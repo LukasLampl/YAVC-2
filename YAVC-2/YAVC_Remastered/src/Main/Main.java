@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package Main;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
 
@@ -104,10 +105,12 @@ public class Main {
 				ArrayList<MacroBlock> leaveNodes = QUADTREE_ENGINE.getLeaveNodes(QuadtreeRoots);
 				
 				leaveNodes = DIFFERENCE_ENGINE.computeDifferences(curFrame.getColorSpectrum(), prevFrame, leaveNodes);
-				ArrayList<Vector> movementVectors = VECTOR_ENGINE.computeMovementVectors(leaveNodes, prevFrame);
+				ArrayList<Vector> movementVectors = VECTOR_ENGINE.computeMovementVectors(leaveNodes, references, futFrame);
 
-				VECTOR_ENGINE.drawVectorizedImage(curFrame, movementVectors, references, futFrame, prevFrame);
+//				BufferedImage vectors = VECTOR_ENGINE.drawVectors(movementVectors, curFrame.getDimension());
+				VECTOR_ENGINE.drawVectorizedImage(prevFrame, movementVectors, references, futFrame);
 
+//				ImageIO.write(vectors, "png", new File(output.getAbsolutePath() + "\\V_" + i + ".png"));
 				ImageIO.write(curFrame.toBufferedImage(), "png", new File(output.getAbsolutePath() + "\\VR_" + i + ".png"));
 				
 				outStream.addObjectToOutputQueue(new QueueObject(movementVectors));
@@ -117,7 +120,6 @@ public class Main {
 				sumOfMilliSeconds += time;
 				printStatistics(time, sumOfMilliSeconds, i, movementVectors);
 				
-//				curFrame = new PixelRaster(render);
 				prevFrame = curFrame;
 				references.add(prevFrame);
 				manageReferences(references);
@@ -137,7 +139,7 @@ public class Main {
 		System.out.println("");
 		System.out.println("Frame " + index + ":");
 		System.out.println("Time: " + time + "ms | Avg. time: " + (fullTime / index) + "ms");
-		System.out.println("Vectors: " + vecs.size() + " | Covered area: " + vecArea + "px");
+		System.out.println("Vectors: " + vecs.size() + " | Covered area: " + vecArea + "px | Avg. MSE: " + (VECTOR_ENGINE.getVectorMSE() / vecs.size()));
 	}
 	
 	private static void manageReferences(ArrayList<PixelRaster> references) {

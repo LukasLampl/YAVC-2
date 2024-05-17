@@ -12,66 +12,56 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import Main.config;
 import Utils.MacroBlock;
 import Utils.PixelRaster;
 import Utils.Vector;
 
 public class VectorEngine {
-	public ArrayList<Vector> computeMovementVectors(ArrayList<MacroBlock> differences, PixelRaster prevFrame) {//ArrayList<PixelRaster> refs, PixelRaster futureFrame) {
+	private double TOTAL_MSE = 0;
+	
+	public ArrayList<Vector> computeMovementVectors(ArrayList<MacroBlock> differences, ArrayList<PixelRaster> refs, PixelRaster futureFrame) {
 		ArrayList<Vector> vecs = new ArrayList<Vector>(differences.size() / 2);
 		ArrayList<Future<Vector>> futureVecs = new ArrayList<Future<Vector>>(differences.size() / 2);
 		
 		int threads = Runtime.getRuntime().availableProcessors();
 		ExecutorService executor = Executors.newFixedThreadPool(threads);
 		
+		this.TOTAL_MSE = 0;
+		
 		for (MacroBlock block : differences) {
 			Callable<Vector> task = () -> {
-//				int maxSize = refs.size();
-//				MacroBlock[] canidates = new MacroBlock[maxSize + 1];
-//				
-//				for (int i = 0, index = 0; i < maxSize; i++, index++) {
-//					MacroBlock bestMatch = computeHexagonSearch(refs.get(i), block);
-//					
-//					if (bestMatch != null) {
-//						bestMatch.setReference(config.MAX_REFERENCES - i);
-//					}
-//					
-//					canidates[index] = bestMatch;
-//				}
-//				
-//				if (futureFrame != null) {
-//					MacroBlock futureMatch = computeHexagonSearch(futureFrame, block);
-//					if (futureMatch != null) futureMatch.setReference(-1);
-//					canidates[refs.size()] = futureMatch;
-//				}
-//				
-//				MacroBlock best = evaluateBestGuess(canidates);
-//				Vector vec = null;
-//				
-//				if (best != null) {
-//					vec = new Vector(best.getPosition());
-//					vec.setAppendedBlock(block);
-//					vec.setMostEqualBlock(best);
-//					vec.setSize(block.getSize());
-//					vec.setReference(best.getReference());
-//					vec.setSpanX(block.getPosition().x - best.getPosition().x);
-//					vec.setSpanY(block.getPosition().y - best.getPosition().y);
-//				}
-//				
-//				return vec;
+				int maxSize = refs.size();
+				MacroBlock[] canidates = new MacroBlock[maxSize + 1];
 				
-				MacroBlock bestMatch = computeHexagonSearch(prevFrame, block);
+				for (int i = 0, index = 0; i < maxSize; i++, index++) {
+					MacroBlock bestMatch = computeHexagonSearch(refs.get(i), block);
+					
+					if (bestMatch != null) {
+						bestMatch.setReference(config.MAX_REFERENCES - i);
+					}
+					
+					canidates[index] = bestMatch;
+				}
 				
+				if (futureFrame != null) {
+					MacroBlock futureMatch = computeHexagonSearch(futureFrame, block);
+					if (futureMatch != null) futureMatch.setReference(-1);
+					canidates[refs.size()] = futureMatch;
+				}
+				
+				MacroBlock best = evaluateBestGuess(canidates);
 				Vector vec = null;
 				
-				if (bestMatch != null) {
-					vec = new Vector(bestMatch.getPosition());
+				if (best != null) {
+					this.TOTAL_MSE += best.getMSE();
+					vec = new Vector(best.getPosition());
 					vec.setAppendedBlock(block);
-					vec.setMostEqualBlock(bestMatch);
+					vec.setMostEqualBlock(best);
 					vec.setSize(block.getSize());
-					vec.setReference(1);
-					vec.setSpanX(block.getPosition().x - bestMatch.getPosition().x);
-					vec.setSpanY(block.getPosition().y - bestMatch.getPosition().y);
+					vec.setReference(best.getReference());
+					vec.setSpanX(block.getPosition().x - best.getPosition().x);
+					vec.setSpanY(block.getPosition().y - best.getPosition().y);
 				}
 				
 				return vec;
@@ -115,7 +105,7 @@ public class VectorEngine {
 	
 	private MacroBlock computeHexagonSearch(PixelRaster ref, MacroBlock blockToBeSearched) {
 		double lowestMSE = Double.MAX_VALUE;
-		int radius = 2, searchWindow = 24, size = blockToBeSearched.getSize();
+		int radius = 4, searchWindow = 24, size = blockToBeSearched.getSize();
 		Point blockPos = blockToBeSearched.getPosition();
 		Point centerPoint = blockToBeSearched.getPosition();
 		MacroBlock mostEqualBlock = null;
@@ -264,17 +254,20 @@ public class VectorEngine {
 		return ((resY + resU + resV + resA) / (size * size * 4));
 	}
 	
-	public void drawVectorizedImage(PixelRaster render, ArrayList<Vector> vecs, ArrayList<PixelRaster> refs, PixelRaster futureFrame, PixelRaster prevFrame) {
+	public double getVectorMSE() {
+		return this.TOTAL_MSE;
+	}
+	
+	public void drawVectorizedImage(PixelRaster render, ArrayList<Vector> vecs, ArrayList<PixelRaster> refs, PixelRaster futureFrame) {
 		for (Vector v : vecs) {
-			PixelRaster cache = prevFrame;
+			PixelRaster cache = null;
 			
-//			if (v.getReference() == -1 && futureFrame != null) {
-//				cache = futureFrame;
-//			} else {
-//				cache = refs.get(config.MAX_REFERENCES - v.getReference());
-//			}
+			if (v.getReference() == -1 && futureFrame != null) {
+				cache = futureFrame;
+			} else {
+				cache = refs.get(config.MAX_REFERENCES - v.getReference());
+			}
 			
-			MacroBlock ref = v.getMostEqualBlock();
 			int size = v.getSize();
 			int vecEndX = v.getPosition().x + v.getSpanX();
 			int vecEndY = v.getPosition().y + v.getSpanY();
@@ -293,19 +286,19 @@ public class VectorEngine {
 					if (y + vecEndY < 0 || y + vecEndY >= render.getHeight()) continue;
 					render.setYUV(vecEndX + x, vecEndY + y, cache.getYUV(x + vecEndX, y + vecEndY));
 					
-					if (x == 0 && y == 0) {
-						if (v.getReference() == -1) {
-							render.setRGB(x + vecEndX, y + vecEndY, Color.GREEN.getRGB());
-						} else if (v.getReference() == 0) {
-							render.setRGB(x + vecEndX, y + vecEndY, Color.ORANGE.getRGB());
-						} else if (v.getReference() == 1) {
-							render.setRGB(x + vecEndX, y + vecEndY, Color.YELLOW.getRGB());
-						} else if (v.getReference() == 2) {
-							render.setRGB(x + vecEndX, y + vecEndY, Color.BLUE.getRGB());
-						} else if (v.getReference() == 3) {
-							render.setRGB(x + vecEndX, y + vecEndY, Color.RED.getRGB());
-						}
-					}
+//					if (x == 0 && y == 0) {
+//						if (v.getReference() == -1) {
+//							render.setRGB(x + vecEndX, y + vecEndY, Color.GREEN.getRGB());
+//						} else if (v.getReference() == 0) {
+//							render.setRGB(x + vecEndX, y + vecEndY, Color.ORANGE.getRGB());
+//						} else if (v.getReference() == 1) {
+//							render.setRGB(x + vecEndX, y + vecEndY, Color.YELLOW.getRGB());
+//						} else if (v.getReference() == 2) {
+//							render.setRGB(x + vecEndX, y + vecEndY, Color.BLUE.getRGB());
+//						} else if (v.getReference() == 3) {
+//							render.setRGB(x + vecEndX, y + vecEndY, Color.RED.getRGB());
+//						}
+//					}
 				}
 			}
 		}

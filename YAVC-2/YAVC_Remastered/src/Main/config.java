@@ -3,7 +3,7 @@ package Main;
 public class config {
 	public static final int CODING_OFFSET = 15;
 	public static final int UTF_8_CODING_SIZE = 8;
-	public static final int MAX_REFERENCES = 1;
+	public static final int MAX_REFERENCES = 4;
 	
 	public static final char VECTOR_START = (char)1;
 	public static final char Y_DCT_END = (char)2;
