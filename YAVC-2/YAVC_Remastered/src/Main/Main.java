@@ -54,10 +54,20 @@ public class Main {
 			return;
 		}
 		
-		encode(jfc.getSelectedFile());
+		File in = jfc.getSelectedFile();
+		
+		jfc.showDialog(null, null);
+		
+		if (jfc.getSelectedFile() == null) {
+			return;
+		}
+		
+		File out = jfc.getSelectedFile();
+		
+		encode(in, out);
 	}
 	
-	public static void encode(File input) {
+	public static void encode(File input, File output) {
 		OutputStream outStream = new OutputStream(new File(input.getParent()));
 		ArrayList<PixelRaster> references = new ArrayList<PixelRaster>(MAX_REFERENCES);
 		PixelRaster futFrame = null;
@@ -95,12 +105,10 @@ public class Main {
 				
 				leaveNodes = DIFFERENCE_ENGINE.computeDifferences(curFrame.getColorSpectrum(), prevFrame, leaveNodes);
 				ArrayList<Vector> movementVectors = VECTOR_ENGINE.computeMovementVectors(leaveNodes, prevFrame);
-				
-//				BufferedImage vecsImg = VECTOR_ENGINE.drawVectors(movementVectors, curFrame.getDimension());
+
 				VECTOR_ENGINE.drawVectorizedImage(curFrame, movementVectors, references, futFrame, prevFrame);
-				
-//				ImageIO.write(vecsImg, "png", new File("C:\\Users\\Lukas Lampl\\Documents\\susFrames\\V_" + i + ".png"));
-				ImageIO.write(curFrame.toBufferedImage(), "png", new File("C:\\Users\\Lukas Lampl\\Documents\\susFrames\\VR_" + i + ".png"));
+
+				ImageIO.write(curFrame.toBufferedImage(), "png", new File(output.getAbsolutePath() + "\\VR_" + i + ".png"));
 				
 				outStream.addObjectToOutputQueue(new QueueObject(movementVectors));
 				
