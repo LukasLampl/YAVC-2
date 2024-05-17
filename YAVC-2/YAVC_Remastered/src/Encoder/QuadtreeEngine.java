@@ -1,0 +1,127 @@
+package Encoder;
+
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+import Utils.MacroBlock;
+import Utils.PixelRaster;
+
+public class QuadtreeEngine {
+	private final int MAX_SIZE = 128;
+	
+	public ArrayList<MacroBlock> constructQuadtree(PixelRaster currentFrame) {
+		ArrayList<MacroBlock> roots = new ArrayList<MacroBlock>();
+		
+		int threads = Runtime.getRuntime().availableProcessors();
+		ArrayList<Future<MacroBlock>> futureRoots = new ArrayList<Future<MacroBlock>>();
+		ExecutorService executor = Executors.newFixedThreadPool(threads);
+		
+		for (int x = 0; x < currentFrame.getWidth(); x += this.MAX_SIZE) {
+			for (int y = 0; y < currentFrame.getHeight(); y += this.MAX_SIZE) {
+				final int posX = x, posY = y;
+				
+				Callable<MacroBlock> task = () -> {
+					MacroBlock origin = new MacroBlock(new Point(posX, posY), this.MAX_SIZE);
+					double[][][] comps = currentFrame.getPixelBlock(new Point(posX, posY), this.MAX_SIZE, null);
+					origin.setColorComponents(comps[0], comps[1], comps[2], comps[3]);
+					origin.subdivide(40);
+					return origin;
+				};
+				
+				futureRoots.add(executor.submit(task));
+			}
+		}
+		
+		for (Future<MacroBlock> root : futureRoots) {
+			try {
+				MacroBlock block = root.get();
+				
+				if (block != null) {
+					roots.add(block);
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		
+		executor.shutdown();
+		
+		return roots;
+	}
+	
+	public ArrayList<MacroBlock> getLeaveNodes(ArrayList<MacroBlock> roots) {
+		ArrayList<MacroBlock> leaveNodes = new ArrayList<MacroBlock>();
+		ArrayList<Future<ArrayList<MacroBlock>>> futureLeavesList = new ArrayList<Future<ArrayList<MacroBlock>>>();
+		int threads = Runtime.getRuntime().availableProcessors();
+		ExecutorService executor = Executors.newFixedThreadPool(threads);
+		
+		for (MacroBlock root : roots) {
+			Callable<ArrayList<MacroBlock>> task = () -> {
+				return getLeaves(root);
+			};
+			
+			futureLeavesList.add(executor.submit(task));
+		}
+		
+		for (Future<ArrayList<MacroBlock>> flist : futureLeavesList) {
+			try {
+				ArrayList<MacroBlock> nodes = flist.get();
+				if (nodes != null) leaveNodes.addAll(nodes);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		
+		executor.shutdown();
+		
+		return leaveNodes;
+	}
+	
+	public BufferedImage[] drawMacroBlocks(ArrayList<MacroBlock> leaveNodes, Dimension dim) {
+		BufferedImage[] render = new BufferedImage[2];
+		render[0] = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
+		render[1] = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
+		
+		Graphics2D g2d1 = (Graphics2D)render[0].createGraphics();
+		Graphics2D g2d2 = (Graphics2D)render[1].createGraphics();
+		g2d1.setColor(Color.RED);
+		
+		for (MacroBlock leaf : leaveNodes) {
+			Point pos = leaf.getPosition();
+			int size= leaf.getSize();
+			g2d1.drawRect(pos.x, pos.y, size, size);
+			g2d1.drawLine(pos.x, pos.y, pos.x + size, pos.y + size);
+			
+			double[] rgb = leaf.getMeanColor();
+			g2d2.setColor(new Color((int)rgb[0], (int)rgb[1], (int)rgb[2]));
+			g2d2.fillRect(pos.x, pos.y, size, size);
+		}
+		
+		g2d1.dispose();
+		g2d2.dispose();
+		
+		return render;
+	}
+	
+	private ArrayList<MacroBlock> getLeaves(MacroBlock block) {
+		ArrayList<MacroBlock> blocks = new ArrayList<MacroBlock>(4);
+		
+		for (MacroBlock node : block.getNodes()) {
+			if (node.isSubdivided()) {
+				blocks.addAll(getLeaves(node));
+			} else {
+				blocks.add(node);
+			}
+		}
+		
+		return blocks;
+	}
+}
