@@ -213,7 +213,13 @@ public class OutputStream {
 						if (EndY + y < 0 || EndY + y >= dim.height) continue;
 						if (pos.y + y < 0 || pos.y + y >= dim.height) continue;
 						
-						render.setYUV(x + EndX, y + EndY, cache.getYUV(pos.x + x, pos.y + y));
+						double referenceYUV[] = cache.getYUV(pos.x + x, pos.y + y);
+						double differenceYUV[] = v.getAbsoluteColorDifferenceAt(x, y);
+						referenceYUV[0] += differenceYUV[0];
+						referenceYUV[1] += differenceYUV[1];
+						referenceYUV[2] += differenceYUV[2];
+						
+						render.setYUV(x + EndX, y + EndY, referenceYUV);
 					}
 				}
 			}

@@ -13,7 +13,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import Main.config;
-import Utils.ColorManager;
 import Utils.MacroBlock;
 import Utils.PixelRaster;
 import Utils.Vector;
@@ -56,7 +55,10 @@ public class VectorEngine {
 				
 				if (best != null) {
 					this.TOTAL_MSE += best.getMSE();
+					double[][][] absoluteColorDifference = getAbsoluteDifferenceOfColors(block.getColors(), best.getColors(), block.getSize());
+					
 					vec = new Vector(best.getPosition());
+					vec.setAbsoluteDifferences(absoluteColorDifference);
 					vec.setAppendedBlock(block);
 					vec.setMostEqualBlock(best);
 					vec.setSize(block.getSize());
@@ -222,6 +224,28 @@ public class VectorEngine {
 		return points;
 	}
 	
+	private double[][][] getAbsoluteDifferenceOfColors(double[][][] col1, double[][][] col2, int size) {
+		int halfSize = (int)(size * 0.5);
+		double[][] Y = new double[size][size];
+		double[][] U = new double[halfSize][halfSize];
+		double[][] V = new double[halfSize][halfSize];
+		
+		for (int y = 0; y < size; y++) {
+			for (int x = 0; x < size; x++) {
+				Y[x][y] = col1[0][x][y] - col2[0][x][y];
+			}
+		}
+		
+		for (int y = 0; y < halfSize; y++) {
+			for (int x = 0; x < halfSize; x++) {
+				U[x][y] = col1[1][x][y] - col2[1][x][y];
+				V[x][y] = col1[2][x][y] - col2[2][x][y];
+			}
+		}
+
+		return new double[][][] {Y, U, V};
+	}
+	
 	private double getMSEOfColors(double[][][] col1, double[][][] col2, int size) {
 		double resY = 0;
 		double resU = 0;
@@ -251,67 +275,11 @@ public class VectorEngine {
 		
 		resY *= resY;
 		resA = Math.pow(resA, resA);
-		
 		return ((resY + resU + resV + resA) / (size * size * 4));
 	}
 	
 	public double getVectorMSE() {
 		return this.TOTAL_MSE;
-	}
-	
-	public BufferedImage drawVectorizedImage(PixelRaster img, ArrayList<Vector> vecs, ArrayList<PixelRaster> refs, PixelRaster futureFrame, PixelRaster prevFrame) {
-		BufferedImage render = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_ARGB);
-		Graphics2D g2d = (Graphics2D)render.createGraphics();
-		g2d.drawImage(img.toBufferedImage(), 0, 0, img.getWidth(), img.getHeight(), null);
-		g2d.dispose();
-		
-		ColorManager colorManager = new ColorManager();
-		
-		for (Vector v : vecs) {
-			PixelRaster cache = prevFrame;
-			
-//			if (v.getReference() == -1 && futureFrame != null) {
-//				cache = futureFrame;
-//			} else {
-//				cache = refs.get(config.MAX_REFERENCES - v.getReference());
-//			}
-			
-			int size = v.getSize();
-			int vecEndX = v.getPosition().x + v.getSpanX();
-			int vecEndY = v.getPosition().y + v.getSpanY();
-			
-			if (vecEndX >= render.getWidth()
-				|| vecEndY >= render.getHeight()
-				|| vecEndX < 0
-				|| vecEndY < 0) {
-				continue;
-			}
-			
-			for (int x = 0; x < size; x++) {
-				if (x + vecEndX < 0 || x + vecEndX >= render.getWidth()) continue;
-				
-				for (int y = 0; y < size; y++) {
-					if (y + vecEndY < 0 || y + vecEndY >= render.getHeight()) continue;
-					render.setRGB(vecEndX + x, vecEndY + y, colorManager.convertYUVToRGB(cache.getYUV(x + vecEndX, y + vecEndY)).getRGB());
-					
-//					if (x == 0 && y == 0) {
-//						if (v.getReference() == -1) {
-//							render.setRGB(x + vecEndX, y + vecEndY, Color.GREEN.getRGB());
-//						} else if (v.getReference() == 0) {
-//							render.setRGB(x + vecEndX, y + vecEndY, Color.ORANGE.getRGB());
-//						} else if (v.getReference() == 1) {
-//							render.setRGB(x + vecEndX, y + vecEndY, Color.YELLOW.getRGB());
-//						} else if (v.getReference() == 2) {
-//							render.setRGB(x + vecEndX, y + vecEndY, Color.BLUE.getRGB());
-//						} else if (v.getReference() == 3) {
-//							render.setRGB(x + vecEndX, y + vecEndY, Color.RED.getRGB());
-//						}
-//					}
-				}
-			}
-		}
-		
-		return render;
 	}
 	
 	public BufferedImage drawVectors(ArrayList<Vector> vecs, Dimension dim) {
