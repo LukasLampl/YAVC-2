@@ -20,7 +20,15 @@ import Utils.Vector;
 public class VectorEngine {
 	private double TOTAL_MSE = 0;
 	
-	public ArrayList<Vector> computeMovementVectors(ArrayList<MacroBlock> differences, ArrayList<PixelRaster> refs, PixelRaster futureFrame, PixelRaster prevFrame) {
+	/*
+	 * Purpose: Calculate all possible movement vectors by the differences from the prevFrame to the curFrame.
+	 * 			To achieve that it uses reference images that go 4 images into the past.
+	 * Return Type: ArrayList<Vector> => List of movement vectors
+	 * Params: ArrayList<MacroBlock> differences => Differences from the prevFrame to the curFrame;
+	 * 			ArrayList<PixelRaster> refs => Reference images;
+	 * 			PixelRaster futureFrame => Frame in the future
+	 */
+	public ArrayList<Vector> computeMovementVectors(ArrayList<MacroBlock> differences, ArrayList<PixelRaster> refs, PixelRaster futureFrame) {
 		ArrayList<Vector> vecs = new ArrayList<Vector>(differences.size() / 2);
 		ArrayList<Future<Vector>> futureVecs = new ArrayList<Future<Vector>>(differences.size() / 2);
 		
@@ -55,7 +63,10 @@ public class VectorEngine {
 				
 				if (best != null) {
 					this.TOTAL_MSE += best.getMSE();
-					double[][][] absoluteColorDifference = getAbsoluteDifferenceOfColors(block.getColors(), best.getColors(), block.getSize());
+					
+					PixelRaster references = refs.get(config.MAX_REFERENCES - best.getReference());
+					double referenceColor[][][] = references.getPixelBlock(best.getPosition(), block.getSize(), null);
+					double[][][] absoluteColorDifference = getAbsoluteDifferenceOfColors(block.getColors(), referenceColor, block.getSize());
 					
 					vec = new Vector(best.getPosition());
 					vec.setAbsoluteDifferences(absoluteColorDifference);
@@ -91,6 +102,11 @@ public class VectorEngine {
 		return vecs;
 	}
 	
+	/*
+	 * Purpose: The method evaluates the best guess among an array of "best matches"
+	 * Return Type: MacroBlock => Best match to the searched MacroBlock
+	 * Params: MacroBlock[] canidates => Candiates to check for the lowest MSE
+	 */
 	private MacroBlock evaluateBestGuess(MacroBlock[] canidates) {
 		MacroBlock best = canidates[0];
 		
@@ -106,6 +122,26 @@ public class VectorEngine {
 		return best;
 	}
 	
+	/*
+	 * Purpose: Compute the hexagon-search algorithm for a MacroBlock with one reference.
+	 * 			The algorithm is as followed:
+	 * +---+---------------------------------------------------------------------------------------------------------+
+	 * | 1 | Move a coordinate system to the Position of the block, so that the origin is a the blocks position.     |
+	 * +---+---------------------------------------------------------------------------------------------------------+
+	 * | 2 | Span a hexagon with the radius r and get all MSEs from the seven points. Look for the lowest.           |
+	 * |   | If the lowest can be found at the center move to step 4; else to step 3.                                |
+	 * +---+---------------------------------------------------------------------------------------------------------+
+	 * | 3 | Set the new origin to the Point with the lowest MSE and repeat step 2.                                  |
+	 * +---+---------------------------------------------------------------------------------------------------------+
+	 * | 4 | Now set the radius to r /= 2 and repeat step 2, until r <= 1. If r <= 1 go to step 5.                   |
+	 * +---+---------------------------------------------------------------------------------------------------------+
+	 * | 5 | Check the points around the "best guess" and get the one with the lowest MSE >> this is the best match. |
+	 * +---+---------------------------------------------------------------------------------------------------------+
+	 * 
+	 * Return Type: MacroBlock => Best match in the referene image
+	 * Params: PixelRaster ref => Reference image, in which to search for the best match;
+	 * 			MacroBlock blockToBeSearched => MacroBlock to be searched in the reference image.
+	 */
 	private MacroBlock computeHexagonSearch(PixelRaster ref, MacroBlock blockToBeSearched) {
 		double lowestMSE = Double.MAX_VALUE;
 		int radius = 4, searchWindow = 24, size = blockToBeSearched.getSize();
@@ -192,6 +228,12 @@ public class VectorEngine {
 		return mostEqualBlock;
 	}
 	
+	/*
+	 * Purpose: Checks if the MSE is to high to be matched or not. The check is adaptive to the size
+	 * Return Type: boolean => true = is Valid : false = not Valid
+	 * Params: double MSE => MSE to check;
+	 * 			int size => Size of the block
+	 */
 	private boolean isValidMSE(double MSE, int size) {
 		switch (size) {
 		case 128:
@@ -211,6 +253,12 @@ public class VectorEngine {
 		return true;
 	}
 	
+	/*
+	 * Purpose: Provide the seven Points for the hexagon-search algorithm
+	 * Return Type: Point[] => Points from the hexagon
+	 * Params: int radius => Defines the radius of the hexagon;
+	 * 			Point pos => Defines the position of the hexagon
+	 */
 	private Point[] getHexagonPoints(int radius, Point pos) {
 		Point[] points = new Point[7];
 		points[6] = pos;
@@ -224,6 +272,15 @@ public class VectorEngine {
 		return points;
 	}
 	
+	/*
+	 * Purpose: Calculates the absolute color differences in the YUV-Colorspace, so the decoder can reconstruct
+	 * 			"the original" based on all wrong coded colors during inter-prediction.
+	 * Return Type: double[][][] => The deltaValues of the Y ([0]), U ([1]) and V ([2]) components between
+	 * 				the first and second color;
+	 * Params: double[][][] col1 => The "original" color to compare to the "best match";
+	 * 			double[][][] col2 => The "best match" color from which the difference should be calculated;
+	 * 			int size => Size of the color components (in width and height)
+	 */
 	private double[][][] getAbsoluteDifferenceOfColors(double[][][] col1, double[][][] col2, int size) {
 		int halfSize = (int)(size * 0.5);
 		double[][] Y = new double[size][size];
@@ -246,6 +303,16 @@ public class VectorEngine {
 		return new double[][][] {Y, U, V};
 	}
 	
+	/*
+	 * Purpose: Calculates the MSE (Mean Square Error) between two YUV color components.
+	 * 			The U and V are both subsampled to 4:2:0.
+	 * Return Type: double => MSE between both colors
+	 * Params: double[][][] col1 => Color component 1, containing Y at [0], U at [1], V at [2]
+	 * 			and A at [3];
+	 * 			double[][][] col2 => Color component 2, containing Y at [0], U at [1], V at [2]
+	 * 			and A at [3];
+	 * 			int size => Size of both color components (in width and height)
+	 */
 	private double getMSEOfColors(double[][][] col1, double[][][] col2, int size) {
 		double resY = 0;
 		double resU = 0;
@@ -278,10 +345,27 @@ public class VectorEngine {
 		return ((resY + resU + resV + resA) / (size * size * 4));
 	}
 	
+	/*
+	 * Purpose: Returns the sum of all MSEs from all matching vectors
+	 * Return Type: void
+	 * Params: void
+	 */
 	public double getVectorMSE() {
 		return this.TOTAL_MSE;
 	}
 	
+	/*
+	 * Purpose: This function is DEBUG ONLY and returns a BufferedImage that contains all vectors drawn on it.
+	 * 			The Vectors have different colors according to their "origin". Look at the table below
+	 * +-----------+-------+--------+--------+-------+-------+
+	 * | Reference |  -1   |    0   |    1   |   2   |   3   |
+	 * +-----------+-------+--------+--------+-------+-------+
+	 * |   Color   | GREEN | ORANGE | YELLOW |  BLUE |  RED  |
+	 * +-----------+-------+--------+--------+-------+-------+
+	 * Return Type: BufferedImage => Image with all vectors drawn on it
+	 * Params: ArrayList<Vector> vecs => Vectors to draw;
+	 * 			Dimension dim => Dimension of the video (width x height)
+	 */
 	public BufferedImage drawVectors(ArrayList<Vector> vecs, Dimension dim) {
 		BufferedImage render = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D g2d = (Graphics2D)render.createGraphics();

@@ -51,6 +51,12 @@ public class MacroBlock {
 		this.meanColor = computeRGBMean();
 	}
 	
+	/*
+	 * Purpose: Get the YUV color at the specific position (x and y) with the reverse subsampled chroma values
+	 * Return Type: double[] => YUV color (Y at [0], U at [1] and V at [2])
+	 * Params: int x => X position;
+	 * 			int y => Y position
+	 */
 	public double[] getYUV(int x, int y) {
 		if (x < 0 || x >= this.size) {
 			throw new ArrayIndexOutOfBoundsException("(X) " + x + " is bigger than " + this.size);
@@ -62,6 +68,12 @@ public class MacroBlock {
 		return new double[] {this.Y[x][y], this.U[subSX][subSY], this.V[subSX][subSY]};
 	}
 
+	/*
+	 * Purpose: Subdivides the current MacroBlock recursively down to 4 smaller MacroBlock.
+	 * Return Type: void
+	 * Params: double errorThreshold => Maximum color error, till subdivision gets aborted;
+	 * 			int depth => Depth of the subdivision
+	 */
 	private double FACTOR_TABLE[] = {0.1, 0.01, 0.001, 0.0001, 0.00001};
 	
 	public void subdivide(double errorThreshold, int depth) {
@@ -140,6 +152,12 @@ public class MacroBlock {
 		this.ORDER = order;
 	}
 	
+	/*
+	 * Purpose: Gets a smaller sub-block of the current block with the size "size"
+	 * Return Type: MacroBlock => Sub-block
+	 * Params: Point pos => Position of the sub-block within the current block;
+	 * 			int size => Size of the sub-block
+	 */
 	private MacroBlock getSubBlock(Point pos, int size) {
 		double[][] resY = new double[size][size];
 		double[][] resU = new double[size / 2][size / 2];
