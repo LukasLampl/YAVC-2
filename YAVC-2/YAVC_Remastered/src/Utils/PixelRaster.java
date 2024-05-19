@@ -103,7 +103,7 @@ public class PixelRaster {
 			throw new ArrayIndexOutOfBoundsException("(Y) " + y + " is out of bounds 0:" + this.dim.height);
 		}
 		
-		int subSX = x / 2, subSY = y / 2;
+		int subSX = (int)(x * 0.5), subSY = (int)(y * 0.5);
 		return new double[] {this.Y[x][y], this.U[subSX][subSY], this.V[subSX][subSY]};
 	}
 	
@@ -114,7 +114,7 @@ public class PixelRaster {
 			throw new ArrayIndexOutOfBoundsException("(X) " + x + "is out of bounds!");
 		}
 		
-		int subSX = x / 2, subSY = y / 2;
+		int subSX = (int)(x * 0.5), subSY = (int)(y * 0.5);
 		this.Y[x][y] = YUV[0];
 		this.U[subSX][subSY] = YUV[1];
 		this.V[subSX][subSY] = YUV[2];
@@ -128,7 +128,7 @@ public class PixelRaster {
 		}
 		
 		double[] YUV = this.COLOR_MANAGER.convertRGBToYUV(argb);
-		int subSX = x / 2, subSY = y / 2;
+		int subSX = (int)(x * 0.5), subSY = (int)(y * 0.5);
 		this.Y[x][y] = YUV[0];
 		this.U[subSX][subSY] = YUV[1];
 		this.V[subSX][subSY] = YUV[2];
@@ -145,7 +145,7 @@ public class PixelRaster {
 			throw new ArrayIndexOutOfBoundsException("(X) " + x + "is out of bounds!");
 		}
 		
-		int subSX = x / 2, subSY = y / 2;
+		int subSX = (int)(x * 0.5), subSY = (int)(y * 0.5);
 		this.U[subSX][subSY] = U;
 		this.V[subSX][subSY] = V;
 	}
@@ -198,9 +198,9 @@ public class PixelRaster {
 			}
 		}
 		
-		int halfSize = size / 2;
-		int halfPosX = position.x / 2, halfPosY = position.y / 2;
-		int halfDimWidth = this.dim.width / 2, halfDimHeight = this.dim.height / 2;
+		int halfSize = (int)(size * 0.5);
+		int halfPosX = (int)(position.x * 0.5), halfPosY = (int)(position.y * 0.5);
+		int halfDimWidth = (int)(this.dim.width * 0.5), halfDimHeight = (int)(this.dim.height * 0.5);
 		
 		for (int y = 0; y < halfSize; y++) {
 			for (int x = 0; x < halfSize; x++) {

@@ -31,7 +31,7 @@ public class DifferenceEngine {
 				
 				for (int x = 0; x < size; x++) {
 					for (int y = 0; y < size; y++) {
-						int subSX = x / 2, subSY = y / 2;
+						int subSX = (int)(x * 0.5), subSY = (int)(y * 0.5);
 						double deltaY = refCols[0][x][y] - curCols[0][x][y];
 						double deltaU = refCols[1][subSX][subSY] - curCols[1][subSX][subSY];
 						double deltaV = refCols[2][subSX][subSY] - curCols[2][subSX][subSY];

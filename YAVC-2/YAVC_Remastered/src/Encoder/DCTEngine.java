@@ -24,7 +24,7 @@ public class DCTEngine {
 				
 				Callable<Void> task = () -> {
 					double[][][] comps = raster.getPixelBlock(new Point(posX, posY), size, null);
-					double[][][] DCT = computeChromaDCTCoefficients(comps[1], comps[2], size / 2);
+					double[][][] DCT = computeChromaDCTCoefficients(comps[1], comps[2], (int)(size * 0.5));
 					DCT = computeChromaIDCTCoefficients(DCT[0], DCT[1], size / 2);
 					
 					for (int u = 0; u < size / 2; u++) {
