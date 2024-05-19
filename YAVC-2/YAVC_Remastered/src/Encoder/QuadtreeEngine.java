@@ -21,18 +21,21 @@ public class QuadtreeEngine {
 		ArrayList<MacroBlock> roots = new ArrayList<MacroBlock>();
 		
 		int threads = Runtime.getRuntime().availableProcessors();
+		int currentOrderNumber = 0;
 		ArrayList<Future<MacroBlock>> futureRoots = new ArrayList<Future<MacroBlock>>();
 		ExecutorService executor = Executors.newFixedThreadPool(threads);
 		
 		for (int x = 0; x < currentFrame.getWidth(); x += this.MAX_SIZE) {
 			for (int y = 0; y < currentFrame.getHeight(); y += this.MAX_SIZE) {
 				final int posX = x, posY = y;
+				final int currentOrder = currentOrderNumber++;
 				
 				Callable<MacroBlock> task = () -> {
 					MacroBlock origin = new MacroBlock(new Point(posX, posY), this.MAX_SIZE);
 					double[][][] comps = currentFrame.getPixelBlock(new Point(posX, posY), this.MAX_SIZE, null);
 					origin.setColorComponents(comps[0], comps[1], comps[2], comps[3]);
-					origin.subdivide(40);
+					origin.setOrder(currentOrder);
+					origin.subdivide(40, 0);
 					return origin;
 				};
 				
@@ -85,6 +88,20 @@ public class QuadtreeEngine {
 		return leaveNodes;
 	}
 	
+	private ArrayList<MacroBlock> getLeaves(MacroBlock block) {
+		ArrayList<MacroBlock> blocks = new ArrayList<MacroBlock>(4);
+		
+		for (MacroBlock node : block.getNodes()) {
+			if (node.isSubdivided()) {
+				blocks.addAll(getLeaves(node));
+			} else {
+				blocks.add(node);
+			}
+		}
+		
+		return blocks;
+	}
+	
 	public BufferedImage[] drawMacroBlocks(ArrayList<MacroBlock> leaveNodes, Dimension dim) {
 		BufferedImage[] render = new BufferedImage[2];
 		render[0] = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
@@ -109,19 +126,5 @@ public class QuadtreeEngine {
 		g2d2.dispose();
 		
 		return render;
-	}
-	
-	private ArrayList<MacroBlock> getLeaves(MacroBlock block) {
-		ArrayList<MacroBlock> blocks = new ArrayList<MacroBlock>(4);
-		
-		for (MacroBlock node : block.getNodes()) {
-			if (node.isSubdivided()) {
-				blocks.addAll(getLeaves(node));
-			} else {
-				blocks.add(node);
-			}
-		}
-		
-		return blocks;
 	}
 }

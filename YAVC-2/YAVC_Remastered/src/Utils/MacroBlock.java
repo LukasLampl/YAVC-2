@@ -15,6 +15,7 @@ public class MacroBlock {
 	private MacroBlock[] nodes = null;
 	private double[] meanColor = new double[3];
 	
+	private double ORDER = 0;
 	private double MSE = Double.MAX_VALUE;
 	private int reference = 0;
 	
@@ -61,7 +62,9 @@ public class MacroBlock {
 		return new double[] {this.Y[x][y], this.U[subSX][subSY], this.V[subSX][subSY]};
 	}
 
-	public void subdivide(double errorThreshold) {
+	private double FACTOR_TABLE[] = {0.1, 0.01, 0.001, 0.0001, 0.00001};
+	
+	public void subdivide(double errorThreshold, int depth) {
 		if (this.isSubdivided == true) {
 			return;
 		} else if (this.size <= 4) {
@@ -70,17 +73,18 @@ public class MacroBlock {
 		
 		this.isSubdivided = true;
 		this.nodes = new MacroBlock[4];
-		int index = 0;
+		int index = 0, currentOrder = 0;
 		
 		for (int x = 0; x < this.size; x += this.size / 2) {
 			for (int y = 0; y < this.size; y += this.size / 2) {
 				MacroBlock b = getSubBlock(new Point(x, y), this.size / 2);
+				b.setOrder(this.ORDER + (this.FACTOR_TABLE[depth] * currentOrder++));
 				this.nodes[index] = b;
 				
 				double standardDeviation = computeStandardDeviation(this.meanColor);
 				
 				if (standardDeviation > errorThreshold) {
-					b.subdivide(errorThreshold);
+					b.subdivide(errorThreshold, depth + 1);
 				}
 				
 				index++;
@@ -126,6 +130,14 @@ public class MacroBlock {
 	
 	public int getReference() {
 		return this.reference;
+	}
+	
+	public double getOrder() {
+		return this.ORDER;
+	}
+	
+	public void setOrder(double order) {
+		this.ORDER = order;
 	}
 	
 	private MacroBlock getSubBlock(Point pos, int size) {
