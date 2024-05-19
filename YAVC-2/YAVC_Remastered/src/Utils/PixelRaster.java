@@ -234,6 +234,6 @@ public class PixelRaster {
 	}
 	
 	public PixelRaster copy() {
-		return new PixelRaster(this.dim, this.Y, this.U, this.V);
+		return new PixelRaster(this.dim, this.Y.clone(), this.U.clone(), this.V.clone());
 	}
 }

@@ -21,13 +21,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package Main;
 
+import java.awt.Dimension;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
 import javax.swing.JFileChooser;
 
+import Decoder.InputProcessor;
+import Decoder.InputStream;
 import Encoder.DCTEngine;
 import Encoder.DifferenceEngine;
 import Encoder.OutputStream;
@@ -66,6 +70,7 @@ public class Main {
 		File out = jfc.getSelectedFile();
 		
 		encode(in, out);
+		decode(new File(out.getParent() + "/YAVC-Res.yavc.part"), out);
 	}
 	
 	public static void encode(File input, File output) {
@@ -93,10 +98,12 @@ public class Main {
 				if (prevFrame == null) {
 					prevFrame = new PixelRaster(ImageIO.read(frameFile));
 //					futureFrame = new PixelRaster(ImageIO.read(getAwaitedFile(input, i + 1, ".bmp")));
+					outStream.writeStartFrame(output, prevFrame);
 					references.add(prevFrame);
 					continue;
 				}
 				
+				prevFrame = new PixelRaster(ImageIO.read(getAwaitedFile(input, i - 1, ".bmp")));
 				curFrame = new PixelRaster(ImageIO.read(frameFile));
 //				futureFrame = new PixelRaster(ImageIO.read(getAwaitedFile(input, i + 1, ".bmp")));
 				
@@ -104,24 +111,27 @@ public class Main {
 				ArrayList<MacroBlock> QuadtreeRoots = QUADTREE_ENGINE.constructQuadtree(curFrame);
 				ArrayList<MacroBlock> leaveNodes = QUADTREE_ENGINE.getLeaveNodes(QuadtreeRoots);
 				
+//				BufferedImage[] part = QUADTREE_ENGINE.drawMacroBlocks(leaveNodes, curFrame.getDimension());
 				leaveNodes = DIFFERENCE_ENGINE.computeDifferences(curFrame.getColorSpectrum(), prevFrame, leaveNodes);
-				ArrayList<Vector> movementVectors = VECTOR_ENGINE.computeMovementVectors(leaveNodes, references, futFrame);
-
-//				BufferedImage vectors = VECTOR_ENGINE.drawVectors(movementVectors, curFrame.getDimension());
-				VECTOR_ENGINE.drawVectorizedImage(prevFrame, movementVectors, references, futFrame);
-
-//				ImageIO.write(vectors, "png", new File(output.getAbsolutePath() + "\\V_" + i + ".png"));
-				ImageIO.write(curFrame.toBufferedImage(), "png", new File(output.getAbsolutePath() + "\\VR_" + i + ".png"));
+				ArrayList<Vector> movementVectors = VECTOR_ENGINE.computeMovementVectors(leaveNodes, references, futFrame, prevFrame);
 				
-				outStream.addObjectToOutputQueue(new QueueObject(movementVectors));
+//				BufferedImage vectors = VECTOR_ENGINE.drawVectors(movementVectors, curFrame.getDimension());
+				PixelRaster composit = outStream.renderResult(movementVectors, references, leaveNodes, prevFrame);
+
+//				ImageIO.write(part[0], "png", new File(output.getAbsolutePath() + "/MB_" + i + ".png"));
+//				ImageIO.write(part[1], "png", new File(output.getAbsolutePath() + "/MBA_" + i + ".png"));
+//				ImageIO.write(vectors, "png", new File(output.getAbsolutePath() + "/V_" + i + ".png"));
+				ImageIO.write(composit.toBufferedImage(), "png", new File(output.getAbsolutePath() + "/VR_" + i + ".png"));
+				
+				outStream.addObjectToOutputQueue(new QueueObject(movementVectors, leaveNodes));
 				
 				long end = System.currentTimeMillis();
 				long time = end - start;
 				sumOfMilliSeconds += time;
-				printStatistics(time, sumOfMilliSeconds, i, movementVectors);
-				
-				prevFrame = curFrame;
-				references.add(prevFrame);
+				printStatistics(time, sumOfMilliSeconds, i, movementVectors, leaveNodes);
+
+				references.add(composit.copy());
+				prevFrame = composit;
 				manageReferences(references);
 			}
 			
@@ -132,17 +142,25 @@ public class Main {
 		}
 	}
 	
-	private static void printStatistics(long time, long fullTime, int index, ArrayList<Vector> vecs) {
-		int vecArea = 0;
-		for (Vector v : vecs) vecArea += v.getSize() * v.getSize();
-		
+	private static void printStatistics(long time, long fullTime, int index, ArrayList<Vector> vecs, ArrayList<MacroBlock> diffs) {
 		System.out.println("");
 		System.out.println("Frame " + index + ":");
 		System.out.println("Time: " + time + "ms | Avg. time: " + (fullTime / index) + "ms");
-		System.out.println("Vectors: " + vecs.size() + " | Covered area: " + vecArea + "px | Avg. MSE: " + (VECTOR_ENGINE.getVectorMSE() / vecs.size()));
+
+		if (vecs != null) {
+			int vecArea = 0;
+			for (Vector v : vecs) vecArea += v.getSize() * v.getSize();
+			System.out.println("Vectors: " + vecs.size() + " | Covered area: " + vecArea + "px | Avg. MSE: " + (VECTOR_ENGINE.getVectorMSE() / vecs.size()));
+		}
+		
+		if (diffs != null) {
+			int diffArea = 0;
+			for (MacroBlock b : diffs) diffArea += b.getSize() * b.getSize();
+			System.out.println("Non-Coded blocks: " + diffs.size() + " | Covered area: " + diffArea + "px");
+		}
 	}
 	
-	private static void manageReferences(ArrayList<PixelRaster> references) {
+	private static void manageReferences(ArrayList<?> references) {
 		if (references == null) {
 			return;
 		}
@@ -169,5 +187,31 @@ public class Main {
 		name.append(index);
 		name.append(format);
 		return new File(name.toString());
+	}
+	
+	//DEBUG ONLY!
+	public static void decode(File input, File output) {
+		InputStream inputStream = new InputStream(input);
+		InputProcessor processor = new InputProcessor();
+		
+		String startFrame = inputStream.getStartFrame();
+		BufferedImage startFrameImg = processor.constructStartFrame(startFrame, new Dimension(176, 144));
+		
+		try {
+			ImageIO.write(startFrameImg, "png", new File(input.getAbsolutePath() + "/SF.png"));
+			ArrayList<BufferedImage> refs = new ArrayList<BufferedImage>();
+			refs.add(startFrameImg);
+			
+			for (int i = 0; i < 100; i++) {
+				String frame = inputStream.getFrame(i);
+				BufferedImage result = processor.processFrame(frame, refs, new Dimension(176, 144));
+				
+				ImageIO.write(result, "png", new File(input.getAbsolutePath() + "/R_" + i + ".png"));
+				refs.add(result);
+				manageReferences(refs);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 }

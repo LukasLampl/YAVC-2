@@ -13,6 +13,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import Main.config;
+import Utils.ColorManager;
 import Utils.MacroBlock;
 import Utils.PixelRaster;
 import Utils.Vector;
@@ -20,7 +21,7 @@ import Utils.Vector;
 public class VectorEngine {
 	private double TOTAL_MSE = 0;
 	
-	public ArrayList<Vector> computeMovementVectors(ArrayList<MacroBlock> differences, ArrayList<PixelRaster> refs, PixelRaster futureFrame) {
+	public ArrayList<Vector> computeMovementVectors(ArrayList<MacroBlock> differences, ArrayList<PixelRaster> refs, PixelRaster futureFrame, PixelRaster prevFrame) {
 		ArrayList<Vector> vecs = new ArrayList<Vector>(differences.size() / 2);
 		ArrayList<Future<Vector>> futureVecs = new ArrayList<Future<Vector>>(differences.size() / 2);
 		
@@ -116,7 +117,7 @@ public class VectorEngine {
 		double[][][] cache = null;
 		
 		while (radius > 1) {
-			searchPoints = getGeomPoints(6, radius, centerPoint);
+			searchPoints = getHexagonPoints(radius, centerPoint);
 			
 			for (Point p : searchPoints) {
 				if (p.x > blockPos.x + searchWindow
@@ -208,13 +209,13 @@ public class VectorEngine {
 		return true;
 	}
 	
-	private Point[] getGeomPoints(int edges, int radius, Point pos) {
-		Point[] points = new Point[edges + 1];
-		points[edges] = pos;
-		double Pirad = Math.PI / (edges / 2);
+	private Point[] getHexagonPoints(int radius, Point pos) {
+		Point[] points = new Point[7];
+		points[6] = pos;
+		double Pirad = Math.PI / 3;
 		
-		for (int i = 0; i < edges; i++) {
-			double rad = Pirad * i;
+		for (int i = 0; i < 6; i++) {
+			double rad = Pirad * (i + 1);
 			points[i] = new Point((int)(Math.cos(rad) * radius + pos.x), (int)(Math.sin(rad) * radius + pos.y));
 		}
 		
@@ -258,15 +259,22 @@ public class VectorEngine {
 		return this.TOTAL_MSE;
 	}
 	
-	public void drawVectorizedImage(PixelRaster render, ArrayList<Vector> vecs, ArrayList<PixelRaster> refs, PixelRaster futureFrame) {
+	public BufferedImage drawVectorizedImage(PixelRaster img, ArrayList<Vector> vecs, ArrayList<PixelRaster> refs, PixelRaster futureFrame, PixelRaster prevFrame) {
+		BufferedImage render = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g2d = (Graphics2D)render.createGraphics();
+		g2d.drawImage(img.toBufferedImage(), 0, 0, img.getWidth(), img.getHeight(), null);
+		g2d.dispose();
+		
+		ColorManager colorManager = new ColorManager();
+		
 		for (Vector v : vecs) {
-			PixelRaster cache = null;
+			PixelRaster cache = prevFrame;
 			
-			if (v.getReference() == -1 && futureFrame != null) {
-				cache = futureFrame;
-			} else {
-				cache = refs.get(config.MAX_REFERENCES - v.getReference());
-			}
+//			if (v.getReference() == -1 && futureFrame != null) {
+//				cache = futureFrame;
+//			} else {
+//				cache = refs.get(config.MAX_REFERENCES - v.getReference());
+//			}
 			
 			int size = v.getSize();
 			int vecEndX = v.getPosition().x + v.getSpanX();
@@ -284,7 +292,7 @@ public class VectorEngine {
 				
 				for (int y = 0; y < size; y++) {
 					if (y + vecEndY < 0 || y + vecEndY >= render.getHeight()) continue;
-					render.setYUV(vecEndX + x, vecEndY + y, cache.getYUV(x + vecEndX, y + vecEndY));
+					render.setRGB(vecEndX + x, vecEndY + y, colorManager.convertYUVToRGB(cache.getYUV(x + vecEndX, y + vecEndY)).getRGB());
 					
 //					if (x == 0 && y == 0) {
 //						if (v.getReference() == -1) {
@@ -302,6 +310,8 @@ public class VectorEngine {
 				}
 			}
 		}
+		
+		return render;
 	}
 	
 	public BufferedImage drawVectors(ArrayList<Vector> vecs, Dimension dim) {
