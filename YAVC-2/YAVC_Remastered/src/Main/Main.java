@@ -103,7 +103,6 @@ public class Main {
 					continue;
 				}
 				
-				prevFrame = new PixelRaster(ImageIO.read(getAwaitedFile(input, i - 1, ".bmp")));
 				curFrame = new PixelRaster(ImageIO.read(frameFile));
 //				futureFrame = new PixelRaster(ImageIO.read(getAwaitedFile(input, i + 1, ".bmp")));
 				
@@ -128,10 +127,10 @@ public class Main {
 				long end = System.currentTimeMillis();
 				long time = end - start;
 				sumOfMilliSeconds += time;
-				printStatistics(time, sumOfMilliSeconds, i, movementVectors, leaveNodes);
+				printStatistics(time, sumOfMilliSeconds, i, movementVectors, leaveNodes, curFrame.getColorSpectrum());
 
-				references.add(composit.copy());
-				prevFrame = composit;
+				prevFrame = composit.copy();
+				references.add(prevFrame);
 				manageReferences(references);
 			}
 			
@@ -142,9 +141,9 @@ public class Main {
 		}
 	}
 	
-	private static void printStatistics(long time, long fullTime, int index, ArrayList<Vector> vecs, ArrayList<MacroBlock> diffs) {
+	private static void printStatistics(long time, long fullTime, int index, ArrayList<Vector> vecs, ArrayList<MacroBlock> diffs, int colsCount) {
 		System.out.println("");
-		System.out.println("Frame " + index + ":");
+		System.out.println("Frame " + index + " [Colors: " + colsCount + "]" + ":");
 		System.out.println("Time: " + time + "ms | Avg. time: " + (fullTime / index) + "ms");
 
 		if (vecs != null) {

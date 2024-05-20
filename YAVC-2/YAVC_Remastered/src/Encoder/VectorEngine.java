@@ -29,8 +29,8 @@ public class VectorEngine {
 	 * 			PixelRaster futureFrame => Frame in the future
 	 */
 	public ArrayList<Vector> computeMovementVectors(ArrayList<MacroBlock> differences, ArrayList<PixelRaster> refs, PixelRaster curFrame, PixelRaster futureFrame) {
-		ArrayList<Vector> vecs = new ArrayList<Vector>(differences.size() / 2);
-		ArrayList<Future<Vector>> futureVecs = new ArrayList<Future<Vector>>(differences.size() / 2);
+		ArrayList<Vector> vecs = new ArrayList<Vector>(differences.size());
+		ArrayList<Future<Vector>> futureVecs = new ArrayList<Future<Vector>>(differences.size());
 		
 		int threads = Runtime.getRuntime().availableProcessors();
 		ExecutorService executor = Executors.newFixedThreadPool(threads);
@@ -66,7 +66,7 @@ public class VectorEngine {
 					
 					PixelRaster references = refs.get(config.MAX_REFERENCES - best.getReference());
 					double[][][] referenceColor = references.getPixelBlock(best.getPosition(), block.getSize(), null);
-					double[][][] absoluteColorDifference = getAbsoluteDifferenceOfColors(block.getColors(), referenceColor, block.getSize());
+					double[][][] absoluteColorDifference = getAbsoluteDifferenceOfColors(block.getColors(), referenceColor, block.getSize(), curFrame.getColorSpectrum());
 					
 					vec = new Vector(best.getPosition());
 					vec.setAbsoluteDifferences(absoluteColorDifference);
@@ -222,7 +222,7 @@ public class VectorEngine {
 			}
 		}
 		
-		mostEqualBlock.setMSE(lowestMSE);
+		if (mostEqualBlock != null) mostEqualBlock.setMSE(lowestMSE);
 		return mostEqualBlock;
 	}
 	
@@ -252,19 +252,22 @@ public class VectorEngine {
 	 * 				the first and second color;
 	 * Params: double[][][] col1 => The "original" color to compare to the "best match";
 	 * 			double[][][] col2 => The "best match" color from which the difference should be calculated;
-	 * 			int size => Size of the color components (in width and height)
+	 * 			int size => Size of the color components (in width and height);
+	 * 			int colors => Number of colors in the current frame (adaptive thresholds)
 	 */
-	private double[][][] getAbsoluteDifferenceOfColors(double[][][] col1, double[][][] col2, int size) {
+	private double[][][] getAbsoluteDifferenceOfColors(double[][][] col1, double[][][] col2, int size, int colors) {
 		int halfSize = size / 2;
 		double[][] Y = new double[size][size];
 		double[][] U = new double[halfSize][halfSize];
 		double[][] V = new double[halfSize][halfSize];
 		
+		double YThreshold = colors / 12000, UVThreshold = colors / 6000;
+		
 		for (int y = 0; y < size; y++) {
 			for (int x = 0; x < size; x++) {
 				double diff = col1[0][x][y] - col2[0][x][y];
 				
-				if (Math.abs(diff) > 3.0) {
+				if (Math.abs(diff) > YThreshold) {
 					Y[x][y] = diff;
 				}
 			}
@@ -275,11 +278,11 @@ public class VectorEngine {
 				double diffU = col1[1][x][y] - col2[1][x][y];
 				double diffV = col1[2][x][y] - col2[2][x][y];
 				
-				if (Math.abs(diffU) > 7.0) {
+				if (Math.abs(diffU) > UVThreshold) {
 					U[x][y] = diffU;
 				}
 				
-				if (Math.abs(diffV) > 7.0) {
+				if (Math.abs(diffV) > UVThreshold) {
 					V[x][y] = diffV;
 				}
 			}

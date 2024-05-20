@@ -150,6 +150,16 @@ public class PixelRaster {
 		this.V[subSX][subSY] = V;
 	}
 	
+	public void setLuma(int x, int y, double Y) {
+		if (y < 0 || y >= this.dim.height) {
+			throw new ArrayIndexOutOfBoundsException("(Y) " + y + "is out of bounds!");
+		} else if (x < 0 || x >= this.dim.width) {
+			throw new ArrayIndexOutOfBoundsException("(X) " + x + "is out of bounds!");
+		}
+		
+		this.Y[x][y] = Y;
+	}
+	
 	public int getWidth() {
 		return this.dim.width;
 	}
@@ -234,6 +244,19 @@ public class PixelRaster {
 	}
 	
 	public PixelRaster copy() {
-		return new PixelRaster(this.dim, this.Y.clone(), this.U.clone(), this.V.clone());
+		double[][] clonedY = new double[this.dim.width][];
+		double[][] clonedU = new double[this.dim.width / 2][];
+		double[][] clonedV = new double[this.dim.width / 2][];
+		
+		for (int i = 0; i < this.dim.width; i++) {
+			clonedY[i] = this.Y[i].clone();
+		}
+		
+		for (int i = 0; i < this.dim.width / 2; i++) {
+			clonedU[i] = this.U[i].clone();
+			clonedV[i] = this.V[i].clone();
+		}
+		
+		return new PixelRaster(this.dim, clonedY, clonedU, clonedV);
 	}
 }

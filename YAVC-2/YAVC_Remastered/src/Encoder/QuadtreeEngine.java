@@ -20,6 +20,7 @@ public class QuadtreeEngine {
 	public ArrayList<MacroBlock> constructQuadtree(PixelRaster currentFrame) {
 		ArrayList<MacroBlock> roots = new ArrayList<MacroBlock>();
 		
+		final double errorThreshold = currentFrame.getColorSpectrum() / 1111;
 		int threads = Runtime.getRuntime().availableProcessors();
 		int currentOrderNumber = 0;
 		ArrayList<Future<MacroBlock>> futureRoots = new ArrayList<Future<MacroBlock>>();
@@ -35,7 +36,7 @@ public class QuadtreeEngine {
 					double[][][] comps = currentFrame.getPixelBlock(new Point(posX, posY), this.MAX_SIZE, null);
 					origin.setColorComponents(comps[0], comps[1], comps[2], comps[3]);
 					origin.setOrder(currentOrder);
-					origin.subdivide(40, 0);
+					origin.subdivide(errorThreshold, 0);
 					return origin;
 				};
 				

@@ -2,6 +2,8 @@ package Utils;
 
 import java.awt.Point;
 
+import Encoder.DCTEngine;
+
 public class Vector {
 	private Point startingPoint = null;
 	private int spanX = 0;
@@ -68,9 +70,9 @@ public class Vector {
 		this.VDifference = YUVDifference[2];
 	}
 	
-	public double[] getAbsoluteColorDifferenceAt(int x, int y) {
-		int halfX = x / 2, halfY = y / 2;
-		return new double[] {this.YDifference[x][y], this.UDifference[halfX][halfY], this.VDifference[halfX][halfY]};
+	public double[][][] getDCTCoefficientsOfAbsoluteColorDifference() {
+		DCTEngine dctEngine = new DCTEngine();
+		return dctEngine.computeDCTOfVectorColorDifference(this);
 	}
 	
 	public double[][][] getAbsoluteColorDifference() {
