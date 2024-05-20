@@ -30,9 +30,10 @@ public class ColorManager {
 	 * Params: Color color => Color to be converted
 	 */
 	public double[] convertRGBToYUV(Color color) {
-		double Y = 0.299 * color.getRed() + 0.587 * color.getGreen() + 0.114 * color.getBlue();
-		double U = 128 - 0.168736 * color.getRed() - 0.331264 * color.getGreen() + 0.5 * color.getBlue();
-		double V = 128 + 0.5 * color.getRed() - 0.418688 * color.getGreen() - 0.081312 * color.getBlue();
+		int red = color.getRed(), green = color.getGreen(), blue = color.getBlue();
+		double Y = 0.299 * red + 0.587 * green + 0.114 * blue;
+		double U = 128 - 0.168736 * red - 0.331264 * green + 0.5 * blue;
+		double V = 128 + 0.5 * red - 0.418688 * green - 0.081312 * blue;
 		return new double[] {Y, U, V};
 	}
 	
@@ -42,7 +43,11 @@ public class ColorManager {
 	 * Params: int color => Color to be converted
 	 */
 	public double[] convertRGBToYUV(int color) {
-		return convertRGBToYUV(new Color(color));
+		int red = (color >> 16) & 0xFF, green = (color >> 8) & 0xFF, blue = color & 0xFF;
+		double Y = 0.299 * red + 0.587 * green + 0.114 * blue;
+		double U = 128 - 0.168736 * red - 0.331264 * green + 0.5 * blue;
+		double V = 128 + 0.5 * red - 0.418688 * green - 0.081312 * blue;
+		return new double[] {Y, U, V};
 	}
 	
 	/*
