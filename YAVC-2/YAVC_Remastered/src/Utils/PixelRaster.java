@@ -27,6 +27,7 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.awt.image.DataBufferInt;
 import java.util.HashSet;
+import java.util.stream.IntStream;
 
 public class PixelRaster {
 	private double[][] Y = null;
@@ -232,13 +233,13 @@ public class PixelRaster {
 	
 	public BufferedImage toBufferedImage() {
 		BufferedImage render = new BufferedImage(this.dim.width, this.dim.height, BufferedImage.TYPE_INT_ARGB);
-		
-		for (int y = 0; y < this.dim.height; y++) {
+
+		IntStream.range(0, this.dim.height).parallel().forEach(y -> {
 			for (int x = 0; x < this.dim.width; x++) {
 				int argb = this.COLOR_MANAGER.convertYUVToRGB(getYUV(x, y)).getRGB();
 				render.setRGB(x, y, argb);
 			}
-		}
+		});
 		
 		return render;
 	}
