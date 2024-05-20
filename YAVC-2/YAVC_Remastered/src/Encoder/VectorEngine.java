@@ -255,7 +255,7 @@ public class VectorEngine {
 	 * 			int size => Size of the color components (in width and height)
 	 */
 	private double[][][] getAbsoluteDifferenceOfColors(double[][][] col1, double[][][] col2, int size) {
-		int halfSize = (int)(size * 0.5);
+		int halfSize = size / 2;
 		double[][] Y = new double[size][size];
 		double[][] U = new double[halfSize][halfSize];
 		double[][] V = new double[halfSize][halfSize];

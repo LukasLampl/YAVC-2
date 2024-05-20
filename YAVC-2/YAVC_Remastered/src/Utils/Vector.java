@@ -69,7 +69,7 @@ public class Vector {
 	}
 	
 	public double[] getAbsoluteColorDifferenceAt(int x, int y) {
-		int halfX = (int)(0.5 * x), halfY = (int)(0.5 * y);
+		int halfX = x / 2, halfY = y / 2;
 		return new double[] {this.YDifference[x][y], this.UDifference[halfX][halfY], this.VDifference[halfX][halfY]};
 	}
 	

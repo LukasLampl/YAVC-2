@@ -64,7 +64,7 @@ public class MacroBlock {
 			throw new ArrayIndexOutOfBoundsException("(Y) " + y + " is bigger than " + this.size);
 		}
 		
-		int subSX = (int)(x * 0.5), subSY = (int)(y * 0.5);
+		int subSX = x / 2, subSY = y / 2;
 		return new double[] {this.Y[x][y], this.U[subSX][subSY], this.V[subSX][subSY]};
 	}
 
@@ -85,7 +85,7 @@ public class MacroBlock {
 		
 		this.isSubdivided = true;
 		this.nodes = new MacroBlock[4];
-		int index = 0, currentOrder = 0, fraction = (int)(this.size * 0.5);
+		int index = 0, currentOrder = 0, fraction = this.size / 2;
 		
 		for (int x = 0; x < this.size; x += fraction) {
 			for (int y = 0; y < this.size; y += fraction) {
@@ -169,8 +169,8 @@ public class MacroBlock {
 				resY[x][y] = this.Y[pos.x + x][pos.y + y];
 				resA[x][y] = this.A[x][y];
 				
-				int subSX = (int)(x * 0.5), subSY = (int)(y * 0.5);
-				int thisPosX = (int)((pos.x + x) * 0.5), thisPosY = (int)((pos.y + y) * 0.5);
+				int subSX = x / 2, subSY = y / 2;
+				int thisPosX = (pos.x + x) / 2, thisPosY = (pos.y + y) / 2;
 				resU[subSX][subSY] = this.U[thisPosX][thisPosY];
 				resV[subSX][subSY] = this.V[thisPosX][thisPosY];
 			}

@@ -213,7 +213,7 @@ public class OutputStream {
 					for (int y = 0; y < size; y++) {
 						if (EndY + y < 0 || EndY + y >= dim.height) continue;
 						if (pos.y + y < 0 || pos.y + y >= dim.height) continue;
-						int subSX = (int)(x * 0.5), subSY = (int)(y * 0.5);
+						int subSX = x / 2, subSY = y * 2;
 						double[] YUV = new double[] {reconstructedColor[0][x][y], reconstructedColor[1][subSX][subSY], reconstructedColor[2][subSX][subSY]};
 						render.setYUV(x + EndX, y + EndY, YUV);
 					}
@@ -225,7 +225,7 @@ public class OutputStream {
 	}
 	
 	private double[][][] reconstructColors(double[][][] differenceOfColor, double[][][] referenceColor, int size) {
-		int halfSize = (int)(size * 0.5);
+		int halfSize = size / 2;
 		double[][][] reconstructedColor = new double[3][][];
 		reconstructedColor[0] = new double[size][size];
 		reconstructedColor[1] = new double[halfSize][halfSize];
