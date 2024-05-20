@@ -18,9 +18,10 @@ public class DCTEngine {
 		
 		int threads = Runtime.getRuntime().availableProcessors();
 		ExecutorService executor = Executors.newFixedThreadPool(threads);
+		int width = raster.getWidth(), height = raster.getHeight();
 		
-		for (int x = 0; x < raster.getWidth(); x += size) {
-			for (int y = 0; y < raster.getHeight(); y += size) {
+		for (int x = 0; x < width; x += size) {
+			for (int y = 0; y < height; y += size) {
 				final int posX = x, posY = y;
 				
 				Callable<Void> task = () -> {

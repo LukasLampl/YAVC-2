@@ -22,12 +22,12 @@ public class QuadtreeEngine {
 		
 		final double errorThreshold = currentFrame.getColorSpectrum() / 1111;
 		int threads = Runtime.getRuntime().availableProcessors();
-		int currentOrderNumber = 0;
+		int currentOrderNumber = 0, width = currentFrame.getWidth(), height = currentFrame.getHeight();
 		ArrayList<Future<MacroBlock>> futureRoots = new ArrayList<Future<MacroBlock>>();
 		ExecutorService executor = Executors.newFixedThreadPool(threads);
 		
-		for (int x = 0; x < currentFrame.getWidth(); x += this.MAX_SIZE) {
-			for (int y = 0; y < currentFrame.getHeight(); y += this.MAX_SIZE) {
+		for (int x = 0; x < width; x += this.MAX_SIZE) {
+			for (int y = 0; y < height; y += this.MAX_SIZE) {
 				final int posX = x, posY = y;
 				final int currentOrder = currentOrderNumber++;
 				

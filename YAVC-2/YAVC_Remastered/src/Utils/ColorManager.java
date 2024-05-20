@@ -55,15 +55,12 @@ public class ColorManager {
 	 * Return Type: YUVColor => Converted color
 	 * Params: YCbCrColor color => Color to be converted
 	 */
-	public Color convertYUVToRGB(double Y, double U, double V) {		
+	public Color convertYUVToRGB(double[] YUV) {
+		double Y = YUV[0], U = YUV[1], V = YUV[2];
 		int red = (int)Math.round(Y + 1.402 * (V - 128));
 		int green = (int)Math.round(Y - 0.344136 * (U - 128) - 0.714136 * (V - 128));
 		int blue = (int)Math.round(Y + 1.772 * (U - 128));
 		return new Color(Math.min(Math.max(red, 0), 255), Math.min(Math.max(green, 0), 255), Math.min(Math.max(blue, 0), 255));
-	}
-	
-	public Color convertYUVToRGB(double[] YUV) {		
-		return convertYUVToRGB(YUV[0], YUV[1], YUV[2]);
 	}
 	
 	public int[] convertYUVToRGB_intARR(double[] YUV) {		
