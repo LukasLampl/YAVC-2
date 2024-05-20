@@ -28,7 +28,7 @@ public class VectorEngine {
 	 * 			ArrayList<PixelRaster> refs => Reference images;
 	 * 			PixelRaster futureFrame => Frame in the future
 	 */
-	public ArrayList<Vector> computeMovementVectors(ArrayList<MacroBlock> differences, ArrayList<PixelRaster> refs, PixelRaster futureFrame) {
+	public ArrayList<Vector> computeMovementVectors(ArrayList<MacroBlock> differences, ArrayList<PixelRaster> refs, PixelRaster curFrame, PixelRaster futureFrame) {
 		ArrayList<Vector> vecs = new ArrayList<Vector>(differences.size() / 2);
 		ArrayList<Future<Vector>> futureVecs = new ArrayList<Future<Vector>>(differences.size() / 2);
 		
@@ -65,7 +65,7 @@ public class VectorEngine {
 					this.TOTAL_MSE += best.getMSE();
 					
 					PixelRaster references = refs.get(config.MAX_REFERENCES - best.getReference());
-					double referenceColor[][][] = references.getPixelBlock(best.getPosition(), block.getSize(), null);
+					double[][][] referenceColor = references.getPixelBlock(best.getPosition(), block.getSize(), null);
 					double[][][] absoluteColorDifference = getAbsoluteDifferenceOfColors(block.getColors(), referenceColor, block.getSize());
 					
 					vec = new Vector(best.getPosition());
@@ -222,35 +222,8 @@ public class VectorEngine {
 			}
 		}
 		
-		if (!isValidMSE(lowestMSE, size)) return null;
-		
 		mostEqualBlock.setMSE(lowestMSE);
 		return mostEqualBlock;
-	}
-	
-	/*
-	 * Purpose: Checks if the MSE is to high to be matched or not. The check is adaptive to the size
-	 * Return Type: boolean => true = is Valid : false = not Valid
-	 * Params: double MSE => MSE to check;
-	 * 			int size => Size of the block
-	 */
-	private boolean isValidMSE(double MSE, int size) {
-		switch (size) {
-		case 128:
-			return MSE > 1000 ? false : true;
-		case 64:
-			return MSE > 1000 ? false : true;
-		case 32:
-			return MSE > 1000 ? false : true;
-		case 16:
-			return MSE > 1000 ? false : true;
-		case 8:
-			return MSE > 1000 ? false : true;
-		case 4:
-			return MSE > 1000 ? false : true;
-		}
-		
-		return true;
 	}
 	
 	/*
@@ -299,7 +272,7 @@ public class VectorEngine {
 				V[x][y] = col1[2][x][y] - col2[2][x][y];
 			}
 		}
-
+		
 		return new double[][][] {Y, U, V};
 	}
 	

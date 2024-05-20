@@ -204,6 +204,7 @@ public class OutputStream {
 				Point pos = v.getPosition();
 				int EndX = pos.x + v.getSpanX(), EndY = pos.y + v.getSpanY();
 				int size = v.getSize();
+				double[][][] reconstructedColor = reconstructColors(v.getAbsoluteColorDifference(), cache.getPixelBlock(pos, size, null), size);
 				
 				for (int x = 0; x < size; x++) {
 					if (EndX + x < 0 || EndX + x >= dim.width) continue;
@@ -212,19 +213,39 @@ public class OutputStream {
 					for (int y = 0; y < size; y++) {
 						if (EndY + y < 0 || EndY + y >= dim.height) continue;
 						if (pos.y + y < 0 || pos.y + y >= dim.height) continue;
-						
-						double referenceYUV[] = cache.getYUV(pos.x + x, pos.y + y);
-						double differenceYUV[] = v.getAbsoluteColorDifferenceAt(x, y);
-						referenceYUV[0] += differenceYUV[0];
-						referenceYUV[1] += differenceYUV[1];
-						referenceYUV[2] += differenceYUV[2];
-						
-						render.setYUV(x + EndX, y + EndY, referenceYUV);
+						int subSX = (int)(x * 0.5), subSY = (int)(y * 0.5);
+						double[] YUV = new double[] {reconstructedColor[0][x][y], reconstructedColor[1][subSX][subSY], reconstructedColor[2][subSX][subSY]};
+						render.setYUV(x + EndX, y + EndY, YUV);
 					}
 				}
 			}
 		}
 		
 		return render;
+	}
+	
+	private double[][][] reconstructColors(double[][][] differenceOfColor, double[][][] referenceColor, int size) {
+		int halfSize = (int)(size * 0.5);
+		double[][][] reconstructedColor = new double[3][][];
+		reconstructedColor[0] = new double[size][size];
+		reconstructedColor[1] = new double[halfSize][halfSize];
+		reconstructedColor[2] = new double[halfSize][halfSize];
+		
+		//Reconstruct Y-Comp
+		for (int x = 0; x < size; x++) {
+			for (int y = 0; y < size; y++) {
+				reconstructedColor[0][x][y] = referenceColor[0][x][y] + differenceOfColor[0][x][y];
+			}
+		}
+		
+		//Reconstruct U,V-Comp
+		for (int x = 0; x < halfSize; x++) {
+			for (int y = 0; y < halfSize; y++) {
+				reconstructedColor[1][x][y] = referenceColor[1][x][y] + differenceOfColor[1][x][y];
+				reconstructedColor[2][x][y] = referenceColor[2][x][y] + differenceOfColor[2][x][y];
+			}
+		}
+		
+		return reconstructedColor;
 	}
 }
