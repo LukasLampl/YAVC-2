@@ -33,7 +33,7 @@ public class PixelRaster {
 	private double[][] U = null;
 	private double[][] V = null;
 	
-	private HashSet<Integer> colors = new HashSet<Integer>();
+	private HashSet<Integer> colors = new HashSet<Integer>(65536);
 	private Dimension dim = null;
 	private ColorManager COLOR_MANAGER = new ColorManager();
 	

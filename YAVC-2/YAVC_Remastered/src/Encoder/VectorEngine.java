@@ -144,14 +144,14 @@ public class VectorEngine {
 	 */
 	private MacroBlock computeHexagonSearch(PixelRaster ref, MacroBlock blockToBeSearched) {
 		double lowestMSE = Double.MAX_VALUE;
-		int radius = 4, searchWindow = 24, size = blockToBeSearched.getSize();
+		int radius = 4, searchWindow = 24, size = blockToBeSearched.getSize(), sumOfAllPoints = 2304;
 		Point blockPos = blockToBeSearched.getPosition();
 		Point centerPoint = blockToBeSearched.getPosition();
 		MacroBlock mostEqualBlock = null;
 		
 		Point initPos = new Point(0, 0);
 		Point[] searchPoints = new Point[7];
-		HashSet<Point> searchedPoints = new HashSet<Point>();
+		HashSet<Point> searchedPoints = new HashSet<Point>(sumOfAllPoints);
 		double[][][] cache = null;
 		
 		while (radius > 1) {
@@ -262,14 +262,26 @@ public class VectorEngine {
 		
 		for (int y = 0; y < size; y++) {
 			for (int x = 0; x < size; x++) {
-				Y[x][y] = col1[0][x][y] - col2[0][x][y];
+				double diff = col1[0][x][y] - col2[0][x][y];
+				
+				if (Math.abs(diff) > 3.0) {
+					Y[x][y] = diff;
+				}
 			}
 		}
 		
 		for (int y = 0; y < halfSize; y++) {
 			for (int x = 0; x < halfSize; x++) {
-				U[x][y] = col1[1][x][y] - col2[1][x][y];
-				V[x][y] = col1[2][x][y] - col2[2][x][y];
+				double diffU = col1[1][x][y] - col2[1][x][y];
+				double diffV = col1[2][x][y] - col2[2][x][y];
+				
+				if (Math.abs(diffU) > 7.0) {
+					U[x][y] = diffU;
+				}
+				
+				if (Math.abs(diffV) > 7.0) {
+					V[x][y] = diffV;
+				}
 			}
 		}
 		
