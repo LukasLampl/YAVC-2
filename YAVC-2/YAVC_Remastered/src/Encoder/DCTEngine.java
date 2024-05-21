@@ -14,9 +14,12 @@ public class DCTEngine {
 	}
 	
 	public void applyDCTOnPixelRaster(PixelRaster raster) {
-		int size = 8;
+		if (raster == null) {
+			System.err.println("No PixelRaster for 8x8 DCT-II > Skip process");
+			return;
+		}
 		
-		int threads = Runtime.getRuntime().availableProcessors();
+		int size = 8, threads = Runtime.getRuntime().availableProcessors();
 		ExecutorService executor = Executors.newFixedThreadPool(threads);
 		int width = raster.getWidth(), height = raster.getHeight();
 		
@@ -54,6 +57,11 @@ public class DCTEngine {
 	}
 	
 	public double[][][] computeDCTOfVectorColorDifference(Vector vector) {
+		if (vector == null) {
+			System.err.println("No Vector to apply DCT-II on! > NULL");
+			return null;
+		}
+		
 		double[][][] diffs = vector.getAbsoluteColorDifference();
 		double[][][] chromaDCT = computeChromaDCTCoefficients(diffs[1], diffs[2], vector.getSize() / 2);
 		double[][] lumaDCT = computeLumaDCTCoefficients(diffs[0], vector.getSize());
