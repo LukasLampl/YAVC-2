@@ -112,7 +112,7 @@ public class Main {
 				
 //				BufferedImage[] part = QUADTREE_ENGINE.drawMacroBlocks(leaveNodes, curFrame.getDimension());
 				leaveNodes = DIFFERENCE_ENGINE.computeDifferences(curFrame.getColorSpectrum(), prevFrame, leaveNodes);
-				ArrayList<Vector> movementVectors = VECTOR_ENGINE.computeMovementVectors(leaveNodes, references, curFrame, futFrame);
+				ArrayList<Vector> movementVectors = VECTOR_ENGINE.computeMovementVectors(leaveNodes, references, curFrame.getColorSpectrum(), futFrame);
 				
 //				BufferedImage vectors = VECTOR_ENGINE.drawVectors(movementVectors, curFrame.getDimension());
 				PixelRaster composit = outStream.renderResult(movementVectors, references, leaveNodes, prevFrame);

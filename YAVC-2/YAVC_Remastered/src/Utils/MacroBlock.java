@@ -13,7 +13,7 @@ public class MacroBlock {
 	private int size = 0;
 	private boolean isSubdivided = false;
 	private MacroBlock[] nodes = null;
-	private double[] meanColor = new double[3];
+	private int[] meanColor = new int[3];
 	
 	private double ORDER = 0;
 	private double MSE = Double.MAX_VALUE;
@@ -31,7 +31,6 @@ public class MacroBlock {
 		this.U = U;
 		this.V = V;
 		this.A = A;
-		this.meanColor = computeRGBMean();
 	}
 	
 	public MacroBlock(Point position, int size, double[][][] colors) {
@@ -48,7 +47,6 @@ public class MacroBlock {
 		this.U = U;
 		this.V = V;
 		this.A = A;
-		this.meanColor = computeRGBMean();
 	}
 	
 	/*
@@ -76,7 +74,7 @@ public class MacroBlock {
 	 */
 	private double FACTOR_TABLE[] = {0.1, 0.01, 0.001, 0.0001, 0.00001};
 	
-	public void subdivide(double errorThreshold, int depth) {
+	public void subdivide(double errorThreshold, int depth, int[][] meanOf4x4Blocks) {
 		if (this.isSubdivided == true) {
 			return;
 		} else if (this.size <= 4) {
@@ -93,10 +91,13 @@ public class MacroBlock {
 				b.setOrder(this.ORDER + (this.FACTOR_TABLE[depth] * currentOrder++));
 				this.nodes[index] = b;
 				
-				double standardDeviation = computeStandardDeviation(this.meanColor);
+				int[][] subMeanColorArray = getMeanColorSubArray(x, y, fraction, meanOf4x4Blocks);
+				int[] meanRGB = calculateMeanOfCurrentBlock(subMeanColorArray);
+				double standardDeviation = computeStandardDeviation(meanRGB);
+				b.setMeanColor(meanRGB);
 				
 				if (standardDeviation > errorThreshold) {
-					b.subdivide(errorThreshold, depth + 1);
+					b.subdivide(errorThreshold, depth + 1, subMeanColorArray);
 				}
 				
 				index++;
@@ -120,8 +121,12 @@ public class MacroBlock {
 		return this.size;
 	}
 	
-	public double[] getMeanColor() {
+	public int[] getMeanColor() {
 		return this.meanColor;
+	}
+	
+	public void setMeanColor(int[] meanColor) {
+		this.meanColor = meanColor;
 	}
 	
 	public double[][][] getColors() {
@@ -179,26 +184,71 @@ public class MacroBlock {
 		return new MacroBlock(new Point(pos.x + this.position.x, pos.y + this.position.y), size, resY, resU, resV, resA);
 	}
 	
-	private double[] computeRGBMean() {
-		double sumR = 0, sumG = 0, sumB = 0;
-		double length = this.size * this.size;
+	public int[][] calculate4x4Means() {
+		int[][] argbs = new int[this.size / 4][this.size / 4];
 		
-		for (int x = 0; x < this.size; x++) {
-			for (int y = 0; y < this.size; y++) {
-				int[] rgb = this.COLOR_MANAGER.convertYUVToRGB_intARR(getYUV(x, y));
-				sumR += rgb[0];
-				sumG += rgb[1];
-				sumB += rgb[2];
+		for (int u = 0; u < this.size; u += 4) {
+			for (int v = 0; v < this.size; v += 4) {
+				int sumR = 0, sumG = 0, sumB = 0;
+				
+				for (int x = 0; x < 4; x++) {
+					for (int y = 0; y < 4; y++) {
+						int[] rgb = this.COLOR_MANAGER.convertYUVToRGB_intARR(getYUV(x + u, y + v));
+						sumR += rgb[0];
+						sumG += rgb[1];
+						sumB += rgb[2];
+					}
+				}
+				
+				argbs[u / 4][v / 4] = ((sumR / 16) << 16) | ((sumG / 16) << 8) | (sumB / 16);
 			}
 		}
 		
-		return new double[] {sumR /= length, sumG /= length, sumB /= length};
+		return argbs;
+	}
+	
+	private int[][] getMeanColorSubArray(int posX, int posY, int size, int[][] meanColorArray) {
+		int[][] subArray = new int[size / 4][size / 4];
+		int actualPosX = posX / 4, actualPosY = posY / 4;
+		int actualSize = size / 4, fraction = this.size / 4;
+		
+		for (int x = 0; x < actualSize; x++) {
+			if (x + actualPosX >= fraction || x + actualPosX < 0) continue;
+			
+			for (int y = 0; y < actualSize; y++) {
+				if (y + actualPosY >= fraction || y + actualPosY < 0) continue;
+				
+				subArray[x][y] = meanColorArray[x + actualPosX][y + actualPosY];
+			}
+		}
+		
+		return subArray;
+	}
+	
+	private int[] calculateMeanOfCurrentBlock(int[][] meanOf4x4Blocks) {
+		double sumR = 0, sumG = 0, sumB = 0;
+		int actualSize = meanOf4x4Blocks.length, length = actualSize * actualSize;
+		
+		for (int x = 0; x < actualSize; x++) {
+			for (int y = 0; y < actualSize; y++) {
+				int argb = meanOf4x4Blocks[x][y];
+				double r = (argb >> 16) & 0xFF, g = (argb >> 8) & 0xFF, b = argb & 0xFF;
+				sumR += r;
+				sumG += g;
+				sumB += b;
+			}
+		}
+
+		sumR /= length;
+		sumG /= length;
+		sumB /= length;
+		return new int[] {(int)Math.round(sumR), (int)Math.round(sumG), (int)Math.round(sumB)};
 	}
 
-	private double computeStandardDeviation(double[] mean) {
+	private double computeStandardDeviation(int[] mean) {
 		double resR = 0, resG = 0, resB = 0;
 		double length = this.size * this.size;
-		int meanR = (int)mean[0], meanG = (int)mean[1], meanB = (int)mean[2];
+		int meanR = mean[0], meanG = mean[1], meanB = mean[2];
 		
 		for (int x = 0; x < this.size; x++) {
 			for (int y = 0; y < this.size; y++) {

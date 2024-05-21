@@ -36,7 +36,9 @@ public class QuadtreeEngine {
 					double[][][] comps = currentFrame.getPixelBlock(new Point(posX, posY), this.MAX_SIZE, null);
 					origin.setColorComponents(comps[0], comps[1], comps[2], comps[3]);
 					origin.setOrder(currentOrder);
-					origin.subdivide(errorThreshold, 0);
+					
+					int[][] meanOf4x4BlocksInBlock = origin.calculate4x4Means();
+					origin.subdivide(errorThreshold, 0, meanOf4x4BlocksInBlock);
 					return origin;
 				};
 				
@@ -62,6 +64,11 @@ public class QuadtreeEngine {
 	}
 	
 	public ArrayList<MacroBlock> getLeaveNodes(ArrayList<MacroBlock> roots) {
+		if (roots == null) {
+			System.err.println("No QuadtreeRoots to process! > Skip");
+			return null;
+		}
+		
 		ArrayList<MacroBlock> leaveNodes = new ArrayList<MacroBlock>();
 		ArrayList<Future<ArrayList<MacroBlock>>> futureLeavesList = new ArrayList<Future<ArrayList<MacroBlock>>>();
 		int threads = Runtime.getRuntime().availableProcessors();
@@ -85,11 +92,12 @@ public class QuadtreeEngine {
 		}
 		
 		executor.shutdown();
-		
 		return leaveNodes;
 	}
 	
 	private ArrayList<MacroBlock> getLeaves(MacroBlock block) {
+		if (block == null) return null;
+		
 		ArrayList<MacroBlock> blocks = new ArrayList<MacroBlock>(4);
 		
 		for (MacroBlock node : block.getNodes()) {
@@ -118,8 +126,8 @@ public class QuadtreeEngine {
 			g2d1.drawRect(pos.x, pos.y, size, size);
 			g2d1.drawLine(pos.x, pos.y, pos.x + size, pos.y + size);
 			
-			double[] rgb = leaf.getMeanColor();
-			g2d2.setColor(new Color((int)rgb[0], (int)rgb[1], (int)rgb[2]));
+			int[] rgb = leaf.getMeanColor();
+			g2d2.setColor(new Color(rgb[0], rgb[1], rgb[2]));
 			g2d2.fillRect(pos.x, pos.y, size, size);
 		}
 		

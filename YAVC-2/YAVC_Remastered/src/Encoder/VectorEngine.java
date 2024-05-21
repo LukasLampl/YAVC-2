@@ -24,20 +24,31 @@ public class VectorEngine {
 	 * Purpose: Calculate all possible movement vectors by the differences from the prevFrame to the curFrame.
 	 * 			To achieve that it uses reference images that go 4 images into the past.
 	 * Return Type: ArrayList<Vector> => List of movement vectors
-	 * Params: ArrayList<MacroBlock> differences => Differences from the prevFrame to the curFrame;
+	 * Params: ArrayList<MacroBlock> blocksToInterpredict => Blocks to inter-predict;
 	 * 			ArrayList<PixelRaster> refs => Reference images;
 	 * 			PixelRaster futureFrame => Frame in the future
 	 */
-	public ArrayList<Vector> computeMovementVectors(ArrayList<MacroBlock> differences, ArrayList<PixelRaster> refs, PixelRaster curFrame, PixelRaster futureFrame) {
-		ArrayList<Vector> vecs = new ArrayList<Vector>(differences.size());
-		ArrayList<Future<Vector>> futureVecs = new ArrayList<Future<Vector>>(differences.size());
+	public ArrayList<Vector> computeMovementVectors(ArrayList<MacroBlock> blocksToInterpredict, ArrayList<PixelRaster> refs, int colorSpectrum, PixelRaster futureFrame) {
+		if (blocksToInterpredict == null || blocksToInterpredict.size() == 0) {
+			System.err.println("No blocks for inter-prediction > Skip process");
+			return null;
+		} else if (refs == null || refs.size() == 0) {
+			System.err.println("Can't compute motion vectors, due to missing references! > Skip");
+			return null;
+		} else if (colorSpectrum <= 0) {
+			System.err.println("An Image can't have 0 or less colors! > Skip");
+			return null;
+		}
+		
+		ArrayList<Vector> vecs = new ArrayList<Vector>(blocksToInterpredict.size());
+		ArrayList<Future<Vector>> futureVecs = new ArrayList<Future<Vector>>(blocksToInterpredict.size());
 		
 		int threads = Runtime.getRuntime().availableProcessors();
 		ExecutorService executor = Executors.newFixedThreadPool(threads);
 		
 		this.TOTAL_MSE = 0;
 		
-		for (MacroBlock block : differences) {
+		for (MacroBlock block : blocksToInterpredict) {
 			Callable<Vector> task = () -> {
 				int maxSize = refs.size();
 				MacroBlock[] canidates = new MacroBlock[maxSize + 1];
@@ -66,7 +77,7 @@ public class VectorEngine {
 					
 					PixelRaster references = refs.get(config.MAX_REFERENCES - best.getReference());
 					double[][][] referenceColor = references.getPixelBlock(best.getPosition(), block.getSize(), null);
-					double[][][] absoluteColorDifference = getAbsoluteDifferenceOfColors(block.getColors(), referenceColor, block.getSize(), curFrame.getColorSpectrum());
+					double[][][] absoluteColorDifference = getAbsoluteDifferenceOfColors(block.getColors(), referenceColor, block.getSize(), colorSpectrum);
 					
 					vec = new Vector(best.getPosition());
 					vec.setAbsoluteDifferences(absoluteColorDifference);
@@ -90,7 +101,7 @@ public class VectorEngine {
 				
 				if (vec != null) {
 					vecs.add(vec);
-					differences.remove(vec.getAppendedBlock());
+					blocksToInterpredict.remove(vec.getAppendedBlock());
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -138,7 +149,7 @@ public class VectorEngine {
 	 * | 5 | Check the points around the "best guess" and get the one with the lowest MSE >> this is the best match. |
 	 * +---+---------------------------------------------------------------------------------------------------------+
 	 * 
-	 * Return Type: MacroBlock => Best match in the referene image
+	 * Return Type: MacroBlock => Best match in the reference image
 	 * Params: PixelRaster ref => Reference image, in which to search for the best match;
 	 * 			MacroBlock blockToBeSearched => MacroBlock to be searched in the reference image.
 	 */
