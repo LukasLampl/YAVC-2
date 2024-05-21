@@ -56,20 +56,32 @@ public class ColorManager {
 	 * Params: YCbCrColor color => Color to be converted
 	 */
 	public Color convertYUVToRGB(double[] YUV) {
-		double Y = YUV[0], U = YUV[1], V = YUV[2];
-		int red = (int)Math.round(Y + 1.402 * (V - 128));
-		int green = (int)Math.round(Y - 0.344136 * (U - 128) - 0.714136 * (V - 128));
-		int blue = (int)Math.round(Y + 1.772 * (U - 128));
-		return new Color(Math.min(Math.max(red, 0), 255), Math.min(Math.max(green, 0), 255), Math.min(Math.max(blue, 0), 255));
+		if (YUV == null) {
+			throw new IllegalArgumentException("Can't convert NULL to RGB!");
+		} else if (YUV.length != 3) {
+			throw new IllegalArgumentException("YUV color contains " + YUV.length + " components instead of 3!");
+		}
+		
+		double Y = YUV[0], U = YUV[1] - 128, V = YUV[2] - 128;
+		int red = (int)Math.round(Y + 1.402 * V);
+		int green = (int)Math.round(Y - 0.344136 * U - 0.714136 * V);
+		int blue = (int)Math.round(Y + 1.772 * U);
+		return new Color(range(red, 0, 255), range(green, 0, 255), range(blue, 0, 255));
 	}
 	
-	public int[] convertYUVToRGB_intARR(double[] YUV) {		
-		int red = (int)Math.round(YUV[0] + 1.402 * (YUV[2] - 128));
-		int green = (int)Math.round(YUV[0] - 0.344136 * (YUV[1] - 128) - 0.714136 * (YUV[2] - 128));
-		int blue = (int)Math.round(YUV[0] + 1.772 * (YUV[1] - 128));
-		return new int[] {Math.min(Math.max(red, 0), 255), Math.min(Math.max(green, 0), 255), Math.min(Math.max(blue, 0), 255)};
+	public int[] convertYUVToRGB_intARR(double[] YUV) {
+		if (YUV == null) {
+			throw new IllegalArgumentException("Can't convert NULL to RGB array!");
+		} else if (YUV.length != 3) {
+			throw new IllegalArgumentException("YUV color contains " + YUV.length + " components instead of 3!");
+		}
+		
+		double Y = YUV[0], U = YUV[1] - 128, V = YUV[2] - 128;
+		int red = (int)Math.round(Y + 1.402 * V);
+		int green = (int)Math.round(Y - 0.344136 * U - 0.714136 * V);
+		int blue = (int)Math.round(Y + 1.772 * U);
+		return new int[] {range(red, 0, 255), range(green, 0, 255), range(blue, 0, 255)};
 	}
-	
 	
 	/*
 	 * Purpose: Convert an int RGB color to grayscale
@@ -79,5 +91,9 @@ public class ColorManager {
 	public int convertRGBToGRAYSCALE(int argb) {
 		Color col = new Color(argb);
 		return (int)Math.round(col.getRed() * 0.299 + col.getGreen() * 0.587 + col.getBlue() * 0.114);
+	}
+	
+	private int range(int x, int min, int max) {
+		return x < min ? min : x > max ? max : x;
 	}
 }
