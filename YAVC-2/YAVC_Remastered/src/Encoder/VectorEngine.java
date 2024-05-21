@@ -55,6 +55,7 @@ public class VectorEngine {
 				
 				for (int i = 0, index = 0; i < maxSize; i++, index++) {
 					MacroBlock bestMatch = computeHexagonSearch(refs.get(i), block);
+					bestMatch = computeExhaustiveSearch(block, bestMatch, refs.get(i));
 					
 					if (bestMatch != null) {
 						bestMatch.setReference(config.MAX_REFERENCES - i);
@@ -235,6 +236,36 @@ public class VectorEngine {
 		
 		if (mostEqualBlock != null) mostEqualBlock.setMSE(lowestMSE);
 		return mostEqualBlock;
+	}
+	
+	private MacroBlock computeExhaustiveSearch(MacroBlock blockToSearch, MacroBlock bestMatchTillNow, PixelRaster ref) {
+		if (bestMatchTillNow == null) return null;
+		
+		Dimension dim = ref.getDimension();
+		MacroBlock mostEqualBlock = null;
+		double lowestMSE = bestMatchTillNow.getMSE();
+		Point pos = blockToSearch.getPosition();
+		int searchWindow = 2, size = blockToSearch.getSize();
+		double[][][] cache = null;
+		
+		for (int y = pos.y - searchWindow; y < pos.y + searchWindow; y++) {
+			if (y < 0 || y >= dim.height) continue;
+			
+			for (int x = pos.x - searchWindow; x < pos.x + searchWindow; x++) {
+				if (x < 0 || x >= dim.width) continue;
+				
+				cache = ref.getPixelBlock(new Point(x, y), size, cache);
+				double MSE = getMSEOfColors(blockToSearch.getColors(), cache, size);
+				
+				if (MSE < lowestMSE) {
+					lowestMSE = MSE;
+					mostEqualBlock = new MacroBlock(new Point(x, y), size, cache);
+				}
+			}
+		}
+		
+		if (mostEqualBlock != null) mostEqualBlock.setMSE(lowestMSE);
+		return mostEqualBlock == null ? bestMatchTillNow : mostEqualBlock;
 	}
 	
 	/*
