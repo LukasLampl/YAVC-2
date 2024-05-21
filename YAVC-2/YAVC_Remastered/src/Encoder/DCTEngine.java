@@ -90,6 +90,7 @@ public class DCTEngine {
 	private double[][][] computeChromaIDCTCoefficients(double[][] U, double[][] V, int m) {
 		double[][] resU = new double[m][m];
 		double[][] resV = new double[m][m];
+		double[] steps = {step(0, m), step(1, m)};
 		
 		for (int x = 0; x < m; x++) {
 			for (int y = 0; y < m; y++) {
@@ -99,7 +100,7 @@ public class DCTEngine {
 					double cos1 = Math.cos(((double)(2 * x + 1) * (double)u * Math.PI) / (double)(2 * m));
 					
 					for (int v = 0; v < m; v++) {
-						double step = step(u, m) * step(v, m);
+						double step = (u == 0 ? steps[0] : steps[1]) * (v == 0 ? steps[0] : steps[1]);
                         double cos2 = Math.cos(((double)(2 * y + 1) * (double)v * Math.PI) / (double)(2 * m)); 
                         sumU += U[u][v] * step * cos1 * cos2;
                         sumV += V[u][v] * step * cos1 * cos2;
@@ -139,7 +140,7 @@ public class DCTEngine {
 		
 	private double[][] computeLumaIDCTCoefficients(double[][] Y, int m) {
 		double[][] resY = new double[m][m];
-		double[][] resV = new double[m][m];
+		double[] steps = {step(0, m), step(1, m)};
 		
 		for (int x = 0; x < m; x++) {
 			for (int y = 0; y < m; y++) {
@@ -149,7 +150,7 @@ public class DCTEngine {
 					double cos1 = Math.cos(((double)(2 * x + 1) * (double)u * Math.PI) / (double)(2 * m));
 					
 					for (int v = 0; v < m; v++) {
-						double step = step(u, m) * step(v, m);
+						double step = (u == 0 ? steps[0] : steps[1]) * (v == 0 ? steps[0] : steps[1]);
                         double cos2 = Math.cos(((double)(2 * y + 1) * (double)v * Math.PI) / (double)(2 * m)); 
                         sum += Y[u][v] * step * cos1 * cos2;
 					}
