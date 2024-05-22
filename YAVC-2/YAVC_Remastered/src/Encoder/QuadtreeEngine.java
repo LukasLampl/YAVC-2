@@ -38,7 +38,12 @@ public class QuadtreeEngine {
 					origin.setOrder(currentOrder);
 					
 					int[][] meanOf4x4BlocksInBlock = origin.calculate4x4Means();
-					origin.subdivide(errorThreshold, 0, meanOf4x4BlocksInBlock);
+					double originStdDeviation = origin.computeStandardDeviation(origin.calculateMeanOfCurrentBlock(meanOf4x4BlocksInBlock));
+					
+					if (originStdDeviation > errorThreshold) {
+						origin.subdivide(errorThreshold, 0, meanOf4x4BlocksInBlock);
+					}
+					
 					return origin;
 				};
 				

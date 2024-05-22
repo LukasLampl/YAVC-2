@@ -225,7 +225,7 @@ public class MacroBlock {
 		return subArray;
 	}
 	
-	private int[] calculateMeanOfCurrentBlock(int[][] meanOf4x4Blocks) {
+	public int[] calculateMeanOfCurrentBlock(int[][] meanOf4x4Blocks) {
 		double sumR = 0, sumG = 0, sumB = 0;
 		int actualSize = meanOf4x4Blocks.length, length = actualSize * actualSize;
 		
@@ -245,7 +245,7 @@ public class MacroBlock {
 		return new int[] {(int)Math.round(sumR), (int)Math.round(sumG), (int)Math.round(sumB)};
 	}
 
-	private double computeStandardDeviation(int[] mean) {
+	public double computeStandardDeviation(int[] mean) {
 		double resR = 0, resG = 0, resB = 0;
 		double length = this.size * this.size;
 		int meanR = mean[0], meanG = mean[1], meanB = mean[2];
