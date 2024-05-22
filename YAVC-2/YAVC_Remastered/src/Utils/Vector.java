@@ -5,7 +5,7 @@ import java.awt.Point;
 import Encoder.DCTEngine;
 
 public class Vector {
-	private static DCTEngine DCT_ENGINE = Main.Main.DCT_ENGINE;
+	private static DCTEngine DCT_ENGINE = Encoder.Encoder.DCT_ENGINE;
 	private Point startingPoint = null;
 	private int spanX = 0;
 	private int spanY = 0;

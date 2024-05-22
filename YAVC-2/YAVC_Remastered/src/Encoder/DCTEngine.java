@@ -9,7 +9,7 @@ import Utils.PixelRaster;
 import Utils.Vector;
 
 public class DCTEngine {
-	public static double[][][][][] DCT_COEFFICIENTS = new double[2][][][][];
+	public static double[][][][][] DCT_COEFFICIENTS = new double[2][][][][]; //Position at [0][][][]... is for DCT; Position at [1][][][]... is for IDCT
 
 	public void initDCTCoefficinets() {
 		int threads = Runtime.getRuntime().availableProcessors();
@@ -142,8 +142,9 @@ public class DCTEngine {
             	
                 for (int x = 0; x < m; x++) {
                     for (int y = 0; y < m; y++) {
-                        sumU += (U[x][y] - 128) * cos[x * m + y];
-                        sumV += (V[x][y] - 128) * cos[x * m + y];
+                    	int tLD = x * m + y;
+                        sumU += (U[x][y] - 128) * cos[tLD];
+                        sumV += (V[x][y] - 128) * cos[tLD];
                     }
                 }
                 
@@ -170,8 +171,9 @@ public class DCTEngine {
 				for (int u = 0; u < m; u++) {
 					for (int v = 0; v < m; v++) {
 						double step = (u == 0 ? steps[0] : steps[1]) * (v == 0 ? steps[0] : steps[1]);
-                        sumU += U[u][v] * step * cos[u * m + v];;
-                        sumV += V[u][v] * step * cos[u * m + v];;
+						int tLD = u * m + v;
+                        sumU += U[u][v] * step * cos[tLD];;
+                        sumV += V[u][v] * step * cos[tLD];;
 					}
 				}
 				
