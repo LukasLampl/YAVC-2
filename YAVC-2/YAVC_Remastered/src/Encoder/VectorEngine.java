@@ -74,11 +74,11 @@ public class VectorEngine {
 				Vector vec = null;
 				
 				if (best != null) {
-					this.TOTAL_MSE += best.getMSE();
-					
 					PixelRaster references = refs.get(config.MAX_REFERENCES - best.getReference());
 					double[][][] referenceColor = references.getPixelBlock(best.getPosition(), block.getSize(), null);
 					double[][][] absoluteColorDifference = getAbsoluteDifferenceOfColors(block.getColors(), referenceColor, block.getSize(), colorSpectrum);
+					double newMatchMSE = getMSEOfColors(absoluteColorDifference, block.getColors(), block.getSize(), false);
+					this.TOTAL_MSE += newMatchMSE;
 					
 					vec = new Vector(best.getPosition());
 					vec.setAbsoluteDifferences(absoluteColorDifference);
@@ -184,7 +184,7 @@ public class VectorEngine {
 				
 				searchedPoints.add(p);
 				cache = ref.getPixelBlock(p, size, cache);
-				double MSE = getMSEOfColors(cache, blockToBeSearched.getColors(), size);
+				double MSE = getMSEOfColors(cache, blockToBeSearched.getColors(), size, true);
 				
 				if (MSE < lowestMSE) {
 					lowestMSE = MSE;
@@ -226,7 +226,7 @@ public class VectorEngine {
 			}
 			
 			cache = ref.getPixelBlock(p, size, cache);
-			double MSE = getMSEOfColors(cache, blockToBeSearched.getColors(), size);
+			double MSE = getMSEOfColors(cache, blockToBeSearched.getColors(), size, true);
 			
 			if (MSE < lowestMSE) {
 				lowestMSE = MSE;
@@ -255,7 +255,7 @@ public class VectorEngine {
 				if (x < 0 || x >= dim.width) continue;
 				
 				cache = ref.getPixelBlock(new Point(x, y), size, cache);
-				double MSE = getMSEOfColors(blockToSearch.getColors(), cache, size);
+				double MSE = getMSEOfColors(blockToSearch.getColors(), cache, size, true);
 				
 				if (MSE < lowestMSE) {
 					lowestMSE = MSE;
@@ -343,7 +343,7 @@ public class VectorEngine {
 	 * 			and A at [3];
 	 * 			int size => Size of both color components (in width and height)
 	 */
-	private double getMSEOfColors(double[][][] col1, double[][][] col2, int size) {
+	private double getMSEOfColors(double[][][] col1, double[][][] col2, int size, boolean countAlpha) {
 		double resY = 0;
 		double resU = 0;
 		double resV = 0;
@@ -353,10 +353,12 @@ public class VectorEngine {
 		for (int y = 0; y < size; y++) {
 			for (int x = 0; x < size; x++) {
 				double deltaY = col1[0][x][y] - col2[0][x][y];
-				double deltaA = col1[3][x][y] - col2[3][x][y];
-				
 				resY += deltaY * deltaY;
-				resA += deltaA * deltaA;
+				
+				if (countAlpha) {
+					double deltaA = col1[3][x][y] - col2[3][x][y];
+					resA += deltaA * deltaA;
+				}
 			}
 		}
 		
