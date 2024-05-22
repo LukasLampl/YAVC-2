@@ -200,6 +200,7 @@ public class MacroBlock {
 	
 	public int[][] calculate4x4Means() {
 		int[][] argbs = new int[this.size / 4][this.size / 4];
+		int[] rgbCache = new int[3];
 		
 		for (int u = 0; u < this.size; u += 4) {
 			for (int v = 0; v < this.size; v += 4) {
@@ -207,10 +208,10 @@ public class MacroBlock {
 				
 				for (int x = 0; x < 4; x++) {
 					for (int y = 0; y < 4; y++) {
-						int[] rgb = this.COLOR_MANAGER.convertYUVToRGB_intARR(getYUV(x + u, y + v));
-						sumR += rgb[0];
-						sumG += rgb[1];
-						sumB += rgb[2];
+						this.COLOR_MANAGER.convertYUVToRGB_intARR(getYUV(x + u, y + v), rgbCache);
+						sumR += rgbCache[0];
+						sumG += rgbCache[1];
+						sumB += rgbCache[2];
 					}
 				}
 				
@@ -263,13 +264,14 @@ public class MacroBlock {
 		double resR = 0, resG = 0, resB = 0;
 		double length = this.size * this.size;
 		int meanR = mean[0], meanG = mean[1], meanB = mean[2];
+		int[] rgbCache = new int[3];
 		
 		for (int x = 0; x < this.size; x++) {
 			for (int y = 0; y < this.size; y++) {
-				int[] rgb = this.COLOR_MANAGER.convertYUVToRGB_intARR(getYUV(x, y));
-				int r = rgb[0] - meanR;
-				int g = rgb[1] - meanG;
-				int b = rgb[2] - meanB;
+				this.COLOR_MANAGER.convertYUVToRGB_intARR(getYUV(x, y), rgbCache);
+				int r = rgbCache[0] - meanR;
+				int g = rgbCache[1] - meanG;
+				int b = rgbCache[2] - meanB;
 				resR += r * r;
 				resG += g * g;
 				resB += b * b;
