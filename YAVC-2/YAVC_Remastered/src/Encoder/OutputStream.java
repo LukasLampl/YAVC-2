@@ -3,6 +3,7 @@ package Encoder;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -55,59 +56,137 @@ public class OutputStream {
 	}
 	
 	private void writeVectors(File file, ArrayList<Vector> vecs) {
-		StringBuilder vectors = new StringBuilder();
-		vectors.append(config.VECTOR_START);
+		ArrayList<Byte> bytesOfVectors = new ArrayList<Byte>();
+		bytesOfVectors.add(config.VECTOR_START);
 		int offset = config.CODING_OFFSET;
 		
 		if (vecs != null) {
 			for (Vector v : vecs) {
-				char posX = (char)(v.getPosition().x + offset), posY = (char)(v.getPosition().y + offset);
-				char span = (char)(getVectorSpanChar(v.getSpanX(), v.getSpanY(), offset));
-				char refAndSize = (char)((getReferenceChar(v.getReference(), offset)) << 8 | (v.getSize() & 0xFF));
-				
-				vectors.append(posX);
-				vectors.append(posY);
-				vectors.append(span);
-				vectors.append(refAndSize);
+				byte[] posX = getPositionByte(v.getPosition().x, offset);
+				byte[] posY = getPositionByte(v.getPosition().y, offset);
+				byte[] span = getVectorSpanBytes(v.getSpanX(), v.getSpanY(), offset);
+				byte refAndSize = getReferenceAndSizeByte(v.getReference(), v.getSize(), offset);
+				byte[] differences = getVectorAbsoluteColorDifferenceBytes(v.getDCTCoefficientsOfAbsoluteColorDifference(), v.getSize());
+				addByteToArrayList(bytesOfVectors, posX);
+				addByteToArrayList(bytesOfVectors, posY);
+				addByteToArrayList(bytesOfVectors, span);
+				bytesOfVectors.add(refAndSize);
+				addByteToArrayList(bytesOfVectors, differences);
 			}
 		}
+		
+		int size = bytesOfVectors.size();
+		byte[] result = new byte[size];
+		for (int i = 0; i < size; i++) result[i] = bytesOfVectors.get(i);
 			
 		try {
-			Files.write(Path.of(file.getAbsolutePath()), vectors.toString().getBytes(), StandardOpenOption.APPEND);
+			FileOutputStream outStream = new FileOutputStream(file);
+			outStream.write(result);
+			outStream.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 	
-	private int getReferenceChar(int reference, int offset) {
-		int res = Math.abs(reference);
+	private void addByteToArrayList(ArrayList<Byte> byteList, byte[] array) {
+		for (int i = 0; i < array.length; i++) {
+			byteList.add(array[i]);
+		}
+	}
+	
+	private byte[] getPositionByte(int pos, int offset) {
+		pos += offset;
+		return new byte[] {(byte)((pos >> 8) & 0xFF), (byte)(pos)};
+	}
+	
+	private byte getReferenceAndSizeByte(int reference, int size, int offset) {
+		if (reference > 7 || reference < -7) {
+			System.err.println("Reference to high! > Can't write into single byte!");
+		}
+		
+		byte res = 0;
 		
 		if (reference < 0) {
-			res = (1 << 7) | res;
+			res = (byte)(((1 << 3) | Math.abs(reference)) << 4);
+		}
+		
+		if (size == 128) {
+			res |= 1;
+		} else if (size == 64) {
+			res |= 2;
+		} else if (size == 32) {
+			res |= 3;
+		} else if (size == 16) {
+			res |= 4;
+		} else if (size == 8) {
+			res |= 5;
+		} else if (size == 4) {
+			res |= 6;
 		}
 		
 		return res;
 	}
 	
-	private int getVectorSpanChar(int spanX, int spanY, int offset) {
-		int intspany = Math.abs(spanY);
-		int intspanx = Math.abs(spanX);
+	private byte[] getVectorSpanBytes(int spanX, int spanY, int offset) {
+		byte bytespany = (byte)Math.abs(spanY);
+		byte bytespanx = (byte)Math.abs(spanX);
+		
+		if (bytespany > 127 || bytespanx > 127) System.err.println("Span to big (|Span| > 127)!");
 		
 		if (spanY < 0) {
-			intspany = (1 << 7) | intspany;
+			bytespany = (byte)((1 << 7) | bytespany);
 		}
 		
 		if (spanX < 0) {
-			intspanx = (1 << 7) | intspanx;
+			bytespanx = (byte)((1 << 7) | bytespanx);
 		}
 		
-		int result = (((intspanx & 0xFF) << 8) | (intspany & 0xFF)) + offset;
+		return new byte[] {(byte)(bytespanx + offset), (byte)(bytespany + offset)};
+	}
+	
+	private byte[] getVectorAbsoluteColorDifferenceBytes(double[][][] absoluteDifference, int size) {
+		int halfSize = size / 2;
+		byte[] differenceBytes = new byte[size * size + 2 * halfSize * halfSize];
+		byte[] VBytes = new byte[halfSize * halfSize];
+		int index = 0, indexV = 0;
 		
-		if (result > 65536) System.err.println("Coded span is out of bounds!");
+		for (int x = 0; x < size; x++) {
+			for (int y = 0; y < size; y++) {
+				differenceBytes[index++] = getDCTCoeffByte(absoluteDifference[0][x][y], size, (x == 0 && y == 0) ? true : false);
+			}
+		}
+		
+		for (int x = 0; x < halfSize; x++) {
+			for (int y = 0; y < halfSize; y++) {
+				differenceBytes[index++] = getDCTCoeffByte(absoluteDifference[1][x][y], size, (x == 0 && y == 0) ? true : false);
+				differenceBytes[indexV++] = getDCTCoeffByte(absoluteDifference[2][x][y], size, (x == 0 && y == 0) ? true : false);
+			}
+		}
+		
+		System.arraycopy(VBytes, 0, differenceBytes, index, halfSize * halfSize);
+		return differenceBytes;
+	}
+
+	private byte getDCTCoeffByte(double coeff, int size, boolean cord0x0) {
+		byte result = 0;
+		
+		if (cord0x0 == false) {
+			result = (byte)Math.abs(coeff);
+			
+			if (coeff < 0) {
+				result |= (1 << 7);
+			}
+		} else {
+			result = (byte)Math.round(Math.abs(coeff / (size * size)));
+			
+			if (coeff < 0) {
+				result |= (1 << 7);
+			}
+		}
 		
 		return result;
 	}
-
+	
 	//ONLY FOR DEBUG!
 	private void writeDifferences(File file, ArrayList<MacroBlock> blocks) {
 		StringBuilder differences = new StringBuilder();
