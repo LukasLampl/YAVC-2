@@ -117,8 +117,14 @@ public class PixelRaster {
 		
 		int subSX = x / 2, subSY = y / 2;
 		this.Y[x][y] = YUV[0];
-		this.U[subSX][subSY] = YUV[1];
-		this.V[subSX][subSY] = YUV[2];
+		
+		if (this.U[subSX][subSY] == 0) {
+			this.U[subSX][subSY] = YUV[1];
+			this.V[subSX][subSY] = YUV[2];
+		} else {
+			this.U[subSX][subSY] = (this.U[subSX][subSY] + YUV[1]) / 2;
+			this.V[subSX][subSY] = (this.V[subSX][subSY] + YUV[2]) / 2;
+		}
 	}
 	
 	public void setRGB(int x, int y, int argb) {
