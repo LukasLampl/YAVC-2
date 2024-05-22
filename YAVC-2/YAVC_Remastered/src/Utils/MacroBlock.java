@@ -89,7 +89,7 @@ public class MacroBlock {
 			for (int y = 0; y < this.size; y += fraction) {
 				MacroBlock b = getSubBlock(new Point(x, y), fraction);
 				b.setOrder(this.ORDER + (this.FACTOR_TABLE[depth] * currentOrder++));
-				this.nodes[index] = b;
+				this.nodes[index++] = b;
 				
 				int[][] subMeanColorArray = getMeanColorSubArray(x, y, fraction, meanOf4x4Blocks);
 				int[] meanRGB = calculateMeanOfCurrentBlock(subMeanColorArray);
@@ -99,8 +99,6 @@ public class MacroBlock {
 				if (standardDeviation > errorThreshold) {
 					b.subdivide(errorThreshold, depth + 1, subMeanColorArray);
 				}
-				
-				index++;
 			}
 		}
 	}

@@ -68,7 +68,7 @@ public class QuadtreeEngine {
 		return roots;
 	}
 	
-	public ArrayList<MacroBlock> getLeaveNodes(ArrayList<MacroBlock> roots) {
+	public ArrayList<MacroBlock> getLeaveNodes(ArrayList<MacroBlock> roots, Dimension dim) {
 		if (roots == null) {
 			System.err.println("No QuadtreeRoots to process! > Skip");
 			return null;
@@ -81,7 +81,7 @@ public class QuadtreeEngine {
 		
 		for (MacroBlock root : roots) {
 			Callable<ArrayList<MacroBlock>> task = () -> {
-				return getLeaves(root);
+				return getLeaves(root, dim);
 			};
 			
 			futureLeavesList.add(executor.submit(task));
@@ -100,14 +100,20 @@ public class QuadtreeEngine {
 		return leaveNodes;
 	}
 	
-	private ArrayList<MacroBlock> getLeaves(MacroBlock block) {
+	private ArrayList<MacroBlock> getLeaves(MacroBlock block, Dimension dim) {
 		if (block == null) return null;
 		
 		ArrayList<MacroBlock> blocks = new ArrayList<MacroBlock>(4);
 		
 		for (MacroBlock node : block.getNodes()) {
+			if (node == null) continue;
+			
+			Point pos = node.getPosition();
+			
+			if (pos.x > dim.width || pos.y > dim.height) continue;
+			
 			if (node.isSubdivided()) {
-				blocks.addAll(getLeaves(node));
+				blocks.addAll(getLeaves(node, dim));
 			} else {
 				blocks.add(node);
 			}
