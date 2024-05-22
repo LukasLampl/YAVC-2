@@ -69,7 +69,7 @@ public class ColorManager {
 		return new Color(range(red, 0, 255), range(green, 0, 255), range(blue, 0, 255));
 	}
 	
-	public int[] convertYUVToRGB_intARR(double[] YUV) {
+	public int[] convertYUVToRGB_intARR(double[] YUV, int[] rgbCache) {
 		if (YUV == null) {
 			throw new IllegalArgumentException("Can't convert NULL to RGB array!");
 		} else if (YUV.length != 3) {
@@ -80,6 +80,14 @@ public class ColorManager {
 		int red = (int)Math.round(Y + 1.402 * V);
 		int green = (int)Math.round(Y - 0.344136 * U - 0.714136 * V);
 		int blue = (int)Math.round(Y + 1.772 * U);
+		
+		if (rgbCache != null) {
+			rgbCache[0] = red;
+			rgbCache[1] = green;
+			rgbCache[2] = blue;
+			return null;
+		}
+		
 		return new int[] {range(red, 0, 255), range(green, 0, 255), range(blue, 0, 255)};
 	}
 	
