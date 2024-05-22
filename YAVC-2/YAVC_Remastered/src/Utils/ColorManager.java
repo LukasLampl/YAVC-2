@@ -89,8 +89,8 @@ public class ColorManager {
 	 * Params: int argb => ARGB value to convert
 	 */
 	public int convertRGBToGRAYSCALE(int argb) {
-		Color col = new Color(argb);
-		return (int)Math.round(col.getRed() * 0.299 + col.getGreen() * 0.587 + col.getBlue() * 0.114);
+		int red = (argb >> 16) & 0xFF, green = (argb >> 8) & 0xFF, blue = argb & 0xFF;
+		return (int)Math.round(red * 0.299 + green * 0.587 + blue * 0.114);
 	}
 	
 	private int range(int x, int min, int max) {
