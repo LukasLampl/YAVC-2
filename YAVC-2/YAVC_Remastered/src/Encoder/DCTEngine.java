@@ -9,6 +9,43 @@ import Utils.PixelRaster;
 import Utils.Vector;
 
 public class DCTEngine {
+	public static double[][][][][] DCT_COEFFICIENTS = new double[2][][][][];
+
+	public void initDCTCoefficinets() {
+		int threads = Runtime.getRuntime().availableProcessors();
+		ExecutorService executor = Executors.newFixedThreadPool(threads);
+		
+		int[] sizes = {128, 64, 32, 16, 8, 4, 2};
+		DCT_COEFFICIENTS[0] = new double[sizes.length][][][];
+		
+		for (int i = 0; i < sizes.length; i++) {
+			final int index = i;
+			
+			Callable<Void> task = () -> {
+				int m = sizes[index];
+				DCT_COEFFICIENTS[0][index] = new double[m][m][m * m];
+				double m2 = m * 2;
+				
+				for (int v = 0; v < m; v++) {
+		            for (int u = 0; u < m; u++) {
+		            	for (int x = 0; x < m; x++) {
+		                	double cos1 = Math.cos(((double)(2 * x + 1) * (double)v * Math.PI) / m2);
+		                    for (int y = 0; y < m; y++) {
+		                        double cos2 = Math.cos(((double)(2 * y + 1) * (double)u * Math.PI) / m2);
+		                        DCT_COEFFICIENTS[0][index][v][u][x * m + y] = cos1 * cos2;
+		                        DCT_COEFFICIENTS[1][index][x][y][u * m + v] = cos1 * cos2;
+		                    }
+		                }
+		            }
+		        }
+				
+				return null;
+			};
+			
+			executor.submit(task);
+		}
+	}
+	
 	private double step(int x, int m) {
 		return x == 0 ? 1 / Math.sqrt(m) : Math.sqrt(2.0 / (double)m);
 	}
@@ -68,25 +105,49 @@ public class DCTEngine {
 		return new double[][][] {lumaDCT, chromaDCT[0], chromaDCT[1]};
 	}
 	
+	public double[][][] computeIDCTOfVectorColorDifference(double[][][] DCTCoeff, int size) {
+		if (DCTCoeff == null) {
+			System.err.println("No DCT-II Coefficients to apply IDCT-II on! > NULL");
+			return null;
+		}
+		
+		double[][][] chromaIDCT = computeChromaIDCTCoefficients(DCTCoeff[1], DCTCoeff[2], size / 2);
+		double[][] lumaIDCT = computeLumaIDCTCoefficients(DCTCoeff[0], size);
+		return new double[][][] {lumaIDCT, chromaIDCT[0], chromaIDCT[1]};
+	}
+	
+	private int setIndexOfDCT(int m) {
+		switch (m) {
+		case 128: return 0;
+		case 64: return 1;
+		case 32: return 2;
+		case 16: return 3;
+		case 8: return 4;
+		case 4: return 5;
+		case 2: return 6;
+		default: throw new IllegalArgumentException("Unsupported matrix size: " + m);
+		}
+	}
+	
 	private double[][][] computeChromaDCTCoefficients(double[][] U, double[][] V, int m) {
 		double resU[][] = new double[m][m];
 		double resV[][] = new double[m][m];
+		int index = setIndexOfDCT(m);
+		double[] steps = {step(0, m), step(1, m)};
 		
 		for (int v = 0; v < m; v++) {
             for (int u = 0; u < m; u++) {
             	double sumU = 0, sumV = 0;
+            	double cos[] = DCT_COEFFICIENTS[0][index][v][u];
             	
                 for (int x = 0; x < m; x++) {
-                	double cos1 = Math.cos(((double)(2 * x + 1) * (double)v * Math.PI) / (double)(2 * m));
-                	
                     for (int y = 0; y < m; y++) {
-                        double cos2 = Math.cos(((double)(2 * y + 1) * (double)u * Math.PI) / (double)(2 * m)); 
-                        sumU += (U[x][y] - 128) * cos1 * cos2;
-                        sumV += (V[x][y] - 128) * cos1 * cos2;
+                        sumU += (U[x][y] - 128) * cos[x * m + y];
+                        sumV += (V[x][y] - 128) * cos[x * m + y];
                     }
                 }
                 
-                double step = step(v, m) * step(u, m);
+                double step = (u == 0 ? steps[0] : steps[1]) * (v == 0 ? steps[0] : steps[1]);
                 resU[v][u] = Math.round(step * sumU);
                 resV[v][u] = Math.round(step * sumV);
             }
@@ -99,19 +160,18 @@ public class DCTEngine {
 		double[][] resU = new double[m][m];
 		double[][] resV = new double[m][m];
 		double[] steps = {step(0, m), step(1, m)};
+		int index = setIndexOfDCT(m);
 		
 		for (int x = 0; x < m; x++) {
 			for (int y = 0; y < m; y++) {
 				double sumU = 0, sumV = 0;
+				double[] cos = DCT_COEFFICIENTS[1][index][x][y];
 				
 				for (int u = 0; u < m; u++) {
-					double cos1 = Math.cos(((double)(2 * x + 1) * (double)u * Math.PI) / (double)(2 * m));
-					
 					for (int v = 0; v < m; v++) {
 						double step = (u == 0 ? steps[0] : steps[1]) * (v == 0 ? steps[0] : steps[1]);
-                        double cos2 = Math.cos(((double)(2 * y + 1) * (double)v * Math.PI) / (double)(2 * m)); 
-                        sumU += U[u][v] * step * cos1 * cos2;
-                        sumV += V[u][v] * step * cos1 * cos2;
+                        sumU += U[u][v] * step * cos[u * m + v];;
+                        sumV += V[u][v] * step * cos[u * m + v];;
 					}
 				}
 				
@@ -125,17 +185,16 @@ public class DCTEngine {
 		
 	private double[][] computeLumaDCTCoefficients(double[][] Y, int m) {
 		double resY[][] = new double[m][m];
+		int index = setIndexOfDCT(m);
 		
 		for (int v = 0; v < m; v++) {
             for (int u = 0; u < m; u++) {
             	double sum = 0;
+            	double cos[] = DCT_COEFFICIENTS[0][index][v][u];
             	
                 for (int x = 0; x < m; x++) {
-                	double cos1 = Math.cos(((double)(2 * x + 1) * (double)v * Math.PI) / (double)(2 * m));
-                	
                     for (int y = 0; y < m; y++) {
-                        double cos2 = Math.cos(((double)(2 * y + 1) * (double)u * Math.PI) / (double)(2 * m)); 
-                        sum += (Y[x][y] - 128) * cos1 * cos2;
+                        sum += (Y[x][y] - 128) * cos[x * m + y];
                     }
                 }
                 
@@ -149,18 +208,17 @@ public class DCTEngine {
 	private double[][] computeLumaIDCTCoefficients(double[][] Y, int m) {
 		double[][] resY = new double[m][m];
 		double[] steps = {step(0, m), step(1, m)};
+		int index = setIndexOfDCT(m);
 		
 		for (int x = 0; x < m; x++) {
 			for (int y = 0; y < m; y++) {
 				double sum = 0;
+				double[] cos = DCT_COEFFICIENTS[1][index][x][y];
 				
 				for (int u = 0; u < m; u++) {
-					double cos1 = Math.cos(((double)(2 * x + 1) * (double)u * Math.PI) / (double)(2 * m));
-					
 					for (int v = 0; v < m; v++) {
 						double step = (u == 0 ? steps[0] : steps[1]) * (v == 0 ? steps[0] : steps[1]);
-                        double cos2 = Math.cos(((double)(2 * y + 1) * (double)v * Math.PI) / (double)(2 * m)); 
-                        sum += Y[u][v] * step * cos1 * cos2;
+                        sum += Y[u][v] * step * cos[u * m + v];
 					}
 				}
 				

@@ -44,8 +44,8 @@ import Utils.Vector;
 
 public class Main {
 	private static final int MAX_REFERENCES = config.MAX_REFERENCES;
-	
-	private static DCTEngine DCT_ENGINE = new DCTEngine();
+
+	public static DCTEngine DCT_ENGINE = null;
 	private static QuadtreeEngine QUADTREE_ENGINE = new QuadtreeEngine();
 	private static DifferenceEngine DIFFERENCE_ENGINE = new DifferenceEngine();
 	private static VectorEngine VECTOR_ENGINE = new VectorEngine();
@@ -74,6 +74,8 @@ public class Main {
 	}
 	
 	public static void encode(File input, File output) {
+		DCT_ENGINE = new DCTEngine();
+		DCT_ENGINE.initDCTCoefficinets();
 		OutputStream outStream = new OutputStream(new File(input.getParent()));
 		ArrayList<PixelRaster> references = new ArrayList<PixelRaster>(MAX_REFERENCES);
 		PixelRaster futFrame = null;
@@ -107,16 +109,16 @@ public class Main {
 //				futureFrame = new PixelRaster(ImageIO.read(getAwaitedFile(input, i + 1, ".bmp")));
 				
 				DCT_ENGINE.applyDCTOnPixelRaster(curFrame);
-				ArrayList<MacroBlock> QuadtreeRoots = QUADTREE_ENGINE.constructQuadtree(curFrame);
-				ArrayList<MacroBlock> leaveNodes = QUADTREE_ENGINE.getLeaveNodes(QuadtreeRoots);
+				ArrayList<MacroBlock> quadtreeRoots = QUADTREE_ENGINE.constructQuadtree(curFrame);
+				ArrayList<MacroBlock> leaveNodes = QUADTREE_ENGINE.getLeaveNodes(quadtreeRoots);
 				
 //				BufferedImage[] part = QUADTREE_ENGINE.drawMacroBlocks(leaveNodes, curFrame.getDimension());
-				leaveNodes = DIFFERENCE_ENGINE.computeDifferences(curFrame.getColorSpectrum(), prevFrame, leaveNodes);
+//				leaveNodes = DIFFERENCE_ENGINE.computeDifferences(curFrame.getColorSpectrum(), prevFrame, leaveNodes);
 				ArrayList<Vector> movementVectors = VECTOR_ENGINE.computeMovementVectors(leaveNodes, references, curFrame.getColorSpectrum(), futFrame);
 				
 //				BufferedImage vectors = VECTOR_ENGINE.drawVectors(movementVectors, curFrame.getDimension());
 				PixelRaster composit = outStream.renderResult(movementVectors, references, leaveNodes, prevFrame);
-
+				
 //				ImageIO.write(part[0], "png", new File(output.getAbsolutePath() + "/MB_" + i + ".png"));
 //				ImageIO.write(part[1], "png", new File(output.getAbsolutePath() + "/MBA_" + i + ".png"));
 //				ImageIO.write(vectors, "png", new File(output.getAbsolutePath() + "/V_" + i + ".png"));
@@ -141,6 +143,9 @@ public class Main {
 		}
 	}
 	
+	private static double TOTAL_MSE = 0;
+	private static int TOTAL_MSE_ADDITION_COUNT = 0;
+	
 	private static void printStatistics(long time, long fullTime, int index, ArrayList<Vector> vecs, ArrayList<MacroBlock> diffs, int colsCount) {
 		System.out.println("");
 		System.out.println("Frame " + index + " [Colors: " + colsCount + "]" + ":");
@@ -148,8 +153,11 @@ public class Main {
 
 		if (vecs != null) {
 			int vecArea = 0;
+			double averageMSE = (VECTOR_ENGINE.getVectorMSE() / vecs.size());
+			TOTAL_MSE += averageMSE;
+			TOTAL_MSE_ADDITION_COUNT++;
 			for (Vector v : vecs) vecArea += v.getSize() * v.getSize();
-			System.out.println("Vectors: " + vecs.size() + " | Covered area: " + vecArea + "px | Avg. MSE: " + (VECTOR_ENGINE.getVectorMSE() / vecs.size()));
+			System.out.println("Vectors: " + vecs.size() + " | Covered area: " + vecArea + "px | Avg. MSE: " + averageMSE);
 		}
 		
 		if (diffs != null) {
@@ -157,6 +165,8 @@ public class Main {
 			for (MacroBlock b : diffs) diffArea += b.getSize() * b.getSize();
 			System.out.println("Non-Coded blocks: " + diffs.size() + " | Covered area: " + diffArea + "px");
 		}
+		
+		System.out.println("Total Avg. MSE of inter prediction: " + (TOTAL_MSE / TOTAL_MSE_ADDITION_COUNT));
 	}
 	
 	private static void manageReferences(ArrayList<?> references) {
