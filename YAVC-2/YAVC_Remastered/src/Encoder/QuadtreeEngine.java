@@ -41,7 +41,7 @@ public class QuadtreeEngine {
 					double originStdDeviation = origin.computeStandardDeviation(origin.calculateMeanOfCurrentBlock(meanOf4x4BlocksInBlock));
 					
 					if (originStdDeviation > errorThreshold) {
-						origin.subdivide(errorThreshold, 0, meanOf4x4BlocksInBlock);
+						origin.subdivide(errorThreshold, 0, meanOf4x4BlocksInBlock, currentFrame.getDimension());
 					}
 					
 					return origin;
@@ -68,7 +68,7 @@ public class QuadtreeEngine {
 		return roots;
 	}
 	
-	public ArrayList<MacroBlock> getLeaveNodes(ArrayList<MacroBlock> roots, Dimension dim) {
+	public ArrayList<MacroBlock> getLeaveNodes(ArrayList<MacroBlock> roots) {
 		if (roots == null) {
 			System.err.println("No QuadtreeRoots to process! > Skip");
 			return null;
@@ -78,10 +78,10 @@ public class QuadtreeEngine {
 		ArrayList<Future<ArrayList<MacroBlock>>> futureLeavesList = new ArrayList<Future<ArrayList<MacroBlock>>>();
 		int threads = Runtime.getRuntime().availableProcessors();
 		ExecutorService executor = Executors.newFixedThreadPool(threads);
-		
+
 		for (MacroBlock root : roots) {
 			Callable<ArrayList<MacroBlock>> task = () -> {
-				return getLeaves(root, dim);
+				return getLeaves(root);
 			};
 			
 			futureLeavesList.add(executor.submit(task));
@@ -100,23 +100,19 @@ public class QuadtreeEngine {
 		return leaveNodes;
 	}
 	
-	private ArrayList<MacroBlock> getLeaves(MacroBlock block, Dimension dim) {
+	private ArrayList<MacroBlock> getLeaves(MacroBlock block) {
 		if (block == null) return null;
 		
 		ArrayList<MacroBlock> blocks = new ArrayList<MacroBlock>(4);
 		
-		for (MacroBlock node : block.getNodes()) {
-			if (node == null) continue;
-			
-			Point pos = node.getPosition();
-			
-			if (pos.x > dim.width || pos.y > dim.height) continue;
-			
-			if (node.isSubdivided()) {
-				blocks.addAll(getLeaves(node, dim));
-			} else {
-				blocks.add(node);
+		if (block.isSubdivided()) {
+			for (MacroBlock node : block.getNodes()) {
+				if (node == null) continue;
+				
+				blocks.addAll(getLeaves(node));
 			}
+		} else {
+			blocks.add(block);
 		}
 		
 		return blocks;

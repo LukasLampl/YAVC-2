@@ -1,5 +1,6 @@
 package Utils;
 
+import java.awt.Dimension;
 import java.awt.Point;
 
 public class MacroBlock {
@@ -74,7 +75,7 @@ public class MacroBlock {
 	 */
 	private double FACTOR_TABLE[] = {0.1, 0.01, 0.001, 0.0001, 0.00001};
 	
-	public void subdivide(double errorThreshold, int depth, int[][] meanOf4x4Blocks) {
+	public void subdivide(double errorThreshold, int depth, int[][] meanOf4x4Blocks, Dimension dim) {
 		if (this.isSubdivided == true) {
 			return;
 		} else if (this.size <= 4) {
@@ -83,10 +84,21 @@ public class MacroBlock {
 		
 		this.isSubdivided = true;
 		this.nodes = new MacroBlock[4];
-		int index = 0, currentOrder = 0, fraction = this.size / 2;
+		int index = 0, currentOrder = 0, fraction = this.size / 2, outlyers = 0;
 		
 		for (int x = 0; x < this.size; x += fraction) {
 			for (int y = 0; y < this.size; y += fraction) {
+				if ((this.position.x + x >= dim.width
+					|| this.position.x + x < 0)
+					|| (this.position.y + y >= dim.height
+					|| this.position.y + y < 0)) {
+					if (outlyers++ >= 4) {
+						this.isSubdivided = false;
+					}
+					
+					continue;
+				}
+				
 				MacroBlock b = getSubBlock(new Point(x, y), fraction);
 				b.setOrder(this.ORDER + (this.FACTOR_TABLE[depth] * currentOrder++));
 				this.nodes[index++] = b;
@@ -97,7 +109,7 @@ public class MacroBlock {
 				b.setMeanColor(meanRGB);
 				
 				if (standardDeviation > errorThreshold) {
-					b.subdivide(errorThreshold, depth + 1, subMeanColorArray);
+					b.subdivide(errorThreshold, depth + 1, subMeanColorArray, dim);
 				}
 			}
 		}
@@ -162,20 +174,24 @@ public class MacroBlock {
 	 * 			int size => Size of the sub-block
 	 */
 	private MacroBlock getSubBlock(Point pos, int size) {
+		int halfSize = size / 2;
 		double[][] resY = new double[size][size];
-		double[][] resU = new double[size / 2][size / 2];
-		double[][] resV = new double[size / 2][size / 2];
+		double[][] resU = new double[halfSize][halfSize];
+		double[][] resV = new double[halfSize][halfSize];
 		double[][] resA = new double[size][size];
 		
 		for (int x = 0; x < size; x++) {
 			for (int y = 0; y < size; y++) {
 				resY[x][y] = this.Y[pos.x + x][pos.y + y];
-				resA[x][y] = this.A[x][y];
-				
-				int subSX = x / 2, subSY = y / 2;
-				int thisPosX = (pos.x + x) / 2, thisPosY = (pos.y + y) / 2;
-				resU[subSX][subSY] = this.U[thisPosX][thisPosY];
-				resV[subSX][subSY] = this.V[thisPosX][thisPosY];
+				resA[x][y] = this.A[pos.x + x][pos.y + y];
+			}
+		}
+		
+		for (int x = 0; x < halfSize; x++) {
+			for (int y = 0; y < halfSize; y++) {
+				int thisPosX = (pos.x / 2) + x, thisPosY = (pos.y / 2) + y;
+				resU[x][y] = this.U[thisPosX][thisPosY];
+				resV[x][y] = this.V[thisPosX][thisPosY];
 			}
 		}
 		
