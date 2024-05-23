@@ -63,9 +63,9 @@ public class ColorManager {
 		}
 		
 		double Y = YUV[0], U = YUV[1] - 128, V = YUV[2] - 128;
-		int red = range((int)Math.round(Y + 1.402 * V), 0, 255);
-		int green = range((int)Math.round(Y - 0.344136 * U - 0.714136 * V), 0, 255);
-		int blue = range((int)Math.round(Y + 1.772 * U), 0, 255);
+		int red = range((int)((Y + 1.402 * V) + 0.5), 0, 255);
+		int green = range((int)((Y - 0.344136 * U - 0.714136 * V) + 0.5), 0, 255);
+		int blue = range((int)((Y + 1.772 * U) + 0.5), 0, 255);
 		return (0xFF000000 | ((red & 0xFF) << 16) | ((green & 0xFF) << 8) | (blue & 0xFF));
 	}
 	
@@ -77,9 +77,9 @@ public class ColorManager {
 		}
 		
 		double Y = YUV[0], U = YUV[1] - 128, V = YUV[2] - 128;
-		int red = (int)Math.round(Y + 1.402 * V);
-		int green = (int)Math.round(Y - 0.344136 * U - 0.714136 * V);
-		int blue = (int)Math.round(Y + 1.772 * U);
+		int red = (int)((Y + 1.402 * V) + 0.5);
+		int green = (int)((Y - 0.344136 * U - 0.714136 * V) + 0.5);
+		int blue = (int)((Y + 1.772 * U) + 0.5);
 		
 		if (rgbCache != null) {
 			rgbCache[0] = red;

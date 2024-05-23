@@ -283,13 +283,14 @@ public class MacroBlock {
 		double resR = 0, resG = 0, resB = 0;
 		double length = this.size * this.size;
 		int meanR = mean[0], meanG = mean[1], meanB = mean[2];
+		int[] rgbCache = new int[3];
 		
 		for (int x = 0; x < this.size; x++) {
 			for (int y = 0; y < this.size; y++) {
-				int argb = this.COLOR_MANAGER.convertYUVToRGB(getYUV(x, y));
-				int r = ((argb >> 16) & 0xFF) - meanR;
-				int g = ((argb >> 8) & 0xFF) - meanG;
-				int b = (argb & 0xFF) - meanB;
+				this.COLOR_MANAGER.convertYUVToRGB_intARR(getYUV(x, y), rgbCache);
+				int r = rgbCache[0] - meanR;
+				int g = rgbCache[1] - meanG;
+				int b = rgbCache[2] - meanB;
 				resR += r * r;
 				resG += g * g;
 				resB += b * b;
