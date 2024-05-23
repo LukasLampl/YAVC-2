@@ -68,6 +68,12 @@ public class DCTEngine {
 					double[][][] comps = raster.getPixelBlock(new Point(posX, posY), size, null);
 					double[][][] ChromaDCT = computeChromaDCTCoefficients(comps[1], comps[2], size / 2);
 					double[][] LumaDCT = computeLumaDCTCoefficients(comps[0], size);
+					
+					quantizeChromaDCTCoefficients(ChromaDCT);
+					quantizeLumaDCTCoefficients(LumaDCT);
+					dequantizeChromaDCTCoefficients(ChromaDCT);
+					dequantizeLumaDCTCoefficients(LumaDCT);
+					
 					ChromaDCT = computeChromaIDCTCoefficients(ChromaDCT[0], ChromaDCT[1], size / 2);
 					LumaDCT = computeLumaIDCTCoefficients(LumaDCT, size);
 					
@@ -252,4 +258,94 @@ public class DCTEngine {
 			{99, 99, 99, 99, 99, 99, 99, 99},
 			{99, 99, 99, 99, 99, 99, 99, 99}
 	};
+	
+	private static int[][] QUANTIZATION_MATRIX_4x4_Luma = {
+			{13, 15, 37, 57},
+			{15, 29, 59, 67},
+			{25, 53, 91, 96},
+			{69, 90, 109, 106}
+	};
+	
+	private static int[][] QUANTIZATION_MATRIX_4x4_Chroma = {
+			{74, 41, 99, 99},
+			{41, 88, 99, 99},
+			{99, 99, 99, 99},
+			{99, 99, 99, 99}
+	};
+	
+	private static int[][] QUANTIZATION_MATRIX_2x2_Chroma = {
+			{61, 99},
+			{99, 99}
+	};
+	
+	public void quantizeChromaDCTCoefficients(double[][][] coefficients) {
+		int sizeChroma = coefficients[1].length;
+		int[][] chromaQuant = getChromaQuantizationTable(sizeChroma);
+		
+		for (int x = 0; x < sizeChroma; x++) {
+			for (int y = 0; y < sizeChroma; y++) {
+				coefficients[1][x][y] = Math.round(coefficients[1][x][y] / (double)chromaQuant[x][y]);
+				coefficients[2][x][y] = Math.round(coefficients[2][x][y] / (double)chromaQuant[x][y]);
+			}
+		}
+	}
+	
+	public void quantizeLumaDCTCoefficients(double[][] coefficients) {
+		int sizeLuma = coefficients[0].length;
+		int[][] lumaQuant = getLumaQuantizationTable(sizeLuma);
+		
+		for (int x = 0; x < sizeLuma; x++) {
+			for (int y = 0; y < sizeLuma; y++) {
+				coefficients[x][y] = Math.round(coefficients[x][y] / (double)lumaQuant[x][y]);
+			}
+		}
+	}
+	
+	public void dequantizeChromaDCTCoefficients(double[][][] coefficients) {
+		int sizeChroma = coefficients[1].length;
+		int[][] chromaQuant = getChromaQuantizationTable(sizeChroma);
+		
+		for (int x = 0; x < sizeChroma; x++) {
+			for (int y = 0; y < sizeChroma; y++) {
+				coefficients[1][x][y] *= chromaQuant[x][y];
+				coefficients[2][x][y] *= chromaQuant[x][y];
+			}
+		}
+	}
+	
+	public void dequantizeLumaDCTCoefficients(double[][] coefficients) {
+		int sizeLuma = coefficients[0].length;
+		int[][] lumaQuant = getLumaQuantizationTable(sizeLuma);
+		
+		for (int x = 0; x < sizeLuma; x++) {
+			for (int y = 0; y < sizeLuma; y++) {
+				coefficients[x][y] *= (double)lumaQuant[x][y];
+			}
+		}
+	}
+	
+	private int[][] getLumaQuantizationTable(int size) {
+		switch (size) {
+		case 128:
+		case 64:
+		case 32:
+		case 16: throw new IllegalArgumentException("Unsupported matrix size: " + size);
+		case 8: return QUANTIZATION_MATRIX_8x8_Luma;
+		case 4: return QUANTIZATION_MATRIX_4x4_Luma;
+		default: throw new IllegalArgumentException("Unsupported matrix size: " + size);
+		}
+	}
+	
+	private int[][] getChromaQuantizationTable(int size) {
+		switch (size) {
+		case 128:
+		case 64:
+		case 32:
+		case 16: throw new IllegalArgumentException("Unsupported matrix size: " + size);
+		case 8: return QUANTIZATION_MATRIX_8x8_Chroma;
+		case 4: return QUANTIZATION_MATRIX_4x4_Chroma;
+		case 2: return QUANTIZATION_MATRIX_2x2_Chroma;
+		default: throw new IllegalArgumentException("Unsupported matrix size: " + size);
+		}
+	}
 }
