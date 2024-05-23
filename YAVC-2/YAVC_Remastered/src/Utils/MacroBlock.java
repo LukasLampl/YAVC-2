@@ -2,6 +2,9 @@ package Utils;
 
 import java.awt.Dimension;
 import java.awt.Point;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class MacroBlock {
 	private double[][] Y = null;
@@ -199,26 +202,42 @@ public class MacroBlock {
 	}
 	
 	public int[][] calculate4x4Means() {
+		int threads = Runtime.getRuntime().availableProcessors();
+		ExecutorService executor = Executors.newFixedThreadPool(threads);
+		
 		int[][] argbs = new int[this.size / 4][this.size / 4];
 		int[] rgbCache = new int[3];
 		
-		for (int u = 0; u < this.size; u += 4) {
-			for (int v = 0; v < this.size; v += 4) {
-				int sumR = 0, sumG = 0, sumB = 0;
+		for (int n = 0; n < this.size; n += 32) {
+			for (int j = 0; j < this.size; j += 32) {
+				final int posX = n, posY = j, fracX = n / 32, fracY = j / 32;
 				
-				for (int x = 0; x < 4; x++) {
-					for (int y = 0; y < 4; y++) {
-						this.COLOR_MANAGER.convertYUVToRGB_intARR(getYUV(x + u, y + v), rgbCache);
-						sumR += rgbCache[0];
-						sumG += rgbCache[1];
-						sumB += rgbCache[2];
+				Callable<Void> task = () -> {
+					for (int u = 0; u < 32; u += 4) {
+						for (int v = 0; v < 32; v += 4) {
+							int sumR = 0, sumG = 0, sumB = 0;
+							
+							for (int x = 0; x < 4; x++) {
+								for (int y = 0; y < 4; y++) {
+									this.COLOR_MANAGER.convertYUVToRGB_intARR(getYUV(posX + x + u, posY + y + v), rgbCache);
+									sumR += rgbCache[0];
+									sumG += rgbCache[1];
+									sumB += rgbCache[2];
+								}
+							}
+							
+							argbs[fracX + u / 4][fracY / 16 + v / 4] = ((sumR / 16) << 16) | ((sumG / 16) << 8) | (sumB / 16);
+						}
 					}
-				}
+					
+					return null;
+				};
 				
-				argbs[u / 4][v / 4] = ((sumR / 16) << 16) | ((sumG / 16) << 8) | (sumB / 16);
+				executor.submit(task);
 			}
 		}
 		
+		executor.shutdown();
 		return argbs;
 	}
 	
@@ -264,14 +283,13 @@ public class MacroBlock {
 		double resR = 0, resG = 0, resB = 0;
 		double length = this.size * this.size;
 		int meanR = mean[0], meanG = mean[1], meanB = mean[2];
-		int[] rgbCache = new int[3];
 		
 		for (int x = 0; x < this.size; x++) {
 			for (int y = 0; y < this.size; y++) {
-				this.COLOR_MANAGER.convertYUVToRGB_intARR(getYUV(x, y), rgbCache);
-				int r = rgbCache[0] - meanR;
-				int g = rgbCache[1] - meanG;
-				int b = rgbCache[2] - meanB;
+				int argb = this.COLOR_MANAGER.convertYUVToRGB(getYUV(x, y));
+				int r = ((argb >> 16) & 0xFF) - meanR;
+				int g = ((argb >> 8) & 0xFF) - meanG;
+				int b = (argb & 0xFF) - meanB;
 				resR += r * r;
 				resG += g * g;
 				resB += b * b;
