@@ -117,7 +117,7 @@ public class PixelRaster {
 		
 		int subSX = x / 2, subSY = y / 2;
 		this.Y[x][y] = YUV[0];
-		
+
 		if (this.U[subSX][subSY] == 0) {
 			this.U[subSX][subSY] = YUV[1];
 			this.V[subSX][subSY] = YUV[2];
@@ -242,8 +242,7 @@ public class PixelRaster {
 
 		IntStream.range(0, this.dim.height).parallel().forEach(y -> {
 			for (int x = 0; x < this.dim.width; x++) {
-				int argb = this.COLOR_MANAGER.convertYUVToRGB(getYUV(x, y)).getRGB();
-				render.setRGB(x, y, argb);
+				render.setRGB(x, y, this.COLOR_MANAGER.convertYUVToRGB(getYUV(x, y)));
 			}
 		});
 		

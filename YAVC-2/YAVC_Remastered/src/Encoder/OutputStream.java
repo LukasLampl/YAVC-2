@@ -40,7 +40,7 @@ public class OutputStream {
 		
 		for (int x = 0; x < raster.getWidth(); x++) {
 			for (int y = 0; y < raster.getHeight(); y++) {
-				img.append(this.COLOR_MANAGER.convertYUVToRGB(raster.getYUV(x, y)).getRGB());
+				img.append(this.COLOR_MANAGER.convertYUVToRGB(raster.getYUV(x, y)));
 				img.append(".");
 			}
 		}
@@ -198,8 +198,7 @@ public class OutputStream {
 				
 				for (int x = 0; x < size; x++) {
 					for (int y = 0; y < size; y++) {
-						int col = this.COLOR_MANAGER.convertYUVToRGB(b.getYUV(x, y)).getRGB();
-						differences.append(col);
+						differences.append(this.COLOR_MANAGER.convertYUVToRGB(b.getYUV(x, y)));
 						differences.append(".");
 					}
 				}

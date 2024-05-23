@@ -52,7 +52,7 @@ public class InputProcessor {
 				for (int y = 0; y < b.getSize(); y++) {
 					if (pos.y + y < 0 || pos.y + y >= dim.height) continue;
 					
-					render.setRGB(x + pos.x, y + pos.y, colorManager.convertYUVToRGB(b.getYUV(x, y)).getRGB());
+					render.setRGB(x + pos.x, y + pos.y, colorManager.convertYUVToRGB(b.getYUV(x, y)));
 				}
 			}
 		}

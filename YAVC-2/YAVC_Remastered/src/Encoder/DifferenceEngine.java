@@ -82,8 +82,7 @@ public class DifferenceEngine {
 						|| y + b.getPosition().y >= dim.height
 						|| y + b.getPosition().y < 0) continue;
 					
-					Color col = colManager.convertYUVToRGB(b.getYUV(x, y));
-					render.setRGB(x + b.getPosition().x, y + b.getPosition().y, col.getRGB());
+					render.setRGB(x + b.getPosition().x, y + b.getPosition().y, colManager.convertYUVToRGB(b.getYUV(x, y)));
 				}
 			}
 		}
