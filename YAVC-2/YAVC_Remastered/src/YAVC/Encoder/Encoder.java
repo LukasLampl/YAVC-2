@@ -1,5 +1,6 @@
 package YAVC.Encoder;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
 
@@ -43,7 +44,8 @@ public class Encoder {
 				if (prevFrame == null) {
 					prevFrame = new PixelRaster(ImageIO.read(frameFile));
 //					futureFrame = new PixelRaster(ImageIO.read(getAwaitedFile(input, i + 1, ".bmp")));
-					outStream.writeStartFrame(output, prevFrame);
+					outStream.writeMetadata(prevFrame.getDimension(), files - 1);
+					outStream.writeStartFrame(prevFrame);
 					references.add(prevFrame);
 					continue;
 				}
@@ -54,14 +56,14 @@ public class Encoder {
 				ArrayList<MacroBlock> quadtreeRoots = QUADTREE_ENGINE.constructQuadtree(curFrame);
 				ArrayList<MacroBlock> leaveNodes = QUADTREE_ENGINE.getLeaveNodes(quadtreeRoots);
 				
-//				BufferedImage[] part = QUADTREE_ENGINE.drawMacroBlocks(leaveNodes, curFrame.getDimension());
+				BufferedImage[] part = QUADTREE_ENGINE.drawMacroBlocks(leaveNodes, curFrame.getDimension());
 				leaveNodes = DIFFERENCE_ENGINE.computeDifferences(curFrame.getColorSpectrum(), prevFrame, leaveNodes);
 				ArrayList<Vector> movementVectors = VECTOR_ENGINE.computeMovementVectors(leaveNodes, references, curFrame.getColorSpectrum(), futFrame);
 				
 //				BufferedImage vectors = VECTOR_ENGINE.drawVectors(movementVectors, curFrame.getDimension());
 				PixelRaster composit = outStream.renderResult(movementVectors, references, leaveNodes, prevFrame);
 				
-//				ImageIO.write(part[0], "png", new File(output.getAbsolutePath() + "/MB_" + i + ".png"));
+				ImageIO.write(part[0], "png", new File(output.getAbsolutePath() + "/MB_" + i + ".png"));
 //				ImageIO.write(part[1], "png", new File(output.getAbsolutePath() + "/MBA_" + i + ".png"));
 //				ImageIO.write(vectors, "png", new File(output.getAbsolutePath() + "/V_" + i + ".png"));
 				ImageIO.write(composit.toBufferedImage(), "png", new File(output.getAbsolutePath() + "/VR_" + i + ".png"));

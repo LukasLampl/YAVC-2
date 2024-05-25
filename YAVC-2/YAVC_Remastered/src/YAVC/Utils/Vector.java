@@ -2,7 +2,6 @@ package YAVC.Utils;
 
 import java.awt.Point;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import YAVC.Encoder.DCTEngine;
 
@@ -68,6 +67,10 @@ public class Vector {
 		return this.reference;
 	}
 	
+	public void setAbsolutedifferenceDCTCoefficients(ArrayList<double[][][]> diffs) {
+		this.AbsoluteColorDifferenceDCTCoefficients = diffs;
+	}
+	
 	public void setAbsoluteDifferences(double[][][] YUVDifference) {
 		this.AbsoluteColorDifferenceDCTCoefficients = DCT_ENGINE.computeDCTOfVectorColorDifference(YUVDifference, this.size);
 		this.invokedDCTOfDifferences = true;
@@ -78,11 +81,7 @@ public class Vector {
 	}
 	
 	public double[][][] getIDCTCoefficientsOfAbsoluteColorDifference() {
-		if (this.invokedDCTOfDifferences == false) {
-			System.err.println("No absolute difference were invoked, NULL DCT-Coefficients to process! > SKIP");
-			return null;
-		}
-		
+		if (this.invokedDCTOfDifferences == false) throw new NullPointerException("No absolute difference were invoked, NULL DCT-Coefficients to process");
 		return DCT_ENGINE.computeIDCTOfVectorColorDifference(this.AbsoluteColorDifferenceDCTCoefficients, this.size);
 	}
 	

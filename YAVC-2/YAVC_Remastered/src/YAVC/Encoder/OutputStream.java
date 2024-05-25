@@ -35,8 +35,20 @@ public class OutputStream {
 		this.OUTPUT_FILE = out;
 	}
 	
-	//DEBUG ONLY!
-	public void writeStartFrame(File file, PixelRaster raster) {
+	public void writeMetadata(Dimension dim, int filesCount) {
+		try {
+			String content = "{DIM:" + dim.width + "," + dim.height + "}" +
+							"{FC:" + filesCount + "}";
+			File output = new File(this.OUTPUT_FILE.getAbsolutePath() + "/META.yavc");
+			output.createNewFile();
+			
+			Files.write(Path.of(output.getAbsolutePath()), content.getBytes(), StandardOpenOption.WRITE);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void writeStartFrame(PixelRaster raster) {
 		StringBuilder img = new StringBuilder(raster.getWidth() * raster.getHeight());
 		
 		for (int x = 0; x < raster.getWidth(); x++) {
@@ -47,7 +59,7 @@ public class OutputStream {
 		}
 		
 		try {
-			File output = new File(file.getAbsolutePath() + "/SF.yavc");
+			File output = new File(this.OUTPUT_FILE.getAbsolutePath() + "/SF.yavc");
 			output.createNewFile();
 			
 			Files.write(Path.of(output.getAbsolutePath()), img.toString().getBytes(), StandardOpenOption.WRITE);
@@ -89,43 +101,79 @@ public class OutputStream {
 		}
 	}
 	
+	/*
+	 * Purpose: Writes a byte array into a byte ArrayList
+	 * Return Type: void
+	 * Params: ArrayList<Byte> byteList => List to write the bytes into;
+	 * 			byte[] array => Array to write into the list (in order)
+	 */
 	private void addByteToArrayList(ArrayList<Byte> byteList, byte[] array) {
+		if (byteList == null || array == null) throw new NullPointerException();
+		
 		for (int i = 0; i < array.length; i++) {
 			byteList.add(array[i]);
 		}
 	}
 	
+	/*
+	 * Purpose: Get the bytes for the position of the vector (max. 65536)
+	 * Return Type: byte[] => Array of the position in bytes
+	 * Params: int pos => position to write;
+	 * 			int offset => Coding offset, so the encoded bytes do not collide with coding units
+	 * Function: First the offset is added to the original pos, since adding the offset afterwards
+	 * 			might exceed the limit of an byte (255). The position gets splitted into two bytes
+	 * 			containing the position.
+	 * 			Example for position 21201 (BIN: 0101 0010 1101 0001). The number in BIN has more than
+	 * 			8 digits, so the last digits are written into a byte. The second part, that is in the
+	 * 			front is also put into a byte. To extract the first 8 bits, the number is shifted 8 to
+	 * 			the right. To sum it all up, the first byte contains 0101 0010 and the second contains
+	 * 			1101 0001 (for this example).
+	 */
 	private byte[] getPositionByte(int pos, int offset) {
 		pos += offset;
+		if (pos > 65536) throw new IllegalArgumentException("Position of vector exceeds maximum limit of 65536");
+		else if (pos < 0) throw new IllegalArgumentException("Position of vector is smaller than 0 (out of frame)");
 		return new byte[] {(byte)((pos >> 8) & 0xFF), (byte)(pos)};
 	}
 	
+	/*
+	 * Purpose: Get the byte for reference and size of the vector
+	 * Return Type: byte => Byte containing reference and size
+	 * Params: int reference => Reference of the vector;
+	 * 			int size => Size of the vector (size in px);
+	 * 			int offset => Coding offset, so the encoded bytes do not collide with coding units
+	 * Function: One byte is splitted into 2 parts, each with 4 bits. The upper part is the storage
+	 * 			place for the reference, while the lower part is for the size. The reference cannot
+	 * 			exceed 7, since it would get bigger than 4 bits. If the number is negative, a sign is
+	 * 			written to the first bit. The size would be too big for 4 bits, thats why the size
+	 * 			is only represented by numbers from 1 to 6. If we'd do an example for reference 4
+	 * 			and size 64. First reference is written into the upper part of the byte.
+	 * 		-> First: 0000 0100 => 0100 0000 (Bitshifting 4 to the left)
+	 * 		-> Next: 64 = 5 (BIN: 101)
+	 * 		-> Now combine both: 0100 0000 | 0000 0101 => 0100 0101 
+	 * 		-> Finally add the Coding offset to the result
+	 */
 	private byte getReferenceAndSizeByte(int reference, int size, int offset) {
-		if (reference > 7 || reference < -7) {
-			System.err.println("Reference to high! > Can't write into single byte!");
-		}
-		
+		if (reference > 7 || reference < -7) throw new IllegalArgumentException("Reference out of range (-7 to 7)");
 		byte res = 0;
 		
 		if (reference < 0) {
 			res = (byte)(((1 << 3) | Math.abs(reference)) << 4);
+		} else {
+			res = (byte)(Math.abs(reference) << 4);
 		}
 		
-		if (size == 128) {
-			res |= 1;
-		} else if (size == 64) {
-			res |= 2;
-		} else if (size == 32) {
-			res |= 3;
-		} else if (size == 16) {
-			res |= 4;
-		} else if (size == 8) {
-			res |= 5;
-		} else if (size == 4) {
-			res |= 6;
+		switch (size) {
+			case 128: res |= 6; break;
+			case 64: res |= 5; break;
+			case 32: res |= 4; break;
+			case 16: res |= 3; break;
+			case 8: res |= 2; break;
+			case 4: res |= 1; break;
+			default: throw new IllegalArgumentException("Size: " + size + " not supported by YAVC");
 		}
 		
-		return res;
+		return (byte)(res + offset);
 	}
 	
 	private byte[] getVectorSpanBytes(int spanX, int spanY, int offset) {
@@ -182,7 +230,7 @@ public class OutputStream {
 			result |= (1 << 7);
 		}
 		
-		return result;
+		return (byte)(result + config.CODING_OFFSET);
 	}
 	
 	//ONLY FOR DEBUG!

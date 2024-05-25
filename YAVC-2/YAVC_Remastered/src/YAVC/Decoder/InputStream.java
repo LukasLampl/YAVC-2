@@ -13,10 +13,28 @@ public class InputStream {
 		this.cache = file;
 	}
 	
+	public String getMetadata() {
+		String content = null;
+		File metaFile = new File(this.cache.getAbsolutePath() + "/META.yavc");
+		
+		if (!metaFile.exists()) {
+			System.err.println("No metadata found! > Abort process");
+			System.exit(0);
+		}
+		
+		try {
+			content = new String(Files.readAllBytes(Path.of(metaFile.getAbsolutePath())), StandardCharsets.UTF_8);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		return content;
+	}
+	
 	public String getStartFrame() {
 		String content = null;
 		File sf_file = new File(this.cache.getAbsolutePath() + "/SF.yavc");
-		System.out.println(sf_file.getAbsolutePath());
+
 		if (!sf_file.exists()) {
 			System.err.println("No start frame found! > Abort process");
 			System.exit(0);
@@ -42,7 +60,7 @@ public class InputStream {
 		}
 		
 		try {
-			content = new String(Files.readAllBytes(Path.of(f_file.getAbsolutePath())), StandardCharsets.UTF_8);
+			content = new String(Files.readAllBytes(Path.of(f_file.getAbsolutePath())), StandardCharsets.ISO_8859_1);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
