@@ -2,7 +2,6 @@ package YAVC.Encoder;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import javax.imageio.ImageIO;
 
@@ -65,82 +64,6 @@ public class Encoder {
 //				ImageIO.write(part[1], "png", new File(output.getAbsolutePath() + "/MBA_" + i + ".png"));
 //				ImageIO.write(vectors, "png", new File(output.getAbsolutePath() + "/V_" + i + ".png"));
 				ImageIO.write(composit.toBufferedImage(), "png", new File(output.getAbsolutePath() + "/VR_" + i + ".png"));
-
-//				double[][][] t = new double[][][] {
-//					{
-//						{-415, -33, -58, 35, 58, -51, -15, -12},
-//						{5, -34, 49, 18, 27, 1, -5, 3},
-//						{-46, 14, 80, -35, -50, -19, 7, -18},
-//						{-53, 21, 34, -20, 2, 34, 36, 12},
-//						{9, -2, 9, -5, -32, -15, 45, 37},
-//						{-8, 15, -16, 7, -8, 11, 4, 7},
-//						{19, -28, -2, -26, -2, 7, -44, -21},
-//						{18, 25, -12, -44, 35, 48, -37, -3}
-//					},
-//					{
-//						{0, 0, 0, 0},
-//						{0, 0, 0, 0},
-//						{0, 0, 0, 0},
-//						{0, 0, 0, 0}
-//					},
-//					{
-//						{0, 0, 0, 0},
-//						{0, 0, 0, 0},
-//						{0, 0, 0, 0},
-//						{0, 0, 0, 0}
-//					}
-//				};
-				
-				double[][][] t = new double[][][] {
-					{
-						{-415, -33, -58, 35},
-						{5, -34, 49, 18},
-						{-46, 14, 80, -35},
-						{-53, 21, 34, -20}
-					},
-					{
-						{0, 0},
-						{0, 0}
-					},
-					{
-						{0, 0},
-						{0, 0}
-					}
-				};
-				
-				for (int n = 0; n < t.length; n++) {
-					if (n == 0) System.out.println("Y-Org:");
-					else if (n == 1) System.out.println("U-Org:");
-					else if (n == 2) System.out.println("V-Org:");
-					
-					for (int j = 0; j < t[n].length; j++) {
-						System.out.println(Arrays.toString(t[n][j]));
-					}
-				}
-				
-				ArrayList<double[][][]> res = DCT_ENGINE.computeDCTOfVectorColorDifference(t, 4);
-				
-				for (int n = 0; n < res.get(0).length; n++) {
-					if (n == 0) System.out.println("Y-DCT:");
-					else if (n == 1) System.out.println("U-DCT:");
-					else if (n == 2) System.out.println("V-DCT:");
-					
-					for (int j = 0; j < res.get(0)[n].length; j++) {
-						System.out.println(Arrays.toString(res.get(0)[n][j]));
-					}
-				}
-				
-				double[][][] rev = DCT_ENGINE.computeIDCTOfVectorColorDifference(res, 4);
-				
-				for (int n = 0; n < rev.length; n++) {
-					if (n == 0) System.out.println("Y-Rev:");
-					else if (n == 1) System.out.println("U-Rev:");
-					else if (n == 2) System.out.println("V-Rev:");
-					
-					for (int j = 0; j < rev[n].length; j++) {
-						System.out.println(Arrays.toString(rev[n][j]));
-					}
-				}
 
 //				outStream.addObjectToOutputQueue(new QueueObject(movementVectors, leaveNodes));
 				

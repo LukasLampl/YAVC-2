@@ -92,8 +92,8 @@ public class DCTEngine {
 				double[][][] subArr = getSubArray(diffs, 8, x, y);
 				double[][][] chromaDCT = computeChromaDCTCoefficients(subArr[1], subArr[2], 4);
 				double[][] lumaDCT = computeLumaDCTCoefficients(subArr[0], 8);
-//				quantizeChromaDCTCoefficients(chromaDCT, 4);
-//				quantizeLumaDCTCoefficients(lumaDCT, 8);
+				quantizeChromaDCTCoefficients(chromaDCT, 4);
+				quantizeLumaDCTCoefficients(lumaDCT, 8);
 				
 				double[][][] cache = new double[3][][];
 				cache[0] = lumaDCT;
@@ -137,8 +137,8 @@ public class DCTEngine {
 				double[][][] CoeffGroup = DCTCoeff.get(index++);
 				double[][][] chromaIDCT = new double[][][] {CoeffGroup[1], CoeffGroup[2]};
 				double[][] lumaIDCT = CoeffGroup[0];
-//				dequantizeChromaDCTCoefficients(chromaIDCT, 4);
-//				dequantizeLumaDCTCoefficients(lumaIDCT, 8);
+				dequantizeChromaDCTCoefficients(chromaIDCT, 4);
+				dequantizeLumaDCTCoefficients(lumaIDCT, 8);
 				chromaIDCT = computeChromaIDCTCoefficients(chromaIDCT[0], chromaIDCT[1], 4);
 				lumaIDCT = computeLumaIDCTCoefficients(lumaIDCT, 8);
 				
