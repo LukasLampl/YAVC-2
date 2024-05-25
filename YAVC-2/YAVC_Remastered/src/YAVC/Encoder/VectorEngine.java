@@ -155,7 +155,7 @@ public class VectorEngine {
 	 */
 	private MacroBlock computeHexagonSearch(PixelRaster ref, MacroBlock blockToBeSearched) {
 		double lowestMSE = Double.MAX_VALUE;
-		int radius = 4, searchWindow = 24, size = blockToBeSearched.getSize(), sumOfAllPoints = 2304;
+		int radius = 4, searchWindow = 48, size = blockToBeSearched.getSize(), sumOfAllPoints = 2304;
 		Point blockPos = blockToBeSearched.getPosition();
 		Point centerPoint = blockToBeSearched.getPosition();
 		MacroBlock mostEqualBlock = null;

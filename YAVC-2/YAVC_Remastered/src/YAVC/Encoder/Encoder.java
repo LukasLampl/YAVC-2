@@ -8,6 +8,7 @@ import javax.imageio.ImageIO;
 import YAVC.Main.config;
 import YAVC.Utils.MacroBlock;
 import YAVC.Utils.PixelRaster;
+import YAVC.Utils.QueueObject;
 import YAVC.Utils.Vector;
 
 public class Encoder {
@@ -65,7 +66,7 @@ public class Encoder {
 //				ImageIO.write(vectors, "png", new File(output.getAbsolutePath() + "/V_" + i + ".png"));
 				ImageIO.write(composit.toBufferedImage(), "png", new File(output.getAbsolutePath() + "/VR_" + i + ".png"));
 
-//				outStream.addObjectToOutputQueue(new QueueObject(movementVectors, leaveNodes));
+				outStream.addObjectToOutputQueue(new QueueObject(movementVectors, leaveNodes));
 				
 				long end = System.currentTimeMillis();
 				long time = end - start;
@@ -77,9 +78,10 @@ public class Encoder {
 				manageReferences(references);
 			}
 			
-			outStream.shutdown();
+			outStream.waitForFinish();
 			references.clear();
 		} catch (Exception e) {
+			outStream.shutdown();
 			e.printStackTrace();
 		}
 	}

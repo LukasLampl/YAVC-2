@@ -23,6 +23,7 @@ import YAVC.Utils.Vector;
 public class OutputStream {
 	private File OUTPUT_FILE = null;
 	private boolean isWriterActive = false;
+	private boolean waitForWriterToFinish = false;
 	private ArrayList<QueueObject> QUEUE = new ArrayList<QueueObject>();
 	private int fileCounter = 0;
 	
@@ -66,12 +67,12 @@ public class OutputStream {
 				byte[] posY = getPositionByte(v.getPosition().y, offset);
 				byte[] span = getVectorSpanBytes(v.getSpanX(), v.getSpanY(), offset);
 				byte refAndSize = getReferenceAndSizeByte(v.getReference(), v.getSize(), offset);
-//				byte[] differences = getVectorAbsoluteColorDifferenceBytes(v.getDCTCoefficientsOfAbsoluteColorDifference(), v.getSize());
+				byte[] differences = getVectorAbsoluteColorDifferenceBytes(v.getDCTCoefficientsOfAbsoluteColorDifference(), v.getSize());
 				addByteToArrayList(bytesOfVectors, posX);
 				addByteToArrayList(bytesOfVectors, posY);
 				addByteToArrayList(bytesOfVectors, span);
 				bytesOfVectors.add(refAndSize);
-//				addByteToArrayList(bytesOfVectors, differences);
+				addByteToArrayList(bytesOfVectors, differences);
 			}
 		}
 		
@@ -144,48 +145,41 @@ public class OutputStream {
 		return new byte[] {(byte)(bytespanx + offset), (byte)(bytespany + offset)};
 	}
 	
-//	private byte[] getVectorAbsoluteColorDifferenceBytes(double[][][][] absoluteDifference, int size) {
-//		int halfSize = size / 2;
-//		byte[] differenceBytes = new byte[size * size + 2 * halfSize * halfSize];
-//		byte[] VBytes = new byte[halfSize * halfSize];
-//		int index = 0, indexV = 0;
-//		
-//		for (double[][][] arr : absoluteDifference) {
-//			for (int x = 0; x < size; x++) {
-//				for (int y = 0; y < size; y++) {
-//					differenceBytes[index++] = getDCTCoeffByte(arr[0][x][y], size, (x == 0 && y == 0) ? true : false);
-//				}
-//			}
-//		}
-//		
-//		for (double[][][] arr : absoluteDifference) {
-//			for (int x = 0; x < halfSize; x++) {
-//				for (int y = 0; y < halfSize; y++) {
-//					differenceBytes[index++] = getDCTCoeffByte(arr[1][x][y], size, (x == 0 && y == 0) ? true : false);
-//					differenceBytes[indexV++] = getDCTCoeffByte(arr[2][x][y], size, (x == 0 && y == 0) ? true : false);
-//				}
-//			}
-//		}
-//			
-//		System.arraycopy(VBytes, 0, differenceBytes, index, halfSize * halfSize);
-//		return differenceBytes;
-//	}
-
-	private byte getDCTCoeffByte(double coeff, int size, boolean cord0x0) {
-		byte result = 0;
+	private byte[] getVectorAbsoluteColorDifferenceBytes(ArrayList<double[][][]> absoluteDifference, int size) {
+		int halfSize = size / 2, frac = size == 4 ? 4 : 8, halfFrac = frac / 2;
+		byte[] YBytes = new byte[size * size];
+		byte[] UBytes = new byte[halfSize * halfSize];
+		byte[] VBytes = new byte[halfSize * halfSize];
+		byte[] res = new byte[YBytes.length + UBytes.length + VBytes.length];
 		
-		if (cord0x0 == false) {
-			result = (byte)Math.abs(coeff);
-			
-			if (coeff < 0) {
-				result |= (1 << 7);
+		int YIndex = 0, UIndex = 0, VIndex = 0;
+		
+		for (double[][][] coeffGroup : absoluteDifference) {
+			for (int x = 0; x < frac; x++) {
+				for (int y = 0; y < frac; y++) {
+					YBytes[YIndex++] = getDCTCoeffByte(coeffGroup[0][x][y]);
+				}
 			}
-		} else {
-			result = (byte)Math.round(Math.abs(coeff / (size * size)));
 			
-			if (coeff < 0) {
-				result |= (1 << 7);
+			for (int x = 0; x < halfFrac; x++) {
+				for (int y = 0; y < halfFrac; y++) {
+					UBytes[UIndex++] = getDCTCoeffByte(coeffGroup[1][x][y]);
+					VBytes[VIndex++] = getDCTCoeffByte(coeffGroup[2][x][y]);
+				}
 			}
+		}
+		
+		System.arraycopy(YBytes, 0, res, 0, YBytes.length);
+		System.arraycopy(UBytes, 0, res, YBytes.length, UBytes.length);
+		System.arraycopy(VBytes, 0, res, YBytes.length + UBytes.length, VBytes.length);
+		return res;
+	}
+
+	private byte getDCTCoeffByte(double coeff) {
+		byte result = (byte)Math.abs(coeff);
+		
+		if (coeff < 0) {
+			result |= (1 << 7);
 		}
 		
 		return result;
@@ -236,8 +230,12 @@ public class OutputStream {
 		
 		Thread writer = new Thread(() -> {
 			try {
-				while (isWriterActive == true) {
+				while (isWriterActive == true || waitForWriterToFinish == true) {
 					if (QUEUE.size() == 0) {
+						if (waitForWriterToFinish == true) {
+							break;
+						}
+						
 						Thread.sleep(50);
 					} else {
 						QueueObject obj = QUEUE.get(0);
@@ -261,6 +259,10 @@ public class OutputStream {
 	
 	public void shutdown() {
 		this.isWriterActive = false;
+	}
+	
+	public void waitForFinish() {
+		this.waitForWriterToFinish = true;
 	}
 	
 	public PixelRaster renderResult(ArrayList<Vector> vecs, ArrayList<PixelRaster> refs, ArrayList<MacroBlock> diffs, PixelRaster prevFrame) {

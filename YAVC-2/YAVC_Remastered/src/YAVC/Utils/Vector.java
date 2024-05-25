@@ -68,19 +68,9 @@ public class Vector {
 		return this.reference;
 	}
 	
-	private double[][][] absD = new double[3][][];
-	
 	public void setAbsoluteDifferences(double[][][] YUVDifference) {
 		this.AbsoluteColorDifferenceDCTCoefficients = DCT_ENGINE.computeDCTOfVectorColorDifference(YUVDifference, this.size);
 		this.invokedDCTOfDifferences = true;
-		
-		this.absD[0] = YUVDifference[0];
-		this.absD[1] = YUVDifference[1];
-		this.absD[2] = YUVDifference[2];
-	}
-	
-	public double[][][] getDebugAbsD() {
-		return this.absD;
 	}
 	
 	public ArrayList<double[][][]> getDCTCoefficientsOfAbsoluteColorDifference() {
