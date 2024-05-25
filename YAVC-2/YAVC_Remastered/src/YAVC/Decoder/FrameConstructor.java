@@ -1,4 +1,4 @@
-package Decoder;
+package YAVC.Decoder;
 
 public class FrameConstructor {
 	

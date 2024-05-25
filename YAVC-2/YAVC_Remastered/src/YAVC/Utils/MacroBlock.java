@@ -1,4 +1,4 @@
-package Utils;
+package YAVC.Utils;
 
 import java.awt.Dimension;
 import java.awt.Point;

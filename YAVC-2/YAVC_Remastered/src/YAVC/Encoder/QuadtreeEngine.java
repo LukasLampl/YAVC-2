@@ -1,4 +1,4 @@
-package Encoder;
+package YAVC.Encoder;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -11,8 +11,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import Utils.MacroBlock;
-import Utils.PixelRaster;
+import YAVC.Utils.MacroBlock;
+import YAVC.Utils.PixelRaster;
 
 public class QuadtreeEngine {
 	private final int MAX_SIZE = 128;

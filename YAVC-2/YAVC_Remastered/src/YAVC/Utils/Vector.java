@@ -1,11 +1,13 @@
-package Utils;
+package YAVC.Utils;
 
 import java.awt.Point;
+import java.util.ArrayList;
+import java.util.Arrays;
 
-import Encoder.DCTEngine;
+import YAVC.Encoder.DCTEngine;
 
 public class Vector {
-	private static DCTEngine DCT_ENGINE = Encoder.Encoder.DCT_ENGINE;
+	private static DCTEngine DCT_ENGINE = YAVC.Encoder.Encoder.DCT_ENGINE;
 	private Point startingPoint = null;
 	private int spanX = 0;
 	private int spanY = 0;
@@ -13,12 +15,13 @@ public class Vector {
 	private int reference = 0;
 	private MacroBlock appendedBlock = null;
 	private MacroBlock mostEqualBlock = null;
-	private double[][] YDifference = null;
-	private double[][] UDifference = null;
-	private double[][] VDifference = null;
 	
-	public Vector(Point pos) {
+	private ArrayList<double[][][]> AbsoluteColorDifferenceDCTCoefficients = null;
+	private boolean invokedDCTOfDifferences = false;
+	
+	public Vector(Point pos, int size) {
 		this.startingPoint = pos;
+		this.size = size;
 	}
 	
 	public void setAppendedBlock(MacroBlock block) {
@@ -65,25 +68,32 @@ public class Vector {
 		return this.reference;
 	}
 	
+	private double[][][] absD = new double[3][][];
+	
 	public void setAbsoluteDifferences(double[][][] YUVDifference) {
-		this.YDifference = YUVDifference[0];
-		this.UDifference = YUVDifference[1];
-		this.VDifference = YUVDifference[2];
+		this.AbsoluteColorDifferenceDCTCoefficients = DCT_ENGINE.computeDCTOfVectorColorDifference(YUVDifference, this.size);
+		this.invokedDCTOfDifferences = true;
+		
+		this.absD[0] = YUVDifference[0];
+		this.absD[1] = YUVDifference[1];
+		this.absD[2] = YUVDifference[2];
 	}
 	
-	private double[][][] AbsoluteColorDifferenceDCTCoefficients = null;
+	public double[][][] getDebugAbsD() {
+		return this.absD;
+	}
 	
-	public double[][][] getDCTCoefficientsOfAbsoluteColorDifference() {
-		this.AbsoluteColorDifferenceDCTCoefficients = DCT_ENGINE.computeDCTOfVectorColorDifference(this);
+	public ArrayList<double[][][]> getDCTCoefficientsOfAbsoluteColorDifference() {
 		return this.AbsoluteColorDifferenceDCTCoefficients;
 	}
 	
 	public double[][][] getIDCTCoefficientsOfAbsoluteColorDifference() {
+		if (this.invokedDCTOfDifferences == false) {
+			System.err.println("No absolute difference were invoked, NULL DCT-Coefficients to process! > SKIP");
+			return null;
+		}
+		
 		return DCT_ENGINE.computeIDCTOfVectorColorDifference(this.AbsoluteColorDifferenceDCTCoefficients, this.size);
-	}
-	
-	public double[][][] getAbsoluteColorDifference() {
-		return new double[][][] {this.YDifference, this.UDifference, this.VDifference};
 	}
 	
 	public void setMostEqualBlock(MacroBlock block) {

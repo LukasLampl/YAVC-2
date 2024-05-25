@@ -1,4 +1,4 @@
-package Encoder;
+package YAVC.Encoder;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -12,10 +12,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import Main.config;
-import Utils.MacroBlock;
-import Utils.PixelRaster;
-import Utils.Vector;
+import YAVC.Main.config;
+import YAVC.Utils.MacroBlock;
+import YAVC.Utils.PixelRaster;
+import YAVC.Utils.Vector;
 
 public class VectorEngine {
 	private double TOTAL_MSE = 0;
@@ -80,14 +80,13 @@ public class VectorEngine {
 					double newMatchMSE = getMSEOfColors(absoluteColorDifference, block.getColors(), block.getSize(), false);
 					this.TOTAL_MSE += newMatchMSE;
 					
-					vec = new Vector(best.getPosition());
-					vec.setAbsoluteDifferences(absoluteColorDifference);
+					vec = new Vector(best.getPosition(), block.getSize());
 					vec.setAppendedBlock(block);
 					vec.setMostEqualBlock(best);
-					vec.setSize(block.getSize());
 					vec.setReference(best.getReference());
 					vec.setSpanX(block.getPosition().x - best.getPosition().x);
 					vec.setSpanY(block.getPosition().y - best.getPosition().y);
+					vec.setAbsoluteDifferences(absoluteColorDifference);
 				}
 				
 				return vec;

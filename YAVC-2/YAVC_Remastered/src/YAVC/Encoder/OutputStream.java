@@ -1,4 +1,4 @@
-package Encoder;
+package YAVC.Encoder;
 
 import java.awt.Dimension;
 import java.awt.Point;
@@ -13,12 +13,12 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import Main.config;
-import Utils.ColorManager;
-import Utils.MacroBlock;
-import Utils.PixelRaster;
-import Utils.QueueObject;
-import Utils.Vector;
+import YAVC.Main.config;
+import YAVC.Utils.ColorManager;
+import YAVC.Utils.MacroBlock;
+import YAVC.Utils.PixelRaster;
+import YAVC.Utils.QueueObject;
+import YAVC.Utils.Vector;
 
 public class OutputStream {
 	private File OUTPUT_FILE = null;
@@ -66,12 +66,12 @@ public class OutputStream {
 				byte[] posY = getPositionByte(v.getPosition().y, offset);
 				byte[] span = getVectorSpanBytes(v.getSpanX(), v.getSpanY(), offset);
 				byte refAndSize = getReferenceAndSizeByte(v.getReference(), v.getSize(), offset);
-				byte[] differences = getVectorAbsoluteColorDifferenceBytes(v.getDCTCoefficientsOfAbsoluteColorDifference(), v.getSize());
+//				byte[] differences = getVectorAbsoluteColorDifferenceBytes(v.getDCTCoefficientsOfAbsoluteColorDifference(), v.getSize());
 				addByteToArrayList(bytesOfVectors, posX);
 				addByteToArrayList(bytesOfVectors, posY);
 				addByteToArrayList(bytesOfVectors, span);
 				bytesOfVectors.add(refAndSize);
-				addByteToArrayList(bytesOfVectors, differences);
+//				addByteToArrayList(bytesOfVectors, differences);
 			}
 		}
 		
@@ -144,28 +144,32 @@ public class OutputStream {
 		return new byte[] {(byte)(bytespanx + offset), (byte)(bytespany + offset)};
 	}
 	
-	private byte[] getVectorAbsoluteColorDifferenceBytes(double[][][] absoluteDifference, int size) {
-		int halfSize = size / 2;
-		byte[] differenceBytes = new byte[size * size + 2 * halfSize * halfSize];
-		byte[] VBytes = new byte[halfSize * halfSize];
-		int index = 0, indexV = 0;
-		
-		for (int x = 0; x < size; x++) {
-			for (int y = 0; y < size; y++) {
-				differenceBytes[index++] = getDCTCoeffByte(absoluteDifference[0][x][y], size, (x == 0 && y == 0) ? true : false);
-			}
-		}
-		
-		for (int x = 0; x < halfSize; x++) {
-			for (int y = 0; y < halfSize; y++) {
-				differenceBytes[index++] = getDCTCoeffByte(absoluteDifference[1][x][y], size, (x == 0 && y == 0) ? true : false);
-				differenceBytes[indexV++] = getDCTCoeffByte(absoluteDifference[2][x][y], size, (x == 0 && y == 0) ? true : false);
-			}
-		}
-		
-		System.arraycopy(VBytes, 0, differenceBytes, index, halfSize * halfSize);
-		return differenceBytes;
-	}
+//	private byte[] getVectorAbsoluteColorDifferenceBytes(double[][][][] absoluteDifference, int size) {
+//		int halfSize = size / 2;
+//		byte[] differenceBytes = new byte[size * size + 2 * halfSize * halfSize];
+//		byte[] VBytes = new byte[halfSize * halfSize];
+//		int index = 0, indexV = 0;
+//		
+//		for (double[][][] arr : absoluteDifference) {
+//			for (int x = 0; x < size; x++) {
+//				for (int y = 0; y < size; y++) {
+//					differenceBytes[index++] = getDCTCoeffByte(arr[0][x][y], size, (x == 0 && y == 0) ? true : false);
+//				}
+//			}
+//		}
+//		
+//		for (double[][][] arr : absoluteDifference) {
+//			for (int x = 0; x < halfSize; x++) {
+//				for (int y = 0; y < halfSize; y++) {
+//					differenceBytes[index++] = getDCTCoeffByte(arr[1][x][y], size, (x == 0 && y == 0) ? true : false);
+//					differenceBytes[indexV++] = getDCTCoeffByte(arr[2][x][y], size, (x == 0 && y == 0) ? true : false);
+//				}
+//			}
+//		}
+//			
+//		System.arraycopy(VBytes, 0, differenceBytes, index, halfSize * halfSize);
+//		return differenceBytes;
+//	}
 
 	private byte getDCTCoeffByte(double coeff, int size, boolean cord0x0) {
 		byte result = 0;
@@ -295,7 +299,7 @@ public class OutputStream {
 					Point pos = v.getPosition();
 					int EndX = pos.x + v.getSpanX(), EndY = pos.y + v.getSpanY();
 					int size = v.getSize();
-					double[][][] reconstructedColor = reconstructColors(v.getAbsoluteColorDifference(), cache.getPixelBlock(pos, size, null), size);
+					double[][][] reconstructedColor = reconstructColors(v.getIDCTCoefficientsOfAbsoluteColorDifference(), cache.getPixelBlock(pos, size, null), size);
 					
 					for (int x = 0; x < size; x++) {
 						if (EndX + x < 0 || EndX + x >= dim.width) continue;

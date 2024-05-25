@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package Main;
+package YAVC.Main;
 
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
@@ -30,9 +30,9 @@ import java.util.ArrayList;
 import javax.imageio.ImageIO;
 import javax.swing.JFileChooser;
 
-import Decoder.InputProcessor;
-import Decoder.InputStream;
-import Encoder.Encoder;
+import YAVC.Decoder.InputProcessor;
+import YAVC.Decoder.InputStream;
+import YAVC.Encoder.Encoder;
 
 public class Main {
 	public static void main(String [] args) {

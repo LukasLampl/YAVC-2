@@ -1,4 +1,4 @@
-package Decoder;
+package YAVC.Decoder;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -7,10 +7,10 @@ import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
-import Main.config;
-import Utils.ColorManager;
-import Utils.MacroBlock;
-import Utils.Vector;
+import YAVC.Main.config;
+import YAVC.Utils.ColorManager;
+import YAVC.Utils.MacroBlock;
+import YAVC.Utils.Vector;
 
 public class InputProcessor {
 	public BufferedImage constructStartFrame(String content, Dimension dim) {
@@ -129,11 +129,10 @@ public class InputProcessor {
 			int[] span = getVectorSpanInt(vectorPart.charAt(i + 2), offset);
 			int[] refAndSize = getReferenceAndSizeInt(vectorPart.charAt(i + 3), offset);
 			
-			Vector vec = new Vector(new Point(posX, posY));
+			Vector vec = new Vector(new Point(posX, posY), refAndSize[1]);
 			vec.setSpanX(span[0]);
 			vec.setSpanY(span[1]);
 			vec.setReference(refAndSize[0]);
-			vec.setSize(refAndSize[1]);
 			vecs.add(vec);
 		}
 		
