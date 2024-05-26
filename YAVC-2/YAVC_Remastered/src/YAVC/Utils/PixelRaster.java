@@ -159,7 +159,6 @@ public class PixelRaster {
 	
 	public double[][][] getPixelBlock(Point position, int size, double[][][] cache) {
 		if (position == null) throw new NullPointerException();
-		else if (position.x + size >= this.dim.width || position.y + size >= this.dim.height) throw new ArrayIndexOutOfBoundsException();
 		
 		double[][][] res = null;
 		
