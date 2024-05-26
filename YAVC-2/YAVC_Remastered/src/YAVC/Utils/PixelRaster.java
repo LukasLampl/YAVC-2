@@ -234,11 +234,13 @@ public class PixelRaster {
 		double[][] clonedU = new double[this.dim.width / 2][];
 		double[][] clonedV = new double[this.dim.width / 2][];
 		
-		for (int i = 0; i < this.dim.width; i++) {
+		int size = this.dim.width, halfSize = this.dim.width / 2;
+		
+		for (int i = 0; i < size; i++) {
 			clonedY[i] = this.Y[i].clone();
 		}
 		
-		for (int i = 0; i < this.dim.width / 2; i++) {
+		for (int i = 0; i < halfSize; i++) {
 			clonedU[i] = this.U[i].clone();
 			clonedV[i] = this.V[i].clone();
 		}

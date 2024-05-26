@@ -30,7 +30,7 @@ public class DCTEngine {
 		executor.shutdown();
 	}
 	
-	private Callable<Void> getDCTCoeffs(final int m, final int index) {
+	private Callable<Void> getDCTCoeffs(int m, int index) {
 		int m2 = m * 2;
 		
 		Callable<Void> task = () -> {
@@ -55,11 +55,11 @@ public class DCTEngine {
 		return task;
 	}
 	
-	private double step(final int x, final int m) {
+	private double step(int x, int m) {
 		return x == 0 ? 1 / Math.sqrt(m) : Math.sqrt(2.0 / (double)m);
 	}
 	
-	private int setIndexOfDCT(final int m) {
+	private int setIndexOfDCT(int m) {
 		switch (m) {
 		case 8: return 0;
 		case 4: return 1;
@@ -68,7 +68,7 @@ public class DCTEngine {
 		}
 	}
 		
-	public ArrayList<double[][][]> computeDCTOfVectorColorDifference(final double[][][] diffs, final int size) {
+	public ArrayList<double[][][]> computeDCTOfVectorColorDifference(double[][][] diffs, int size) {
 		int estimatedSize = (size / 8) * (size / 8);
 		ArrayList<double[][][]> coeffs = new ArrayList<double[][][]>(estimatedSize <= 0 ? 2 : estimatedSize);
 
@@ -106,7 +106,7 @@ public class DCTEngine {
 		return coeffs;
 	}
 	
-	public double[][][] computeIDCTOfVectorColorDifference(final ArrayList<double[][][]> DCTCoeff, final int size) {
+	public double[][][] computeIDCTOfVectorColorDifference(ArrayList<double[][][]> DCTCoeff, int size) {
 		if (DCTCoeff == null || DCTCoeff.size() == 0) {
 			System.err.println("No DCT-II Coefficients to apply IDCT-II on! > NULL");
 			return null;
@@ -153,7 +153,7 @@ public class DCTEngine {
 		return res;
 	}
 	
-	private void writeSubArrayInArray(final double[][][] subArray, double[][][] dest, final int posX, final int posY) {
+	private void writeSubArrayInArray(double[][][] subArray, double[][][] dest, int posX, int posY) {
 		int size = subArray[0].length, halfSize = subArray[1].length;
 		
 		for (int x = 0; x < size; x++) {
@@ -171,7 +171,7 @@ public class DCTEngine {
 		}
 	}
 	
-	private double[][][] getSubArray(final double[][][] org, final int size, final int posX, final int posY) {
+	private double[][][] getSubArray(double[][][] org, int size, int posX, int posY) {
 		double arr[][][] = new double[3][][];
 		int halfSize = size / 2;
 		
@@ -196,7 +196,7 @@ public class DCTEngine {
 		return arr;
 	}
 	
-	private double[][][] computeChromaDCTCoefficients(final double[][] U, final double[][] V, final int m) {
+	private double[][][] computeChromaDCTCoefficients(double[][] U, double[][] V, int m) {
 		double resU[][] = new double[m][m];
 		double resV[][] = new double[m][m];
 		int index = setIndexOfDCT(m);
@@ -224,7 +224,7 @@ public class DCTEngine {
 		return new double[][][] {resU, resV};
 	}
 	
-	private double[][][] computeChromaIDCTCoefficients(final double[][] U, final double[][] V, final int m) {
+	private double[][][] computeChromaIDCTCoefficients(double[][] U, double[][] V, int m) {
 		double[][] resU = new double[m][m];
 		double[][] resV = new double[m][m];
 		double[] steps = {step(0, m), step(1, m)};
@@ -251,7 +251,7 @@ public class DCTEngine {
 		return new double[][][] {resU, resV};
 	}
 		
-	private double[][] computeLumaDCTCoefficients(final double[][] Y, final int m) {
+	private double[][] computeLumaDCTCoefficients(double[][] Y, int m) {
 		double resY[][] = new double[m][m];
 		int index = setIndexOfDCT(m);
 		double[] steps = {step(0, m), step(1, m)};
@@ -275,7 +275,7 @@ public class DCTEngine {
 		return resY;
 	}
 	
-	private double[][] computeLumaIDCTCoefficients(final double[][] Y, final int m) {
+	private double[][] computeLumaIDCTCoefficients(double[][] Y, int m) {
 		double[][] resY = new double[m][m];
 		double[] steps = {step(0, m), step(1, m)};
 		int index = setIndexOfDCT(m);
@@ -299,7 +299,7 @@ public class DCTEngine {
 		return resY;
 	}
 
-	public void quantizeChromaDCTCoefficients(double[][][] coefficients, final int size) {
+	public void quantizeChromaDCTCoefficients(double[][][] coefficients, int size) {
 		int[][] chromaQuant = getChromaQuantizationTable(size);
 		
 		for (int x = 0; x < size; x++) {
@@ -310,7 +310,7 @@ public class DCTEngine {
 		}
 	}
 	
-	public void quantizeLumaDCTCoefficients(double[][] coefficients, final int size) {
+	public void quantizeLumaDCTCoefficients(double[][] coefficients, int size) {
 		int[][] lumaQuant = getLumaQuantizationTable(size);
 		
 		for (int x = 0; x < size; x++) {
@@ -320,7 +320,7 @@ public class DCTEngine {
 		}
 	}
 	
-	public void dequantizeChromaDCTCoefficients(double[][][] coefficients, final int size) {
+	public void dequantizeChromaDCTCoefficients(double[][][] coefficients, int size) {
 		int[][] chromaQuant = getChromaQuantizationTable(size);
 		
 		for (int x = 0; x < size; x++) {
@@ -331,7 +331,7 @@ public class DCTEngine {
 		}
 	}
 	
-	public void dequantizeLumaDCTCoefficients(double[][] coefficients, final int size) {
+	public void dequantizeLumaDCTCoefficients(double[][] coefficients, int size) {
 		int[][] lumaQuant = getLumaQuantizationTable(size);
 		
 		for (int x = 0; x < size; x++) {
@@ -341,7 +341,7 @@ public class DCTEngine {
 		}
 	}
 	
-	private int[][] getLumaQuantizationTable(final int size) {
+	private int[][] getLumaQuantizationTable(int size) {
 		switch (size) {
 		case 8: return config.QUANTIZATION_MATRIX_8x8_Luma;
 		case 4: return config.QUANTIZATION_MATRIX_4x4_Luma;
@@ -349,7 +349,7 @@ public class DCTEngine {
 		}
 	}
 	
-	private int[][] getChromaQuantizationTable(final int size) {
+	private int[][] getChromaQuantizationTable(int size) {
 		switch (size) {
 		case 4: return config.QUANTIZATION_MATRIX_4x4_Chroma;
 		case 2: return config.QUANTIZATION_MATRIX_2x2_Chroma;
