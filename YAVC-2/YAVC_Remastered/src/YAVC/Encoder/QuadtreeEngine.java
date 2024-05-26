@@ -22,7 +22,7 @@ public class QuadtreeEngine {
 		
 		ArrayList<MacroBlock> roots = new ArrayList<MacroBlock>();
 		
-		final double errorThreshold = currentFrame.getColorSpectrum() / 1050;
+		final double errorThreshold = 120;
 		int threads = Runtime.getRuntime().availableProcessors();
 		int currentOrderNumber = 0, width = currentFrame.getWidth(), height = currentFrame.getHeight();
 		ArrayList<Future<MacroBlock>> futureRoots = new ArrayList<Future<MacroBlock>>();

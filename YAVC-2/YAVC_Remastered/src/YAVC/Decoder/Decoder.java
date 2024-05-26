@@ -7,7 +7,6 @@ import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
 
-import YAVC.Encoder.DCTEngine;
 import YAVC.Main.config;
 import YAVC.Utils.PixelRaster;
 

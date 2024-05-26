@@ -14,7 +14,7 @@ import YAVC.Utils.Vector;
 public class Encoder {
 	public DCTEngine DCT_ENGINE = null;
 	private static QuadtreeEngine QUADTREE_ENGINE = new QuadtreeEngine();
-	private static DifferenceEngine DIFFERENCE_ENGINE = new DifferenceEngine();
+//	private static DifferenceEngine DIFFERENCE_ENGINE = new DifferenceEngine();
 	private static VectorEngine VECTOR_ENGINE = new VectorEngine();
 	
 	public Encoder(DCTEngine dctEngine) {
@@ -59,7 +59,7 @@ public class Encoder {
 				ArrayList<MacroBlock> leaveNodes = QUADTREE_ENGINE.getLeaveNodes(quadtreeRoots);
 				
 //				BufferedImage[] part = QUADTREE_ENGINE.drawMacroBlocks(leaveNodes, curFrame.getDimension());
-				leaveNodes = DIFFERENCE_ENGINE.computeDifferences(curFrame.getColorSpectrum(), prevFrame, leaveNodes);
+//				leaveNodes = DIFFERENCE_ENGINE.computeDifferences(curFrame.getColorSpectrum(), prevFrame, leaveNodes);
 				ArrayList<Vector> movementVectors = VECTOR_ENGINE.computeMovementVectors(leaveNodes, references, curFrame.getColorSpectrum(), futFrame);
 				
 //				BufferedImage vectors = VECTOR_ENGINE.drawVectors(movementVectors, curFrame.getDimension());
@@ -68,7 +68,7 @@ public class Encoder {
 //				ImageIO.write(part[0], "png", new File(output.getAbsolutePath() + "/MB_" + i + ".png"));
 //				ImageIO.write(part[1], "png", new File(output.getAbsolutePath() + "/MBA_" + i + ".png"));
 //				ImageIO.write(vectors, "png", new File(output.getAbsolutePath() + "/V_" + i + ".png"));
-//				ImageIO.write(composit.toBufferedImage(), "png", new File(output.getAbsolutePath() + "/VR_" + i + ".png"));
+				ImageIO.write(composit.toBufferedImage(), "png", new File(output.getAbsolutePath() + "/VR_" + i + ".png"));
 
 				outStream.addObjectToOutputQueue(new QueueObject(movementVectors, leaveNodes));
 				
