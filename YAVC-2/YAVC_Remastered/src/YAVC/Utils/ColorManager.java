@@ -56,11 +56,8 @@ public class ColorManager {
 	 * Params: YCbCrColor color => Color to be converted
 	 */
 	public int convertYUVToRGB(double[] YUV) {
-		if (YUV == null) {
-			throw new IllegalArgumentException("Can't convert NULL to RGB!");
-		} else if (YUV.length != 3) {
-			throw new IllegalArgumentException("YUV color contains " + YUV.length + " components instead of 3!");
-		}
+		if (YUV == null) throw new IllegalArgumentException("Can't convert NULL to RGB!");
+		else if (YUV.length != 3) throw new IllegalArgumentException("YUV color contains " + YUV.length + " components instead of 3!");
 		
 		double Y = YUV[0], U = YUV[1] - 128, V = YUV[2] - 128;
 		int red = range((int)Math.round(Y + 1.402 * V), 0, 255);
@@ -70,11 +67,9 @@ public class ColorManager {
 	}
 	
 	public int[] convertYUVToRGB_intARR(double[] YUV, int[] rgbCache) {
-		if (YUV == null) {
-			throw new IllegalArgumentException("Can't convert NULL to RGB array!");
-		} else if (YUV.length != 3) {
-			throw new IllegalArgumentException("YUV color contains " + YUV.length + " components instead of 3!");
-		}
+		if (YUV == null) throw new IllegalArgumentException("Can't convert NULL to RGB array!");
+		else if (YUV.length != 3) throw new IllegalArgumentException("YUV color contains " + YUV.length + " components instead of 3!");
+		else if (rgbCache != null && rgbCache.length != 3) throw new IllegalArgumentException("RGB cache has length of " + rgbCache.length + "instead of 3");
 		
 		double Y = YUV[0], U = YUV[1] - 128, V = YUV[2] - 128;
 		int red = (int)Math.round(Y + 1.402 * V);

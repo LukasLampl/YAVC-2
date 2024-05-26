@@ -24,11 +24,21 @@ public class MacroBlock {
 	private int reference = 0;
 	
 	public MacroBlock(Point position, int size) {
+		if (position == null) throw new NullPointerException("MacroBlock can't have position NULL");
+		else if (size < 0) throw new IllegalArgumentException("The size of " + size + " is not supported!");
+		
 		this.position = position;
 		this.size = size;
 	}
 	
 	public MacroBlock(Point position, int size, double[][] Y, double[][] U, double[][] V, double[][] A) {
+		if (position == null) throw new NullPointerException("MacroBlock can't have position NULL");
+		else if (size < 0) throw new IllegalArgumentException("The size of " + size + " is not supported!");
+		else if (Y == null) throw new NullPointerException("MacroBlock can't have a NULL Luma-Y channel");
+		else if (U == null) throw new NullPointerException("MacroBlock can't have a NULL Chroma-U channel");
+		else if (V == null) throw new NullPointerException("MacroBlock can't have a NULL Chroma-V channel");
+		else if (A == null) throw new NullPointerException("MacroBlock can't have a NULL Alpha channel");
+		
 		this.position = position;
 		this.size = size;
 		this.Y = Y;
@@ -38,6 +48,13 @@ public class MacroBlock {
 	}
 	
 	public MacroBlock(Point position, int size, double[][][] colors) {
+		if (position == null) throw new NullPointerException("MacroBlock can't have position NULL");
+		else if (size < 0) throw new IllegalArgumentException("The size of " + size + " is not supported!");
+		else if (colors[0] == null) throw new NullPointerException("MacroBlock can't have a NULL Luma-Y channel");
+		else if (colors[1] == null) throw new NullPointerException("MacroBlock can't have a NULL Chroma-U channel");
+		else if (colors[2] == null) throw new NullPointerException("MacroBlock can't have a NULL Chroma-V channel");
+		else if (colors[3] == null) throw new NullPointerException("MacroBlock can't have a NULL Alpha channel");
+		
 		this.position = position;
 		this.size = size;
 		this.Y = colors[0];
@@ -47,6 +64,11 @@ public class MacroBlock {
 	}
 	
 	public void setColorComponents(double[][] Y, double[][] U, double[][] V, double[][] A) {
+		if (Y == null) throw new NullPointerException("MacroBlock can't have a NULL Luma-Y channel");
+		else if (U == null) throw new NullPointerException("MacroBlock can't have a NULL Chroma-U channel");
+		else if (V == null) throw new NullPointerException("MacroBlock can't have a NULL Chroma-V channel");
+		else if (A == null) throw new NullPointerException("MacroBlock can't have a NULL Alpha channel");
+		
 		this.Y = Y;
 		this.U = U;
 		this.V = V;
@@ -60,11 +82,8 @@ public class MacroBlock {
 	 * 			int y => Y position
 	 */
 	public double[] getYUV(int x, int y) {
-		if (x < 0 || x >= this.size) {
-			throw new ArrayIndexOutOfBoundsException("(X) " + x + " is bigger than " + this.size);
-		} else if (y < 0 || y >= this.size) {
-			throw new ArrayIndexOutOfBoundsException("(Y) " + y + " is bigger than " + this.size);
-		}
+		if (x < 0 || x >= this.size) throw new ArrayIndexOutOfBoundsException("(X) " + x + " is out of bounds (" + this.size + ")");
+		else if (y < 0 || y >= this.size) throw new ArrayIndexOutOfBoundsException("(Y) " + y + " is out of bounds (" + this.size + ")");
 		
 		int subSX = x / 2, subSY = y / 2;
 		return new double[] {this.Y[x][y], this.U[subSX][subSY], this.V[subSX][subSY]};
@@ -79,6 +98,8 @@ public class MacroBlock {
 	private double FACTOR_TABLE[] = {0.1, 0.01, 0.001, 0.0001, 0.00001};
 	
 	public void subdivide(double errorThreshold, int depth, int[][] meanOf4x4Blocks, Dimension dim) {
+		if (meanOf4x4Blocks == null) throw new NullPointerException("No 4x4Mean, can't subdivide MacroBlock");
+		
 		if (this.isSubdivided == true) {
 			return;
 		} else if (this.size <= 4) {
@@ -177,6 +198,10 @@ public class MacroBlock {
 	 * 			int size => Size of the sub-block
 	 */
 	private MacroBlock getSubBlock(Point pos, int size) {
+		if (pos.x < 0 || pos.x >= this.size) throw new ArrayIndexOutOfBoundsException();
+		else if (pos.y < 0 || pos.y >= this.size) throw new ArrayIndexOutOfBoundsException();
+		else if (size < 1 || size > this.size) throw new IllegalArgumentException("Size cannot exceed the maximum size itself and cannot be 0 or lower");
+		
 		int halfSize = size / 2;
 		double[][] resY = new double[size][size];
 		double[][] resU = new double[halfSize][halfSize];
