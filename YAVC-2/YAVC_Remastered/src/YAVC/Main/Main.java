@@ -26,9 +26,12 @@ import java.io.File;
 import javax.swing.JFileChooser;
 
 import YAVC.Decoder.Decoder;
+import YAVC.Encoder.DCTEngine;
 import YAVC.Encoder.Encoder;
 
 public class Main {
+	public static DCTEngine DCT_ENGINE = new DCTEngine();
+	
 	public static void main(String [] args) {
 		JFileChooser jfc = new JFileChooser();
 		jfc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
@@ -48,7 +51,7 @@ public class Main {
 		
 		File out = jfc.getSelectedFile();
 		
-		Encoder encoder = new Encoder();
+		Encoder encoder = new Encoder(DCT_ENGINE);
 		encoder.encode(in, out);
 		
 		Decoder decoder = new Decoder();

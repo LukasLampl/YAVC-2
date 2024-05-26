@@ -6,9 +6,9 @@ public class config {
 	public static final int MAX_REFERENCES = 4;
 	
 	public static final byte VECTOR_START = (char)1;
-	public static final char DCT_BLOCK_SIZE = (char)2;
-	public static final char DCT_BLOCK_END = (char)3;
-	public static final char MACRO_BLOCK_START = (char)4;
+	public static final byte VECTOR_DCT_START = (char)2;
+	public static final byte VECTOR_U_START = (char)3;
+	public static final byte VECTOR_V_START = (char)4;
 	public static final byte VECTOR_END = (char)5;
 	
 	// DCT - ONLY! //

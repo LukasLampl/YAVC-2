@@ -79,12 +79,16 @@ public class OutputStream {
 				byte[] posY = getPositionByte(v.getPosition().y, offset);
 				byte[] span = getVectorSpanBytes(v.getSpanX(), v.getSpanY(), offset);
 				byte refAndSize = getReferenceAndSizeByte(v.getReference(), v.getSize(), offset);
-				byte[] differences = getVectorAbsoluteColorDifferenceBytes(v.getDCTCoefficientsOfAbsoluteColorDifference(), v.getSize());
+				byte[][] differences = getVectorAbsoluteColorDifferenceBytes(v.getDCTCoefficientsOfAbsoluteColorDifference(), v.getSize());
 				addByteToArrayList(bytesOfVectors, posX);
 				addByteToArrayList(bytesOfVectors, posY);
 				addByteToArrayList(bytesOfVectors, span);
 				bytesOfVectors.add(refAndSize);
-				addByteToArrayList(bytesOfVectors, differences);
+				bytesOfVectors.add(config.VECTOR_DCT_START);
+				addByteToArrayList(bytesOfVectors, differences[0]);
+				addByteToArrayList(bytesOfVectors, differences[1]);
+				addByteToArrayList(bytesOfVectors, differences[2]);
+				bytesOfVectors.add(config.VECTOR_END);
 			}
 		}
 		
@@ -193,12 +197,11 @@ public class OutputStream {
 		return new byte[] {(byte)(bytespanx + offset), (byte)(bytespany + offset)};
 	}
 	
-	private byte[] getVectorAbsoluteColorDifferenceBytes(ArrayList<double[][][]> absoluteDifference, int size) {
+	private byte[][] getVectorAbsoluteColorDifferenceBytes(ArrayList<double[][][]> absoluteDifference, int size) {
 		int halfSize = size / 2, frac = size == 4 ? 4 : 8, halfFrac = frac / 2;
 		byte[] YBytes = new byte[size * size];
 		byte[] UBytes = new byte[halfSize * halfSize];
 		byte[] VBytes = new byte[halfSize * halfSize];
-		byte[] res = new byte[YBytes.length + UBytes.length + VBytes.length];
 		
 		int YIndex = 0, UIndex = 0, VIndex = 0;
 		
@@ -217,10 +220,7 @@ public class OutputStream {
 			}
 		}
 		
-		System.arraycopy(YBytes, 0, res, 0, YBytes.length);
-		System.arraycopy(UBytes, 0, res, YBytes.length, UBytes.length);
-		System.arraycopy(VBytes, 0, res, YBytes.length + UBytes.length, VBytes.length);
-		return res;
+		return new byte[][] {YBytes, UBytes, VBytes};
 	}
 
 	private byte getDCTCoeffByte(double coeff) {
@@ -232,38 +232,7 @@ public class OutputStream {
 		
 		return (byte)(result + config.CODING_OFFSET);
 	}
-	
-	//ONLY FOR DEBUG!
-	private void writeDifferences(File file, ArrayList<MacroBlock> blocks) {
-		StringBuilder differences = new StringBuilder();
-		differences.append(config.MACRO_BLOCK_START);
-		
-		if (blocks != null) {
-			for (MacroBlock b : blocks) {
-				int size = b.getSize();
-				
-				for (int x = 0; x < size; x++) {
-					for (int y = 0; y < size; y++) {
-						differences.append(this.COLOR_MANAGER.convertYUVToRGB(b.getYUV(x, y)));
-						differences.append(".");
-					}
-				}
-				
-				differences.append("$");
-				differences.append((char)(size));
-				differences.append((char)(b.getPosition().x));
-				differences.append((char)(b.getPosition().y));
-				differences.append(";");
-			}
-		}
-		
-		try {
-			Files.write(Path.of(file.getAbsolutePath()), differences.toString().getBytes(), StandardOpenOption.WRITE);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-	
+
 	public void addObjectToOutputQueue(QueueObject obj) {
 		this.QUEUE.add(obj);
 	}
@@ -289,8 +258,7 @@ public class OutputStream {
 						QueueObject obj = QUEUE.get(0);
 						File f = new File(OUTPUT_FILE.getAbsolutePath() + "/F" + fileCounter++ + ".yavcf");
 						f.createNewFile();
-
-						writeDifferences(f, obj.getDifferences());
+						
 						writeVectors(f, obj.getVectors());
 						
 						QUEUE.remove(0);

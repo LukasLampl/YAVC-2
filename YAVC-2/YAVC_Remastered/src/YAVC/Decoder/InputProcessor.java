@@ -106,20 +106,28 @@ public class InputProcessor {
 		ArrayList<Vector> vecs = new ArrayList<Vector>();
 		if (vectorPart.length() <= 1) return vecs;
 		
-		int offset = config.CODING_OFFSET, index = 0;
+		int offset = config.CODING_OFFSET;
+		String[] vectors = vectorPart.split(Character.toString(config.VECTOR_END));
 		
 		//  LAYOUT:
 		//  POSX ⊥ POSY ⊥ SPANX ⊥ SPANY ⊥ REFERENCE << 4 | SIZE ⊥ DIFFERENCE
 		// ^_____________________________________________________^
 		//                      = 7 Bytes offset
 		
-		while (index < vectorPart.length()) {
-			int posX = getPositionCoordinate(vectorPart.charAt(index), vectorPart.charAt(index + 1));
-			int posY = getPositionCoordinate(vectorPart.charAt(index + 2), vectorPart.charAt(index + 3));
-			int spanX = getVectorSpanInt(vectorPart.charAt(index + 4), offset);
-			int spanY = getVectorSpanInt(vectorPart.charAt(index + 5), offset);
-			int[] refAndSize = getReferenceAndSizeInt((byte)vectorPart.charAt(index + 6), offset);
-			ArrayList<double[][][]> diffs = getVectorDifferences(vectorPart, index + 7, refAndSize[1]);
+		for (String vector : vectors) {
+			int posX = getPositionCoordinate(vector.charAt(0), vector.charAt(1));
+			int posY = getPositionCoordinate(vector.charAt(2), vector.charAt(3));
+			int spanX = getVectorSpanInt(vector.charAt(4), offset);
+			int spanY = getVectorSpanInt(vector.charAt(5), offset);
+			int[] refAndSize = getReferenceAndSizeInt((byte)vector.charAt(6), offset);
+			
+			int skip = 6;
+			
+			while (vector.charAt(skip) != config.VECTOR_DCT_START) {
+				skip++;
+			}
+			
+			ArrayList<double[][][]> diffs = getVectorDifferences(vector, ++skip, refAndSize[1]);
 			
 			Vector vec = new Vector(new Point(posX, posY), refAndSize[1]);
 			vec.setAbsolutedifferenceDCTCoefficients(diffs);
@@ -127,16 +135,13 @@ public class InputProcessor {
 			vec.setSpanY(spanY);
 			vec.setReference(refAndSize[0]);
 			vecs.add(vec);
-			
-			int length = refAndSize[1] * refAndSize[1];
-			index += 7 + (length + length / 4 * 2);
 		}
 		
 		return vecs;
 	}
 	
 	private int getPositionCoordinate(char c1, char c2) {
-		int res = c1 << 8 | c2;
+		int res = (c1 << 8) | c2;
 		res -= config.CODING_OFFSET;
 		return res;
 	}
@@ -158,7 +163,7 @@ public class InputProcessor {
 					res[0][x][y] = data[0][i++];
 				}
 			}
-			
+
 			for (int x = 0, i = 0; x < 2; x++) {
 				for (int y = 0; y < 2; y++) {
 					res[1][x][y] = data[1][i];
@@ -201,7 +206,7 @@ public class InputProcessor {
 		double[] YBytes = new double[YLength];
 		double[] UBytes = new double[UVLength];
 		double[] VBytes = new double[UVLength];
-		
+		if (vectorPart.charAt(startPos + 0) == config.VECTOR_DCT_START) System.err.println("Err!");
 		for (int n = 0; n < YLength; n++) {
 			YBytes[n] = getDCTCoeff(vectorPart.charAt(startPos + n));
 		}
@@ -217,7 +222,7 @@ public class InputProcessor {
 		for (int n = 0; n < UVLength; n++) {
 			VBytes[n] = getDCTCoeff(vectorPart.charAt(startPos + n));
 		}
-		
+
 		return new double[][] {YBytes, UBytes, VBytes};
 	}
 	
