@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import YAVC.Encoder.DCTEngine;
 
 public class Vector {
-	private static DCTEngine DCT_ENGINE = YAVC.Encoder.Encoder.DCT_ENGINE;
+	private DCTEngine DCT_ENGINE = null;
 	private Point startingPoint = null;
 	private int spanX = 0;
 	private int spanY = 0;
@@ -18,12 +18,15 @@ public class Vector {
 	private ArrayList<double[][][]> AbsoluteColorDifferenceDCTCoefficients = null;
 	private boolean invokedDCTOfDifferences = false;
 	
-	public Vector(Point pos, int size) {
+	public Vector(final Point pos, final int size) {
+		if (pos == null) throw new NullPointerException("Vector can't have NULL point as startingPoint");
+		
 		this.startingPoint = pos;
 		this.size = size;
+		this.DCT_ENGINE = YAVC.Main.Main.DCT_ENGINE;
 	}
 	
-	public void setAppendedBlock(MacroBlock block) {
+	public void setAppendedBlock(final MacroBlock block) {
 		this.appendedBlock = block;
 	}
 	
@@ -31,19 +34,19 @@ public class Vector {
 		return this.appendedBlock;
 	}
 	
-	public void setSpanX(int span) {
+	public void setSpanX(final int span) {
 		this.spanX = span;
 	}
 	
-	public void setSpanY(int span) {
+	public void setSpanY(final int span) {
 		this.spanY = span;
 	}
 	
-	public void setReference(int reference) {
+	public void setReference(final int reference) {
 		this.reference = reference;
 	}
 	
-	public void setSize(int size) {
+	public void setSize(final int size) {
 		this.size = size;
 	}
 	
@@ -67,11 +70,14 @@ public class Vector {
 		return this.reference;
 	}
 	
-	public void setAbsolutedifferenceDCTCoefficients(ArrayList<double[][][]> diffs) {
+	public void setAbsolutedifferenceDCTCoefficients(final ArrayList<double[][][]> diffs) {
+		if (diffs == null) throw new NullPointerException("Can't use NULL as difference");
+		
 		this.AbsoluteColorDifferenceDCTCoefficients = diffs;
+		this.invokedDCTOfDifferences = true;
 	}
 	
-	public void setAbsoluteDifferences(double[][][] YUVDifference) {
+	public void setAbsoluteDifferences(final double[][][] YUVDifference) {
 		this.AbsoluteColorDifferenceDCTCoefficients = DCT_ENGINE.computeDCTOfVectorColorDifference(YUVDifference, this.size);
 		this.invokedDCTOfDifferences = true;
 	}
@@ -85,7 +91,7 @@ public class Vector {
 		return DCT_ENGINE.computeIDCTOfVectorColorDifference(this.AbsoluteColorDifferenceDCTCoefficients, this.size);
 	}
 	
-	public void setMostEqualBlock(MacroBlock block) {
+	public void setMostEqualBlock(final MacroBlock block) {
 		this.mostEqualBlock = block;
 	}
 	

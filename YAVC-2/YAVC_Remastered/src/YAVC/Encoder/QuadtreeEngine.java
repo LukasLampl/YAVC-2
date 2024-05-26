@@ -18,6 +18,8 @@ public class QuadtreeEngine {
 	private final int MAX_SIZE = 128;
 	
 	public ArrayList<MacroBlock> constructQuadtree(PixelRaster currentFrame) {
+		if (currentFrame == null) throw new NullPointerException("PixelRaster \"currentFrame\" == NULL!");
+		
 		ArrayList<MacroBlock> roots = new ArrayList<MacroBlock>();
 		
 		final double errorThreshold = currentFrame.getColorSpectrum() / 1050;
@@ -69,10 +71,7 @@ public class QuadtreeEngine {
 	}
 	
 	public ArrayList<MacroBlock> getLeaveNodes(ArrayList<MacroBlock> roots) {
-		if (roots == null) {
-			System.err.println("No QuadtreeRoots to process! > Skip");
-			return null;
-		}
+		if (roots == null) throw new NullPointerException("No QuadtreeRoots to process");
 		
 		ArrayList<MacroBlock> leaveNodes = new ArrayList<MacroBlock>();
 		ArrayList<Future<ArrayList<MacroBlock>>> futureLeavesList = new ArrayList<Future<ArrayList<MacroBlock>>>();
