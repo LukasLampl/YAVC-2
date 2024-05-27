@@ -2,7 +2,10 @@ package YAVC.Utils;
 
 import java.awt.Dimension;
 import java.awt.Point;
-import java.util.stream.IntStream;
+import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class MacroBlock {
 	private double[][] Y = null;
@@ -228,28 +231,41 @@ public class MacroBlock {
 	public MeanStructure calculate4x4Means() {
 		int[][] meanArgbs = new int[this.size / 4][this.size / 4];
 		int[][][] argbs = new int[this.size][this.size][3];
-
-		IntStream.range(0, this.size / 4).parallel().forEach(uI -> {
-			int u = uI * 4;
-			
-			for (int v = 0; v < this.size; v += 4) {
-				int sumR = 0, sumG = 0, sumB = 0;
-				
-				for (int x = 0; x < 4; x++) {
-					for (int y = 0; y < 4; y++) {
-						int iPosX = u + x, iPosY = v + y;
-						int[] col = this.COLOR_MANAGER.convertYUVToRGB_intARR(this.getYUV(iPosX, iPosY), null);
-						sumR += col[0];
-						sumG += col[1];
-						sumB += col[2];
-						argbs[iPosX][iPosY] = col;
-					}
-				}
-				
-				meanArgbs[u / 4][v / 4] = ((sumR / 16) << 16) | ((sumG / 16) << 8) | (sumB / 16);
-			}
-		});
+		ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+		ArrayList<Future<?>> futures = new ArrayList<>();
 		
+		for (int u = 0; u < this.size; u += 4) {
+			for (int v = 0; v < this.size; v += 4) {
+				final int startX = u, startY = v;
+				
+				futures.add(executor.submit(() -> {
+					int sumR = 0, sumG = 0, sumB = 0;
+					
+					for (int x = 0; x < 4; x++) {
+						for (int y = 0; y < 4; y++) {
+							int iPosX = startX + x, iPosY = startY + y;
+							int[] col = this.COLOR_MANAGER.convertYUVToRGB_intARR(getYUV(iPosX, iPosY), null);
+							sumR += col[0];
+							sumG += col[1];
+							sumB += col[2];
+							argbs[iPosX][iPosY] = col;
+						}
+					}
+					
+					meanArgbs[startX / 4][startY / 4] = ((sumR / 16) << 16) | ((sumG / 16) << 8) | (sumB / 16);
+				}));
+			}
+		}
+		
+		for (Future<?> future : futures) {
+			try {
+				future.get();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		
+		executor.shutdown();
 		return new MeanStructure(meanArgbs, argbs);
 	}
 

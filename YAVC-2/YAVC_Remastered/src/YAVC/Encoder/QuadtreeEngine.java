@@ -71,7 +71,6 @@ public class QuadtreeEngine {
 			}
 			
 			executor.shutdown();
-			
 			while (!executor.awaitTermination(10, TimeUnit.MILLISECONDS)) {}
 		} catch (Exception e) {
 			e.printStackTrace();

@@ -1,7 +1,6 @@
 package YAVC.Encoder;
 
 import java.util.ArrayList;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -36,10 +35,10 @@ public class DCTEngine {
 		}
 	}
 	
-	private Callable<Void> getDCTCoeffs(int m, int index) {
+	private Runnable getDCTCoeffs(int m, int index) {
 		int m2 = m * 2;
 		
-		Callable<Void> task = () -> {
+		Runnable task = () -> {
 			for (int v = 0; v < m; v++) {
 				for (int u = 0; u < m; u++) {
 					for (int x = 0; x < m; x++) {
@@ -54,8 +53,6 @@ public class DCTEngine {
 					}
 				}
 			}
-			
-			return null;
 		};
 		
 		return task;

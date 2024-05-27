@@ -9,7 +9,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -290,7 +289,7 @@ public class OutputStream {
 		try {
 			if (diffs != null) {
 				for (MacroBlock block : diffs) {
-					Callable<Void> task = () -> {
+					Runnable task = () -> {
 						Point pos = block.getPosition();
 						int size = block.getSize();
 						
@@ -303,8 +302,6 @@ public class OutputStream {
 								render.setYUV(x + pos.x, y + pos.y, block.getYUV(x, y));
 							}
 						}
-						
-						return null;
 					};
 					
 					executor.submit(task);
@@ -313,7 +310,7 @@ public class OutputStream {
 			
 			if (vecs != null) {
 				for (Vector v : vecs) {
-					Callable<Void> task = () -> {
+					Runnable task = () -> {
 						PixelRaster cache = v.getReference() == -1 ? null : refs.get(config.MAX_REFERENCES - v.getReference());
 						Point pos = v.getPosition();
 						int EndX = pos.x + v.getSpanX(), EndY = pos.y + v.getSpanY();
@@ -332,8 +329,6 @@ public class OutputStream {
 								render.setYUV(x + EndX, y + EndY, YUV);
 							}
 						}
-						
-						return null;
 					};
 					
 					executor.submit(task);

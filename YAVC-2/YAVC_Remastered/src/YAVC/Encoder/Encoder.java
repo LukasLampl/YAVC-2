@@ -36,6 +36,8 @@ public class Encoder {
 			outStream.activate();
 			
 			for (int i = 0; i < files; i++) {
+				if (i % 10 == 0) System.gc();
+				
 				long start = System.currentTimeMillis();
 				File frameFile = getAwaitedFile(input, i, ".bmp");
 				
@@ -69,7 +71,7 @@ public class Encoder {
 //				ImageIO.write(part[0], "png", new File(output.getAbsolutePath() + "/MB_" + i + ".png"));
 //				ImageIO.write(part[1], "png", new File(output.getAbsolutePath() + "/MBA_" + i + ".png"));
 //				ImageIO.write(part[2], "png", new File(output.getAbsolutePath() + "/MBI_" + i + ".png"));
-				ImageIO.write(composit.toBufferedImage(), "png", new File(output.getAbsolutePath() + "/VR_" + i + ".png"));
+//				ImageIO.write(composit.toBufferedImage(), "png", new File(output.getAbsolutePath() + "/VR_" + i + ".png"));
 
 				outStream.addObjectToOutputQueue(new QueueObject(movementVectors, leaveNodes));
 				

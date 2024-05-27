@@ -209,7 +209,7 @@ public class PixelRaster {
 	
 	public BufferedImage toBufferedImage() {
 		BufferedImage render = new BufferedImage(this.dim.width, this.dim.height, BufferedImage.TYPE_INT_ARGB);
-
+		
 		IntStream.range(0, this.dim.height).parallel().forEach(y -> {
 			for (int x = 0; x < this.dim.width; x++) {
 				render.setRGB(x, y, this.COLOR_MANAGER.convertYUVToRGB(getYUV(x, y)));
