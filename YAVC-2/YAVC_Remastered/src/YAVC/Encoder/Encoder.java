@@ -30,6 +30,7 @@ public class Encoder {
 		
 		int files = input.listFiles().length;
 		long sumOfMilliSeconds = 0;
+		long startOfTime = System.currentTimeMillis();
 		
 		try {
 			outStream.activate();
@@ -67,7 +68,7 @@ public class Encoder {
 				
 //				ImageIO.write(part[0], "png", new File(output.getAbsolutePath() + "/MB_" + i + ".png"));
 //				ImageIO.write(part[1], "png", new File(output.getAbsolutePath() + "/MBA_" + i + ".png"));
-//				ImageIO.write(vectors, "png", new File(output.getAbsolutePath() + "/V_" + i + ".png"));
+//				ImageIO.write(part[2], "png", new File(output.getAbsolutePath() + "/MBI_" + i + ".png"));
 				ImageIO.write(composit.toBufferedImage(), "png", new File(output.getAbsolutePath() + "/VR_" + i + ".png"));
 
 				outStream.addObjectToOutputQueue(new QueueObject(movementVectors, leaveNodes));
@@ -81,6 +82,9 @@ public class Encoder {
 				references.add(prevFrame);
 				manageReferences(references);
 			}
+			
+			long endOfTime = System.currentTimeMillis();
+			System.out.println("Time used: " + (endOfTime - startOfTime) + "ms");
 			
 			outStream.waitForFinish();
 			references.clear();

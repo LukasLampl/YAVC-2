@@ -11,6 +11,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import YAVC.Main.config;
 import YAVC.Utils.MacroBlock;
@@ -41,74 +42,78 @@ public class VectorEngine {
 		}
 		
 		ArrayList<Vector> vecs = new ArrayList<Vector>(blocksToInterpredict.size());
-		ArrayList<Future<Vector>> futureVecs = new ArrayList<Future<Vector>>(blocksToInterpredict.size());
-		
-		int threads = Runtime.getRuntime().availableProcessors();
-		ExecutorService executor = Executors.newFixedThreadPool(threads);
-		
-		this.TOTAL_MSE = 0;
-		
-		for (MacroBlock block : blocksToInterpredict) {
-			Callable<Vector> task = () -> {
-				int maxSize = refs.size();
-				MacroBlock[] canidates = new MacroBlock[maxSize + 1];
-				
-				for (int i = 0, index = 0; i < maxSize; i++, index++) {
-					MacroBlock bestMatch = computeHexagonSearch(refs.get(i), block);
-					bestMatch = computeExhaustiveSearch(block, bestMatch, refs.get(i));
+			
+		try {
+			ArrayList<Future<Vector>> futureVecs = new ArrayList<Future<Vector>>(blocksToInterpredict.size());
+			ExecutorService executor = Executors.newCachedThreadPool();
+			
+			this.TOTAL_MSE = 0;
+			
+			for (MacroBlock block : blocksToInterpredict) {
+				Callable<Vector> task = () -> {
+					int maxSize = refs.size();
+					MacroBlock[] canidates = new MacroBlock[maxSize + 1];
 					
-					if (bestMatch != null) {
-						bestMatch.setReference(config.MAX_REFERENCES - i);
+					for (int i = 0, index = 0; i < maxSize; i++, index++) {
+						MacroBlock bestMatch = computeHexagonSearch(refs.get(i), block);
+						bestMatch = computeExhaustiveSearch(block, bestMatch, refs.get(i));
+						
+						if (bestMatch != null) {
+							bestMatch.setReference(config.MAX_REFERENCES - i);
+						}
+						
+						canidates[index] = bestMatch;
 					}
 					
-					canidates[index] = bestMatch;
-				}
-				
-				if (futureFrame != null) {
-					MacroBlock futureMatch = computeHexagonSearch(futureFrame, block);
-					if (futureMatch != null) futureMatch.setReference(-1);
-					canidates[refs.size()] = futureMatch;
-				}
-				
-				MacroBlock best = evaluateBestGuess(canidates);
-				Vector vec = null;
-				
-				if (best != null) {
-					PixelRaster references = refs.get(config.MAX_REFERENCES - best.getReference());
-					double[][][] referenceColor = references.getPixelBlock(best.getPosition(), block.getSize(), null);
-					double[][][] absoluteColorDifference = getAbsoluteDifferenceOfColors(block.getColors(), referenceColor, block.getSize(), colorSpectrum);
-					double newMatchMSE = getMSEOfColors(absoluteColorDifference, block.getColors(), block.getSize(), false);
-					this.TOTAL_MSE += newMatchMSE;
+					if (futureFrame != null) {
+						MacroBlock futureMatch = computeHexagonSearch(futureFrame, block);
+						if (futureMatch != null) futureMatch.setReference(-1);
+						canidates[refs.size()] = futureMatch;
+					}
 					
-					vec = new Vector(best.getPosition(), block.getSize());
-					vec.setAppendedBlock(block);
-					vec.setMostEqualBlock(best);
-					vec.setReference(best.getReference());
-					vec.setSpanX(block.getPosition().x - best.getPosition().x);
-					vec.setSpanY(block.getPosition().y - best.getPosition().y);
-					vec.setAbsoluteDifferences(absoluteColorDifference);
-				}
+					MacroBlock best = evaluateBestGuess(canidates);
+					Vector vec = null;
+					
+					if (best != null) {
+						PixelRaster references = refs.get(config.MAX_REFERENCES - best.getReference());
+						double[][][] referenceColor = references.getPixelBlock(best.getPosition(), block.getSize(), null);
+						double[][][] absoluteColorDifference = getAbsoluteDifferenceOfColors(block.getColors(), referenceColor, block.getSize(), colorSpectrum);
+						double newMatchMSE = getMSEOfColors(absoluteColorDifference, block.getColors(), block.getSize(), false);
+						this.TOTAL_MSE += newMatchMSE;
+						
+						vec = new Vector(best.getPosition(), block.getSize());
+						vec.setAppendedBlock(block);
+						vec.setMostEqualBlock(best);
+						vec.setReference(best.getReference());
+						vec.setSpanX(block.getPosition().x - best.getPosition().x);
+						vec.setSpanY(block.getPosition().y - best.getPosition().y);
+						vec.setAbsoluteDifferences(absoluteColorDifference);
+					}
+					
+					return vec;
+				};
 				
-				return vec;
-			};
-			
-			futureVecs.add(executor.submit(task));
-		}
-		
-		for (Future<Vector> fvec : futureVecs) {
-			try {
-				Vector vec = fvec.get();
-				
-				if (vec != null) {
-					vecs.add(vec);
-					blocksToInterpredict.remove(vec.getAppendedBlock());
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
+				futureVecs.add(executor.submit(task));
 			}
+			
+			for (Future<Vector> fvec : futureVecs) {
+				try {
+					Vector vec = fvec.get();
+					
+					if (vec != null) {
+						vecs.add(vec);
+						blocksToInterpredict.remove(vec.getAppendedBlock());
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+			
+			executor.shutdown();
+			while (!executor.awaitTermination(20, TimeUnit.NANOSECONDS)) {}
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-		
-		executor.shutdown();
 		
 		return vecs;
 	}
@@ -302,7 +307,7 @@ public class VectorEngine {
 		double[][] U = new double[halfSize][halfSize];
 		double[][] V = new double[halfSize][halfSize];
 		
-		double YThreshold = colors / 12000, UVThreshold = colors / 6000;
+		double YThreshold = 6.0, UVThreshold = 7.0;
 		
 		for (int y = 0; y < size; y++) {
 			for (int x = 0; x < size; x++) {

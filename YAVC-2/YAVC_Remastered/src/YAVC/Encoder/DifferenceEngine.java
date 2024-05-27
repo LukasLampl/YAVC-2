@@ -7,6 +7,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import YAVC.Utils.ColorManager;
 import YAVC.Utils.MacroBlock;
@@ -16,55 +17,60 @@ public class DifferenceEngine {
 	public ArrayList<MacroBlock> computeDifferences(int colorSpectrum, PixelRaster prevFrame, ArrayList<MacroBlock> leaveNodes) {
 		ArrayList<MacroBlock> diffs = new ArrayList<MacroBlock>(leaveNodes.size() / 2);
 		ArrayList<Future<MacroBlock>> futureDiffs = new ArrayList<Future<MacroBlock>>(leaveNodes.size() / 2);
-		
-		int threads = Runtime.getRuntime().availableProcessors();
-		ExecutorService executor = Executors.newFixedThreadPool(threads);
-		
-		for (MacroBlock block : leaveNodes) {
-			Callable<MacroBlock> task = () -> {
-				int size = block.getSize();
-				double[][][] refCols = prevFrame.getPixelBlock(block.getPosition(), size, null);
-				double[][][] curCols = block.getColors();
-				
-				double sumY = 0, sumU = 0, sumV = 0;
-				
-				for (int x = 0; x < size; x++) {
-					for (int y = 0; y < size; y++) {
-						int subSX = (int)(x * 0.5), subSY = (int)(y * 0.5);
-						double deltaY = refCols[0][x][y] - curCols[0][x][y];
-						double deltaU = refCols[1][subSX][subSY] - curCols[1][subSX][subSY];
-						double deltaV = refCols[2][subSX][subSY] - curCols[2][subSX][subSY];
-						sumY += deltaY * deltaY;
-						sumU += deltaU * deltaU;
-						sumV += deltaV * deltaV;
-					}
-				}
-				
-				sumY /= size * size;
-				sumU /= size * size;
-				sumV /= size * size;
-				
-				if (sumY > 1.55 || sumU > 3.6 || sumV > 3.6) return block;
-				
-				return null;
-			};
+
+		try {
+			int threads = Runtime.getRuntime().availableProcessors();
+			ExecutorService executor = Executors.newFixedThreadPool(threads);
 			
-			futureDiffs.add(executor.submit(task));
-		}
-		
-		for (Future<MacroBlock> diff : futureDiffs) {
-			try {
-				MacroBlock block = diff.get();
+			for (MacroBlock block : leaveNodes) {
+				Callable<MacroBlock> task = () -> {
+					int size = block.getSize();
+					double[][][] refCols = prevFrame.getPixelBlock(block.getPosition(), size, null);
+					double[][][] curCols = block.getColors();
+					
+					double sumY = 0, sumU = 0, sumV = 0;
+					
+					for (int x = 0; x < size; x++) {
+						for (int y = 0; y < size; y++) {
+							int subSX = (int)(x * 0.5), subSY = (int)(y * 0.5);
+							double deltaY = refCols[0][x][y] - curCols[0][x][y];
+							double deltaU = refCols[1][subSX][subSY] - curCols[1][subSX][subSY];
+							double deltaV = refCols[2][subSX][subSY] - curCols[2][subSX][subSY];
+							sumY += deltaY * deltaY;
+							sumU += deltaU * deltaU;
+							sumV += deltaV * deltaV;
+						}
+					}
+					
+					sumY /= size * size;
+					sumU /= size * size;
+					sumV /= size * size;
+					
+					if (sumY > 1.55 || sumU > 3.6 || sumV > 3.6) return block;
+					
+					return null;
+				};
 				
-				if (block != null) {
-					diffs.add(block);
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
+				futureDiffs.add(executor.submit(task));
 			}
+			
+			for (Future<MacroBlock> diff : futureDiffs) {
+				try {
+					MacroBlock block = diff.get();
+					
+					if (block != null) {
+						diffs.add(block);
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+			
+			executor.shutdown();
+			while (!executor.awaitTermination(20, TimeUnit.NANOSECONDS)) {}
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-		
-		executor.shutdown();
 		
 		return diffs;
 	}

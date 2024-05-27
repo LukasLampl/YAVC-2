@@ -10,8 +10,11 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
+import YAVC.Utils.ColorManager;
 import YAVC.Utils.MacroBlock;
+import YAVC.Utils.MeanStructure;
 import YAVC.Utils.PixelRaster;
 
 public class QuadtreeEngine {
@@ -22,51 +25,58 @@ public class QuadtreeEngine {
 		
 		ArrayList<MacroBlock> roots = new ArrayList<MacroBlock>();
 		
-		final double errorThreshold = 120;
-		int threads = Runtime.getRuntime().availableProcessors();
-		int currentOrderNumber = 0, width = currentFrame.getWidth(), height = currentFrame.getHeight();
-		ArrayList<Future<MacroBlock>> futureRoots = new ArrayList<Future<MacroBlock>>();
-		ExecutorService executor = Executors.newFixedThreadPool(threads);
-		
-		for (int x = 0; x < width; x += this.MAX_SIZE) {
-			for (int y = 0; y < height; y += this.MAX_SIZE) {
-				final int posX = x, posY = y;
-				final int currentOrder = currentOrderNumber++;
-				
-				Callable<MacroBlock> task = () -> {
-					MacroBlock origin = new MacroBlock(new Point(posX, posY), this.MAX_SIZE);
-					double[][][] comps = currentFrame.getPixelBlock(new Point(posX, posY), this.MAX_SIZE, null);
-					origin.setColorComponents(comps[0], comps[1], comps[2], comps[3]);
-					origin.setOrder(currentOrder);
+		try {
+			final double errorThreshold = 45;
+			int currentOrderNumber = 0, width = currentFrame.getWidth(), height = currentFrame.getHeight();
+			ArrayList<Future<MacroBlock>> futureRoots = new ArrayList<Future<MacroBlock>>();
+			ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+			
+			for (int x = 0; x < width; x += this.MAX_SIZE) {
+				for (int y = 0; y < height; y += this.MAX_SIZE) {
+					final int posX = x, posY = y;
+					final int currentOrder = currentOrderNumber++;
 					
-					int[][] meanOf4x4BlocksInBlock = origin.calculate4x4Means();
-					double originStdDeviation = origin.computeStandardDeviation(origin.calculateMeanOfCurrentBlock(meanOf4x4BlocksInBlock));
+					Callable<MacroBlock> task = () -> {
+						MacroBlock origin = new MacroBlock(new Point(posX, posY), this.MAX_SIZE);
+						double[][][] comps = currentFrame.getPixelBlock(new Point(posX, posY), this.MAX_SIZE, null);
+						origin.setColorComponents(comps[0], comps[1], comps[2], comps[3]);
+						origin.setOrder(currentOrder);
+						
+						MeanStructure meanOf4x4BlocksInBlock = origin.calculate4x4Means();
+						int[] curMean = origin.calculateMeanOfCurrentBlock(meanOf4x4BlocksInBlock.get4x4Means(), new Point(0, 0), this.MAX_SIZE);
+						double originStdDeviation = origin.computeStandardDeviation(curMean, meanOf4x4BlocksInBlock.getArgbs(), new Point(0, 0), this.MAX_SIZE);
+						origin.setMeanColor(curMean);
+						
+						if (originStdDeviation > errorThreshold) {
+							origin.subdivide(errorThreshold, 0, meanOf4x4BlocksInBlock.get4x4Means(), meanOf4x4BlocksInBlock.getArgbs(), currentFrame.getDimension(), new Point(0, 0));
+						}
+						
+						return origin;
+					};
 					
-					if (originStdDeviation > errorThreshold) {
-						origin.subdivide(errorThreshold, 0, meanOf4x4BlocksInBlock, currentFrame.getDimension());
-					}
-					
-					return origin;
-				};
-				
-				futureRoots.add(executor.submit(task));
-			}
-		}
-		
-		for (Future<MacroBlock> root : futureRoots) {
-			try {
-				MacroBlock block = root.get();
-				
-				if (block != null) {
-					roots.add(block);
+					futureRoots.add(executor.submit(task));
 				}
-			} catch (Exception e) {
-				e.printStackTrace();
 			}
+			
+			for (Future<MacroBlock> root : futureRoots) {
+				try {
+					MacroBlock block = root.get();
+					
+					if (block != null) {
+						roots.add(block);
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+			
+			executor.shutdown();
+			
+			while (!executor.awaitTermination(10, TimeUnit.MILLISECONDS)) {}
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-		
-		executor.shutdown();
-		
+			
 		return roots;
 	}
 	
@@ -118,9 +128,11 @@ public class QuadtreeEngine {
 	}
 	
 	public BufferedImage[] drawMacroBlocks(ArrayList<MacroBlock> leaveNodes, Dimension dim) {
-		BufferedImage[] render = new BufferedImage[2];
+		ColorManager colorManager = new ColorManager();
+		BufferedImage[] render = new BufferedImage[3];
 		render[0] = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
 		render[1] = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
+		render[2] = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
 		
 		Graphics2D g2d1 = (Graphics2D)render[0].createGraphics();
 		Graphics2D g2d2 = (Graphics2D)render[1].createGraphics();
@@ -135,6 +147,12 @@ public class QuadtreeEngine {
 			int[] rgb = leaf.getMeanColor();
 			g2d2.setColor(new Color(rgb[0], rgb[1], rgb[2]));
 			g2d2.fillRect(pos.x, pos.y, size, size);
+			
+			for (int x = 0; x < leaf.getSize(); x++) {
+				for (int y = 0; y < leaf.getSize(); y++) {
+					render[2].setRGB(leaf.getPosition().x + x, leaf.getPosition().y + y, colorManager.convertYUVToRGB(leaf.getYUV(x, y)));
+				}
+			}
 		}
 		
 		g2d1.dispose();

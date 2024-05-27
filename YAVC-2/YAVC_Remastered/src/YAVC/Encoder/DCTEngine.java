@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import YAVC.Main.config;
 
@@ -14,20 +15,25 @@ public class DCTEngine {
 		int threads = Runtime.getRuntime().availableProcessors();
 		ExecutorService executor = Executors.newFixedThreadPool(threads);
 		
-		//Sizes that are used for the DCT in YAVC
-		int[] sizes = {8, 4, 2};
-		DCT_COEFFICIENTS[0] = new double[sizes.length][][][][];
-		DCT_COEFFICIENTS[1] = new double[sizes.length][][][][];
-		
-		for (int i = 0; i < sizes.length; i++) {
-			int index = i, m = sizes[index];
-			DCT_COEFFICIENTS[0][i] = new double[m][m][m][m];
-			DCT_COEFFICIENTS[1][i] = new double[m][m][m][m];
+		try {
+			//Sizes that are used for the DCT in YAVC
+			int[] sizes = {8, 4, 2};
+			DCT_COEFFICIENTS[0] = new double[sizes.length][][][][];
+			DCT_COEFFICIENTS[1] = new double[sizes.length][][][][];
 			
-			executor.submit(getDCTCoeffs(m, index));
+			for (int i = 0; i < sizes.length; i++) {
+				int index = i, m = sizes[index];
+				DCT_COEFFICIENTS[0][i] = new double[m][m][m][m];
+				DCT_COEFFICIENTS[1][i] = new double[m][m][m][m];
+				
+				executor.submit(getDCTCoeffs(m, index));
+			}
+			
+			executor.shutdown();
+			while (!executor.awaitTermination(20, TimeUnit.NANOSECONDS)) {}
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-		
-		executor.shutdown();
 	}
 	
 	private Callable<Void> getDCTCoeffs(int m, int index) {

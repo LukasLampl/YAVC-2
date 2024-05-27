@@ -159,26 +159,7 @@ public class PixelRaster {
 	
 	public double[][][] getPixelBlock(Point position, int size, double[][][] cache) {
 		if (position == null) throw new NullPointerException();
-		
-		double[][][] res = null;
-		
-		if (cache == null) {
-			res = new double[4][][]; //0 = Y; 1 = U; 2 = V
-			res[0] = new double[size][size];
-			res[1] = new double[size / 2][size / 2];
-			res[2] = new double[size / 2][size / 2];
-			res[3] = new double[size][size];
-		} else {
-			if (size <= cache[0].length) {
-				res = cache;
-			} else {
-				res = new double[4][][]; //0 = Y; 1 = U; 2 = V
-				res[0] = new double[size][size];
-				res[1] = new double[size / 2][size / 2];
-				res[2] = new double[size / 2][size / 2];
-				res[3] = new double[size][size];
-			}
-		}
+		double[][][] res = cache == null ? getArray(size) : size <= cache[0].length ? cache : getArray(size);
 		
 		for (int y = 0; y < size; y++) {
 			for (int x = 0; x < size; x++) {
@@ -214,6 +195,15 @@ public class PixelRaster {
 			}
 		}
 		
+		return res;
+	}
+	
+	private double[][][] getArray(int size) {
+		double[][][] res = new double[4][][]; //0 = Y; 1 = U; 2 = V
+		res[0] = new double[size][size];
+		res[1] = new double[size / 2][size / 2];
+		res[2] = new double[size / 2][size / 2];
+		res[3] = new double[size][size];
 		return res;
 	}
 	
