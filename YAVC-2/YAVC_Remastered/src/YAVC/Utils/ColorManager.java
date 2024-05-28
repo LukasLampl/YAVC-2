@@ -97,6 +97,9 @@ public class ColorManager {
 	 * 
 	 * @param double[] YUV => The YUV color to be converted
 	 * to a RGB color
+	 * 
+	 * @throws IllegalArgumentException, if the provided YUV is
+	 * null or the length is not 3
 	 */
 	public int convertYUVToRGB(double[] YUV) {
 		if (YUV == null) throw new IllegalArgumentException("Can't convert NULL to RGB!");

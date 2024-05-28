@@ -133,7 +133,9 @@ public class MacroBlock {
 				double standardDeviation = computeStandardDeviation(meanRGB, argbs, newInnerPos, fraction);
 				b.setMeanColor(meanRGB);
 				
-				if (standardDeviation > errorThreshold) {
+				if (standardDeviation > errorThreshold
+					|| this.position.x + fraction > dim.width
+					|| this.position.y + fraction > dim.height) {
 					b.subdivide(errorThreshold, depth + 1, meanOf4x4Blocks, argbs, dim, newInnerPos);
 				}
 			}
