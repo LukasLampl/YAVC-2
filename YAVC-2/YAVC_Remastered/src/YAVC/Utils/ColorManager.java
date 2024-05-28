@@ -23,24 +23,51 @@ package YAVC.Utils;
 
 import java.awt.Color;
 
+/**
+ * The class {@code ColorManager} contains basic functions 
+ * for converting RGB-colorspace to the YUV-colorspace and back.
+ * The formulas are based on the Rec. 601 (ITU-T T.871) Y'CbCr and
+ * have the full 8 bit range from 0 to 255. Due to the
+ * YUV-colorspace, colors that exceed the range of 8 bits
+ * get reduced to the 8 bit range.
+ * Minimum is 0 and maximum is 255.
+ * 
+ * @author Lukas Lampl
+ * @since 1.0
+ */
+
 public class ColorManager {
-	/*
-	 * Purpose: Convert a RGB color to an YUV color
-	 * Return Type: YUVColor => Converted color
-	 * Params: Color color => Color to be converted
+	/**
+	 * Purpose:
+	 * Convert a RGB color, based on a Color object
+	 * to YUV using the Rec. 601 (ITU-T T.871) conversion. 
+	 * 
+	 * @return Returns a double[], that contains the
+	 * Y, U and V component at the following indexes:
+	 * double[0] = Y, double[1] = U, double[2] = V
+	 * 
+	 * @param Color color => RGB color that should be
+	 * converted to an YUV color.
 	 */
 	public double[] convertRGBToYUV(Color color) {
-		int red = color.getRed(), green = color.getGreen(), blue = color.getBlue();
-		double Y = 0.299 * red + 0.587 * green + 0.114 * blue;
-		double U = 128 - 0.168736 * red - 0.331264 * green + 0.5 * blue;
-		double V = 128 + 0.5 * red - 0.418688 * green - 0.081312 * blue;
+		int r = color.getRed(), g = color.getGreen(), b = color.getBlue();
+		double Y = 0.299 * r + 0.587 * g + 0.114 * b;
+		double U = 128 - 0.168736 * r - 0.331264 * g + 0.5 * b;
+		double V = 128 + 0.5 * r - 0.418688 * g - 0.081312 * b;
 		return new double[] {Y, U, V};
 	}
 	
-	/*
-	 * Purpose: Convert an int RGB color to an YUV color
-	 * Return Type: YUVColor => Converted color
-	 * Params: int color => Color to be converted
+	/**
+	 * Purpose:
+	 * Convert a RGB color, based on an integer
+	 * to YUV using the Rec. 601 (ITU-T T.871) conversion. 
+	 * 
+	 * @return Returns a double[], that contains the
+	 * Y, U and V component at the following indexes:
+	 * double[0] = Y, double[1] = U, double[2] = V
+	 * 
+	 * @param int color => RGB color that should be
+	 * converted to an YUV color.
 	 */
 	public double[] convertRGBToYUV(int color) {
 		int red = (color >> 16) & 0xFF, green = (color >> 8) & 0xFF, blue = color & 0xFF;
@@ -50,10 +77,23 @@ public class ColorManager {
 		return new double[] {Y, U, V};
 	}
 	
-	/*
-	 * Purpose: Convert a YUV color to an RGB color
-	 * Return Type: YUVColor => Converted color
-	 * Params: YCbCrColor color => Color to be converted
+	/**
+	 * Purpose:
+	 * Convert a YUV color to RGB using a double[]
+	 * as input, where Y is at [0], U at [1] and V at [2].
+	 * The converted color is stored in an integer
+	 * with the following order of the components:
+	 * First 8 bits: Alpha
+	 * Bits from 8 to 16: Red
+	 * Bits from 16 to 8: Green
+	 * Last 8 bits: Blue 
+	 * The order is the same as in the {@code java.awt.Color}
+	 * Object.
+	 * 
+	 * @return int, with the described order above
+	 * 
+	 * @param double[] YUV => The YUV color to be converted
+	 * to a RGB color
 	 */
 	public int convertYUVToRGB(double[] YUV) {
 		if (YUV == null) throw new IllegalArgumentException("Can't convert NULL to RGB!");
@@ -66,6 +106,28 @@ public class ColorManager {
 		return (0xFF000000 | ((red & 0xFF) << 16) | ((green & 0xFF) << 8) | (blue & 0xFF));
 	}
 	
+	/**
+	 * Purpose:
+	 * Convert a YUV color to RGB using a double[]
+	 * as input, where Y is at [0], U at [1] and V at [2].
+	 * The converted color is stored in an integer array
+	 * with the following order of the components:
+	 * int[0]: Red
+	 * int[1]: Green
+	 * int[2]: Blue
+	 * 
+	 * @return int[] with the red, green and blue values
+	 * in the order described above.
+	 * 
+	 * @param double[] YUV => The YUV color to be converted
+	 * to a RGB color
+	 * @param int[] rgbCache => An optional int array, that should
+	 * be used to store the data. (Faster than initializing each array)
+	 * 
+	 * @throws IllegalArgumentException => When the YUV array is null,
+	 * when the length of the YUV color exceeds 3 or is shorter than 3
+	 * and if the rgbCache is not null, but does not have a length of 3.
+	 */
 	public int[] convertYUVToRGB_intARR(double[] YUV, int[] rgbCache) {
 		if (YUV == null) throw new IllegalArgumentException("Can't convert NULL to RGB array!");
 		else if (YUV.length != 3) throw new IllegalArgumentException("YUV color contains " + YUV.length + " components instead of 3!");
@@ -85,17 +147,21 @@ public class ColorManager {
 		
 		return new int[] {range(red, 0, 255), range(green, 0, 255), range(blue, 0, 255)};
 	}
-	
-	/*
-	 * Purpose: Convert an int RGB color to grayscale
-	 * Return Type: int => Grayscale value
-	 * Params: int argb => ARGB value to convert
+
+	/**
+	 * Purpose:
+	 * Checks if the value of x is bigger than the max
+	 * or smaller than the min and returns based on that.
+	 * 
+	 * @return int with the ranged value.
+	 * If x is smaller than min, min will be returned.
+	 * If x is bigger than max, max will be returned
+	 * If x is in between or equal to min or max, x is returned.
+	 * 
+	 * @param x => Number to check
+	 * @param min => Minimum value that x is allowed to reach
+	 * @param max => Maximum value that x is allowed to reach
 	 */
-	public int convertRGBToGRAYSCALE(int argb) {
-		int red = (argb >> 16) & 0xFF, green = (argb >> 8) & 0xFF, blue = argb & 0xFF;
-		return (int)Math.round(red * 0.299 + green * 0.587 + blue * 0.114);
-	}
-	
 	private int range(int x, int min, int max) {
 		return x < min ? min : x > max ? max : x;
 	}
