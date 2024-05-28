@@ -110,7 +110,7 @@ public class VectorEngine {
 			}
 			
 			executor.shutdown();
-			while (!executor.awaitTermination(20, TimeUnit.NANOSECONDS)) {}
+			while (!executor.awaitTermination(20, TimeUnit.MICROSECONDS)) {}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

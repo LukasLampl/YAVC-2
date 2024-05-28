@@ -61,7 +61,7 @@ public class PixelRaster {
 	}
 	
 	private void processByteBuffer(final byte[] buffer, final boolean hasAlpha) {
-		final int chunkSize = 2048, length = (hasAlpha == true) ? 4 : 3;
+		final int chunkSize = 4096, length = (hasAlpha == true) ? 4 : 3;
 		final int width = this.dim.width, height = this.dim.height;
 		int inc = length * chunkSize;
 		
@@ -105,7 +105,7 @@ public class PixelRaster {
 		executor.shutdown();
 	
 		try {
-			while (!executor.awaitTermination(5, TimeUnit.MILLISECONDS)) {}
+			while (!executor.awaitTermination(20, TimeUnit.MICROSECONDS)) {}
 		} catch (Exception e) {e.printStackTrace();}
 		
 		this.colors = concurrentColors.convertToHashSet();

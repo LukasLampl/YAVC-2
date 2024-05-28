@@ -2,10 +2,9 @@ package YAVC.Utils;
 
 import java.awt.Dimension;
 import java.awt.Point;
-import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 public class MacroBlock {
 	private double[][] Y = null;
@@ -232,13 +231,12 @@ public class MacroBlock {
 		int[][] meanArgbs = new int[this.size / 4][this.size / 4];
 		int[][][] argbs = new int[this.size][this.size][3];
 		ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-		ArrayList<Future<?>> futures = new ArrayList<>();
 		
 		for (int u = 0; u < this.size; u += 4) {
 			for (int v = 0; v < this.size; v += 4) {
 				final int startX = u, startY = v;
 				
-				futures.add(executor.submit(() -> {
+				Runnable task = () -> {
 					int sumR = 0, sumG = 0, sumB = 0;
 					
 					for (int x = 0; x < 4; x++) {
@@ -253,19 +251,18 @@ public class MacroBlock {
 					}
 					
 					meanArgbs[startX / 4][startY / 4] = ((sumR / 16) << 16) | ((sumG / 16) << 8) | (sumB / 16);
-				}));
-			}
-		}
-		
-		for (Future<?> future : futures) {
-			try {
-				future.get();
-			} catch (Exception e) {
-				e.printStackTrace();
+				};
+				
+				executor.submit(task);
 			}
 		}
 		
 		executor.shutdown();
+		
+		try {
+			while (!executor.awaitTermination(20, TimeUnit.MICROSECONDS));
+		} catch (Exception e) {e.printStackTrace();}
+		
 		return new MeanStructure(meanArgbs, argbs);
 	}
 

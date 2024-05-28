@@ -29,7 +29,7 @@ public class DCTEngine {
 			}
 			
 			executor.shutdown();
-			while (!executor.awaitTermination(20, TimeUnit.NANOSECONDS)) {}
+			while (!executor.awaitTermination(20, TimeUnit.MICROSECONDS)) {}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
