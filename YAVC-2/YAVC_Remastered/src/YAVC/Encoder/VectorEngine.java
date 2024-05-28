@@ -29,15 +29,12 @@ public class VectorEngine {
 	 * 			ArrayList<PixelRaster> refs => Reference images;
 	 * 			PixelRaster futureFrame => Frame in the future
 	 */
-	public ArrayList<Vector> computeMovementVectors(ArrayList<MacroBlock> blocksToInterpredict, ArrayList<PixelRaster> refs, int colorSpectrum, PixelRaster futureFrame) {
+	public ArrayList<Vector> computeMovementVectors(ArrayList<MacroBlock> blocksToInterpredict, ArrayList<PixelRaster> refs, PixelRaster futureFrame) {
 		if (blocksToInterpredict == null || blocksToInterpredict.size() == 0) {
 			System.err.println("No blocks for inter-prediction > Skip process");
 			return null;
 		} else if (refs == null || refs.size() == 0) {
 			System.err.println("Can't compute motion vectors, due to missing references! > Skip");
-			return null;
-		} else if (colorSpectrum <= 0) {
-			System.err.println("An Image can't have 0 or less colors! > Skip");
 			return null;
 		}
 		
@@ -77,7 +74,7 @@ public class VectorEngine {
 					if (best != null) {
 						PixelRaster references = refs.get(config.MAX_REFERENCES - best.getReference());
 						double[][][] referenceColor = references.getPixelBlock(best.getPosition(), block.getSize(), null);
-						double[][][] absoluteColorDifference = getAbsoluteDifferenceOfColors(block.getColors(), referenceColor, block.getSize(), colorSpectrum);
+						double[][][] absoluteColorDifference = getAbsoluteDifferenceOfColors(block.getColors(), referenceColor, block.getSize());
 						double newMatchMSE = getMSEOfColors(absoluteColorDifference, block.getColors(), block.getSize(), false);
 						this.TOTAL_MSE += newMatchMSE;
 						
@@ -301,7 +298,7 @@ public class VectorEngine {
 	 * 			int size => Size of the color components (in width and height);
 	 * 			int colors => Number of colors in the current frame (adaptive thresholds)
 	 */
-	private double[][][] getAbsoluteDifferenceOfColors(double[][][] col1, double[][][] col2, int size, int colors) {
+	private double[][][] getAbsoluteDifferenceOfColors(double[][][] col1, double[][][] col2, int size) {
 		int halfSize = size / 2;
 		double[][] Y = new double[size][size];
 		double[][] U = new double[halfSize][halfSize];

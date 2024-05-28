@@ -26,7 +26,6 @@ import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.awt.image.DataBufferInt;
-import java.util.HashSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -37,7 +36,6 @@ public class PixelRaster {
 	private double[][] U = null;
 	private double[][] V = null;
 	
-	private HashSet<Integer> colors = new HashSet<Integer>(65536);
 	private Dimension dim = null;
 	private ColorManager COLOR_MANAGER = new ColorManager();
 	
@@ -66,8 +64,7 @@ public class PixelRaster {
 		int inc = length * chunkSize;
 		
 		ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-		ConcurrentHashSet<Integer, Boolean> concurrentColors = new ConcurrentHashSet<Integer, Boolean>();
-		
+
 		for (int i = 0; i < buffer.length; i += inc) {
 			final int index = i;
 			final int startPosX = (i / length) % width, startPosY = (i / length) / width;
@@ -94,7 +91,6 @@ public class PixelRaster {
 					argb += (((int)buffer[jumper++] & 0xFF) << 8); //Green
 					argb += (((int)buffer[jumper] & 0xFF) << 16); //Red
 					
-					concurrentColors.add(argb, true);
 					setThreadSafeYUV(innerX++, innerY, this.COLOR_MANAGER.convertRGBToYUV(argb), newInit);
 				}
 			};
@@ -107,8 +103,6 @@ public class PixelRaster {
 		try {
 			while (!executor.awaitTermination(20, TimeUnit.MICROSECONDS)) {}
 		} catch (Exception e) {e.printStackTrace();}
-		
-		this.colors = concurrentColors.convertToHashSet();
 	}
 	
 	private void processIntBuffer(final int[] buffer) {
@@ -122,7 +116,6 @@ public class PixelRaster {
 			
 			boolean newInit = (x % 2 == 0 && y % 2 == 0) ? true : false;
 			
-			this.colors.add(argb);
 			setThreadSafeYUV(x, y, this.COLOR_MANAGER.convertRGBToYUV(argb), newInit);
 			x++;
 		}
@@ -173,10 +166,6 @@ public class PixelRaster {
 			this.U[subSX][subSY] = (this.U[subSX][subSY] + YUV[1]) / 2;
 			this.V[subSX][subSY] = (this.V[subSX][subSY] + YUV[2]) / 2;
 		}
-	}
-	
-	public int getColorSpectrum() {
-		return this.colors.size();
 	}
 	
 	public void setChroma(final int x, final int y, final double U, final double V) {

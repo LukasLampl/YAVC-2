@@ -36,8 +36,6 @@ public class Encoder {
 			outStream.activate();
 			
 			for (int i = 0; i < files; i++) {
-				if (i % 10 == 0) System.gc();
-				
 				long start = System.currentTimeMillis();
 				File frameFile = getAwaitedFile(input, i, ".bmp");
 				
@@ -63,7 +61,7 @@ public class Encoder {
 				
 //				BufferedImage[] part = QUADTREE_ENGINE.drawMacroBlocks(leaveNodes, curFrame.getDimension());
 //				leaveNodes = DIFFERENCE_ENGINE.computeDifferences(curFrame.getColorSpectrum(), prevFrame, leaveNodes);
-				ArrayList<Vector> movementVectors = VECTOR_ENGINE.computeMovementVectors(leaveNodes, references, curFrame.getColorSpectrum(), futFrame);
+				ArrayList<Vector> movementVectors = VECTOR_ENGINE.computeMovementVectors(leaveNodes, references, futFrame);
 				
 //				BufferedImage vectors = VECTOR_ENGINE.drawVectors(movementVectors, curFrame.getDimension());
 				PixelRaster composit = outStream.renderResult(movementVectors, references, leaveNodes, prevFrame);
@@ -79,7 +77,7 @@ public class Encoder {
 				long end = System.currentTimeMillis();
 				long time = end - start;
 				sumOfMilliSeconds += time;
-				printStatistics(time, sumOfMilliSeconds, i, movementVectors, leaveNodes, curFrame.getColorSpectrum());
+				printStatistics(time, sumOfMilliSeconds, i, movementVectors, leaveNodes);
 
 				references.add(composit.copy());
 				prevFrame = composit.copy();
@@ -100,9 +98,9 @@ public class Encoder {
 	private static double TOTAL_MSE = 0;
 	private static int TOTAL_MSE_ADDITION_COUNT = 0;
 	
-	private void printStatistics(long time, long fullTime, int index, ArrayList<Vector> vecs, ArrayList<MacroBlock> diffs, int colsCount) {
+	private void printStatistics(long time, long fullTime, int index, ArrayList<Vector> vecs, ArrayList<MacroBlock> diffs) {
 		System.out.println("");
-		System.out.println("Frame " + index + " [Colors: " + colsCount + "]" + ":");
+		System.out.println("Frame " + index + ":");
 		System.out.println("Time: " + time + "ms | Avg. time: " + (fullTime / index) + "ms");
 
 		if (vecs != null) {
