@@ -24,7 +24,7 @@ package YAVC.Utils;
 import java.awt.Color;
 
 /**
- * The class {@code ColorManager} contains basic functions 
+ * The class {@code YAVC.Utils.ColorManager} contains basic functions 
  * for converting RGB-colorspace to the YUV-colorspace and back.
  * The formulas are based on the Rec. 601 (ITU-T T.871) Y'CbCr and
  * have the full 8 bit range from 0 to 255. Due to the

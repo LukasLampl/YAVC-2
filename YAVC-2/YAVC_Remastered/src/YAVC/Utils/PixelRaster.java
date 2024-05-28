@@ -135,11 +135,11 @@ public class PixelRaster {
 	}
 	
 	public double[] getYUV(final int x, final int y) {
-		if (x < 0 || x >= this.dim.width) throw new ArrayIndexOutOfBoundsException("(X) " + x + " is out of bounds 0:" + this.dim.width);
-		else if (y < 0 || y >= this.dim.height) throw new ArrayIndexOutOfBoundsException("(Y) " + y + " is out of bounds 0:" + this.dim.height);
+		if (x < 0 || x >= this.dim.width) return new double[] {0, 0, 0, 255};
+		else if (y < 0 || y >= this.dim.height) return new double[] {0, 0, 0, 255};
 		
 		int subSX = x / 2, subSY = y / 2;
-		return new double[] {this.Y[x][y], this.U[subSX][subSY], this.V[subSX][subSY]};
+		return new double[] {this.Y[x][y], this.U[subSX][subSY], this.V[subSX][subSY], 0};
 	}
 	
 	public void setYUV(final int x, final int y, final double[] YUV) {
