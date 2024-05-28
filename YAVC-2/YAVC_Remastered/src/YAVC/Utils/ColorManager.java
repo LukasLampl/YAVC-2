@@ -32,15 +32,18 @@ import java.awt.Color;
  * get reduced to the 8 bit range.
  * Minimum is 0 and maximum is 255.
  * 
+ * <strong>Performance warning:</strong> The conversion from RGB to
+ * YUV and back involve floatingpoint-arithmetic, which might impact
+ * performance, if used frequently.
+ * 
  * @author Lukas Lampl
  * @since 1.0
  */
 
 public class ColorManager {
 	/**
-	 * Purpose:
-	 * Convert a RGB color, based on a Color object
-	 * to YUV using the Rec. 601 (ITU-T T.871) conversion. 
+	 * @apiNote Convert a RGB color, based on a Color object
+	 * to YUV using the Rec. 601 (ITU-T T.871) conversion.
 	 * 
 	 * @return Returns a double[], that contains the
 	 * Y, U and V component at the following indexes:
@@ -58,9 +61,10 @@ public class ColorManager {
 	}
 	
 	/**
-	 * Purpose:
-	 * Convert a RGB color, based on an integer
+	 * @apiNote: Convert a RGB color, based on an integer
 	 * to YUV using the Rec. 601 (ITU-T T.871) conversion. 
+	 * If a color component is bigger than 8 bits, it'll get
+	 * cut off by masking.
 	 * 
 	 * @return Returns a double[], that contains the
 	 * Y, U and V component at the following indexes:
@@ -70,16 +74,15 @@ public class ColorManager {
 	 * converted to an YUV color.
 	 */
 	public double[] convertRGBToYUV(int color) {
-		int red = (color >> 16) & 0xFF, green = (color >> 8) & 0xFF, blue = color & 0xFF;
-		double Y = 0.299 * red + 0.587 * green + 0.114 * blue;
-		double U = 128 - 0.168736 * red - 0.331264 * green + 0.5 * blue;
-		double V = 128 + 0.5 * red - 0.418688 * green - 0.081312 * blue;
+		int r = (color >> 16) & 0xFF, g = (color >> 8) & 0xFF, b = color & 0xFF;
+		double Y = 0.299 * r + 0.587 * g + 0.114 * b;
+		double U = 128 - 0.168736 * r - 0.331264 * g + 0.5 * b;
+		double V = 128 + 0.5 * r - 0.418688 * g - 0.081312 * b;
 		return new double[] {Y, U, V};
 	}
 	
 	/**
-	 * Purpose:
-	 * Convert a YUV color to RGB using a double[]
+	 * @apiNote Convert a YUV color to RGB using a double[]
 	 * as input, where Y is at [0], U at [1] and V at [2].
 	 * The converted color is stored in an integer
 	 * with the following order of the components:
@@ -107,8 +110,7 @@ public class ColorManager {
 	}
 	
 	/**
-	 * Purpose:
-	 * Convert a YUV color to RGB using a double[]
+	 * @apiNote Convert a YUV color to RGB using a double[]
 	 * as input, where Y is at [0], U at [1] and V at [2].
 	 * The converted color is stored in an integer array
 	 * with the following order of the components:
@@ -149,8 +151,7 @@ public class ColorManager {
 	}
 
 	/**
-	 * Purpose:
-	 * Checks if the value of x is bigger than the max
+	 * @apiNote Checks if the value of x is bigger than the max
 	 * or smaller than the min and returns based on that.
 	 * 
 	 * @return int with the ranged value.
@@ -158,7 +159,7 @@ public class ColorManager {
 	 * If x is bigger than max, max will be returned
 	 * If x is in between or equal to min or max, x is returned.
 	 * 
-	 * @param x => Number to check
+	 * @param x => Number to clamp
 	 * @param min => Minimum value that x is allowed to reach
 	 * @param max => Maximum value that x is allowed to reach
 	 */
