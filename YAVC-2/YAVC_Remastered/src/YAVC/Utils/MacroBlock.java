@@ -128,14 +128,15 @@ public class MacroBlock {
 				b.setOrder(this.ORDER + (this.FACTOR_TABLE[depth] * index));
 				this.nodes[index++] = b;
 				
+				Point bPos = b.getPosition();
 				Point newInnerPos = new Point(innerPos.x + x, innerPos.y + y);
 				int[] meanRGB = calculateMeanOfCurrentBlock(meanOf4x4Blocks, newInnerPos, fraction);
 				double standardDeviation = computeStandardDeviation(meanRGB, argbs, newInnerPos, fraction);
 				b.setMeanColor(meanRGB);
 				
 				if (standardDeviation > errorThreshold
-					|| this.position.x + fraction > dim.width
-					|| this.position.y + fraction > dim.height) {
+					|| bPos.x + fraction > dim.width
+					|| bPos.y + fraction > dim.height) {
 					b.subdivide(errorThreshold, depth + 1, meanOf4x4Blocks, argbs, dim, newInnerPos);
 				}
 			}
