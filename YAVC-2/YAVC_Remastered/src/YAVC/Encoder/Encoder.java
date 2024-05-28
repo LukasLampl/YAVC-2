@@ -71,7 +71,8 @@ public class Encoder {
 //				ImageIO.write(part[0], "png", new File(output.getAbsolutePath() + "/MB_" + i + ".png"));
 //				ImageIO.write(part[1], "png", new File(output.getAbsolutePath() + "/MBA_" + i + ".png"));
 //				ImageIO.write(part[2], "png", new File(output.getAbsolutePath() + "/MBI_" + i + ".png"));
-//				ImageIO.write(composit.toBufferedImage(), "png", new File(output.getAbsolutePath() + "/VR_" + i + ".png"));
+//				ImageIO.write(vectors, "png", new File(output.getAbsolutePath() + "/V_" + i + ".png"));
+				ImageIO.write(composit.toBufferedImage(), "png", new File(output.getAbsolutePath() + "/VR_" + i + ".png"));
 
 				outStream.addObjectToOutputQueue(new QueueObject(movementVectors, leaveNodes));
 				
@@ -80,8 +81,8 @@ public class Encoder {
 				sumOfMilliSeconds += time;
 				printStatistics(time, sumOfMilliSeconds, i, movementVectors, leaveNodes, curFrame.getColorSpectrum());
 
+				references.add(composit.copy());
 				prevFrame = composit.copy();
-				references.add(prevFrame);
 				manageReferences(references);
 			}
 			
@@ -120,6 +121,10 @@ public class Encoder {
 		}
 		
 		System.out.println("Total Avg. MSE of inter prediction: " + (TOTAL_MSE / TOTAL_MSE_ADDITION_COUNT));
+		
+		int usedMemory = (int)(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory());
+		int memory = usedMemory / (1024 * 1024);
+		System.out.println("Memory usage: " + memory + "MB");
 	}
 	
 	private void manageReferences(ArrayList<?> references) {

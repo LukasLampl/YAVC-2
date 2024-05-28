@@ -27,6 +27,9 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.awt.image.DataBufferInt;
 import java.util.HashSet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 public class PixelRaster {
@@ -38,7 +41,8 @@ public class PixelRaster {
 	private Dimension dim = null;
 	private ColorManager COLOR_MANAGER = new ColorManager();
 	
-	public PixelRaster(BufferedImage img) {
+	
+	public PixelRaster(final BufferedImage img) {
 		if (img == null) throw new NullPointerException("Can't invoke NULL image");
 		
 		this.dim = new Dimension(img.getWidth(), img.getHeight());
@@ -48,47 +52,83 @@ public class PixelRaster {
 		
 		if (img.getRaster().getDataBuffer() instanceof DataBufferInt) {
 			int temp[] = ((DataBufferInt)img.getRaster().getDataBuffer()).getData();
-			int x = 0, y = 0;
-			
-			for (int argb : temp) {
-				if (x >= img.getWidth()) {
-					y++;
-					x = 0;
-				}
-				
-				this.colors.add(argb);
-				setYUV(x, y, this.COLOR_MANAGER.convertRGBToYUV(argb));
-				x++;
-			}
+			processIntBuffer(temp);
 		} else if (img.getRaster().getDataBuffer() instanceof DataBufferByte) {
 			byte[] buffer = ((DataBufferByte)img.getRaster().getDataBuffer()).getData();
 			boolean hasAlpha = img.getAlphaRaster() != null ? true : false;
-			int x = 0, y = 0;
+			processByteBuffer(buffer, hasAlpha);
+		} else throw new IllegalArgumentException("Unsupported DataBuffer! DataBufferInt and DataBufferByte are supported");
+	}
+	
+	private void processByteBuffer(final byte[] buffer, final boolean hasAlpha) {
+		final int chunkSize = 2048, length = (hasAlpha == true) ? 4 : 3;
+		final int width = this.dim.width, height = this.dim.height;
+		int inc = length * chunkSize;
+		
+		ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+		ConcurrentHashSet<Integer, Boolean> concurrentColors = new ConcurrentHashSet<Integer, Boolean>();
+		
+		for (int i = 0; i < buffer.length; i += inc) {
+			final int index = i;
+			final int startPosX = (i / length) % width, startPosY = (i / length) / width;
 			
-			for (int i = 0; i < buffer.length; i++) {
-				int argb = -16777216;
+			Runnable task = () -> {
+				int innerX = startPosX, innerY = startPosY;
 				
-				if (hasAlpha) {
-					argb += (((int)buffer[i++] & 0xff) << 24); //Alpha
+				for (int n = 0; n < inc; n += length) {
+					if (n + index >= buffer.length) {
+						break;
+					} else if (innerX >= width) {
+						innerY++;
+						innerX = 0;
+					} else if (innerY >= height) break;
+					
+					int argb = -16777216, jumper = index + n;
+					boolean newInit = (innerX % 2 == 0 && innerY % 2 == 0) ? true : false;
+					
+					if (hasAlpha) {
+						argb += (((int)buffer[jumper++] & 0xFF) << 24); //Alpha
+					}
+					
+					argb += ((int)buffer[jumper++] & 0xFF); //Blue
+					argb += (((int)buffer[jumper++] & 0xFF) << 8); //Green
+					argb += (((int)buffer[jumper] & 0xFF) << 16); //Red
+					
+					concurrentColors.add(argb, true);
+					setThreadSafeYUV(innerX++, innerY, this.COLOR_MANAGER.convertRGBToYUV(argb), newInit);
 				}
-				
-				argb += ((int)buffer[i++] & 0xff); //Blue
-				argb += (((int)buffer[i++] & 0xff) << 8); //Green
-				argb += (((int)buffer[i] & 0xff) << 16); //Red
-				
-				if (x >= img.getWidth()) {
-					y++;
-					x = 0;
-				}
-				
-				this.colors.add(argb);
-				setYUV(x, y, this.COLOR_MANAGER.convertRGBToYUV(argb));
-				x++;
+			};
+			
+			executor.submit(task);
+		}
+		
+		executor.shutdown();
+	
+		try {
+			while (!executor.awaitTermination(5, TimeUnit.MILLISECONDS)) {}
+		} catch (Exception e) {e.printStackTrace();}
+		
+		this.colors = concurrentColors.convertToHashSet();
+	}
+	
+	private void processIntBuffer(final int[] buffer) {
+		int x = 0, y = 0, width = this.dim.width;
+		
+		for (int argb : buffer) {
+			if (x >= width) {
+				y++;
+				x = 0;
 			}
+			
+			boolean newInit = (x % 2 == 0 && y % 2 == 0) ? true : false;
+			
+			this.colors.add(argb);
+			setThreadSafeYUV(x, y, this.COLOR_MANAGER.convertRGBToYUV(argb), newInit);
+			x++;
 		}
 	}
 	
-	public PixelRaster(Dimension dim, double[][] Y, double[][] U, double[][] V) {
+	public PixelRaster(final Dimension dim, final double[][] Y, final double[][] U, final double[][] V) {
 		if (dim.getWidth() <= 0) throw new IllegalArgumentException("Width " + dim.getWidth() + " is not supported");
 		else if (dim.getHeight() <= 0) throw new IllegalArgumentException("Height " + dim.getHeight() + " is not supported");
 		else if (Y == null) throw new NullPointerException("PixelRaster can't have NULL data for Luma-Y");
@@ -101,7 +141,7 @@ public class PixelRaster {
 		this.V = V;
 	}
 	
-	public double[] getYUV(int x, int y) {
+	public double[] getYUV(final int x, final int y) {
 		if (x < 0 || x >= this.dim.width) throw new ArrayIndexOutOfBoundsException("(X) " + x + " is out of bounds 0:" + this.dim.width);
 		else if (y < 0 || y >= this.dim.height) throw new ArrayIndexOutOfBoundsException("(Y) " + y + " is out of bounds 0:" + this.dim.height);
 		
@@ -109,14 +149,24 @@ public class PixelRaster {
 		return new double[] {this.Y[x][y], this.U[subSX][subSY], this.V[subSX][subSY]};
 	}
 	
-	public void setYUV(int x, int y, double[] YUV) {
+	public void setYUV(final int x, final int y, final double[] YUV) {
+		if (y < 0 || y >= this.dim.height) throw new ArrayIndexOutOfBoundsException("(Y) " + y + "is out of bounds!");
+		else if (x < 0 || x >= this.dim.width) throw new ArrayIndexOutOfBoundsException("(X) " + x + "is out of bounds!");
+		
+		int subSX = x / 2, subSY = y / 2;
+		this.Y[x][y] = YUV[0];
+		this.U[subSX][subSY] = YUV[1];
+		this.V[subSX][subSY] = YUV[2];
+	}
+	
+	public void setThreadSafeYUV(final int x, final int y, final double[] YUV, final boolean invokedUV) {
 		if (y < 0 || y >= this.dim.height) throw new ArrayIndexOutOfBoundsException("(Y) " + y + "is out of bounds!");
 		else if (x < 0 || x >= this.dim.width) throw new ArrayIndexOutOfBoundsException("(X) " + x + "is out of bounds!");
 		
 		int subSX = x / 2, subSY = y / 2;
 		this.Y[x][y] = YUV[0];
 
-		if (this.U[subSX][subSY] == 0) {
+		if (invokedUV == true) {
 			this.U[subSX][subSY] = YUV[1];
 			this.V[subSX][subSY] = YUV[2];
 		} else {
@@ -129,7 +179,7 @@ public class PixelRaster {
 		return this.colors.size();
 	}
 	
-	public void setChroma(int x, int y, double U, double V) {
+	public void setChroma(final int x, final int y, final double U, final double V) {
 		if (y < 0 || y >= this.dim.height) throw new ArrayIndexOutOfBoundsException("(Y) " + y + "is out of bounds!");
 		else if (x < 0 || x >= this.dim.width) throw new ArrayIndexOutOfBoundsException("(X) " + x + "is out of bounds!");
 		
@@ -138,7 +188,7 @@ public class PixelRaster {
 		this.V[subSX][subSY] = V;
 	}
 	
-	public void setLuma(int x, int y, double Y) {
+	public void setLuma(final int x, final int y, final double Y) {
 		if (y < 0 || y >= this.dim.height) throw new ArrayIndexOutOfBoundsException("(Y) " + y + "is out of bounds!");
 		else if (x < 0 || x >= this.dim.width) throw new ArrayIndexOutOfBoundsException("(X) " + x + "is out of bounds!");
 		
@@ -157,7 +207,7 @@ public class PixelRaster {
 		return this.dim;
 	}
 	
-	public double[][][] getPixelBlock(Point position, int size, double[][][] cache) {
+	public double[][][] getPixelBlock(final Point position, final int size, double[][][] cache) {
 		if (position == null) throw new NullPointerException();
 		double[][][] res = cache == null ? getArray(size) : size <= cache[0].length ? cache : getArray(size);
 		
@@ -198,7 +248,7 @@ public class PixelRaster {
 		return res;
 	}
 	
-	private double[][][] getArray(int size) {
+	private double[][][] getArray(final int size) {
 		double[][][] res = new double[4][][]; //0 = Y; 1 = U; 2 = V
 		res[0] = new double[size][size];
 		res[1] = new double[size / 2][size / 2];
