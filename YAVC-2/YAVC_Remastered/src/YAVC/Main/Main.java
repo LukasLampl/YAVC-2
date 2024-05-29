@@ -33,6 +33,7 @@ public class Main {
 	public static DCTEngine DCT_ENGINE = new DCTEngine();
 	
 	public static void main(String [] args) {
+/*
 		JFileChooser jfc = new JFileChooser();
 		jfc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 		jfc.showDialog(null, null);
@@ -50,11 +51,14 @@ public class Main {
 		}
 		
 		File out = jfc.getSelectedFile();
+*/
+		File in = new File("/Users/hlampl/frames_Kopie"); 
+		File out = new File("/Users/hlampl/frames_out");		
 		
 		Encoder encoder = new Encoder(DCT_ENGINE);
 		encoder.encode(in, out);
 		
-		Decoder decoder = new Decoder();
-		decoder.decode(new File(out.getParent() + "/YAVC-Res.yavc.part"), out);
+//		Decoder decoder = new Decoder();
+//		decoder.decode(new File(out.getParent() + "/YAVC-Res.yavc.part"), out);
 	}
 }

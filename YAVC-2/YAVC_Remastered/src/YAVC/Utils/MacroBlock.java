@@ -63,6 +63,16 @@ public class MacroBlock {
 		this.A = colors[3];
 	}
 	
+	public MacroBlock(MacroBlock block) {
+		  this.position = block.getPosition();
+		  this.size = block.getSize();
+		  double[][][] col = block.getColors();
+		  this.Y = col[0];
+		  this.U = col[1];
+		  this.V = col[2];
+		  this.A = col[3];
+		}
+	
 	public void setColorComponents(double[][] Y, double[][] U, double[][] V, double[][] A) {
 		if (Y == null) throw new NullPointerException("MacroBlock can't have a NULL Luma-Y channel");
 		else if (U == null) throw new NullPointerException("MacroBlock can't have a NULL Chroma-U channel");
@@ -90,6 +100,28 @@ public class MacroBlock {
 		
 		int subSX = x / 2, subSY = y / 2;
 		return new double[] {this.Y[x][y], this.U[subSX][subSY], this.V[subSX][subSY]};
+	}
+	
+	/*
+	 * Purpose: Set the YUV color at the specific position (x and y) with the reverse sub-sampled chroma values
+	 * Return Type: None
+	 * Params: int x => X position
+	 *         int y => Y position
+	 *         double YUV: array to set
+	 */
+	public void setYUV(int x, int y, double[] YUV)
+	{
+	  if (x < 0 || x >= this.size) {
+	    throw new ArrayIndexOutOfBoundsException("(X) " + x + " is bigger than " + this.size);
+	  } else if (y < 0 || y >= this.size) {
+	    throw new ArrayIndexOutOfBoundsException("(Y) " + y + " is bigger than " + this.size);
+	  }
+	  
+	  int subSX = x / 2, subSY = y / 2;
+	  
+	  this.Y[x][y] = YUV[0];
+	  this.U[subSX][subSY] = YUV[1];
+	  this.V[subSX][subSY] = YUV[2];
 	}
 
 	/*
@@ -134,8 +166,8 @@ public class MacroBlock {
 				b.setMeanColor(meanRGB);
 				
 				if (standardDeviation > errorThreshold
-					|| this.position.x + fraction > dim.width
-					|| this.position.y + fraction > dim.height) {
+					|| b.getPosition().x + fraction > dim.width
+					|| b.getPosition().y + fraction > dim.height) {
 					b.subdivide(errorThreshold, depth + 1, meanOf4x4Blocks, argbs, dim, newInnerPos);
 				}
 			}
@@ -309,5 +341,24 @@ public class MacroBlock {
 		resG = Math.sqrt(resG / length);
 		resB = Math.sqrt(resB / length);
 		return (resR + resG + resB);
+	}
+
+	public MacroBlock clone() {
+	  double[][] YCopy = new double[this.Y.length][];
+	  double[][] UCopy = new double[this.U.length][];
+	  double[][] VCopy = new double[this.V.length][];
+	  double[][] ACopy = new double[this.A.length][];
+	  
+	  for (int i = 0; i < this.Y.length; i++) {
+	    YCopy[i] = this.Y[i].clone();
+	    ACopy[i] = this.A[i].clone();
+	  }
+	  
+	  for (int i = 0; i < this.U.length; i++) {
+	    UCopy[i] = this.U[i].clone();
+	    VCopy[i] = this.V[i].clone();
+	  }
+	  
+	  return new MacroBlock(this.position, this.size, YCopy, UCopy, VCopy, ACopy);
 	}
 }
