@@ -34,14 +34,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 /**
- * The class {@code YAVC.Utils.PixelRaster} is a replacement for
+ * <p>The class {@code YAVC.Utils.PixelRaster} is a replacement for
  * the BufferedImage, due to performance issues and wrong colorspace.
  * The PixelRaster has all important features, like getYUV (getRGB()
- * in YUV) or get PixelBlock() as replacement for getRGB()[].
+ * in YUV) or get PixelBlock() as replacement for getRGB()[].</p>
  * 
- * While converting the BufferedImage to PixelRaster, chroma subsampling
+ * <p>While converting the BufferedImage to PixelRaster, Chroma subsampling
  * takes place. This means, for 4 pixels of luma, there is 1 pixel of 
- * chroma.
+ * chroma.</p>
  * 
  * @author Lukas Lampl
  * @since 1.0
@@ -72,19 +72,20 @@ public class PixelRaster {
 	private Dimension dim = null;
 	
 	/**
-	 * Invokes a ColorManager for color conversion from RGB to YUV.
-	 * For explicit details @see #YAVC.Utils.ColorManager.
+	 * <p>Invokes a ColorManager for color conversion from RGB to YUV.</p>
+	 * 
+	 * @see YAVC.Utils.ColorManager
 	 */
 	private ColorManager COLOR_MANAGER = new ColorManager();
 	
 	/**
-	 * Initialize the PixelRaster using the data of a BufferedImage.
-	 * If the image is not dividable by 4, the image gets resized.
+	 * <p>Initialize the PixelRaster using the data of a BufferedImage.
+	 * If the image is not a divisor by 4, the image gets resized.</p>
 	 * 
-	 * @param BufferedImage img => Image to convert to PixelRaster
+	 * @param img	Image to convert to PixelRaster
 	 * 
-	 * @throws NullPointerException, if the BufferedImage is null
-	 * @throws IllegalArgumentException, when the image DataBuffer is not supported
+	 * @throws NullPointerException	if the BufferedImage is null
+	 * @throws IllegalArgumentException	when the image DataBuffer is not supported
 	 */
 	public PixelRaster(BufferedImage img) {
 		if (img == null) throw new NullPointerException("Can't invoke NULL image");
@@ -106,16 +107,16 @@ public class PixelRaster {
 	}
 	
 	/**
-	 * Initialize the PixelRaster using a Dimension, the Y components,
-	 * U components and V components
+	 * <p>Initialize the PixelRaster using a Dimension, the Y components,
+	 * U components and V components</p>
 	 * 
-	 * @param Dimension dim => Dimension of the PixelRaster (width and height)
-	 * @param double[][] Y => Y component for the PixelRaster
-	 * @param double[][] U => U component for the PixelRaster
-	 * @param double[][] V => V component for the PixelRaster	
+	 * @param dim	Dimension of the PixelRaster (width and height)
+	 * @param Y		Y component for the PixelRaster
+	 * @param U		U component for the PixelRaster
+	 * @param V		V component for the PixelRaster	
 	 * 
-	 * @throws NullPointerException, if one of the provided components is null
-	 * @throws IllegalArgumentException, when either width or height is lower or equal to 0
+	 * @throws NullPointerException	if one of the provided components is null
+	 * @throws IllegalArgumentException	when either width or height is lower or equal to 0
 	 */
 	public PixelRaster(final Dimension dim, final double[][] Y, final double[][] U, final double[][] V) {
 		if (dim.getWidth() <= 0) throw new IllegalArgumentException("Width " + dim.getWidth() + " is not supported");
@@ -131,9 +132,9 @@ public class PixelRaster {
 	}
 	
 	/**
-	 * @apiNote Resizes the provided image to the smaller divisor of 4
+	 * <p>Resizes the provided image to the smaller divisor of 4</p>
 	 * 
-	 * @param BufferedImage img => Image to scale
+	 * @param img	Image to resize
 	 */
 	private BufferedImage scaleToNearest4Divisor(BufferedImage img) {
 		int newWidth = img.getWidth() - (img.getWidth() % 4);
@@ -151,18 +152,18 @@ public class PixelRaster {
 	}
 	
 	/**
-	 * Reads the buffer byte by byte and fills out the YUV colors.
+	 * <p>Reads the buffer byte by byte and fills out the YUV colors.
 	 * The buffer is packed into batches, which then are processed using
-	 * multithreading.
+	 * multithreading.</p>
 	 * 
-	 * <strong>Performance Warning:</strong> Even though there is multi-
+	 * <p><strong>Performance Warning:</strong> Even though there is multi-
 	 * threading involved, the overall performance is totally dependent
 	 * on the buffer size.
-	 * Time: O(n)
+	 * Time: O(n)</p>
 	 * 
-	 * @param byte[] buffer => Raw data of the image, that should be processed
+	 * @param buffer	Raw data of the image, that should be processed
 	 * to YUV colors.
-	 * @param boolean hasAlpha => true if the image has an alpha channel, if not
+	 * @param hasAlpha	true if the image has an alpha channel, if not
 	 * hasAlpha = false
 	 */
 	private void processByteBuffer(final byte[] buffer, final boolean hasAlpha) {
@@ -214,53 +215,75 @@ public class PixelRaster {
 	}
 	
 	/**
-	 * Convert the DataBufferInt to the YUV colorspace
+	 * <p>Convert the DataBufferInt to the YUV colorspace
 	 * and initialize the according colors in the Y, U and V
-	 * components.
+	 * components.</p>
 	 * 
-	 * <strong>Performance Warning:</strong> Even though there is multi-
+	 * <p><strong>Performance Warning:</strong> Even though there is multi-
 	 * threading involved, the overall performance is totally dependent
 	 * on the buffer size.
-	 * Time: O(n)
+	 * Time: O(n)</p>
 	 * 
-	 * @param int[] buffer => Data of the image in form of integers.
-	 * 
-	 * <strong>NOTE:</strong> the integers should be in the order of
+	 * <p><strong>NOTE:</strong> the integers should be in the order of
 	 * ARGB.
-	 * First 8 bits: Alpha
-	 * Bits from 8 to 16: Red
-	 * Bits from 16 to 8: Green
-	 * Last 8 bits: Blue 
-	 * The order is the same as in the {@code java.awt.Color}
-	 * Object.
+	 * <ul><li>First 8 bits:	Alpha
+	 * <li>Bits from 8 to 16:	Red
+	 * <li>Bits from 16 to 8:	Green
+	 * <li>Last 8 bits:			Blue 
+	 * </ul>The order is the same as in the {@code java.awt.Color}
+	 * Object.</p>
+	 * 
+	 * @param buffer	Data of the image in form of integers.
 	 */
 	private void processIntBuffer(final int[] buffer) {
-		int x = 0, y = 0, width = this.dim.width;
+		int width = this.dim.width;
+		final int chunkSize = 4096;
+		ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 		
-		for (int argb : buffer) {
-			if (x >= width) {
-				y++;
-				x = 0;
-			}
+		for (int i = 0; i < buffer.length; i += chunkSize) {
+			final int index = i;
+			final int startPosX = i % width, startPosY = i / width;
 			
-			boolean newInit = (x % 2 == 0 && y % 2 == 0) ? true : false;
+			Runnable task = () -> {
+				int innerX = startPosX, innerY = startPosY;
+				
+				for (int n = 0; n < chunkSize && index + n < buffer.length; n++) {
+					if (innerX >= width) {
+						innerY++;
+						innerX = 0;
+					}
+					
+					boolean newInit = (innerX % 2 == 0 && innerY % 2 == 0) ? true : false;
+					int argb = buffer[index + n];
+					setThreadSafeYUV(innerX++, innerY, this.COLOR_MANAGER.convertRGBToYUV(argb), newInit);
+				}
+			};
 			
-			setThreadSafeYUV(x++, y, this.COLOR_MANAGER.convertRGBToYUV(argb), newInit);
+			executor.submit(task);
 		}
+		
+		executor.shutdown();
+		
+		try {
+			while (!executor.awaitTermination(20, TimeUnit.MICROSECONDS)) {}
+		} catch (Exception e) {e.printStackTrace();}
 	}
 	
 	/**
-	 * Get the YUV color at the specific position
+	 * <p>Get the YUV color at the specific position
 	 * with the following layout:
-	 * double[0] = Y; double[1] = U; double[2] = V;
+	 * <ul><li>double[0] = Y
+	 * <li>double[1] = U
+	 * <li>double[2] = V
+	 * </ul></p>
 	 * 
-	 * @return double[] => Contains all color components, for the
+	 * @return Adouble containing all color components, for the
 	 * order see above.
 	 * 
-	 * @param int x => position X from which to get the Pixel
-	 * @param int y => position Y from which to get the Pixel
+	 * @param x	position X from which to get the Pixel
+	 * @param y	position Y from which to get the Pixel
 	 * 
-	 * @throws ArrayIndexOutOfBoundsException, when either the x
+	 * @throws ArrayIndexOutOfBoundsException	when either the x
 	 * or y coordinate is out of the raster
 	 */
 	public double[] getYUV(final int x, final int y) {
@@ -272,16 +295,19 @@ public class PixelRaster {
 	}
 	
 	/**
-	 * Sets the desired YUV color at the
+	 * <p>Sets the desired YUV color at the
 	 * desired position. The YUV color should have
 	 * the following order:
-	 * double[0] = Y; double[1] = U; double[2] = V;
+	 * <ul><li>double[0] = Y
+	 * <li>double[1] = U
+	 * <li>double[2] = V
+	 * </ul></p>
 	 * 
-	 * @param int x => position X to set the YUV color
-	 * @param int y => position Y to set the YUV color
-	 * @param double[] YUV => YUV color to set
+	 * @param x	position X to set the YUV color
+	 * @param y	position Y to set the YUV color
+	 * @param YUV	YUV color to set
 	 * 
-	 * @throws ArrayIndexOutOfBoundsException, when either the x
+	 * @throws ArrayIndexOutOfBoundsException	when either the x
 	 * or y coordinate is out of the raster
 	 */
 	public void setYUV(final int x, final int y, final double[] YUV) {
@@ -295,12 +321,15 @@ public class PixelRaster {
 	}
 	
 	/**
-	 * Sets the desired YUV color at the
+	 * <p>Sets the desired YUV color at the
 	 * desired position. The YUV color should have
 	 * the following order:
-	 * double[0] = Y; double[1] = U; double[2] = V;
+	 * <ul><li>double[0] = Y
+	 * <li>double[1] = U
+	 * <li>double[2] = V
+	 * </ul></p>
 	 * 
-	 * <strong>NOTE:</strong> the chroma subsampling is automatically
+	 * <p><strong>NOTE:</strong> the chroma subsampling is automatically
 	 * handled here (from 4:4:4 to 4:2:0). chroma subsampling
 	 * means, that on basis of the original luma values there
 	 * is only a fraction of the chroma values, due to the
@@ -308,40 +337,41 @@ public class PixelRaster {
 	 * 4:4:4 means, that there are 4 luma values, 4 chroma
 	 * values on 4 pixels. 4:2:0 means, that there are 4
 	 * luma values, but only 1 chroma value on 4 pixels.
-	 * 
+	 * <br><br>
 	 * Here's an example:
 	 * The values are in the following order {Y, U, V}
-	 * 
-	 * - Original
-	 * +---------------+---------------+
-	 * | 255, 034, 026 | 045, 255, 067 |
-	 * +---------------+---------------+
-	 * | 002, 130, 167 | 157, 182, 036 |
-	 * +---------------+---------------+
-	 * 
-	 * - Chroma subsampled
-	 * +---------------+---------------+
-	 * | 255, 034, 026 | 045, 034, 026 |
-	 * +---------------+---------------+
-	 * | 002, 034, 026 | 157, 034, 026 |
-	 * +---------------+---------------+
-	 * 
+	 * <br><br>
+	 * - Original<br>
+	 * +---------------+---------------+<br>
+	 * | 255, 034, 026 | 045, 255, 067 |<br>
+	 * +---------------+---------------+<br>
+	 * | 002, 130, 167 | 157, 182, 036 |<br>
+	 * +---------------+---------------+<br>
+	 * <br>
+	 * - Chroma subsampled<br>
+	 * +---------------+---------------+<br>
+	 * | 255, 034, 026 | 045, 034, 026 |<br>
+	 * +---------------+---------------+<br>
+	 * | 002, 034, 026 | 157, 034, 026 |<br>
+	 * +---------------+---------------+<br>
+	 * <br>
 	 * To prevent strong differences, YAVC averages the
-	 * chroma out:
-	 * - YAVC Chroma subsampled
-	 * +---------------+---------------+
-	 * | 255, 150, 074 | 045, 150, 074 |
-	 * +---------------+---------------+
-	 * | 002, 150, 074 | 157, 150, 074 |
-	 * +---------------+---------------+
+	 * chroma out:<br>
+	 * - YAVC Chroma subsampled<br>
+	 * +---------------+---------------+<br>
+	 * | 255, 150, 074 | 045, 150, 074 |<br>
+	 * +---------------+---------------+<br>
+	 * | 002, 150, 074 | 157, 150, 074 |<br>
+	 * +---------------+---------------+<br>
+	 * </p>
 	 * 
-	 * @param int x => position X to set the YUV color
-	 * @param int y => position Y to set the YUV color
-	 * @param double[] YUV => YUV color to set
-	 * @param boolean invokedUV => Is it the first Chroma-sample
+	 * @param x	position X to set the YUV color
+	 * @param y	position Y to set the YUV color
+	 * @param YUV	YUV color to set
+	 * @param invokedUV	is it the first Chroma-sample
 	 * of the 2x2 pixel area
 	 * 
-	 * @throws ArrayIndexOutOfBoundsException, when either the x
+	 * @throws ArrayIndexOutOfBoundsException	when either the x
 	 * or y coordinate is out of the raster
 	 */
 	public void setThreadSafeYUV(final int x, final int y, final double[] YUV, final boolean invokedUV) {
@@ -361,15 +391,15 @@ public class PixelRaster {
 	}
 	
 	/**
-	 * Sets the desired chroma value at the
-	 * desired position.
+	 * <p>Sets the desired chroma value at the
+	 * desired position.</p>
 	 * 
-	 * @param int x => position X to set the YUV color
-	 * @param int y => position Y to set the YUV color
-	 * @param double U => U value to set
-	 * @param double V => V value to set
+	 * @param x	position X to set the YUV color
+	 * @param y	position Y to set the YUV color
+	 * @param U	U value to set
+	 * @param V	V value to set
 	 * 
-	 * @throws ArrayIndexOutOfBoundsException, when either the x
+	 * @throws ArrayIndexOutOfBoundsException	when either the x
 	 * or y coordinate is out of the raster
 	 */
 	public void setChroma(final int x, final int y, final double U, final double V) {
@@ -382,14 +412,14 @@ public class PixelRaster {
 	}
 	
 	/**
-	 * Sets the desired luma value at the
-	 * desired position.
+	 * <p>Sets the desired luma value at the
+	 * desired position.</p>
 	 * 
-	 * @param int x => position X to set the YUV color
-	 * @param int y => position Y to set the YUV color
-	 * @param double Y => Y value to set
+	 * @param x	position X to set the YUV color
+	 * @param y	position Y to set the YUV color
+	 * @param Y	Y value to set
 	 * 
-	 * @throws ArrayIndexOutOfBoundsException, when either the x
+	 * @throws ArrayIndexOutOfBoundsException	when either the x
 	 * or y coordinate is out of the raster
 	 */
 	public void setLuma(final int x, final int y, final double Y) {
@@ -399,32 +429,47 @@ public class PixelRaster {
 		this.Y[x][y] = Y;
 	}
 	
+	/**
+	 * <p>Get the width of the PixelRaster.</p>
+	 * 
+	 * @return width of the PixelRaster
+	 */
 	public int getWidth() {
 		return this.dim.width;
 	}
 	
+	/**
+	 * <p>Get the height of the PixelRaster.</p>
+	 * 
+	 * @return height of the PixelRaster
+	 */
 	public int getHeight() {
 		return this.dim.height;
 	}
 	
+	/**
+	 * <p>Get the Dimension of the PixelRaster.</p>
+	 * 
+	 * @return dimension of the PixelRaster
+	 */
 	public Dimension getDimension() {
 		return this.dim;
 	}
 	
 	/**
-	 * Get a pixelblock within the PixelRaster.
+	 * <p>Get a ixelblock within the PixelRaster.
 	 * The block is ordered like a PixelRaster, full 4:4:4
-	 * luma and 4:2:0 chroma.
+	 * luma and 4:2:0 chroma.</p>
 	 * 
-	 * <strong>Performance Warning:</strong> The performance is
+	 * <p><strong>Performance Warning:</strong> The performance is
 	 * totally dependent on the size of the block.
-	 * Time: O(n)
+	 * Time: O(n)</p>
 	 * 
-	 * @param Point position => Position of the block
-	 * @param int size => Size of the block
-	 * @param double[][][] cache => double array to store the values in
+	 * @param position	Position of the block
+	 * @param size	Size of the block
+	 * @param cache	double array to store the values in
 	 * without creating a new array
-	 * @return double[][][] => PixelBlock from the PixelRaster
+	 * @return PixelBlock from the PixelRaster
 	 */
 	public double[][][] getPixelBlock(final Point position, final int size, double[][][] cache) {
 		if (position == null) throw new NullPointerException();
@@ -468,10 +513,10 @@ public class PixelRaster {
 	}
 	
 	/**
-	 * Get an array of 2D arrays
+	 * <p>Get an array of 2D arrays.</p>
 	 * 
-	 * @param int size => size if the arrays
-	 * @return double[][][] => initialized array
+	 * @param size	size if the arrays
+	 * @return initialized array
 	 */
 	private double[][][] getArray(final int size) {
 		double[][][] res = new double[4][][]; //0 = Y; 1 = U; 2 = V
@@ -483,14 +528,14 @@ public class PixelRaster {
 	}
 	
 	/**
-	 * Converts the PixelRaster into a BufferedImage
+	 * <p>Converts the PixelRaster into a BufferedImage.</p>
 	 * 
-	 * <strong>Performance Warning:</strong> Even though there is multi-
+	 * <p><strong>Performance Warning:</strong> Even though there is multi-
 	 * threading involved, the overall performance is totally dependent
 	 * on the Image dimensions.
-	 * Time: O(n)
+	 * Time: O(n)</p>
 	 * 
-	 * @return BufferedImage => Reconstructed BufferedImage
+	 * @return Reconstructed BufferedImage
 	 */
 	public BufferedImage toBufferedImage() {
 		BufferedImage render = new BufferedImage(this.dim.width, this.dim.height, BufferedImage.TYPE_INT_ARGB);
@@ -505,10 +550,10 @@ public class PixelRaster {
 	}
 	
 	/**
-	 * Creates a copy of the PixelRaster
-	 * without any references to other values
+	 * <p>Creates a copy of the PixelRaster
+	 * without any references to other values</p>
 	 * 
-	 * @return PixelRaster => Cloned PixelRaster
+	 * @return Cloned PixelRaster
 	 */
 	public PixelRaster copy() {
 		double[][] clonedY = new double[this.dim.width][];

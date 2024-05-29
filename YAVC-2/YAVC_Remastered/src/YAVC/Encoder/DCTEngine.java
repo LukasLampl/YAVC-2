@@ -1,3 +1,24 @@
+/////////////////////////////////////////////////////////////
+///////////////////////    LICENSE    ///////////////////////
+/////////////////////////////////////////////////////////////
+/*
+The YAVC video / frame compressor compresses frames.
+Copyright (C) 2024  Lukas Nian En Lampl
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 package YAVC.Encoder;
 
 import java.util.ArrayList;
@@ -7,9 +28,41 @@ import java.util.concurrent.TimeUnit;
 
 import YAVC.Main.config;
 
+/**
+ * The class {@code YAVC.Encoder.DCTEngine} contains basic functions 
+ * for calcualting the DCT-II coefficients for a 8x8, 4x4 and 2x2
+ * 2 dimensional double array. IT also contains functions for quantization.
+ * The used DCTs are the DCT-II and DCT-III (referred as IDCT).
+ * 
+ * <strong>Performance warning:</strong> Due to the nature of the DCT-II
+ * there are many repeated calculations and so impact performance
+ * if used in a big scale.
+ * 
+ * @author Lukas Lampl
+ * @since 1.0
+ */
+
 public class DCTEngine {
+	/**
+	 * This array stores the pre-calculated cosines to
+	 * ensure a shorter calculation time in further processing.
+	 * The first dimension describes, whether the coefficients
+	 * are DCT-II ([0]) or IDCT ([1]). Followed by that is the
+	 * dimension of the matrix itself with 8x8 at [0], 4x4
+	 * at [1] and 2x2 at [2]. The rest stores the individual
+	 * coefficients. 
+	 */
 	public static double[][][][][][] DCT_COEFFICIENTS = new double[2][][][][][]; //Position at [0][][][]... is for DCT; Position at [1][][][]... is for IDCT
 
+	/**
+	 * The constructor pre-calculates all cosine values
+	 * to ensure a faster processing time in the next few steps
+	 * of the DCT-II as well as the IDCT.
+	 * 
+	 * <strong>Performance Warning:</strong> Even though there is
+	 * multithreading involved, the process takes up some time
+	 * especially for larger DCT matrices.
+	 */
 	public DCTEngine() {
 		int threads = Runtime.getRuntime().availableProcessors();
 		ExecutorService executor = Executors.newFixedThreadPool(threads);
@@ -35,7 +88,26 @@ public class DCTEngine {
 		}
 	}
 	
+	/**
+	 * Creates a runnable that is then passed
+	 * to run in a thread. The runnable contains the functionality
+	 * to calculate all DCT coefficients for DCT-II as well as IDCT.
+	 * DCT-II:
+	 * N-1    N-1
+	 * ∑      ∑    cos((2 * x + 1 * v * π) / (2 * m)) * cos((2 * y + 1 * u * π) / (2 * m))
+	 * x=0    y=0
+	 * 
+	 * @return Runnable => Runnable with the calculations ready to be run
+	 * 
+	 * @param int m => size of the matrix it should represent
+	 * @param int index => Position in the array.
+	 * For 8x8 it is at position [0], 4x4 at [1] and 2x2 at [2].
+	 * 
+	 * @throws IllegalArgumentException, when m is not positive or is 0
+	 */
 	private Runnable getDCTCoeffs(int m, int index) {
+		if (m <= 0) throw new IllegalArgumentException("Size m has to be greater than 0");
+		
 		int m2 = m * 2;
 		
 		Runnable task = () -> {
@@ -58,10 +130,31 @@ public class DCTEngine {
 		return task;
 	}
 	
+	/**
+	 * Returns the factor with which the individual coefficients
+	 * should be multiplied with
+	 * 
+	 * @return double => Factor with which the coefficient should be multiplied
+	 * with
+	 * 
+	 * @param int x => position of the coefficient in one dimension
+	 * @param int m => size of the coefficient matrix
+	 */
 	private double step(int x, int m) {
 		return x == 0 ? 1 / Math.sqrt(m) : Math.sqrt(2.0 / (double)m);
 	}
 	
+	/**
+	 * Returns the index of the coefficient matrix based
+	 * on the matrix size.
+	 * 
+	 * @return int => Index of the matrix
+	 * 
+	 * @param int m => size of the matrix
+	 * 
+	 * @throws IllegalArgumentException, if the matrix size is not
+	 * 8x8, 4x4 or 2x2
+	 */
 	private int setIndexOfDCT(int m) {
 		switch (m) {
 		case 8: return 0;
@@ -70,7 +163,22 @@ public class DCTEngine {
 		default: throw new IllegalArgumentException("Unsupported matrix size: " + m);
 		}
 	}
-		
+	
+	/**
+	 * Computes the DCT Coefficients of the absolute color difference
+	 * received by a vector {@code YAVC.Utils.Vector}. First the coefficients are
+	 * calculated and then they're quantizized.
+	 * 
+	 * <strong>IMPORTANT:</strong> this function only calculates the DCT coefficients
+	 * for 8x8, 4x4 and 2x2 matrices. If a matrix exceeds that size, then the matrix is
+	 * split into 8x8 matrices and sorted from Left-to-Right and Top-to-Bottom.
+	 * 
+	 * @return ArrayList<double[][][]> => ArrayList containing all 8x8 or 4x4 matrices.
+	 * For the order see above.
+	 * 
+	 * @param double[][][] diffs => AbsoluteColorDifference from vector
+	 * @param int size => Size of the matrix to process
+	 */
 	public ArrayList<double[][][]> computeDCTOfVectorColorDifference(double[][][] diffs, int size) {
 		int estimatedSize = (size / 8) * (size / 8);
 		ArrayList<double[][][]> coeffs = new ArrayList<double[][][]>(estimatedSize <= 0 ? 2 : estimatedSize);
@@ -109,6 +217,17 @@ public class DCTEngine {
 		return coeffs;
 	}
 	
+	/**
+	 * Computes the IDCT Coefficients of the DCT-II coefficients
+	 * received by the converted AbsoluteColorDifference {@code YAVC.Utils.Vector}.
+	 * First the coefficients are dequantizized and then further processed.
+	 * 
+	 * @return double[][][] => reconstructed AbsoluteColorDifference array
+	 * 
+	 * @param ArrayList<double[][][]> DCTCoeff => Coefficients to reverse.
+	 * For order @see YAVC.Encoder.DCTEngine.computeDCTOfVectorColorDifference().
+	 * @param int size => Size of the original matrix
+	 */
 	public double[][][] computeIDCTOfVectorColorDifference(ArrayList<double[][][]> DCTCoeff, int size) {
 		if (DCTCoeff == null || DCTCoeff.size() == 0) {
 			System.err.println("No DCT-II Coefficients to apply IDCT-II on! > NULL");
@@ -156,6 +275,14 @@ public class DCTEngine {
 		return res;
 	}
 	
+	/**
+	 * Writes a subarray into another array
+	 * 
+	 * @param double[][][] subArray => subarray to put into the array
+	 * @param double[][][] dest => destination to put the subarray into 
+	 * @param int posX => position x in the destination array
+	 * @param int posY => position y in the destination array
+	 */
 	private void writeSubArrayInArray(double[][][] subArray, double[][][] dest, int posX, int posY) {
 		int size = subArray[0].length, halfSize = subArray[1].length;
 		
@@ -174,7 +301,24 @@ public class DCTEngine {
 		}
 	}
 	
+	/**
+	 * Gets a subarray from an array.
+	 * 
+	 * @return double[][][] => created subarray from the original array
+	 * 
+	 * @param double[][][] org => Original array to get the sub-array from
+	 * @param int size => size of the subarray
+	 * @param int posX => position x in the original array
+	 * @param int posY => position y in the original array
+	 * 
+	 * @throws ArrayIndexOutOfBoundsException, when the size is bigger than the
+	 * original array or the subarray exceeds the original array
+	 */
 	private double[][][] getSubArray(double[][][] org, int size, int posX, int posY) {
+		if (size > org[0].length) throw new ArrayIndexOutOfBoundsException("Size of the subarray can't be bigger than the original");
+		else if (size + posX > org[0].length) throw new ArrayIndexOutOfBoundsException("Subarray exceeds the original array");
+		else if (size + posY > org[0].length) throw new ArrayIndexOutOfBoundsException("Subarray exceeds the original array");
+		
 		double arr[][][] = new double[3][][];
 		int halfSize = size / 2;
 		
@@ -199,6 +343,18 @@ public class DCTEngine {
 		return arr;
 	}
 	
+	/**
+	 * Computes the DCT-II coefficients for the chroma channels.
+	 * Important to know is, that the chroma is subsampled unlike the
+	 * luma channel.
+	 * 
+	 * @return double[][][] => Array with the DCT-II coefficients,
+	 * where U is at [0] and V at [1].
+	 * 
+	 * @param double[][] U => U values to convert
+	 * @param double[][] V => V values to convert
+	 * @param int m => size of the matrix
+	 */
 	private double[][][] computeChromaDCTCoefficients(double[][] U, double[][] V, int m) {
 		double resU[][] = new double[m][m];
 		double resV[][] = new double[m][m];
@@ -227,6 +383,17 @@ public class DCTEngine {
 		return new double[][][] {resU, resV};
 	}
 	
+	/**
+	 * Computes the IDCT coefficients for the DCT-II
+	 * coefficients.
+	 * 
+	 * @return double[][][] => Array with the IDCT coefficients,
+	 * where U is at [0] and V at [1].
+	 * 
+	 * @param double[][] U => DCT-II U values to convert
+	 * @param double[][] V => DCT-II V values to convert
+	 * @param int m => size of the matrix
+	 */
 	private double[][][] computeChromaIDCTCoefficients(double[][] U, double[][] V, int m) {
 		double[][] resU = new double[m][m];
 		double[][] resV = new double[m][m];
@@ -254,6 +421,16 @@ public class DCTEngine {
 		return new double[][][] {resU, resV};
 	}
 		
+	/**
+	 * Computes the DCT-II coefficients for the luma channel.
+	 * Important to know is, that the luma is not subsampled unlike the
+	 * chroma channels.
+	 * 
+	 * @return double[][] => Array with the DCT-II coefficients
+	 * 
+	 * @param double[][] Y => Y values to convert
+	 * @param int m => size of the matrix
+	 */
 	private double[][] computeLumaDCTCoefficients(double[][] Y, int m) {
 		double resY[][] = new double[m][m];
 		int index = setIndexOfDCT(m);
@@ -278,6 +455,15 @@ public class DCTEngine {
 		return resY;
 	}
 	
+	/**
+	 * Computes the IDCT coefficients for the DCT-II
+	 * coefficients.
+	 * 
+	 * @return double[][] => Array with the IDCT coefficients
+	 * 
+	 * @param double[][] Y => DCT-II Y values to convert
+	 * @param int m => size of the matrix
+	 */
 	private double[][] computeLumaIDCTCoefficients(double[][] Y, int m) {
 		double[][] resY = new double[m][m];
 		double[] steps = {step(0, m), step(1, m)};
@@ -301,7 +487,16 @@ public class DCTEngine {
 		
 		return resY;
 	}
-
+	
+	/**
+	 * Quantifies all DCT-II coefficients with the according
+	 * quantization table.
+	 * 
+	 * @see YAVC.Main.config
+	 * 
+	 * @param double[][][] coefficients => Coefficients to quantify
+	 * @param int size => size of the matrix
+	 */
 	public void quantizeChromaDCTCoefficients(double[][][] coefficients, int size) {
 		int[][] chromaQuant = getChromaQuantizationTable(size);
 		
@@ -344,6 +539,15 @@ public class DCTEngine {
 		}
 	}
 	
+	/**
+	 * returns the according luma quantization table
+	 *
+	 * @return int[][] => quantization table
+	 * 
+	 * @param int size => size of the matrix
+	 * 
+	 * @throws IllegalArgumentException, when the matrix size is not supported
+	 */
 	private int[][] getLumaQuantizationTable(int size) {
 		switch (size) {
 		case 8: return config.QUANTIZATION_MATRIX_8x8_Luma;
@@ -352,6 +556,15 @@ public class DCTEngine {
 		}
 	}
 	
+	/**
+	 * returns the according chroma quantization table
+	 *
+	 * @return int[][] => quantization table
+	 * 
+	 * @param int size => Size of the matrix
+	 * 
+	 * @throws IllegalArgumentException, when the matrix size is not supported
+	 */
 	private int[][] getChromaQuantizationTable(int size) {
 		switch (size) {
 		case 4: return config.QUANTIZATION_MATRIX_4x4_Chroma;
