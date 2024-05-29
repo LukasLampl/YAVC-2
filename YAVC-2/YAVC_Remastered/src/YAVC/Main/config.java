@@ -1,4 +1,33 @@
+/////////////////////////////////////////////////////////////
+///////////////////////    LICENSE    ///////////////////////
+/////////////////////////////////////////////////////////////
+/*
+The YAVC video / frame compressor compresses frames.
+Copyright (C) 2024  Lukas Nian En Lampl
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 package YAVC.Main;
+
+/**
+ * <p>The class {@code YAVC.Main.config} contains all universally used
+ * constants throughout the YAVC video compressor.</p>
+ * 
+ * @author Lukas Lampl
+ * @since 1.0
+ */
 
 public class config {
 	public static final int CODING_OFFSET = 15;
@@ -10,8 +39,7 @@ public class config {
 	public static final byte VECTOR_U_START = (char)3;
 	public static final byte VECTOR_V_START = (char)4;
 	public static final byte VECTOR_END = (char)5;
-	
-	// DCT - ONLY! //
+
 	public static final int[][] QUANTIZATION_MATRIX_8x8_Luma = {
 		{16, 11, 10, 16, 24, 40, 51, 61},
 		{12, 12, 14, 19, 26, 58, 60, 55},
@@ -41,34 +69,4 @@ public class config {
 		{4, 15},
 		{17, 42}
 	};
-	
-////	public static final int[][] QUANTIZATION_MATRIX_8x8_Luma = {
-////			{32, 1, 1, 1, 1, 1, 1, 1},
-////			{1, 1, 1, 1, 1, 1, 1, 1},
-////			{1, 1, 1, 1, 1, 1, 1, 1},
-////			{1, 1, 1, 1, 1, 1, 1, 1},
-////			{1, 1, 1, 1, 1, 1, 1, 1},
-////			{1, 1, 1, 1, 1, 1, 1, 1},
-////			{1, 1, 1, 1, 1, 1, 1, 1},
-////			{1, 1, 1, 1, 1, 1, 1, 1}
-////		};
-//		
-//		public static final int[][] QUANTIZATION_MATRIX_4x4_Luma = {
-//			{16, 1, 1, 1},
-//			{1, 1, 1, 1},
-//			{1, 1, 1, 1},
-//			{1, 1, 1, 1}
-//		};
-//		
-//		public static final int[][] QUANTIZATION_MATRIX_4x4_Chroma = {
-//			{16, 1, 1, 1},
-//			{1, 1, 1, 1},
-//			{1, 1, 1, 1},
-//			{1, 1, 1, 1}
-//		};
-//		
-//		public static final int[][] QUANTIZATION_MATRIX_2x2_Chroma = {
-//			{4, 1},
-//			{1, 1}
-//		};
 }
