@@ -90,7 +90,7 @@ public class QuadtreeEngine {
 		ArrayList<MacroBlock> roots = new ArrayList<MacroBlock>();
 		
 		try {
-			final double errorThreshold = 45;
+			final int errorThreshold = 45;
 			int currentOrderNumber = 0;
 			int width = currentFrame.getWidth();
 			int height = currentFrame.getHeight();
@@ -101,30 +101,8 @@ public class QuadtreeEngine {
 			
 			for (int x = 0; x < width; x += this.MAX_SIZE) {
 				for (int y = 0; y < height; y += this.MAX_SIZE) {
-					final int posX = x;
-					final int posY = y;
 					final int currentOrder = currentOrderNumber++;
-					
-					Callable<MacroBlock> task = () -> {
-						MacroBlock origin = new MacroBlock(new Point(posX, posY), this.MAX_SIZE);
-						double[][][] comps = currentFrame.getPixelBlock(new Point(posX, posY), this.MAX_SIZE, null);
-						origin.setColorComponents(comps[0], comps[1], comps[2], comps[3]);
-						origin.setOrder(currentOrder);
-						
-						MeanStructure meanOf4x4BlocksInBlock = origin.calculate4x4Means();
-						int[] curMean = origin.calculateMeanOfCurrentBlock(meanOf4x4BlocksInBlock.get4x4Means(), new Point(0, 0), this.MAX_SIZE);
-						double originStdDeviation = origin.computeStandardDeviation(curMean, meanOf4x4BlocksInBlock.getArgbs(), new Point(0, 0), this.MAX_SIZE);
-						origin.setMeanColor(curMean);
-						
-						if (originStdDeviation > errorThreshold
-							|| posX + this.MAX_SIZE > width
-							|| posY + this.MAX_SIZE > height) {
-							origin.subdivide(errorThreshold, 0, meanOf4x4BlocksInBlock.get4x4Means(), meanOf4x4BlocksInBlock.getArgbs(), currentFrame.getDimension(), new Point(0, 0));
-						}
-						
-						return origin;
-					};
-					
+					Callable<MacroBlock> task = createQuadtreeConstructionTask(new Point(x, y), currentFrame, errorThreshold, currentOrder);
 					futureRoots.add(executor.submit(task));
 				}
 			}
@@ -148,6 +126,40 @@ public class QuadtreeEngine {
 		}
 			
 		return roots;
+	}
+	
+	/**
+	 * <p>Creates a subdivision task for a single root.</p>
+	 * 
+	 * @return Runnable task for subdividing a root
+	 * 
+	 * @param pos	Position of the root
+	 * @param frame	Current frame
+	 * @param errorThreshold	Maximum error before subdivision
+	 * @param currentOrder	Order of the root
+	 */
+	private Callable<MacroBlock> createQuadtreeConstructionTask(final Point pos, final PixelRaster frame, final int errorThreshold, final int currentOrder) {
+		Callable<MacroBlock> task = () -> {
+			MacroBlock origin = new MacroBlock(new Point(pos.x, pos.y), this.MAX_SIZE);
+			double[][][] comps = frame.getPixelBlock(new Point(pos.x, pos.y), this.MAX_SIZE, null);
+			origin.setColorComponents(comps[0], comps[1], comps[2], comps[3]);
+			origin.setOrder(currentOrder);
+			
+			MeanStructure meanOf4x4BlocksInBlock = origin.calculate4x4Means();
+			int[] curMean = origin.calculateMeanOfCurrentBlock(meanOf4x4BlocksInBlock.get4x4Means(), new Point(0, 0), this.MAX_SIZE);
+			double originStdDeviation = origin.computeStandardDeviation(curMean, meanOf4x4BlocksInBlock.getArgbs(), new Point(0, 0), this.MAX_SIZE);
+			origin.setMeanColor(curMean);
+			
+			if (originStdDeviation > errorThreshold
+				|| pos.x + this.MAX_SIZE > frame.getWidth()
+				|| pos.y + this.MAX_SIZE > frame.getHeight()) {
+				origin.subdivide(errorThreshold, 0, meanOf4x4BlocksInBlock.get4x4Means(), meanOf4x4BlocksInBlock.getArgbs(), frame.getDimension(), new Point(0, 0));
+			}
+			
+			return origin;
+		};
+		
+		return task;
 	}
 	
 	/**
