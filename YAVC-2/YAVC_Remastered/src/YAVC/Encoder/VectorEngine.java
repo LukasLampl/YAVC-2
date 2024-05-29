@@ -273,7 +273,7 @@ public class VectorEngine {
 			
 			for (Point p : searchPoints) {
 				if (searchedPoints.contains(p)
-					|| isHexagonPointInSearchWindow(blockPos, searchWindow, p, dim)) {
+					|| !isHexagonPointInSearchWindow(blockPos, searchWindow, p, dim)) {
 					continue;
 				}
 				
@@ -300,7 +300,7 @@ public class VectorEngine {
 		
 		for (Point p : searchPoints) {
 			if (searchedPoints.contains(p)
-				|| isHexagonPointInSearchWindow(blockPos, searchWindow, p, dim)) {
+				|| !isHexagonPointInSearchWindow(blockPos, searchWindow, p, dim)) {
 				continue;
 			}
 			
@@ -358,7 +358,7 @@ public class VectorEngine {
 	 * @param edgeOfHexagon	The point to check
 	 * @param dim	Dimension of the frame
 	 */
-	private boolean isHexagonPointInSearchWindow(Point blockPos, int searchWindow, Point edgeOfHexagon, Dimension dim) {
+	private boolean isHexagonPointInSearchWindow(final Point blockPos, int searchWindow, final Point edgeOfHexagon, final Dimension dim) {
 		if ((edgeOfHexagon.x > blockPos.x + searchWindow)
 			|| (edgeOfHexagon.x < blockPos.x - searchWindow)
 			|| (edgeOfHexagon.y > blockPos.y + searchWindow)
