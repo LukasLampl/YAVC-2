@@ -27,18 +27,20 @@ import java.util.ArrayList;
 import YAVC.Encoder.DCTEngine;
 
 /**
- * The class {@code YAVC.Utils.Vector} is a container structure for storing
- * spatial data, received from the inter-prediction process. It is responsible
- * for further processing and usually contains the following information:
- * Position: Start position of the vector
- * Span: How long a direction of the vector is
- * Size: The size of the reference
- * Reference: Which frame was used to reference the vector
- * Difference: An array of color differences to preserve quality
+ * <p>The class {@code YAVC.Utils.Vector} is a container structure for storing
+ * spatial data, received from the inter-prediction process.</p>
+ * <p>It is responsible for further processing and usually contains the following
+ * information:</p>
+ * <ul><li><b>Position</b>: Start position of the vector
+ * <li><b>Span</b>: How long a direction of the vector is
+ * <li><b>Size</b>: The size of the reference
+ * <li><b>Reference</b>: Which frame was used to reference the vector
+ * <li><b>Difference</b>: An array of color differences to preserve quality
+ * </ul>
  * 
- * <strong>Performance warning:</strong> The process of getting the
+ * <p><strong>Performance warning:</strong> The process of getting the
  * difference DCT-II coefficients might impact the performance a lot
- * due to the recalculation of all DCT-II coefficients.
+ * due to the recalculation of all DCT-II coefficients.</p>
  * 
  * @author Lukas Lampl
  * @since 1.0
@@ -68,7 +70,7 @@ public class Vector {
 	private int size = 0;
 	
 	/**
-	 * The reference frame, from which the block is reffered to
+	 * The reference frame, from which the block is referred to
 	 */
 	private int reference = 0;
 	
@@ -89,12 +91,17 @@ public class Vector {
 	private boolean invokedDCTOfDifferences = false;
 	
 	/**
-	 * Initializes the vector for further processing
-	 * @param Point pos => starting position of the vector
-	 * @param int size => size of the reference MacroBlock
+	 * <p>Initializes the vector for further processing</p>
+	 * 
+	 * @param pos	starting position of the vector
+	 * @param size	size of the reference MacroBlock
+	 * 
+	 * @throws NullPointerException	when the position is null
+	 * @throws IllegalArgumentException	if the area of the reference is 0 or negative
 	 */
 	public Vector(final Point pos, final int size) {
 		if (pos == null) throw new NullPointerException("Vector can't have NULL point as startingPoint");
+		else if (size <= 0) throw new IllegalArgumentException("Vector can't have a 0 or negative area of reference");
 		
 		this.startingPoint = pos;
 		this.size = size;
@@ -102,101 +109,134 @@ public class Vector {
 	}
 	
 	/**
-	 * @apiNote This function is never used in the actual code, but provides
-	 * a good debugging option
-	 * @param MacroBlock block => The appended MacroBlock of the vector
+	 * <p>This function is never used in the actual code, but provides
+	 * a good debugging option</p>
+	 * <p>Sets the appended block "block to be searched"</p>
+	 *
+	 * @param block	The appended MacroBlock of the vector
 	 */
 	public void setAppendedBlock(final MacroBlock block) {
 		this.appendedBlock = block;
 	}
 	
 	/**
-	 * This function is never used in the actual code, but provides
-	 * a good debugging option
-	 * @return MacroBlock => MacroBlock that was previously appended to the vector
+	 * <p>This function is never used in the actual code, but provides
+	 * a good debugging option</p>
+	 * <p>Returns the appended block</p>
+	 * 
+	 * @return MacroBlock that was previously appended to the vector
 	 */
 	public MacroBlock getAppendedBlock() {
 		return this.appendedBlock;
 	}
 	
 	/**
-	 * The function sets the spanX of the vector to a given integer.
-	 * The span starts from the origin (startPoint).
+	 * <p>The function sets the spanX of the vector to a given integer.
+	 * The span starts from the origin (startPoint).</p>
 	 * 
-	 * <strong>Warning:</strong> the set span might exceed the encoding
+	 * <p><strong>Warning:</strong> the set span might exceed the encoding
 	 * maximum of 8 bits = 255. The offset is excluded
-	 * ({@code YAVC.config.CODING_OFFSET}).
+	 * ({@code YAVC.config.CODING_OFFSET}).</p>
 	 * 
-	 * @param int span => Span to the x direction
+	 * @param span	Span to the x direction
 	 */
 	public void setSpanX(final int span) {
 		this.spanX = span;
 	}
 	
 	/**
-	 * The function sets the spanY of the vector to a given integer.
-	 * The span starts from the origin (startPoint).
+	 * <p>The function sets the spanY of the vector to a given integer.
+	 * The span starts from the origin (startPoint).</p>
 	 * 
-	 * <strong>Warning:</strong> the set span might exceed the encoding
+	 * <p><strong>Warning:</strong> the set span might exceed the encoding
 	 * maximum of 8 bits = 255. The offset is excluded
-	 * ({@code YAVC.config.CODING_OFFSET}).
+	 * ({@code YAVC.config.CODING_OFFSET}).</p>
 	 * 
-	 * @param int span => Span to the y direction
+	 * @param span	Span to the y direction
 	 */
 	public void setSpanY(final int span) {
 		this.spanY = span;
 	}
 	
 	/**
-	 * Sets the reference frame of the mostEqualBlock, meaning
+	 * <p>Sets the reference frame of the mostEqualBlock, meaning
 	 * that this number represents, out of which frame the mostEqualBlock
-	 * was extracted from.
+	 * was extracted from.</p>
 	 * 
-	 * <strong>Warning:</strong> the max reference is set by
-	 * {@code YAVC.config.MAX_REFERENCES}. The encoding only
-	 * supports till 4!
+	 * <p><strong>Warning:</strong> the max reference is set by
+	 * {@code YAVC.config.MAX_REFERENCES}.<br>
+	 * <u>The encoding only supports till 4 references into the past!</u></p>
 	 * 
-	 * @param int reference => reference frame number
+	 * @param reference	reference frame number
 	 */
 	public void setReference(final int reference) {
 		this.reference = reference;
 	}
 	
 	/**
-	 * Sets the size of the mostEqualBlock as well as
-	 * the size of the appendedBlock
-	 * @param int size => Size of the appendedBlock
+	 * <p>Sets the size of the mostEqualBlock as well as
+	 * the size of the appendedBlock.</p>
+	 * 
+	 * @param size	Size of the appendedBlock
 	 */
 	public void setSize(final int size) {
 		this.size = size;
 	}
 	
+	/**
+	 * <p>Get the position of the vector.</p>
+	 * 
+	 * @return Position of the vector.
+	 */
 	public Point getPosition() {
 		return this.startingPoint;
 	}
 	
+	/**
+	 * <p>Get the x span of the vector.</p>
+	 * 
+	 * @return Span x of the vector.
+	 */
 	public int getSpanX() {
 		return this.spanX;
 	}
 	
+	/**
+	 * <p>Get the y span of the vector.</p>
+	 * 
+	 * @return Span y of the vector.
+	 */
 	public int getSpanY() {
 		return this.spanY;
 	}
 	
+	/**
+	 * <p>Get the size of the vector reference.</p>
+	 * 
+	 * @return Size of the vector reference.
+	 */
 	public int getSize() {
 		return this.size;
 	}
 	
+	/**
+	 * <p>Get the reference frame number of the vectors reference.</p>
+	 * 
+	 * @return Reference number
+	 */
 	public int getReference() {
 		return this.reference;
 	}
 	
 	/**
-	 * Sets the AbsoluteColorDifferenceDCTCoefficients to the
-	 * prepared list, that is provided by the param. The order is as followed:
-	 * ArrayList order: Left-to-Right & Top-to-Bottom
-	 * Double Order: [0] = Y-DCT; [1] = U-DCT; [2] = V-DCT
-	 * @param ArrayList<double[][][]> diffs => The prepared list to set
+	 * <p>Sets the AbsoluteColorDifferenceDCTCoefficients to the
+	 * prepared list, that is provided by the parameters.</p>
+	 * <p>The order is as followed:
+	 * <ul><li>ArrayList order: Left-to-Right & Top-to-Bottom
+	 * <li>Double order: [0] = Y-DCT; [1] = U-DCT; [2] = V-DCT
+	 * </ul></p>
+	 * 
+	 * @param diffs	The prepared list to set
 	 */
 	public void setAbsolutedifferenceDCTCoefficients(final ArrayList<double[][][]> diffs) {
 		if (diffs == null) throw new NullPointerException("Can't use NULL as difference");
@@ -206,39 +246,45 @@ public class Vector {
 	}
 	
 	/**
-	 * Sets the AbsoluteColorDifferenceDCTCoefficients.
+	 * <p>Sets the AbsoluteColorDifferenceDCTCoefficients.
 	 * First the provided YUVDifference, with the order
 	 * [0] = Y; [1] = U; [2] = V is passed to the DCTEngine, which
 	 * calculates the DCT-Coefficients for each part individually.
 	 * After that the AbsoluteColorDifferenceDCTCoefficients is set to
-	 * the result.
+	 * the result.</p>
 	 * 
-	 * <strong>NOTE: </strong> the DCT matrices are always in the sizes
+	 * <p><strong>NOTE: </strong> The DCT matrices are always in the sizes
 	 * 2x2, 4x4 and 8x8! If the size of the difference is bigger than that
 	 * the difference is split into equally sized 8x8 blocks. Those are the
 	 * order of the returned ArrayList.
-	 * ArrayList order: Left-to-Rigth & Top-to-Bottom
-	 * Double Order: [0] = Y-DCT; [1] = U-DCT; [2] = V-DCT
+	 * <ul><li>ArrayList order: Left-to-Rigth & Top-to-Bottom
+	 * <li>Double order: [0] = Y-DCT; [1] = U-DCT; [2] = V-DCT
+	 * </ul></p>
 	 * 
-	 * @param ArrayList<double[][][]> diffs => The prepared list to set
+	 * @param diffs	The prepared list to set
 	 */
 	public void setAbsoluteDifferences(final double[][][] YUVDifference) {
 		this.AbsoluteColorDifferenceDCTCoefficients = DCT_ENGINE.computeDCTOfVectorColorDifference(YUVDifference, this.size);
 		this.invokedDCTOfDifferences = true;
 	}
 	
+	/**
+	 * <p>Get the ArrayList with all DCT coefficients of color differences.</p>
+	 * 
+	 * @return ArrayList with the DCT coefficients of the color difference
+	 */
 	public ArrayList<double[][][]> getDCTCoefficientsOfAbsoluteColorDifference() {
 		return this.AbsoluteColorDifferenceDCTCoefficients;
 	}
 	
 	/**
-	 * This function uses the invoked DCT coefficients
+	 * <p>This function uses the invoked DCT coefficients
 	 * of the absolute color difference to reconstruct the absolute
-	 * color difference by using the IDCT (reversed DCT-II).
+	 * color difference by using the IDCT.</p>
 	 * 
-	 * @return double[][][] => Reconstructed YUV color difference
+	 * @return Reconstructed YUV color difference
 	 * 
-	 * @throws NullPointerException, if no DCT-Coefficients were invoked
+	 * @throws NullPointerException	if no DCT-Coefficients were invoked
 	 */
 	public double[][][] getIDCTCoefficientsOfAbsoluteColorDifference() {
 		if (this.invokedDCTOfDifferences == false) throw new NullPointerException("No absolute difference were invoked, NULL DCT-Coefficients to process");
@@ -246,11 +292,12 @@ public class Vector {
 	}
 	
 	/**
-	 * Clones the absoluteColorDifferenceDCTCoefficients ArrayList.
+	 * <p>Clones the absoluteColorDifferenceDCTCoefficients ArrayList.
 	 * This function should be used for getting the IDCT values, since the
-	 * original ArrayList is referenced and might get quantizized by mistake
-	 * if not cloned.
-	 * @return ArrayList<double[][][]> => Cloned ArrayList.
+	 * original ArrayList is referenced and might get quantified by mistake
+	 * if not cloned.</p>
+	 * 
+	 * @return Cloned ArrayList with all data.
 	 */
 	private ArrayList<double[][][]> cloneAbsoluteColorDifference() {
 		ArrayList<double[][][]> copy = new ArrayList<double[][][]>(this.AbsoluteColorDifferenceDCTCoefficients.size());
@@ -276,19 +323,24 @@ public class Vector {
 	}
 	
 	/**
-	 * Sets the mostEqual MacroBlock to the provided
+	 * <p>Sets the mostEqual MacroBlock to the provided
 	 * MacroBlock. The mostEqual MacroBlock describes the best
-	 * match in the inter-prediction step.
+	 * match in the inter-prediction step.</p>
 	 * 
-	 * This function is DEBUG ONLY and provides a good way for
-	 * debugging inter-prediction.
+	 * <p><u>This function is DEBUG ONLY and provides a good way for
+	 * debugging inter-prediction.</u></p>
 	 * 
-	 * @param MacroBlock block => Block to set as mostEqualBlock
+	 * @param block	Block to set as mostEqualBlock
 	 */
 	public void setMostEqualBlock(final MacroBlock block) {
 		this.mostEqualBlock = block;
 	}
 	
+	/**
+	 * <p>Get the mostEqualBlock MacroBloc.</p>
+	 * 
+	 * @return The set mostEqualBlock
+	 */
 	public MacroBlock getMostEqualBlock() {
 		return this.mostEqualBlock;
 	}
