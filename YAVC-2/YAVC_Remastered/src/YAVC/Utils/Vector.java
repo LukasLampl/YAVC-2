@@ -47,40 +47,40 @@ import YAVC.Encoder.DCTEngine;
 
 public class Vector {
 	/**
-	 * @apiNote provides a DCTEngine with pre-calculated cosine table
+	 * Provides a DCTEngine with pre-calculated cosine table
 	 */
 	private DCTEngine DCT_ENGINE = null;
 	
 	/**
-	 * @apiNote The starting point of the vector
+	 * The starting point of the vector
 	 */
 	private Point startingPoint = null;
 	
 	/**
-	 * @apiNote The individual spans of the vector, measured in pixels
+	 * The individual spans of the vector, measured in pixels
 	 */
 	private int spanX = 0;
 	private int spanY = 0;
 	
 	/**
-	 * @apiNote The size of the reference block
+	 * The size of the reference block
 	 */
 	private int size = 0;
 	
 	/**
-	 * @apiNote The reference frame, from which the block is reffered to
+	 * The reference frame, from which the block is reffered to
 	 */
 	private int reference = 0;
 	
 	/**
-	 * @apiNote The appendedBlock describes the block to be searched in the
+	 * The appendedBlock describes the block to be searched in the
 	 * inter-prediction section, while the mostEqualBlock is the best match.
 	 */
 	private MacroBlock appendedBlock = null;
 	private MacroBlock mostEqualBlock = null;
 	
 	/**
-	 * @apiNote AbsoluteColorDifferenceDCTCoefficients is an ArrayList containing
+	 * AbsoluteColorDifferenceDCTCoefficients is an ArrayList containing
 	 * the absolute color difference in form of 4x4 or 8x8 DCT matrices.
 	 * The invokedDCTOfDifferences is set the true, if the absolute difference was invoked,
 	 * else it's false
@@ -89,7 +89,7 @@ public class Vector {
 	private boolean invokedDCTOfDifferences = false;
 	
 	/**
-	 * @apiNote Initializes the vector for further processing
+	 * Initializes the vector for further processing
 	 * @param Point pos => starting position of the vector
 	 * @param int size => size of the reference MacroBlock
 	 */
@@ -111,7 +111,7 @@ public class Vector {
 	}
 	
 	/**
-	 * @apiNote This function is never used in the actual code, but provides
+	 * This function is never used in the actual code, but provides
 	 * a good debugging option
 	 * @return MacroBlock => MacroBlock that was previously appended to the vector
 	 */
@@ -120,7 +120,7 @@ public class Vector {
 	}
 	
 	/**
-	 * @apiNote The function sets the spanX of the vector to a given integer.
+	 * The function sets the spanX of the vector to a given integer.
 	 * The span starts from the origin (startPoint).
 	 * 
 	 * <strong>Warning:</strong> the set span might exceed the encoding
@@ -134,7 +134,7 @@ public class Vector {
 	}
 	
 	/**
-	 * @apiNote The function sets the spanY of the vector to a given integer.
+	 * The function sets the spanY of the vector to a given integer.
 	 * The span starts from the origin (startPoint).
 	 * 
 	 * <strong>Warning:</strong> the set span might exceed the encoding
@@ -148,7 +148,7 @@ public class Vector {
 	}
 	
 	/**
-	 * @apiNote Sets the reference frame of the mostEqualBlock, meaning
+	 * Sets the reference frame of the mostEqualBlock, meaning
 	 * that this number represents, out of which frame the mostEqualBlock
 	 * was extracted from.
 	 * 
@@ -163,7 +163,7 @@ public class Vector {
 	}
 	
 	/**
-	 * @apiNote Sets the size of the mostEqualBlock as well as
+	 * Sets the size of the mostEqualBlock as well as
 	 * the size of the appendedBlock
 	 * @param int size => Size of the appendedBlock
 	 */
@@ -192,7 +192,7 @@ public class Vector {
 	}
 	
 	/**
-	 * @apiNote Sets the AbsoluteColorDifferenceDCTCoefficients to the
+	 * Sets the AbsoluteColorDifferenceDCTCoefficients to the
 	 * prepared list, that is provided by the param. The order is as followed:
 	 * ArrayList order: Left-to-Right & Top-to-Bottom
 	 * Double Order: [0] = Y-DCT; [1] = U-DCT; [2] = V-DCT
@@ -206,7 +206,7 @@ public class Vector {
 	}
 	
 	/**
-	 * @apiNote Sets the AbsoluteColorDifferenceDCTCoefficients.
+	 * Sets the AbsoluteColorDifferenceDCTCoefficients.
 	 * First the provided YUVDifference, with the order
 	 * [0] = Y; [1] = U; [2] = V is passed to the DCTEngine, which
 	 * calculates the DCT-Coefficients for each part individually.
@@ -232,7 +232,7 @@ public class Vector {
 	}
 	
 	/**
-	 * @apiNote This function uses the invoked DCT coefficients
+	 * This function uses the invoked DCT coefficients
 	 * of the absolute color difference to reconstruct the absolute
 	 * color difference by using the IDCT (reversed DCT-II).
 	 * 
@@ -246,7 +246,7 @@ public class Vector {
 	}
 	
 	/**
-	 * @apiNote Clones the absoluteColorDifferenceDCTCoefficients ArrayList.
+	 * Clones the absoluteColorDifferenceDCTCoefficients ArrayList.
 	 * This function should be used for getting the IDCT values, since the
 	 * original ArrayList is referenced and might get quantizized by mistake
 	 * if not cloned.
@@ -276,7 +276,7 @@ public class Vector {
 	}
 	
 	/**
-	 * @apiNote Sets the mostEqual MacroBlock to the provided
+	 * Sets the mostEqual MacroBlock to the provided
 	 * MacroBlock. The mostEqual MacroBlock describes the best
 	 * match in the inter-prediction step.
 	 * 

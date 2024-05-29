@@ -42,7 +42,7 @@ import java.awt.Color;
 
 public class ColorManager {
 	/**
-	 * @apiNote Convert a RGB color, based on a Color object
+	 * Convert a RGB color, based on a Color object
 	 * to YUV using the Rec. 601 (ITU-T T.871) conversion.
 	 * 
 	 * @return Returns a double[], that contains the
@@ -61,7 +61,7 @@ public class ColorManager {
 	}
 	
 	/**
-	 * @apiNote: Convert a RGB color, based on an integer
+	 * Convert a RGB color, based on an integer
 	 * to YUV using the Rec. 601 (ITU-T T.871) conversion. 
 	 * If a color component is bigger than 8 bits, it'll get
 	 * cut off by masking.
@@ -82,7 +82,7 @@ public class ColorManager {
 	}
 	
 	/**
-	 * @apiNote Convert a YUV color to RGB using a double[]
+	 * Convert a YUV color to RGB using a double[]
 	 * as input, where Y is at [0], U at [1] and V at [2].
 	 * The converted color is stored in an integer
 	 * with the following order of the components:
@@ -113,7 +113,7 @@ public class ColorManager {
 	}
 	
 	/**
-	 * @apiNote Convert a YUV color to RGB using a double[]
+	 * Convert a YUV color to RGB using a double[]
 	 * as input, where Y is at [0], U at [1] and V at [2].
 	 * The converted color is stored in an integer array
 	 * with the following order of the components:
@@ -154,7 +154,7 @@ public class ColorManager {
 	}
 
 	/**
-	 * @apiNote Checks if the value of x is bigger than the max
+	 * Checks if the value of x is bigger than the max
 	 * or smaller than the min and returns based on that.
 	 * 
 	 * @return int with the ranged value.

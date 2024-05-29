@@ -61,7 +61,7 @@ public class QuadtreeEngine {
 	private final int MAX_SIZE = 128;
 	
 	/**
-	 * @apiNote entry point of the quadtree construction.
+	 * Entry point of the quadtree construction.
 	 * The image is split into 128x128 blocks, that are processed
 	 * in an individual subdividing process in the block itself.
 	 * 
@@ -144,7 +144,7 @@ public class QuadtreeEngine {
 	}
 	
 	/**
-	 * @apiNote Get all leave nodes of the quadtree roots.
+	 * Get all leave nodes of the quadtree roots.
 	 * The leaves are recursively searched.
 	 * @see YAVC.Encoder.QuadtreeEngine.getLeaves()
 	 * 
@@ -184,7 +184,7 @@ public class QuadtreeEngine {
 	}
 	
 	/**
-	 * @apiNote get the leaves of the current block, till
+	 * Get the leaves of the current block, till
 	 * the blocks are the leaves of the quadtree itself.
 	 * 
 	 * @return ArrayList<MacroBlock> => Leave nodes
@@ -210,7 +210,7 @@ public class QuadtreeEngine {
 	}
 	
 	/**
-	 * @apiNote This function draws the outlines of the MacroBlocks and
+	 * This function draws the outlines of the MacroBlocks and
 	 * the pixels with the assigned mean color of the MacroBlock
 	 * {@code YAVC.Utils.MacroBlock.subdivide()}
 	 * 

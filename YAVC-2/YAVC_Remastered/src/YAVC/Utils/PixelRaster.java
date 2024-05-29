@@ -52,33 +52,33 @@ public class PixelRaster {
 	private static final int PX_WITHOUT_ALPHA_LENGTH = 3;
 	
 	/**
-	 * @apiNote The Y stores all luma values of the image without subsampling
+	 * The Y stores all luma values of the image without subsampling
 	 */
 	private double[][] Y = null;
 	
 	/**
-	 * @apiNote The U stores all chroma-u values of the image with 4:2:0 subsampling
+	 * The U stores all chroma-u values of the image with 4:2:0 subsampling
 	 */
 	private double[][] U = null;
 	
 	/**
-	 * @apiNote The V stores all chroma-v values of the image wit 4:2:0 subsampling
+	 * The V stores all chroma-v values of the image wit 4:2:0 subsampling
 	 */
 	private double[][] V = null;
 	
 	/**
-	 * @apiNote Dimension of the PixelRaster (width and height)
+	 * Dimension of the PixelRaster (width and height)
 	 */
 	private Dimension dim = null;
 	
 	/**
-	 * @apiNote Invokes a ColorManager for color conversion from RGB to YUV.
+	 * Invokes a ColorManager for color conversion from RGB to YUV.
 	 * For explicit details @see #YAVC.Utils.ColorManager.
 	 */
 	private ColorManager COLOR_MANAGER = new ColorManager();
 	
 	/**
-	 * @apiNote Initialize the PixelRaster using the data of a BufferedImage.
+	 * Initialize the PixelRaster using the data of a BufferedImage.
 	 * If the image is not dividable by 4, the image gets resized.
 	 * 
 	 * @param BufferedImage img => Image to convert to PixelRaster
@@ -106,7 +106,7 @@ public class PixelRaster {
 	}
 	
 	/**
-	 * @apiNote Initialize the PixelRaster using a Dimension, the Y components,
+	 * Initialize the PixelRaster using a Dimension, the Y components,
 	 * U components and V components
 	 * 
 	 * @param Dimension dim => Dimension of the PixelRaster (width and height)
@@ -151,7 +151,7 @@ public class PixelRaster {
 	}
 	
 	/**
-	 * @apiNote reads the buffer byte by byte and fills out the YUV colors.
+	 * Reads the buffer byte by byte and fills out the YUV colors.
 	 * The buffer is packed into batches, which then are processed using
 	 * multithreading.
 	 * 
@@ -214,7 +214,7 @@ public class PixelRaster {
 	}
 	
 	/**
-	 * @apiNote convert the DataBufferInt to the YUV colorspace
+	 * Convert the DataBufferInt to the YUV colorspace
 	 * and initialize the according colors in the Y, U and V
 	 * components.
 	 * 
@@ -250,7 +250,7 @@ public class PixelRaster {
 	}
 	
 	/**
-	 * @apiNote get the YUV color at the specific position
+	 * Get the YUV color at the specific position
 	 * with the following layout:
 	 * double[0] = Y; double[1] = U; double[2] = V;
 	 * 
@@ -272,7 +272,7 @@ public class PixelRaster {
 	}
 	
 	/**
-	 * @apiNote Sets the desired YUV color at the
+	 * Sets the desired YUV color at the
 	 * desired position. The YUV color should have
 	 * the following order:
 	 * double[0] = Y; double[1] = U; double[2] = V;
@@ -295,7 +295,7 @@ public class PixelRaster {
 	}
 	
 	/**
-	 * @apiNote Sets the desired YUV color at the
+	 * Sets the desired YUV color at the
 	 * desired position. The YUV color should have
 	 * the following order:
 	 * double[0] = Y; double[1] = U; double[2] = V;
@@ -361,7 +361,7 @@ public class PixelRaster {
 	}
 	
 	/**
-	 * @apiNote Sets the desired chroma value at the
+	 * Sets the desired chroma value at the
 	 * desired position.
 	 * 
 	 * @param int x => position X to set the YUV color
@@ -382,7 +382,7 @@ public class PixelRaster {
 	}
 	
 	/**
-	 * @apiNote Sets the desired luma value at the
+	 * Sets the desired luma value at the
 	 * desired position.
 	 * 
 	 * @param int x => position X to set the YUV color
@@ -412,7 +412,7 @@ public class PixelRaster {
 	}
 	
 	/**
-	 * @apiNote Get a pixelblock within the PixelRaster.
+	 * Get a pixelblock within the PixelRaster.
 	 * The block is ordered like a PixelRaster, full 4:4:4
 	 * luma and 4:2:0 chroma.
 	 * 
@@ -468,7 +468,7 @@ public class PixelRaster {
 	}
 	
 	/**
-	 * @apiNote Get an array of 2D arrays
+	 * Get an array of 2D arrays
 	 * 
 	 * @param int size => size if the arrays
 	 * @return double[][][] => initialized array
@@ -483,7 +483,7 @@ public class PixelRaster {
 	}
 	
 	/**
-	 * @apiNote converts the PixelRaster into a BufferedImage
+	 * Converts the PixelRaster into a BufferedImage
 	 * 
 	 * <strong>Performance Warning:</strong> Even though there is multi-
 	 * threading involved, the overall performance is totally dependent
@@ -505,7 +505,7 @@ public class PixelRaster {
 	}
 	
 	/**
-	 * @apiNote creates a copy of the PixelRaster
+	 * Creates a copy of the PixelRaster
 	 * without any references to other values
 	 * 
 	 * @return PixelRaster => Cloned PixelRaster
