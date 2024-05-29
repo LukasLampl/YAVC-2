@@ -24,17 +24,17 @@ package YAVC.Utils;
 import java.awt.Color;
 
 /**
- * The class {@code YAVC.Utils.ColorManager} contains basic functions 
- * for converting RGB-colorspace to the YUV-colorspace and back.
- * The formulas are based on the Rec. 601 (ITU-T T.871) Y'CbCr and
+ * <p>The class {@code YAVC.Utils.ColorManager} contains basic functions 
+ * for converting RGB-colorspace to the YUV-colorspace and back.</p>
+ * The formulas are based on the <u>Rec. 601 (ITU-T T.871)</u> Y'CbCr and
  * have the full 8 bit range from 0 to 255. Due to the
  * YUV-colorspace, colors that exceed the range of 8 bits
  * get reduced to the 8 bit range.
  * Minimum is 0 and maximum is 255.
  * 
- * <strong>Performance warning:</strong> The conversion from RGB to
+ * <p><strong>Performance warning:</strong> The conversion from RGB to
  * YUV and back involve floatingpoint-arithmetic, which might impact
- * performance, if used frequently.
+ * performance, if used frequently.</p>
  * 
  * @author Lukas Lampl
  * @since 1.0
@@ -45,11 +45,15 @@ public class ColorManager {
 	 * Convert a RGB color, based on a Color object
 	 * to YUV using the Rec. 601 (ITU-T T.871) conversion.
 	 * 
-	 * @return Returns a double[], that contains the
+	 * @return <p>Returns a double[], that contains the
 	 * Y, U and V component at the following indexes:
-	 * double[0] = Y, double[1] = U, double[2] = V
+	 * </p><p>
+	 * <ul><li>double[0] = Y
+	 * <li>double[1] = U
+	 * <li>double[2] = V
+	 * </ul></p>
 	 * 
-	 * @param Color color => RGB color that should be
+	 * @param color	RGB color that should be
 	 * converted to an YUV color.
 	 */
 	public double[] convertRGBToYUV(Color color) {
@@ -61,16 +65,20 @@ public class ColorManager {
 	}
 	
 	/**
-	 * Convert a RGB color, based on an integer
+	 * <p>Convert a RGB color, based on an integer
 	 * to YUV using the Rec. 601 (ITU-T T.871) conversion. 
 	 * If a color component is bigger than 8 bits, it'll get
-	 * cut off by masking.
+	 * cut off by masking.</p>
 	 * 
-	 * @return Returns a double[], that contains the
+	 * @return <p>Returns a double[], that contains the
 	 * Y, U and V component at the following indexes:
-	 * double[0] = Y, double[1] = U, double[2] = V
+	 * </p>
+	 * <ul><li>double[0] = Y
+	 * <li>double[1] = U
+	 * <li>double[2] = V
+	 * </ul>
 	 * 
-	 * @param int color => RGB color that should be
+	 * @param color	RGB color that should be
 	 * converted to an YUV color.
 	 */
 	public double[] convertRGBToYUV(int color) {
@@ -82,23 +90,24 @@ public class ColorManager {
 	}
 	
 	/**
-	 * Convert a YUV color to RGB using a double[]
-	 * as input, where Y is at [0], U at [1] and V at [2].
-	 * The converted color is stored in an integer
-	 * with the following order of the components:
-	 * First 8 bits: Alpha
-	 * Bits from 8 to 16: Red
-	 * Bits from 16 to 8: Green
-	 * Last 8 bits: Blue 
-	 * The order is the same as in the {@code java.awt.Color}
-	 * Object.
+	 * <p>Convert a YUV color to RGB using a double[]
+	 * as input, where Y is at [0], U at [1] and V at [2].</p>
+	 * <p>The converted color is stored in an integer
+	 * with the following order of the components:</p>
+	 * <ul><li>First 8 bits:	Alpha
+	 * <li>Bits from 8 to 16:	Red
+	 * <li>Bits from 16 to 8:	Green
+	 * <li>Last 8 bits:			Blue
+	 * </ul> 
+	 * <p>The order is the same as in the {@code java.awt.Color}
+	 * Object.</p>
 	 * 
-	 * @return int, with the described order above
+	 * @return Integer with the described order above
 	 * 
-	 * @param double[] YUV => The YUV color to be converted
+	 * @param YUV	The YUV color to be converted
 	 * to a RGB color
 	 * 
-	 * @throws IllegalArgumentException, if the provided YUV is
+	 * @throws IllegalArgumentException	if the provided YUV is
 	 * null or the length is not 3
 	 */
 	public int convertYUVToRGB(double[] YUV) {
@@ -113,23 +122,24 @@ public class ColorManager {
 	}
 	
 	/**
-	 * Convert a YUV color to RGB using a double[]
-	 * as input, where Y is at [0], U at [1] and V at [2].
-	 * The converted color is stored in an integer array
-	 * with the following order of the components:
-	 * int[0]: Red
-	 * int[1]: Green
-	 * int[2]: Blue
+	 * <p>Convert a YUV color to RGB using a double[]
+	 * as input, where Y is at [0], U at [1] and V at [2].</p>
+	 * <p>The converted color is stored in an integer array
+	 * with the following order of the components:</p>
+	 * <ul><li>int[0]: Red
+	 * <li>int[1]: Green
+	 * <li>int[2]: Blue
+	 * </ul>
 	 * 
 	 * @return int[] with the red, green and blue values
 	 * in the order described above.
 	 * 
-	 * @param double[] YUV => The YUV color to be converted
+	 * @param YUV	The YUV color to be converted
 	 * to a RGB color
-	 * @param int[] rgbCache => An optional int array, that should
+	 * @param rgbCache	An optional int array, that should
 	 * be used to store the data. (Faster than initializing each array)
 	 * 
-	 * @throws IllegalArgumentException => When the YUV array is null,
+	 * @throws IllegalArgumentException	When the YUV array is null,
 	 * when the length of the YUV color exceeds 3 or is shorter than 3
 	 * and if the rgbCache is not null, but does not have a length of 3.
 	 */
@@ -154,17 +164,18 @@ public class ColorManager {
 	}
 
 	/**
-	 * Checks if the value of x is bigger than the max
-	 * or smaller than the min and returns based on that.
+	 * <p>Checks if the value of x is bigger than the max
+	 * or smaller than the min and returns based on that.</p>
 	 * 
 	 * @return int with the ranged value.
-	 * If x is smaller than min, min will be returned.
-	 * If x is bigger than max, max will be returned
-	 * If x is in between or equal to min or max, x is returned.
+	 * <ul><li>If x is smaller than min, min will be returned.
+	 * <li>If x is bigger than max, max will be returned
+	 * <li>If x is in between or equal to min or max, x is returned.
+	 * </ul>
 	 * 
-	 * @param x => Number to clamp
-	 * @param min => Minimum value that x is allowed to reach
-	 * @param max => Maximum value that x is allowed to reach
+	 * @param x	Number to clamp
+	 * @param min	Minimum value that x is allowed to reach
+	 * @param max	Maximum value that x is allowed to reach
 	 */
 	private int range(int x, int min, int max) {
 		return x < min ? min : x > max ? max : x;
