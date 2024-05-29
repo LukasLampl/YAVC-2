@@ -77,14 +77,18 @@ public class VectorEngine {
 	 * @see YAVC.Utils.Vector
 	 */
 	public ArrayList<Vector> computeMovementVectors(ArrayList<MacroBlock> blocksToInterpredict, ArrayList<PixelRaster> refs) {
-		if (blocksToInterpredict == null || blocksToInterpredict.size() == 0) throw new NullPointerException("No blocks to inter-predict");
-		else if (refs == null || refs.size() == 0) throw new NullPointerException("No reference frame to refere to");
+		if (blocksToInterpredict == null || blocksToInterpredict.size() == 0) {
+			throw new NullPointerException("No blocks to inter-predict");
+		} else if (refs == null || refs.size() == 0) {
+			throw new NullPointerException("No reference frame to refere to");
+		}
 		
 		ArrayList<Vector> vecs = new ArrayList<Vector>(blocksToInterpredict.size());
 			
 		try {
 			ArrayList<Future<Vector>> futureVecs = new ArrayList<Future<Vector>>(blocksToInterpredict.size());
-			ExecutorService executor = Executors.newCachedThreadPool();
+			int threads = Runtime.getRuntime().availableProcessors();
+			ExecutorService executor = Executors.newFixedThreadPool(threads);
 			
 			this.TOTAL_MSE = 0;
 			
@@ -143,7 +147,7 @@ public class VectorEngine {
 			}
 			
 			executor.shutdown();
-			while (!executor.awaitTermination(20, TimeUnit.MICROSECONDS)) {}
+			while (!executor.awaitTermination(20, TimeUnit.MICROSECONDS));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -163,8 +167,11 @@ public class VectorEngine {
 		MacroBlock best = canidates[0];
 		
 		for (MacroBlock b : canidates) {
-			if (b == null) continue;
-			else if (best == null) best = b;
+			if (b == null) {
+				continue;
+			} else if (best == null) {
+				best = b;
+			}
 			
 			if (b.getMSE() < best.getMSE()) {
 				best = b;
@@ -192,7 +199,10 @@ public class VectorEngine {
 	 */
 	private MacroBlock computeHexagonSearch(PixelRaster ref, MacroBlock blockToBeSearched) {
 		double lowestMSE = Double.MAX_VALUE;
-		int radius = 4, searchWindow = 48, size = blockToBeSearched.getSize(), sumOfAllPoints = 2304;
+		int radius = 4;
+		int searchWindow = 48;
+		int size = blockToBeSearched.getSize();
+		int sumOfAllPoints = 2304; //All possible points to search
 		Point blockPos = blockToBeSearched.getPosition();
 		Point centerPoint = blockToBeSearched.getPosition();
 		MacroBlock mostEqualBlock = null;
@@ -270,7 +280,10 @@ public class VectorEngine {
 			}
 		}
 		
-		if (mostEqualBlock != null) mostEqualBlock.setMSE(lowestMSE);
+		if (mostEqualBlock != null) {
+			mostEqualBlock.setMSE(lowestMSE);
+		}
+		
 		return mostEqualBlock;
 	}
 	
@@ -289,20 +302,27 @@ public class VectorEngine {
 	 * @param bestMatchTillNow	Best matching MacroBlock from the previous hexagonal search
 	 */
 	private MacroBlock computeExhaustiveSearch(MacroBlock blockToSearch, MacroBlock bestMatchTillNow, PixelRaster ref) {
-		if (bestMatchTillNow == null) return null;
+		if (bestMatchTillNow == null) {
+			return null;
+		}
 		
 		Dimension dim = ref.getDimension();
 		MacroBlock mostEqualBlock = null;
 		double lowestMSE = bestMatchTillNow.getMSE();
 		Point pos = blockToSearch.getPosition();
-		int searchWindow = 2, size = blockToSearch.getSize();
+		int searchWindow = 2;
+		int size = blockToSearch.getSize();
 		double[][][] cache = null;
 		
 		for (int y = pos.y - searchWindow; y < pos.y + searchWindow; y++) {
-			if (y < 0 || y >= dim.height) continue;
+			if (y < 0 || y >= dim.height) {
+				continue;
+			}
 			
 			for (int x = pos.x - searchWindow; x < pos.x + searchWindow; x++) {
-				if (x < 0 || x >= dim.width) continue;
+				if (x < 0 || x >= dim.width) {
+					continue;
+				}
 				
 				cache = ref.getPixelBlock(new Point(x, y), size, cache);
 				double MSE = getMSEOfColors(blockToSearch.getColors(), cache, size, true);
@@ -314,7 +334,10 @@ public class VectorEngine {
 			}
 		}
 		
-		if (mostEqualBlock != null) mostEqualBlock.setMSE(lowestMSE);
+		if (mostEqualBlock != null) {
+			mostEqualBlock.setMSE(lowestMSE);
+		}
+		
 		return mostEqualBlock == null ? bestMatchTillNow : mostEqualBlock;
 	}
 	
@@ -330,6 +353,7 @@ public class VectorEngine {
 	private Point[] getHexagonPoints(int radius, Point pos) {
 		Point[] points = new Point[7];
 		points[6] = pos;
+		
 		double Pirad = Math.PI / 3;
 		
 		for (int i = 0; i < 6; i++) {
@@ -485,8 +509,10 @@ public class VectorEngine {
 		
 		for (Vector v : vecs) {
 			Point pos = v.getPosition();
-			int x1 = pos.x, y1 = pos.y;
-			int x2 = pos.x + v.getSpanX(), y2 = pos.y + v.getSpanY();
+			int x1 = pos.x;
+			int y1 = pos.y;
+			int x2 = pos.x + v.getSpanX();
+			int y2 = pos.y + v.getSpanY();
 			
 			switch (v.getReference()) {
 			case -1:

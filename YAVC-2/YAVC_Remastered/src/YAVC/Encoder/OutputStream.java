@@ -94,7 +94,10 @@ public class OutputStream {
 		
 		int size = bytesOfVectors.size();
 		byte[] result = new byte[size];
-		for (int i = 0; i < size; i++) result[i] = bytesOfVectors.get(i);
+		
+		for (int i = 0; i < size; i++) {
+			result[i] = bytesOfVectors.get(i);
+		}
 			
 		try {
 			FileOutputStream outStream = new FileOutputStream(file);
@@ -112,7 +115,9 @@ public class OutputStream {
 	 * 			byte[] array => Array to write into the list (in order)
 	 */
 	private void addByteToArrayList(ArrayList<Byte> byteList, byte[] array) {
-		if (byteList == null || array == null) throw new NullPointerException();
+		if (byteList == null || array == null) {
+			throw new NullPointerException();
+		}
 		
 		for (int i = 0; i < array.length; i++) {
 			byteList.add(array[i]);
@@ -135,8 +140,12 @@ public class OutputStream {
 	 */
 	private byte[] getPositionByte(int pos, int offset) {
 		pos += offset;
-		if (pos > 65536) throw new IllegalArgumentException("Position of vector exceeds maximum limit of 65536");
-		else if (pos < 0) throw new IllegalArgumentException("Position of vector is smaller than 0 (out of frame)");
+		if (pos > 65536) {
+			throw new IllegalArgumentException("Position of vector exceeds maximum limit of 65536");
+		} else if (pos < 0) {
+			throw new IllegalArgumentException("Position of vector is smaller than 0 (out of frame)");
+		}
+		
 		return new byte[] {(byte)((pos >> 8) & 0xFF), (byte)(pos)};
 	}
 	
@@ -158,7 +167,10 @@ public class OutputStream {
 	 * 		-> Finally add the Coding offset to the result
 	 */
 	private byte getReferenceAndSizeByte(int reference, int size, int offset) {
-		if (reference > 7 || reference < -7) throw new IllegalArgumentException("Reference out of range (-7 to 7)");
+		if (reference > 7 || reference < -7) {
+			throw new IllegalArgumentException("Reference out of range (-7 to 7)");
+		}
+		
 		byte res = 0;
 		
 		if (reference < 0) {
@@ -168,13 +180,26 @@ public class OutputStream {
 		}
 		
 		switch (size) {
-			case 128: res |= 6; break;
-			case 64: res |= 5; break;
-			case 32: res |= 4; break;
-			case 16: res |= 3; break;
-			case 8: res |= 2; break;
-			case 4: res |= 1; break;
-			default: throw new IllegalArgumentException("Size: " + size + " not supported by YAVC");
+			case 128:
+				res |= 6;
+				break;
+			case 64:
+				res |= 5;
+				break;
+			case 32:
+				res |= 4;
+				break;
+			case 16:
+				res |= 3;
+				break;
+			case 8:
+				res |= 2;
+				break;
+			case 4:
+				res |= 1;
+				break;
+			default:
+				throw new IllegalArgumentException("Size: " + size + " not supported by YAVC");
 		}
 		
 		return (byte)(res + offset);
@@ -203,7 +228,9 @@ public class OutputStream {
 		byte[] UBytes = new byte[halfSize * halfSize];
 		byte[] VBytes = new byte[halfSize * halfSize];
 		
-		int YIndex = 0, UIndex = 0, VIndex = 0;
+		int YIndex = 0;
+		int UIndex = 0;
+		int VIndex = 0;
 		
 		for (double[][][] coeffGroup : absoluteDifference) {
 			for (int x = 0; x < frac; x++) {
@@ -313,7 +340,8 @@ public class OutputStream {
 					Runnable task = () -> {
 						PixelRaster cache = v.getReference() == -1 ? null : refs.get(config.MAX_REFERENCES - v.getReference());
 						Point pos = v.getPosition();
-						int EndX = pos.x + v.getSpanX(), EndY = pos.y + v.getSpanY();
+						int EndX = pos.x + v.getSpanX();
+						int EndY = pos.y + v.getSpanY();
 						int size = v.getSize();
 						double[][][] reconstructedColor = reconstructColors(v.getIDCTCoefficientsOfAbsoluteColorDifference(), cache.getPixelBlock(pos, size, null), size);
 						

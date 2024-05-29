@@ -100,8 +100,11 @@ public class Vector {
 	 * @throws IllegalArgumentException	if the area of the reference is 0 or negative
 	 */
 	public Vector(final Point pos, final int size) {
-		if (pos == null) throw new NullPointerException("Vector can't have NULL point as startingPoint");
-		else if (size <= 0) throw new IllegalArgumentException("Vector can't have a 0 or negative area of reference");
+		if (pos == null) {
+			throw new NullPointerException("Vector can't have NULL point as startingPoint");
+		} else if (size <= 0) {
+			throw new IllegalArgumentException("Vector can't have a 0 or negative area of reference");
+		}
 		
 		this.startingPoint = pos;
 		this.size = size;
@@ -239,7 +242,9 @@ public class Vector {
 	 * @param diffs	The prepared list to set
 	 */
 	public void setAbsolutedifferenceDCTCoefficients(final ArrayList<double[][][]> diffs) {
-		if (diffs == null) throw new NullPointerException("Can't use NULL as difference");
+		if (diffs == null) {
+			throw new NullPointerException("Can't use NULL as difference");
+		}
 		
 		this.AbsoluteColorDifferenceDCTCoefficients = diffs;
 		this.invokedDCTOfDifferences = true;
@@ -287,7 +292,10 @@ public class Vector {
 	 * @throws NullPointerException	if no DCT-Coefficients were invoked
 	 */
 	public double[][][] getIDCTCoefficientsOfAbsoluteColorDifference() {
-		if (this.invokedDCTOfDifferences == false) throw new NullPointerException("No absolute difference were invoked, NULL DCT-Coefficients to process");
+		if (this.invokedDCTOfDifferences == false) {
+			throw new NullPointerException("No absolute difference were invoked, NULL DCT-Coefficients to process");
+		}
+		
 		return DCT_ENGINE.computeIDCTOfVectorColorDifference(cloneAbsoluteColorDifference(), this.size);
 	}
 	
@@ -304,7 +312,9 @@ public class Vector {
 		
 		for (int i = 0; i < this.AbsoluteColorDifferenceDCTCoefficients.size(); i++) {
 			double[][][] ref = this.AbsoluteColorDifferenceDCTCoefficients.get(i);
-			int size = this.size, halfSize = this.size / 2;
+			int size = this.size;
+			int halfSize = this.size / 2;
+			
 			double[][][] clone = new double[3][][];
 			clone[0] = new double[size][size];
 			clone[1] = new double[halfSize][halfSize];

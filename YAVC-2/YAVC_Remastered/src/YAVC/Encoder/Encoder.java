@@ -107,13 +107,21 @@ public class Encoder {
 			double averageMSE = (VECTOR_ENGINE.getVectorMSE() / vecs.size());
 			TOTAL_MSE += averageMSE;
 			TOTAL_MSE_ADDITION_COUNT++;
-			for (Vector v : vecs) vecArea += v.getSize() * v.getSize();
+			
+			for (Vector v : vecs) {
+				vecArea += v.getSize() * v.getSize();
+			}
+			
 			System.out.println("Vectors: " + vecs.size() + " | Covered area: " + vecArea + "px | Avg. MSE: " + averageMSE);
 		}
 		
 		if (diffs != null) {
 			int diffArea = 0;
-			for (MacroBlock b : diffs) diffArea += b.getSize() * b.getSize();
+			
+			for (MacroBlock b : diffs) {
+				diffArea += b.getSize() * b.getSize();
+			}
+			
 			System.out.println("Non-Coded blocks: " + diffs.size() + " | Covered area: " + diffArea + "px");
 		}
 		

@@ -83,19 +83,26 @@ public class QuadtreeEngine {
 	 * @throws NullPointerException, when the passed frame is null
 	 */
 	public ArrayList<MacroBlock> constructQuadtree(PixelRaster currentFrame) {
-		if (currentFrame == null) throw new NullPointerException("PixelRaster \"currentFrame\" == NULL!");
+		if (currentFrame == null) {
+			throw new NullPointerException("PixelRaster \"currentFrame\" == NULL!");
+		}
 		
 		ArrayList<MacroBlock> roots = new ArrayList<MacroBlock>();
 		
 		try {
 			final double errorThreshold = 45;
-			int currentOrderNumber = 0, width = currentFrame.getWidth(), height = currentFrame.getHeight();
+			int currentOrderNumber = 0;
+			int width = currentFrame.getWidth();
+			int height = currentFrame.getHeight();
+			int threads = Runtime.getRuntime().availableProcessors();
+			
 			ArrayList<Future<MacroBlock>> futureRoots = new ArrayList<Future<MacroBlock>>();
-			ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+			ExecutorService executor = Executors.newFixedThreadPool(threads);
 			
 			for (int x = 0; x < width; x += this.MAX_SIZE) {
 				for (int y = 0; y < height; y += this.MAX_SIZE) {
-					final int posX = x, posY = y;
+					final int posX = x;
+					final int posY = y;
 					final int currentOrder = currentOrderNumber++;
 					
 					Callable<MacroBlock> task = () -> {
@@ -135,7 +142,7 @@ public class QuadtreeEngine {
 			}
 			
 			executor.shutdown();
-			while (!executor.awaitTermination(10, TimeUnit.MICROSECONDS)) {}
+			while (!executor.awaitTermination(10, TimeUnit.MICROSECONDS));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -155,7 +162,9 @@ public class QuadtreeEngine {
 	 * @throws NullPointerException, when no root is provided
 	 */
 	public ArrayList<MacroBlock> getLeaveNodes(ArrayList<MacroBlock> roots) {
-		if (roots == null) throw new NullPointerException("No QuadtreeRoots to process");
+		if (roots == null) {
+			throw new NullPointerException("No QuadtreeRoots to process");
+		}
 		
 		ArrayList<MacroBlock> leaveNodes = new ArrayList<MacroBlock>();
 		ArrayList<Future<ArrayList<MacroBlock>>> futureLeavesList = new ArrayList<Future<ArrayList<MacroBlock>>>();
@@ -192,13 +201,17 @@ public class QuadtreeEngine {
 	 * @param MacroBlock block => Block to go down recursively
 	 */
 	private ArrayList<MacroBlock> getLeaves(MacroBlock block) {
-		if (block == null) return null;
+		if (block == null) {
+			return null;
+		}
 		
 		ArrayList<MacroBlock> blocks = new ArrayList<MacroBlock>(4);
 		
 		if (block.isSubdivided()) {
 			for (MacroBlock node : block.getNodes()) {
-				if (node == null) continue;
+				if (node == null) {
+					continue;
+				}
 				
 				blocks.addAll(getLeaves(node));
 			}
@@ -232,7 +245,7 @@ public class QuadtreeEngine {
 		
 		for (MacroBlock leaf : leaveNodes) {
 			Point pos = leaf.getPosition();
-			int size= leaf.getSize();
+			int size = leaf.getSize();
 			g2d1.drawRect(pos.x, pos.y, size, size);
 			g2d1.drawLine(pos.x, pos.y, pos.x + size, pos.y + size);
 			

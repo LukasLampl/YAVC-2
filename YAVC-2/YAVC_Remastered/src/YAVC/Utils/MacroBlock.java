@@ -123,8 +123,11 @@ public class MacroBlock {
 	 * @throws IllegalArgumentException	If the size is below 0
 	 */
 	public MacroBlock(Point position, int size) {
-		if (position == null) throw new NullPointerException("MacroBlock can't have position NULL");
-		else if (size < 0) throw new IllegalArgumentException("The size of " + size + " is not supported!");
+		if (position == null) {
+			throw new NullPointerException("MacroBlock can't have position NULL");
+		} else if (size < 0) {
+			throw new IllegalArgumentException("The size of " + size + " is not supported!");
+		}
 		
 		this.position = position;
 		this.size = size;
@@ -152,12 +155,19 @@ public class MacroBlock {
 	 * @throws IllegalArgumentException	If the size is below 0
 	 */
 	public MacroBlock(Point position, int size, double[][] Y, double[][] U, double[][] V, double[][] A) {
-		if (position == null) throw new NullPointerException("MacroBlock can't have position NULL");
-		else if (size < 0) throw new IllegalArgumentException("The size of " + size + " is not supported!");
-		else if (Y == null) throw new NullPointerException("MacroBlock can't have a NULL Luma-Y channel");
-		else if (U == null) throw new NullPointerException("MacroBlock can't have a NULL Chroma-U channel");
-		else if (V == null) throw new NullPointerException("MacroBlock can't have a NULL Chroma-V channel");
-		else if (A == null) throw new NullPointerException("MacroBlock can't have a NULL Alpha channel");
+		if (position == null) {
+			throw new NullPointerException("MacroBlock can't have position NULL");
+		} else if (size < 0) {
+			throw new IllegalArgumentException("The size of " + size + " is not supported!");
+		} else if (Y == null) {
+			throw new NullPointerException("MacroBlock can't have a NULL Luma-Y channel");
+		} else if (U == null) {
+			throw new NullPointerException("MacroBlock can't have a NULL Chroma-U channel");
+		} else if (V == null) {
+			throw new NullPointerException("MacroBlock can't have a NULL Chroma-V channel");
+		} else if (A == null) {
+			throw new NullPointerException("MacroBlock can't have a NULL Alpha channel");
+		}
 		
 		this.position = position;
 		this.size = size;
@@ -194,12 +204,19 @@ public class MacroBlock {
 	 * @throws IllegalArgumentException	If the size is below 0
 	 */
 	public MacroBlock(Point position, int size, double[][][] colors) {
-		if (position == null) throw new NullPointerException("MacroBlock can't have position NULL");
-		else if (size < 0) throw new IllegalArgumentException("The size of " + size + " is not supported!");
-		else if (colors[0] == null) throw new NullPointerException("MacroBlock can't have a NULL Luma-Y channel");
-		else if (colors[1] == null) throw new NullPointerException("MacroBlock can't have a NULL Chroma-U channel");
-		else if (colors[2] == null) throw new NullPointerException("MacroBlock can't have a NULL Chroma-V channel");
-		else if (colors[3] == null) throw new NullPointerException("MacroBlock can't have a NULL Alpha channel");
+		if (position == null) {
+			throw new NullPointerException("MacroBlock can't have position NULL");
+		} else if (size < 0) {
+			throw new IllegalArgumentException("The size of " + size + " is not supported!");
+		} else if (colors[0] == null) {
+			throw new NullPointerException("MacroBlock can't have a NULL Luma-Y channel");
+		} else if (colors[1] == null) {
+			throw new NullPointerException("MacroBlock can't have a NULL Chroma-U channel");
+		} else if (colors[2] == null) {
+			throw new NullPointerException("MacroBlock can't have a NULL Chroma-V channel");
+		} else if (colors[3] == null) {
+			throw new NullPointerException("MacroBlock can't have a NULL Alpha channel");
+		}
 		
 		this.position = position;
 		this.size = size;
@@ -225,10 +242,15 @@ public class MacroBlock {
 	 * </ul>
 	 */
 	public void setColorComponents(double[][] Y, double[][] U, double[][] V, double[][] A) {
-		if (Y == null) throw new NullPointerException("MacroBlock can't have a NULL Luma-Y channel");
-		else if (U == null) throw new NullPointerException("MacroBlock can't have a NULL Chroma-U channel");
-		else if (V == null) throw new NullPointerException("MacroBlock can't have a NULL Chroma-V channel");
-		else if (A == null) throw new NullPointerException("MacroBlock can't have a NULL Alpha channel");
+		if (Y == null) {
+			throw new NullPointerException("MacroBlock can't have a NULL Luma-Y channel");
+		} else if (U == null) {
+			throw new NullPointerException("MacroBlock can't have a NULL Chroma-U channel");
+		} else if (V == null) {
+			throw new NullPointerException("MacroBlock can't have a NULL Chroma-V channel");
+		} else if (A == null) {
+			throw new NullPointerException("MacroBlock can't have a NULL Alpha channel");
+		}
 		
 		this.Y = Y;
 		this.U = U;
@@ -254,13 +276,20 @@ public class MacroBlock {
 	 * </ul>
 	 */
 	public double[] getYUV(int x, int y) {
-		if (x < 0 || x >= this.size) throw new ArrayIndexOutOfBoundsException("(X) " + x + " is out of bounds (" + this.size + ")");
-		else if (y < 0 || y >= this.size) throw new ArrayIndexOutOfBoundsException("(Y) " + y + " is out of bounds (" + this.size + ")");
-		else if (this.Y == null) throw new NullPointerException("No Luma-Y Component");
-		else if (this.U == null) throw new NullPointerException("No Chroma-U Component");
-		else if (this.V == null) throw new NullPointerException("No Chroma-V Component");
+		if (x < 0 || x >= this.size) {
+			throw new ArrayIndexOutOfBoundsException("(X) " + x + " is out of bounds (" + this.size + ")");
+		} else if (y < 0 || y >= this.size) {
+			throw new ArrayIndexOutOfBoundsException("(Y) " + y + " is out of bounds (" + this.size + ")");
+		} else if (this.Y == null) {
+			throw new NullPointerException("No Luma-Y Component");
+		} else if (this.U == null) {
+			throw new NullPointerException("No Chroma-U Component");
+		} else if (this.V == null) {
+			throw new NullPointerException("No Chroma-V Component");
+		}
 		
-		int subSX = x / 2, subSY = y / 2;
+		int subSX = x / 2;
+		int subSY = y / 2;
 		return new double[] {this.Y[x][y], this.U[subSX][subSY], this.V[subSX][subSY]};
 	}
 	
@@ -273,10 +302,14 @@ public class MacroBlock {
 	 * @param YUV	YUV color to set
 	 */
 	public void setYUV(int x, int y, double[] YUV) {
-		if (x < 0 || x >= this.size) throw new ArrayIndexOutOfBoundsException("(X) " + x + " is out of bounds (" + this.size + ")");
-		else if (y < 0 || y >= this.size) throw new ArrayIndexOutOfBoundsException("(Y) " + y + " is out of bounds (" + this.size + ")");
+		if (x < 0 || x >= this.size) {
+			throw new ArrayIndexOutOfBoundsException("(X) " + x + " is out of bounds (" + this.size + ")");
+		} else if (y < 0 || y >= this.size) {
+			throw new ArrayIndexOutOfBoundsException("(Y) " + y + " is out of bounds (" + this.size + ")");
+		}
 		
-		int subSX = x / 2, subSY = y / 2;
+		int subSX = x / 2;
+		int subSY = y / 2;
 		this.Y[x][y] = YUV[0];
 		this.U[subSX][subSY] = YUV[1];
 		this.V[subSX][subSY] = YUV[2];
@@ -307,15 +340,23 @@ public class MacroBlock {
 	 * argb array is null
 	 */
 	public void subdivide(double errorThreshold, int depth, int[][] meanOf4x4Blocks, int[][][] argbs, Dimension dim, Point innerPos) {
-		if (meanOf4x4Blocks == null) throw new NullPointerException("No 4x4Mean, can't subdivide MacroBlock");
-		else if (argbs == null) throw new NullPointerException("No ARGB colors, can't subdivide MacroBlock");
+		if (meanOf4x4Blocks == null) {
+			throw new NullPointerException("No 4x4Mean, can't subdivide MacroBlock");
+		} else if (argbs == null) {
+			throw new NullPointerException("No ARGB colors, can't subdivide MacroBlock");
+		}
 		
-		if (this.isSubdivided == true) return;
-		else if (this.size <= 4) return;
+		if (this.isSubdivided == true) {
+			return;
+		} else if (this.size <= 4) {
+			return;
+		}
 		
 		this.isSubdivided = true;
 		this.nodes = new MacroBlock[4];
-		int index = 0, fraction = this.size / 2, outlyers = 0;
+		int index = 0;
+		int fraction = this.size / 2;
+		int outlyers = 0;
 		
 		for (int x = 0; x < size; x += fraction) {
 			for (int y = 0; y < size; y += fraction) {
@@ -475,9 +516,13 @@ public class MacroBlock {
 	 * than the MacroBlock itself
 	 */
 	private MacroBlock getSubBlock(Point pos, int size) {
-		if (pos.x < 0 || pos.x >= this.size) throw new ArrayIndexOutOfBoundsException();
-		else if (pos.y < 0 || pos.y >= this.size) throw new ArrayIndexOutOfBoundsException();
-		else if (size < 1 || size > this.size) throw new IllegalArgumentException("Size cannot exceed the maximum size itself and cannot be 0 or lower");
+		if (pos.x < 0 || pos.x >= this.size) {
+			throw new ArrayIndexOutOfBoundsException();
+		} else if (pos.y < 0 || pos.y >= this.size) {
+			throw new ArrayIndexOutOfBoundsException();
+		} else if (size < 1 || size > this.size) {
+			throw new IllegalArgumentException("Size cannot exceed the maximum size itself and cannot be 0 or lower");
+		}
 		
 		int halfSize = size / 2;
 		double[][] resY = new double[size][size];
@@ -494,13 +539,15 @@ public class MacroBlock {
 		
 		for (int x = 0; x < halfSize; x++) {
 			for (int y = 0; y < halfSize; y++) {
-				int thisPosX = (pos.x / 2) + x, thisPosY = (pos.y / 2) + y;
+				int thisPosX = (pos.x / 2) + x;
+				int thisPosY = (pos.y / 2) + y;
 				resU[x][y] = this.U[thisPosX][thisPosY];
 				resV[x][y] = this.V[thisPosX][thisPosY];
 			}
 		}
 		
-		return new MacroBlock(new Point(pos.x + this.position.x, pos.y + this.position.y), size, resY, resU, resV, resA);
+		Point position = new Point(pos.x + this.position.x, pos.y + this.position.y);
+		return new MacroBlock(position, size, resY, resU, resV, resA);
 	}
 	
 	/**
@@ -520,14 +567,18 @@ public class MacroBlock {
 		
 		for (int u = 0; u < this.size; u += 4) {
 			for (int v = 0; v < this.size; v += 4) {
-				final int startX = u, startY = v;
+				final int startX = u;
+				final int startY = v;
 				
 				Runnable task = () -> {
-					int sumR = 0, sumG = 0, sumB = 0;
+					int sumR = 0;
+					int sumG = 0;
+					int sumB = 0;
 					
 					for (int x = 0; x < 4; x++) {
 						for (int y = 0; y < 4; y++) {
-							int iPosX = startX + x, iPosY = startY + y;
+							int iPosX = startX + x;
+							int iPosY = startY + y;
 							int[] col = this.COLOR_MANAGER.convertYUVToRGB_intARR(getYUV(iPosX, iPosY), null);
 							sumR += col[0];
 							sumG += col[1];
@@ -536,7 +587,8 @@ public class MacroBlock {
 						}
 					}
 					
-					meanArgbs[startX / 4][startY / 4] = ((sumR / 16) << 16) | ((sumG / 16) << 8) | (sumB / 16);
+					int meanColor = ((sumR / 16) << 16) | ((sumG / 16) << 8) | (sumB / 16);
+					meanArgbs[startX / 4][startY / 4] = meanColor;
 				};
 				
 				executor.submit(task);
@@ -547,7 +599,9 @@ public class MacroBlock {
 		
 		try {
 			while (!executor.awaitTermination(20, TimeUnit.MICROSECONDS));
-		} catch (Exception e) {e.printStackTrace();}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		
 		return new MeanStructure(meanArgbs, argbs);
 	}
@@ -567,14 +621,20 @@ public class MacroBlock {
 	 * @param size	Size of the child block
 	 */
 	public int[] calculateMeanOfCurrentBlock(int[][] meanOf4x4Blocks, Point pos, int size) {
-		double sumR = 0, sumG = 0, sumB = 0;
-		int actualSize = size / 4, length = actualSize * actualSize;
-		int actualPosX = pos.x / 4, actualPosY = pos.y / 4;
+		double sumR = 0;
+		double sumG = 0;
+		double sumB = 0;
+		int actualSize = size / 4;
+		int length = actualSize * actualSize;
+		int actualPosX = pos.x / 4;
+		int actualPosY = pos.y / 4;
 		
 		for (int x = 0; x < actualSize; x++) {
 			for (int y = 0; y < actualSize; y++) {
 				int argb = meanOf4x4Blocks[x + actualPosX][y + actualPosY];
-				double r = (argb >> 16) & 0xFF, g = (argb >> 8) & 0xFF, b = argb & 0xFF;
+				double r = (argb >> 16) & 0xFF;
+				double g = (argb >> 8) & 0xFF;
+				double b = argb & 0xFF;
 				sumR += r;
 				sumG += g;
 				sumB += b;
@@ -599,9 +659,13 @@ public class MacroBlock {
 	 * @param size	Size of the child block
 	 */
 	public double computeStandardDeviation(int[] mean, int[][][] argbs, Point pos, int size) {
-		double resR = 0, resG = 0, resB = 0;
+		double resR = 0;
+		double resG = 0;
+		double resB = 0;
 		double length = size * size;
-		int meanR = mean[0], meanG = mean[1], meanB = mean[2];
+		int meanR = mean[0];
+		int meanG = mean[1];
+		int meanB = mean[2];
 		
 		for (int x = 0; x < size; x++) {
 			for (int y = 0; y < size; y++) {

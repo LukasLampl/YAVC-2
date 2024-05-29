@@ -20,7 +20,10 @@ public class InputProcessor {
 		String part = "";
 		
 		for (int i = dimPos; i < stream.length(); i++) {
-			if (stream.charAt(i) == '}') break;
+			if (stream.charAt(i) == '}') {
+				break;
+			}
+			
 			part += stream.charAt(i);
 		}
 		
@@ -54,17 +57,24 @@ public class InputProcessor {
 		if (vecs != null) {
 			for (Vector v : vecs) {
 				Point pos = v.getPosition();
-				int EndX = pos.x + v.getSpanX(), EndY = pos.y + v.getSpanY();
+				int EndX = pos.x + v.getSpanX();
+				int EndY = pos.y + v.getSpanY();
 				PixelRaster cache = refs.get(config.MAX_REFERENCES - v.getReference());
 				double[][][] reconstructedColor = reconstructColors(v.getIDCTCoefficientsOfAbsoluteColorDifference(), cache.getPixelBlock(pos, v.getSize(), null), v.getSize());
 
 				for (int x = 0; x < v.getSize(); x++) {
-					if (EndX + x >= this.FRAME_DIM.width || EndX + x < 0) continue;
-					if (pos.x + x >= this.FRAME_DIM.width || pos.x + x < 0) continue;
+					if (EndX + x >= this.FRAME_DIM.width || EndX + x < 0) {
+						continue;
+					} else if (pos.x + x >= this.FRAME_DIM.width || pos.x + x < 0) {
+						continue;
+					}
 					
 					for (int y = 0; y < v.getSize(); y++) {
-						if (EndY + y >= this.FRAME_DIM.height || EndY + y < 0) continue;
-						if (pos.y + y >= this.FRAME_DIM.height || pos.y + y < 0) continue;
+						if (EndY + y >= this.FRAME_DIM.height || EndY + y < 0) {
+							continue;
+						} else if (pos.y + y >= this.FRAME_DIM.height || pos.y + y < 0) {
+							continue;
+						}
 						
 						int subSX = x / 2, subSY = y / 2;
 						double[] YUV = new double[] {reconstructedColor[0][x][y], reconstructedColor[1][subSX][subSY], reconstructedColor[2][subSX][subSY]};
@@ -104,7 +114,10 @@ public class InputProcessor {
 	
 	private ArrayList<Vector> getVectors(String vectorPart) {
 		ArrayList<Vector> vecs = new ArrayList<Vector>();
-		if (vectorPart.length() <= 1) return vecs;
+		
+		if (vectorPart.length() <= 1) {
+			return vecs;
+		}
 		
 		int offset = config.CODING_OFFSET;
 		String[] vectors = vectorPart.split(Character.toString(config.VECTOR_END));
@@ -150,7 +163,8 @@ public class InputProcessor {
 		ArrayList<double[][][]> DCTCoeffGroups = new ArrayList<double[][][]>();
 		double[][] data = getDCTCoeffsOutOfFile(vectorPart, startPos, size);
 		
-		int halfSize = size / 2, YLength = size * size;
+		int halfSize = size / 2;
+		int YLength = size * size;
 		
 		if (size == 4) {
 			double[][][] res = new double[3][][];
@@ -201,12 +215,15 @@ public class InputProcessor {
 	
 	private double[][] getDCTCoeffsOutOfFile(String vectorPart, int startPos, int size) {
 		int halfSize = size / 2;
-		int YLength = size * size, UVLength = halfSize * halfSize;
+		int YLength = size * size;
+		int UVLength = halfSize * halfSize;
 		
 		double[] YBytes = new double[YLength];
 		double[] UBytes = new double[UVLength];
 		double[] VBytes = new double[UVLength];
+		
 		if (vectorPart.charAt(startPos + 0) == config.VECTOR_DCT_START) System.err.println("Err!");
+		
 		for (int n = 0; n < YLength; n++) {
 			YBytes[n] = getDCTCoeff(vectorPart.charAt(startPos + n));
 		}
@@ -253,12 +270,24 @@ public class InputProcessor {
 		int ref = (refAndSize >> 4) & 0x0F, size = refAndSize & 0x0F;
 		
 		switch (size) {
-			case 6: size = 128; break;
-			case 5: size = 64; break;
-			case 4: size = 32; break;
-			case 3: size = 16; break;
-			case 2: size = 8; break;
-			case 1: size = 4; break;
+			case 6:
+				size = 128;
+				break;
+			case 5:
+				size = 64;
+				break;
+			case 4:
+				size = 32;
+				break;
+			case 3: 
+				size = 16;
+				break;
+			case 2:
+				size = 8;
+				break;
+			case 1:
+				size = 4;
+				break;
 		}
 		
 		return new int[] {ref, size};

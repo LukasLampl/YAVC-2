@@ -74,7 +74,8 @@ public class DCTEngine {
 			DCT_COEFFICIENTS[1] = new double[sizes.length][][][][];
 			
 			for (int i = 0; i < sizes.length; i++) {
-				int index = i, m = sizes[index];
+				int index = i;
+				int m = sizes[index];
 				DCT_COEFFICIENTS[0][i] = new double[m][m][m][m];
 				DCT_COEFFICIENTS[1][i] = new double[m][m][m][m];
 				
@@ -82,7 +83,7 @@ public class DCTEngine {
 			}
 			
 			executor.shutdown();
-			while (!executor.awaitTermination(20, TimeUnit.MICROSECONDS)) {}
+			while (!executor.awaitTermination(20, TimeUnit.MICROSECONDS));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -103,7 +104,9 @@ public class DCTEngine {
 	 * @throws IllegalArgumentException	when m is not positive or is 0
 	 */
 	private Runnable getDCTCoeffs(int m, int index) {
-		if (m <= 0) throw new IllegalArgumentException("Size m has to be greater than 0");
+		if (m <= 0) {
+			throw new IllegalArgumentException("Size m has to be greater than 0");
+		}
 		
 		int m2 = m * 2;
 		
@@ -154,10 +157,14 @@ public class DCTEngine {
 	 */
 	private int setIndexOfDCT(int m) {
 		switch (m) {
-		case 8: return 0;
-		case 4: return 1;
-		case 2: return 2;
-		default: throw new IllegalArgumentException("Unsupported matrix size: " + m);
+		case 8:
+			return 0;
+		case 4:
+			return 1;
+		case 2:
+			return 2;
+		default:
+			throw new IllegalArgumentException("Unsupported matrix size: " + m);
 		}
 	}
 	
@@ -281,7 +288,8 @@ public class DCTEngine {
 	 * @param posY	position y in the destination array
 	 */
 	private void writeSubArrayInArray(double[][][] subArray, double[][][] dest, int posX, int posY) {
-		int size = subArray[0].length, halfSize = subArray[1].length;
+		int size = subArray[0].length;
+		int halfSize = subArray[1].length;
 		
 		for (int x = 0; x < size; x++) {
 			for (int y = 0; y < size; y++) {
@@ -291,7 +299,8 @@ public class DCTEngine {
 		
 		for (int x = 0; x < halfSize; x++) {
 			for (int y = 0; y < halfSize; y++) {
-				int subSX = (posX + x) / 2, subSY = (posY + y) / 2;
+				int subSX = (posX + x) / 2;
+				int subSY = (posY + y) / 2;
 				dest[1][subSX][subSY] = subArray[1][x][y];
 				dest[2][subSX][subSY] = subArray[2][x][y];
 			}
@@ -312,9 +321,13 @@ public class DCTEngine {
 	 * original array or the subarray exceeds the original array
 	 */
 	private double[][][] getSubArray(double[][][] org, int size, int posX, int posY) {
-		if (size > org[0].length) throw new ArrayIndexOutOfBoundsException("Size of the subarray can't be bigger than the original");
-		else if (size + posX > org[0].length) throw new ArrayIndexOutOfBoundsException("Subarray exceeds the original array");
-		else if (size + posY > org[0].length) throw new ArrayIndexOutOfBoundsException("Subarray exceeds the original array");
+		if (size > org[0].length) {
+			throw new ArrayIndexOutOfBoundsException("Size of the subarray can't be bigger than the original");
+		} else if (size + posX > org[0].length) {
+			throw new ArrayIndexOutOfBoundsException("Subarray exceeds the original array");
+		} else if (size + posY > org[0].length) {
+			throw new ArrayIndexOutOfBoundsException("Subarray exceeds the original array");
+		}
 		
 		double arr[][][] = new double[3][][];
 		int halfSize = size / 2;
@@ -362,7 +375,8 @@ public class DCTEngine {
 		
 		for (int v = 0; v < m; v++) {
 			for (int u = 0; u < m; u++) {
-				double sumU = 0, sumV = 0;
+				double sumU = 0;
+				double sumV = 0;
 
 				for (int x = 0; x < m; x++) {
 					for (int y = 0; y < m; y++) {
@@ -403,7 +417,8 @@ public class DCTEngine {
 		
 		for (int x = 0; x < m; x++) {
 			for (int y = 0; y < m; y++) {
-				double sumU = 0, sumV = 0;
+				double sumU = 0;
+				double sumV = 0;
 				
 				for (int u = 0; u < m; u++) {
 					for (int v = 0; v < m; v++) {
@@ -582,9 +597,12 @@ public class DCTEngine {
 	 */
 	private int[][] getLumaQuantizationTable(int size) {
 		switch (size) {
-		case 8: return config.QUANTIZATION_MATRIX_8x8_Luma;
-		case 4: return config.QUANTIZATION_MATRIX_4x4_Luma;
-		default: throw new IllegalArgumentException("Unsupported matrix size: " + size);
+		case 8:
+			return config.QUANTIZATION_MATRIX_8x8_Luma;
+		case 4:
+			return config.QUANTIZATION_MATRIX_4x4_Luma;
+		default:
+			throw new IllegalArgumentException("Unsupported matrix size: " + size);
 		}
 	}
 	
@@ -599,9 +617,12 @@ public class DCTEngine {
 	 */
 	private int[][] getChromaQuantizationTable(int size) {
 		switch (size) {
-		case 4: return config.QUANTIZATION_MATRIX_4x4_Chroma;
-		case 2: return config.QUANTIZATION_MATRIX_2x2_Chroma;
-		default: throw new IllegalArgumentException("Unsupported matrix size: " + size);
+		case 4:
+			return config.QUANTIZATION_MATRIX_4x4_Chroma;
+		case 2:
+			return config.QUANTIZATION_MATRIX_2x2_Chroma;
+		default:
+			throw new IllegalArgumentException("Unsupported matrix size: " + size);
 		}
 	}
 }

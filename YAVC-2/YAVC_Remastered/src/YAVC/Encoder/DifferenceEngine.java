@@ -28,11 +28,14 @@ public class DifferenceEngine {
 					double[][][] refCols = prevFrame.getPixelBlock(block.getPosition(), size, null);
 					double[][][] curCols = block.getColors();
 					
-					double sumY = 0, sumU = 0, sumV = 0;
+					double sumY = 0;
+					double sumU = 0;
+					double sumV = 0;
 					
 					for (int x = 0; x < size; x++) {
 						for (int y = 0; y < size; y++) {
-							int subSX = (int)(x * 0.5), subSY = (int)(y * 0.5);
+							int subSX = x / 2;
+							int subSY = y / 2;
 							double deltaY = refCols[0][x][y] - curCols[0][x][y];
 							double deltaU = refCols[1][subSX][subSY] - curCols[1][subSX][subSY];
 							double deltaV = refCols[2][subSX][subSY] - curCols[2][subSX][subSY];
@@ -46,7 +49,9 @@ public class DifferenceEngine {
 					sumU /= size * size;
 					sumV /= size * size;
 					
-					if (sumY > 1.55 || sumU > 3.6 || sumV > 3.6) return block;
+					if (sumY > 1.55 || sumU > 3.6 || sumV > 3.6) {
+						return block;
+					}
 					
 					return null;
 				};
@@ -67,7 +72,7 @@ public class DifferenceEngine {
 			}
 			
 			executor.shutdown();
-			while (!executor.awaitTermination(20, TimeUnit.NANOSECONDS)) {}
+			while (!executor.awaitTermination(20, TimeUnit.NANOSECONDS));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -85,7 +90,9 @@ public class DifferenceEngine {
 					if (x + b.getPosition().x >= dim.width
 						|| x + b.getPosition().x < 0
 						|| y + b.getPosition().y >= dim.height
-						|| y + b.getPosition().y < 0) continue;
+						|| y + b.getPosition().y < 0) {
+						continue;
+					}
 					
 					render.setRGB(x + b.getPosition().x, y + b.getPosition().y, colManager.convertYUVToRGB(b.getYUV(x, y)));
 				}

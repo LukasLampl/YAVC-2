@@ -88,7 +88,10 @@ public class PixelRaster {
 	 * @throws IllegalArgumentException	when the image DataBuffer is not supported
 	 */
 	public PixelRaster(BufferedImage img) {
-		if (img == null) throw new NullPointerException("Can't invoke NULL image");
+		if (img == null) {
+			throw new NullPointerException("Can't invoke NULL image");
+		}
+		
 		img = scaleToNearest4Divisor(img);
 		
 		this.dim = new Dimension(img.getWidth(), img.getHeight());
@@ -103,7 +106,9 @@ public class PixelRaster {
 			byte[] buffer = ((DataBufferByte)img.getRaster().getDataBuffer()).getData();
 			boolean hasAlpha = img.getAlphaRaster() != null ? true : false;
 			processByteBuffer(buffer, hasAlpha);
-		} else throw new IllegalArgumentException("Unsupported DataBuffer! DataBufferInt and DataBufferByte are supported");
+		} else {
+			throw new IllegalArgumentException("Unsupported DataBuffer! DataBufferInt and DataBufferByte are supported");
+		}
 	}
 	
 	/**
@@ -119,11 +124,17 @@ public class PixelRaster {
 	 * @throws IllegalArgumentException	when either width or height is lower or equal to 0
 	 */
 	public PixelRaster(final Dimension dim, final double[][] Y, final double[][] U, final double[][] V) {
-		if (dim.getWidth() <= 0) throw new IllegalArgumentException("Width " + dim.getWidth() + " is not supported");
-		else if (dim.getHeight() <= 0) throw new IllegalArgumentException("Height " + dim.getHeight() + " is not supported");
-		else if (Y == null) throw new NullPointerException("PixelRaster can't have NULL data for Luma-Y");
-		else if (U == null) throw new NullPointerException("PixelRaster can't have NULL data for Chroma-U");
-		else if (V == null) throw new NullPointerException("PixelRaster can't have NULL data for Chroma-V");
+		if (dim.getWidth() <= 0) {
+			throw new IllegalArgumentException("Width " + dim.getWidth() + " is not supported");
+		} else if (dim.getHeight() <= 0) {
+			throw new IllegalArgumentException("Height " + dim.getHeight() + " is not supported");
+		} else if (Y == null) {
+			throw new NullPointerException("PixelRaster can't have NULL data for Luma-Y");
+		} else if (U == null) {
+			throw new NullPointerException("PixelRaster can't have NULL data for Chroma-U");
+		} else if (V == null) {
+			throw new NullPointerException("PixelRaster can't have NULL data for Chroma-V");
+		}
 		
 		this.dim = dim;
 		this.Y = Y;
@@ -140,7 +151,9 @@ public class PixelRaster {
 		int newWidth = img.getWidth() - (img.getWidth() % 4);
 		int newHeight = img.getHeight() - (img.getHeight() % 4);
 		
-		if (newWidth == img.getWidth() && newHeight == img.getHeight()) return img;
+		if (newWidth == img.getWidth() && newHeight == img.getHeight()) {
+			return img;
+		}
 		
 		BufferedImage scaledImage = new BufferedImage(newWidth, newHeight, img.getType());
 		Graphics2D g2d = scaledImage.createGraphics();
@@ -167,18 +180,23 @@ public class PixelRaster {
 	 * hasAlpha = false
 	 */
 	private void processByteBuffer(final byte[] buffer, final boolean hasAlpha) {
-		final int chunkSize = 4096, length = (hasAlpha == true) ? PX_WITH_ALPHA_LENGTH : PX_WITHOUT_ALPHA_LENGTH;
-		final int width = this.dim.width, height = this.dim.height;
+		final int chunkSize = 4096;
+		int length = hasAlpha ? PX_WITH_ALPHA_LENGTH : PX_WITHOUT_ALPHA_LENGTH;
+		final int width = this.dim.width;
+		final int height = this.dim.height;
 		int inc = length * chunkSize;
+		int threads = Runtime.getRuntime().availableProcessors();
 		
-		ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+		ExecutorService executor = Executors.newFixedThreadPool(threads);
 
 		for (int i = 0; i < buffer.length; i += inc) {
 			final int index = i;
-			final int startPosX = (i / length) % width, startPosY = (i / length) / width;
+			final int startPosX = (i / length) % width;
+			final int startPosY = (i / length) / width;
 			
 			Runnable task = () -> {
-				int innerX = startPosX, innerY = startPosY;
+				int innerX = startPosX;
+				int innerY = startPosY;
 				
 				for (int n = 0; n < inc; n += length) {
 					if (n + index >= buffer.length) {
@@ -186,10 +204,13 @@ public class PixelRaster {
 					} else if (innerX >= width) {
 						innerY++;
 						innerX = 0;
-					} else if (innerY >= height) break;
+					} else if (innerY >= height) {
+						break;
+					}
 					
 					//ARGB for a = 0, r = 0, g = 0, b = 0
-					int argb = -16777216, jumper = index + n;
+					int argb = -16777216;
+					int jumper = index + n;
 					boolean newInit = (innerX % 2 == 0 && innerY % 2 == 0) ? true : false;
 					
 					if (hasAlpha) {
@@ -210,8 +231,10 @@ public class PixelRaster {
 		executor.shutdown();
 	
 		try {
-			while (!executor.awaitTermination(20, TimeUnit.MICROSECONDS)) {}
-		} catch (Exception e) {e.printStackTrace();}
+			while (!executor.awaitTermination(20, TimeUnit.MICROSECONDS));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
 	/**
@@ -242,10 +265,12 @@ public class PixelRaster {
 		
 		for (int i = 0; i < buffer.length; i += chunkSize) {
 			final int index = i;
-			final int startPosX = i % width, startPosY = i / width;
+			final int startPosX = i % width;
+			final int startPosY = i / width;
 			
 			Runnable task = () -> {
-				int innerX = startPosX, innerY = startPosY;
+				int innerX = startPosX;
+				int innerY = startPosY;
 				
 				for (int n = 0; n < chunkSize && index + n < buffer.length; n++) {
 					if (innerX >= width) {
@@ -265,8 +290,10 @@ public class PixelRaster {
 		executor.shutdown();
 		
 		try {
-			while (!executor.awaitTermination(20, TimeUnit.MICROSECONDS)) {}
-		} catch (Exception e) {e.printStackTrace();}
+			while (!executor.awaitTermination(20, TimeUnit.MICROSECONDS));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
 	/**
@@ -287,10 +314,14 @@ public class PixelRaster {
 	 * or y coordinate is out of the raster
 	 */
 	public double[] getYUV(final int x, final int y) {
-		if (y < 0 || y >= this.dim.height) throw new ArrayIndexOutOfBoundsException("(Y) " + y + "is out of bounds!");
-		else if (x < 0 || x >= this.dim.width) throw new ArrayIndexOutOfBoundsException("(X) " + x + "is out of bounds!");
+		if (y < 0 || y >= this.dim.height) {
+			throw new ArrayIndexOutOfBoundsException("(Y) " + y + "is out of bounds!");
+		} else if (x < 0 || x >= this.dim.width) {
+			throw new ArrayIndexOutOfBoundsException("(X) " + x + "is out of bounds!");
+		}
 		
-		int subSX = x / 2, subSY = y / 2;
+		int subSX = x / 2;
+		int subSY = y / 2;
 		return new double[] {this.Y[x][y], this.U[subSX][subSY], this.V[subSX][subSY]};
 	}
 	
@@ -311,10 +342,14 @@ public class PixelRaster {
 	 * or y coordinate is out of the raster
 	 */
 	public void setYUV(final int x, final int y, final double[] YUV) {
-		if (y < 0 || y >= this.dim.height) throw new ArrayIndexOutOfBoundsException("(Y) " + y + "is out of bounds!");
-		else if (x < 0 || x >= this.dim.width) throw new ArrayIndexOutOfBoundsException("(X) " + x + "is out of bounds!");
+		if (y < 0 || y >= this.dim.height) {
+			throw new ArrayIndexOutOfBoundsException("(Y) " + y + "is out of bounds!");
+		} else if (x < 0 || x >= this.dim.width) {
+			throw new ArrayIndexOutOfBoundsException("(X) " + x + "is out of bounds!");
+		}
 		
-		int subSX = x / 2, subSY = y / 2;
+		int subSX = x / 2;
+		int subSY = y / 2;
 		this.Y[x][y] = YUV[0];
 		this.U[subSX][subSY] = YUV[1];
 		this.V[subSX][subSY] = YUV[2];
@@ -375,10 +410,14 @@ public class PixelRaster {
 	 * or y coordinate is out of the raster
 	 */
 	public void setThreadSafeYUV(final int x, final int y, final double[] YUV, final boolean invokedUV) {
-		if (y < 0 || y >= this.dim.height) throw new ArrayIndexOutOfBoundsException("(Y) " + y + "is out of bounds!");
-		else if (x < 0 || x >= this.dim.width) throw new ArrayIndexOutOfBoundsException("(X) " + x + "is out of bounds!");
+		if (y < 0 || y >= this.dim.height) {
+			throw new ArrayIndexOutOfBoundsException("(Y) " + y + "is out of bounds!");
+		} else if (x < 0 || x >= this.dim.width) {
+			throw new ArrayIndexOutOfBoundsException("(X) " + x + "is out of bounds!");
+		}
 		
-		int subSX = x / 2, subSY = y / 2;
+		int subSX = x / 2;
+		int subSY = y / 2;
 		this.Y[x][y] = YUV[0];
 
 		if (invokedUV == true) {
@@ -403,10 +442,14 @@ public class PixelRaster {
 	 * or y coordinate is out of the raster
 	 */
 	public void setChroma(final int x, final int y, final double U, final double V) {
-		if (y < 0 || y >= this.dim.height) throw new ArrayIndexOutOfBoundsException("(Y) " + y + "is out of bounds!");
-		else if (x < 0 || x >= this.dim.width) throw new ArrayIndexOutOfBoundsException("(X) " + x + "is out of bounds!");
+		if (y < 0 || y >= this.dim.height) {
+			throw new ArrayIndexOutOfBoundsException("(Y) " + y + "is out of bounds!");
+		} else if (x < 0 || x >= this.dim.width) {
+			throw new ArrayIndexOutOfBoundsException("(X) " + x + "is out of bounds!");
+		}
 		
-		int subSX = x / 2, subSY = y / 2;
+		int subSX = x / 2;
+		int subSY = y / 2;
 		this.U[subSX][subSY] = U;
 		this.V[subSX][subSY] = V;
 	}
@@ -423,8 +466,11 @@ public class PixelRaster {
 	 * or y coordinate is out of the raster
 	 */
 	public void setLuma(final int x, final int y, final double Y) {
-		if (y < 0 || y >= this.dim.height) throw new ArrayIndexOutOfBoundsException("(Y) " + y + "is out of bounds!");
-		else if (x < 0 || x >= this.dim.width) throw new ArrayIndexOutOfBoundsException("(X) " + x + "is out of bounds!");
+		if (y < 0 || y >= this.dim.height) {
+			throw new ArrayIndexOutOfBoundsException("(Y) " + y + "is out of bounds!");
+		} else if (x < 0 || x >= this.dim.width) {
+			throw new ArrayIndexOutOfBoundsException("(X) " + x + "is out of bounds!");
+		}
 		
 		this.Y[x][y] = Y;
 	}
@@ -472,12 +518,16 @@ public class PixelRaster {
 	 * @return PixelBlock from the PixelRaster
 	 */
 	public double[][][] getPixelBlock(final Point position, final int size, double[][][] cache) {
-		if (position == null) throw new NullPointerException();
+		if (position == null) {
+			throw new NullPointerException();
+		}
+		
 		double[][][] res = cache == null ? getArray(size) : size <= cache[0].length ? cache : getArray(size);
 		
 		for (int y = 0; y < size; y++) {
 			for (int x = 0; x < size; x++) {
-				int absoluteX = position.x + x, absoluteY = position.y + y;
+				int absoluteX = position.x + x;
+				int absoluteY = position.y + y;
 				
 				if (absoluteX >= this.dim.width || x < 0
 					|| absoluteY >= this.dim.height || y < 0) {
@@ -491,12 +541,15 @@ public class PixelRaster {
 		}
 		
 		int halfSize = size / 2;
-		int halfPosX = position.x / 2, halfPosY = position.y / 2;
-		int halfDimWidth = this.dim.width / 2, halfDimHeight = this.dim.height / 2;
+		int halfPosX = position.x / 2;
+		int halfPosY = position.y / 2;
+		int halfDimWidth = this.dim.width / 2;
+		int halfDimHeight = this.dim.height / 2;
 		
 		for (int y = 0; y < halfSize; y++) {
 			for (int x = 0; x < halfSize; x++) {
-				int absoluteX = halfPosX + x, absoluteY = halfPosY + y;
+				int absoluteX = halfPosX + x;
+				int absoluteY = halfPosY + y;
 				
 				if (absoluteX >= halfDimWidth || x < 0
 					|| absoluteY >= halfDimHeight || y < 0) {
@@ -560,7 +613,8 @@ public class PixelRaster {
 		double[][] clonedU = new double[this.dim.width / 2][];
 		double[][] clonedV = new double[this.dim.width / 2][];
 		
-		int size = this.dim.width, halfSize = this.dim.width / 2;
+		int size = this.dim.width;
+		int halfSize = this.dim.width / 2;
 		
 		for (int i = 0; i < size; i++) {
 			clonedY[i] = this.Y[i].clone();
