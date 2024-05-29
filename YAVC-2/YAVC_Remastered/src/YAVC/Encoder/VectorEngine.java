@@ -1,3 +1,24 @@
+/////////////////////////////////////////////////////////////
+///////////////////////    LICENSE    ///////////////////////
+/////////////////////////////////////////////////////////////
+/*
+The YAVC video / frame compressor compresses frames.
+Copyright (C) 2024  Lukas Nian En Lampl
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 package YAVC.Encoder;
 
 import java.awt.Color;
@@ -18,25 +39,46 @@ import YAVC.Utils.MacroBlock;
 import YAVC.Utils.PixelRaster;
 import YAVC.Utils.Vector;
 
+/**
+ * <p>The class {@code YAVC.Encoder.VectorEngine} contains all functions
+ * for the inter-prediction process in the YAVC video compressor.</p>
+ * <p>First hexagonal search is executed followed by exhaustive search.</p>
+ * 
+ * <p><strong>Performance warning:</strong> Even though this process is
+ * multithreaded, it might impact the overall performance due to increasing
+ * amount of data on larger frames.</p>
+ * 
+ * @author Lukas Lampl
+ * @since 1.0
+ */
+
 public class VectorEngine {
+	
+	/**
+	 * <p>Variable to store the total MSE of all "best matches".</p>
+	 */
 	private double TOTAL_MSE = 0;
 	
-	/*
-	 * Purpose: Calculate all possible movement vectors by the differences from the prevFrame to the curFrame.
-	 * 			To achieve that it uses reference images that go 4 images into the past.
-	 * Return Type: ArrayList<Vector> => List of movement vectors
-	 * Params: ArrayList<MacroBlock> blocksToInterpredict => Blocks to inter-predict;
-	 * 			ArrayList<PixelRaster> refs => Reference images;
-	 * 			PixelRaster futureFrame => Frame in the future
+	/**
+	 * <p>Calculates all possible movement vectors from the current frame to
+	 * an list of reference frames.</p>
+	 * <p>Due to the nature of block-matching there is no "100% perfect fit" block,
+	 * but in order to restore most of the information as possible without affecting
+	 * the overall compression ratio, the differences are stored too.</p>
+	 * 
+	 * @return An ArrayList filled with all movement vectors.
+	 * 
+	 * @param blocksToInterpredict	MacroBlocks to search a match for
+	 * @param refs	Reference frames that are allowed to use during the search
+	 *
+	 * @throws NullPointerException	When no MacroBlocks are passed for prediction or
+	 * if no references to refer to are available
+	 * 
+	 * @see YAVC.Utils.Vector
 	 */
-	public ArrayList<Vector> computeMovementVectors(ArrayList<MacroBlock> blocksToInterpredict, ArrayList<PixelRaster> refs, PixelRaster futureFrame) {
-		if (blocksToInterpredict == null || blocksToInterpredict.size() == 0) {
-			System.err.println("No blocks for inter-prediction > Skip process");
-			return null;
-		} else if (refs == null || refs.size() == 0) {
-			System.err.println("Can't compute motion vectors, due to missing references! > Skip");
-			return null;
-		}
+	public ArrayList<Vector> computeMovementVectors(ArrayList<MacroBlock> blocksToInterpredict, ArrayList<PixelRaster> refs) {
+		if (blocksToInterpredict == null || blocksToInterpredict.size() == 0) throw new NullPointerException("No blocks to inter-predict");
+		else if (refs == null || refs.size() == 0) throw new NullPointerException("No reference frame to refere to");
 		
 		ArrayList<Vector> vecs = new ArrayList<Vector>(blocksToInterpredict.size());
 			
@@ -60,12 +102,6 @@ public class VectorEngine {
 						}
 						
 						canidates[index] = bestMatch;
-					}
-					
-					if (futureFrame != null) {
-						MacroBlock futureMatch = computeHexagonSearch(futureFrame, block);
-						if (futureMatch != null) futureMatch.setReference(-1);
-						canidates[refs.size()] = futureMatch;
 					}
 					
 					MacroBlock best = evaluateBestGuess(canidates);
@@ -115,10 +151,13 @@ public class VectorEngine {
 		return vecs;
 	}
 	
-	/*
-	 * Purpose: The method evaluates the best guess among an array of "best matches"
-	 * Return Type: MacroBlock => Best match to the searched MacroBlock
-	 * Params: MacroBlock[] canidates => Candiates to check for the lowest MSE
+	/**
+	 * <p>The function evaluates the best guess among the array of "best matches"
+	 * from every reference frame.</p>
+	 * 
+	 * @return The actual "best match" among all other "best matches"
+	 * 
+	 * @param canidates	Canidates to check
 	 */
 	private MacroBlock evaluateBestGuess(MacroBlock[] canidates) {
 		MacroBlock best = canidates[0];
@@ -135,25 +174,21 @@ public class VectorEngine {
 		return best;
 	}
 	
-	/*
-	 * Purpose: Compute the hexagon-search algorithm for a MacroBlock with one reference.
-	 * 			The algorithm is as followed:
-	 * +---+---------------------------------------------------------------------------------------------------------+
-	 * | 1 | Move a coordinate system to the Position of the block, so that the origin is a the blocks position.     |
-	 * +---+---------------------------------------------------------------------------------------------------------+
-	 * | 2 | Span a hexagon with the radius r and get all MSEs from the seven points. Look for the lowest.           |
-	 * |   | If the lowest can be found at the center move to step 4; else to step 3.                                |
-	 * +---+---------------------------------------------------------------------------------------------------------+
-	 * | 3 | Set the new origin to the Point with the lowest MSE and repeat step 2.                                  |
-	 * +---+---------------------------------------------------------------------------------------------------------+
-	 * | 4 | Now set the radius to r /= 2 and repeat step 2, until r <= 1. If r <= 1 go to step 5.                   |
-	 * +---+---------------------------------------------------------------------------------------------------------+
-	 * | 5 | Check the points around the "best guess" and get the one with the lowest MSE >> this is the best match. |
-	 * +---+---------------------------------------------------------------------------------------------------------+
+	/**
+	 * <p>Computes the hexagon-search algorithm for a MacroBlock with one reference. The algorithm is as followed:<br>
+	 * <ol>
+	 * <li>Move a coordinate system to the Position of the block, so that the origin is a the blocks position.
+	 * <li>Span a hexagon with the radius r and get all MSEs from the seven points. Look for the lowest.If the
+	 * lowest can be found at the center move to step 4; else to step 3.
+	 * <li>Set the new origin to the Point with the lowest MSE and repeat step 2.
+	 * <li>Now set the radius to r /= 2 and repeat step 2, until r <= 1. If r <= 1 go to step 5.
+	 * <li>Check the points around the "best guess" and get the one with the lowest MSE >> this is the best match.
+	 * </ol>
 	 * 
-	 * Return Type: MacroBlock => Best match in the reference image
-	 * Params: PixelRaster ref => Reference image, in which to search for the best match;
-	 * 			MacroBlock blockToBeSearched => MacroBlock to be searched in the reference image.
+	 * @return Best match in the reference image
+	 * 
+	 * @param ref	Reference image
+	 * @param blockToBeSearched	MacroBlock for which a match should be searched
 	 */
 	private MacroBlock computeHexagonSearch(PixelRaster ref, MacroBlock blockToBeSearched) {
 		double lowestMSE = Double.MAX_VALUE;
@@ -239,6 +274,20 @@ public class VectorEngine {
 		return mostEqualBlock;
 	}
 	
+	/**
+	 * <p>Computes the exhaustive search algorithm for a MacroBlock, the steps are as followed:<br>
+	 * <ol>
+	 * <li>Set set start to the origin -searchWindow for x and y.
+	 * <li>Calculate the MSE at that position and increment x by 1. Repeat until all pixels are processed.
+	 * <li>Find the MacroBlock with the lowest MSE >> Best match.
+	 * </ol>
+	 * 
+	 * @return Best match in the reference image
+	 * 
+	 * @param ref	Reference image
+	 * @param blockToBeSearched	MacroBlock for which a match should be searched
+	 * @param bestMatchTillNow	Best matching MacroBlock from the previous hexagonal search
+	 */
 	private MacroBlock computeExhaustiveSearch(MacroBlock blockToSearch, MacroBlock bestMatchTillNow, PixelRaster ref) {
 		if (bestMatchTillNow == null) return null;
 		
@@ -269,11 +318,14 @@ public class VectorEngine {
 		return mostEqualBlock == null ? bestMatchTillNow : mostEqualBlock;
 	}
 	
-	/*
-	 * Purpose: Provide the seven Points for the hexagon-search algorithm
-	 * Return Type: Point[] => Points from the hexagon
-	 * Params: int radius => Defines the radius of the hexagon;
-	 * 			Point pos => Defines the position of the hexagon
+	/**
+	 * <p>Get the six points of a hexagon and the center based
+	 * on radius and position.</p>
+	 * 
+	 * @return Array of all points
+	 * 
+	 * @param radius	Radius of the hexagon
+	 * @param pos	Position of the hexagon
 	 */
 	private Point[] getHexagonPoints(int radius, Point pos) {
 		Point[] points = new Point[7];
@@ -288,15 +340,18 @@ public class VectorEngine {
 		return points;
 	}
 	
-	/*
-	 * Purpose: Calculates the absolute color differences in the YUV-Colorspace, so the decoder can reconstruct
-	 * 			"the original" based on all wrong coded colors during inter-prediction.
-	 * Return Type: double[][][] => The deltaValues of the Y ([0]), U ([1]) and V ([2]) components between
-	 * 				the first and second color;
-	 * Params: double[][][] col1 => The "original" color to compare to the "best match";
-	 * 			double[][][] col2 => The "best match" color from which the difference should be calculated;
-	 * 			int size => Size of the color components (in width and height);
-	 * 			int colors => Number of colors in the current frame (adaptive thresholds)
+	/**
+	 * <p>Get the differences between the original and best matching block.</p>
+	 * <p>Due to the nature of block matching there is no "100% fit", that's
+	 * why the difference is stored as well. To get better compression ratios
+	 * the difference only counts as a difference, if it exceeds a defined
+	 * threshold.</p>
+	 * 
+	 * @return Array containing the differences.
+	 * 
+	 * @param col1	First color array
+	 * @param col2	Second color array
+	 * @param size	Size of the color arrays
 	 */
 	private double[][][] getAbsoluteDifferenceOfColors(double[][][] col1, double[][][] col2, int size) {
 		int halfSize = size / 2;
@@ -334,15 +389,24 @@ public class VectorEngine {
 		return new double[][][] {Y, U, V};
 	}
 	
-	/*
-	 * Purpose: Calculates the MSE (Mean Square Error) between two YUV color components.
-	 * 			The U and V are both subsampled to 4:2:0.
-	 * Return Type: double => MSE between both colors
-	 * Params: double[][][] col1 => Color component 1, containing Y at [0], U at [1], V at [2]
-	 * 			and A at [3];
-	 * 			double[][][] col2 => Color component 2, containing Y at [0], U at [1], V at [2]
-	 * 			and A at [3];
-	 * 			int size => Size of both color components (in width and height)
+	/**
+	 * <p>Calculates the MSE (Mean Square Error) between two YUV color arrays.</p>
+	 * <p>The MSE is slightly modified, so Y is punished more strictly than Chroma.
+	 * If Alpha occures the MSE is extremely high, due to possible false encodings
+	 * and by that should be used as equal as "No other exit".</p>
+	 * <p>The color arrays should be ordered like this:
+	 * <ul><li>[0] = Y
+	 * <li>[1] = U
+	 * <li>[2] = V
+	 * <li>[3] = A
+	 * </ul></p>
+	 * 
+	 * @return The Mean Square Error between the color arrays
+	 * 
+	 * @param col1	First color array to compare
+	 * @param col2	Second color array to compare
+	 * @param size	Size of the color arrays
+	 * @param countAlpha	Flag whether the alpha is involved in the calculation or not
 	 */
 	private double getMSEOfColors(double[][][] col1, double[][][] col2, int size, boolean countAlpha) {
 		double resY = 0;
@@ -378,26 +442,41 @@ public class VectorEngine {
 		return ((resY + resU + resV + resA) / (size * size * 4));
 	}
 	
-	/*
-	 * Purpose: Returns the sum of all MSEs from all matching vectors
-	 * Return Type: void
-	 * Params: void
+	/**
+	 * <p>Returns the total MSE of the "best matching" vectors.</p>
+	 * @return Total MSE
 	 */
 	public double getVectorMSE() {
 		return this.TOTAL_MSE;
 	}
 	
-	/*
-	 * Purpose: This function is DEBUG ONLY and returns a BufferedImage that contains all vectors drawn on it.
-	 * 			The Vectors have different colors according to their "origin". Look at the table below
-	 * +-----------+-------+--------+--------+-------+-------+
-	 * | Reference |  -1   |    0   |    1   |   2   |   3   |
-	 * +-----------+-------+--------+--------+-------+-------+
-	 * |   Color   | GREEN | ORANGE | YELLOW |  BLUE |  RED  |
-	 * +-----------+-------+--------+--------+-------+-------+
-	 * Return Type: BufferedImage => Image with all vectors drawn on it
-	 * Params: ArrayList<Vector> vecs => Vectors to draw;
-	 * 			Dimension dim => Dimension of the video (width x height)
+	/**
+	 * <p>This function provides a good debugging base. It draws all vectors in the
+	 * ArrayList to an image and returns it.</p>
+	 * 
+	 * <p>For better visualization the vectors have different colors:
+	 * <br><br><table border="1">
+	 * <tr>
+	 * <td>Reference</td> <td>Assigned color</td>
+	 * </tr><tr>
+	 * <td>0</td> <td>Color.Orange</td>
+	 * </tr><tr>
+	 * <td>1</td> <td>Color.Yellow</td>
+	 * </tr><tr>
+	 * <td>2</td> <td>Color.Blue</td>
+	 * </tr><tr>
+	 * <td>3</td> <td>Color.Red</td>
+	 * </tr>
+	 * </table>
+	 * </p>
+	 * 
+	 * @return Image with all vectors drawn on it
+	 * 
+	 * @param vecs	Vectors to draw
+	 * @param dim	Dimension of the frame
+	 * 
+	 * @see YAVC.Utils.Vector
+	 * @see java.awt.Color
 	 */
 	public BufferedImage drawVectors(ArrayList<Vector> vecs, Dimension dim) {
 		BufferedImage render = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
