@@ -76,83 +76,137 @@ public class VectorEngine {
 	 * 
 	 * @see YAVC.Utils.Vector
 	 */
-	public ArrayList<Vector> computeMovementVectors(ArrayList<MacroBlock> blocksToInterpredict, ArrayList<PixelRaster> refs) {
+	public ArrayList<Vector> computeMovementVectors(final ArrayList<MacroBlock> blocksToInterpredict, final ArrayList<PixelRaster> refs) {
 		if (blocksToInterpredict == null || blocksToInterpredict.size() == 0) {
 			throw new NullPointerException("No blocks to inter-predict");
 		} else if (refs == null || refs.size() == 0) {
 			throw new NullPointerException("No reference frame to refere to");
 		}
 		
+		this.TOTAL_MSE = 0;
+		
 		ArrayList<Vector> vecs = new ArrayList<Vector>(blocksToInterpredict.size());
-			
-		try {
-			ArrayList<Future<Vector>> futureVecs = new ArrayList<Future<Vector>>(blocksToInterpredict.size());
-			int threads = Runtime.getRuntime().availableProcessors();
-			ExecutorService executor = Executors.newFixedThreadPool(threads);
-			
-			this.TOTAL_MSE = 0;
-			
-			for (MacroBlock block : blocksToInterpredict) {
-				Callable<Vector> task = () -> {
-					int maxSize = refs.size();
-					MacroBlock[] canidates = new MacroBlock[maxSize + 1];
-					
-					for (int i = 0, index = 0; i < maxSize; i++, index++) {
-						MacroBlock bestMatch = computeHexagonSearch(refs.get(i), block);
-						bestMatch = computeExhaustiveSearch(block, bestMatch, refs.get(i));
-						
-						if (bestMatch != null) {
-							bestMatch.setReference(config.MAX_REFERENCES - i);
-						}
-						
-						canidates[index] = bestMatch;
-					}
-					
-					MacroBlock best = evaluateBestGuess(canidates);
-					Vector vec = null;
-					
-					if (best != null) {
-						PixelRaster references = refs.get(config.MAX_REFERENCES - best.getReference());
-						double[][][] referenceColor = references.getPixelBlock(best.getPosition(), block.getSize(), null);
-						double[][][] absoluteColorDifference = getAbsoluteDifferenceOfColors(block.getColors(), referenceColor, block.getSize());
-						double newMatchMSE = getMSEOfColors(absoluteColorDifference, block.getColors(), block.getSize(), false);
-						this.TOTAL_MSE += newMatchMSE;
-						
-						vec = new Vector(best.getPosition(), block.getSize());
-						vec.setAppendedBlock(block);
-						vec.setMostEqualBlock(best);
-						vec.setReference(best.getReference());
-						vec.setSpanX(block.getPosition().x - best.getPosition().x);
-						vec.setSpanY(block.getPosition().y - best.getPosition().y);
-						vec.setAbsoluteDifferences(absoluteColorDifference);
-					}
-					
-					return vec;
-				};
+		ArrayList<Future<Vector>> futureVecs = new ArrayList<Future<Vector>>(blocksToInterpredict.size());
+		
+		int threads = Runtime.getRuntime().availableProcessors();
+		ExecutorService executor = Executors.newFixedThreadPool(threads);
+		
+		for (MacroBlock block : blocksToInterpredict) {
+			Callable<Vector> searchTask = createVectorSearchTask(refs, block);
+			futureVecs.add(executor.submit(searchTask));
+		}
+		
+		for (Future<Vector> fvec : futureVecs) {
+			try {
+				Vector vec = fvec.get();
 				
-				futureVecs.add(executor.submit(task));
-			}
-			
-			for (Future<Vector> fvec : futureVecs) {
-				try {
-					Vector vec = fvec.get();
-					
-					if (vec != null) {
-						vecs.add(vec);
-						blocksToInterpredict.remove(vec.getAppendedBlock());
-					}
-				} catch (Exception e) {
-					e.printStackTrace();
+				if (vec != null) {
+					vecs.add(vec);
+					blocksToInterpredict.remove(vec.getAppendedBlock());
 				}
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
-			
-			executor.shutdown();
+		}
+		
+		executor.shutdown();
+		
+		try {
 			while (!executor.awaitTermination(20, TimeUnit.MICROSECONDS));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		
 		return vecs;
+	}
+	
+	/**
+	 * <p>Creates a task for searching a MacroBlock in the provided references.</p>
+	 * <p>The task first gets the best matching MacroBlock using {@link #getBestMatchingMacroBlock(PixelRaster, MacroBlock, int)}
+	 * and finally evaluates the results with {@link #evaluateBestGuess(MacroBlock[])}.</p>
+	 * 
+	 * @return Executable task for searching a block in all provided references
+	 * 
+	 * @param refs	Reference frames
+	 * @param blockToBeSearched	MacroBlock that should be searched
+	 */
+	private Callable<Vector> createVectorSearchTask(final ArrayList<PixelRaster> refs, MacroBlock blockToBeSearched) {
+		Callable<Vector> task = () -> {
+			int maxSize = refs.size();
+			MacroBlock[] canidates = new MacroBlock[maxSize + 1];
+			
+			for (int i = 0, index = 0; i < maxSize; i++, index++) {
+				MacroBlock bestMatch = getBestMatchingMacroBlock(refs.get(i), blockToBeSearched, i);
+				canidates[index] = bestMatch;
+			}
+			
+			MacroBlock best = evaluateBestGuess(canidates);
+			Vector vec = constructMovementVector(refs, best, blockToBeSearched);
+			
+			return vec;
+		};
+		
+		return task;
+	}
+	
+	/**
+	 * <p>This function searches for the best match of a MacroBlock within a search window.</p>
+	 * <p>First of all the hexagonal search pattern is used to get fast and precise results.
+	 * After the hexagonal search the exhaustive search pattern is applied to find the absolute
+	 * best match in a 4x4 search window.</p>
+	 * 
+	 * @return Best matching MacroBlock in the reference frame
+	 * 
+	 * @param ref	Reference to search the best match in
+	 * @param blockToBeSearched	MaccroBlock that should be matched
+	 * @param referenceNumber	Number of the reference frame
+	 */
+	private MacroBlock getBestMatchingMacroBlock(final PixelRaster ref, MacroBlock blockToBeSearched, final int referenceNumber) {
+		MacroBlock bestMatch = computeHexagonSearch(ref, blockToBeSearched);
+		bestMatch = computeExhaustiveSearch(blockToBeSearched, bestMatch, ref);
+		
+		if (bestMatch != null) {
+			bestMatch.setReference(config.MAX_REFERENCES - referenceNumber);
+		}
+		
+		return bestMatch;
+	}
+	
+	/**
+	 * <p>Here the actual vector itself is created using all previously evaluated data.</p>
+	 * <p>First the absolute color difference is calculated and set, then the vector is
+	 * filled with other important data, like position, size, reference, etc.</p>
+	 * 
+	 * @return Movement vector with all data to "reconstruct" the frame
+	 * 
+	 * @param refs	Reference frames
+	 * @param bestMatch	Best matching MacroBlock
+	 * @param blockToBeSearched	MacroBlock that was searched at the beginning
+	 * 
+	 * @see YAVC.Utils.Vector
+	 */
+	private Vector constructMovementVector(final ArrayList<PixelRaster> refs, MacroBlock bestMatch, MacroBlock blockToBeSearched) {
+		Vector vec = null;
+		
+		if (bestMatch != null) {
+			int size = blockToBeSearched.getSize();
+			
+			PixelRaster referenceRaster = refs.get(config.MAX_REFERENCES - bestMatch.getReference());
+			double[][][] referenceColor = referenceRaster.getPixelBlock(bestMatch.getPosition(), size, null);
+			double[][][] absoluteColorDifference = getAbsoluteDifferenceOfColors(blockToBeSearched.getColors(), referenceColor, size);
+			double newMatchMSE = getMSEOfColors(absoluteColorDifference, blockToBeSearched.getColors(), size, false);
+			this.TOTAL_MSE += newMatchMSE;
+			
+			vec = new Vector(bestMatch.getPosition(), size);
+			vec.setAppendedBlock(blockToBeSearched);
+			vec.setMostEqualBlock(bestMatch);
+			vec.setReference(bestMatch.getReference());
+			vec.setSpanX(blockToBeSearched.getPosition().x - bestMatch.getPosition().x);
+			vec.setSpanY(blockToBeSearched.getPosition().y - bestMatch.getPosition().y);
+			vec.setAbsoluteDifferences(absoluteColorDifference);
+		}
+		
+		return vec;
 	}
 	
 	/**
@@ -203,28 +257,23 @@ public class VectorEngine {
 		int searchWindow = 48;
 		int size = blockToBeSearched.getSize();
 		int sumOfAllPoints = 2304; //All possible points to search
+		Dimension dim = ref.getDimension();
+		HashSet<Point> searchedPoints = new HashSet<Point>(sumOfAllPoints);
+		
 		Point blockPos = blockToBeSearched.getPosition();
 		Point centerPoint = blockToBeSearched.getPosition();
 		MacroBlock mostEqualBlock = null;
 		
 		Point initPos = new Point(0, 0);
 		Point[] searchPoints = new Point[7];
-		HashSet<Point> searchedPoints = new HashSet<Point>(sumOfAllPoints);
 		double[][][] cache = null;
 		
 		while (radius > 1) {
 			searchPoints = getHexagonPoints(radius, centerPoint);
 			
 			for (Point p : searchPoints) {
-				if (p.x > blockPos.x + searchWindow
-					|| p.x < blockPos.x - searchWindow
-					|| p.y > blockPos.y + searchWindow
-					|| p.y < blockPos.y - searchWindow
-					|| searchedPoints.contains(p)
-					|| p.x > ref.getWidth()
-					|| p.x < 0
-					|| p.y > ref.getHeight()
-					|| p.y < 0) {
+				if (searchedPoints.contains(p)
+					|| isHexagonPointInSearchWindow(blockPos, searchWindow, p, dim)) {
 					continue;
 				}
 				
@@ -247,27 +296,11 @@ public class VectorEngine {
 			centerPoint = initPos;
 		}
 		
-		searchPoints = new Point[9];
-		searchPoints[0] = centerPoint;
-		searchPoints[1] = new Point(centerPoint.x + radius, centerPoint.y);
-		searchPoints[2] = new Point(centerPoint.x - radius, centerPoint.y);
-		searchPoints[3] = new Point(centerPoint.x, centerPoint.y + radius);
-		searchPoints[4] = new Point(centerPoint.x, centerPoint.y - radius);
-		searchPoints[5] = new Point(centerPoint.x + radius, centerPoint.y + radius);
-		searchPoints[6] = new Point(centerPoint.x - radius, centerPoint.y - radius);
-		searchPoints[7] = new Point(centerPoint.x - radius, centerPoint.y + radius);
-		searchPoints[8] = new Point(centerPoint.x + radius, centerPoint.y - radius);
+		searchPoints = getSmallHexagonSearchPoints(centerPoint, radius);
 		
 		for (Point p : searchPoints) {
-			if (p.x > blockPos.x + searchWindow
-				|| p.x < blockPos.x - searchWindow
-				|| p.y > blockPos.y + searchWindow
-				|| p.y < blockPos.y - searchWindow
-				|| searchedPoints.contains(p)
-				|| p.x > ref.getWidth()
-				|| p.x < 0
-				|| p.y > ref.getHeight()
-				|| p.y < 0) {
+			if (searchedPoints.contains(p)
+				|| isHexagonPointInSearchWindow(blockPos, searchWindow, p, dim)) {
 				continue;
 			}
 			
@@ -285,6 +318,59 @@ public class VectorEngine {
 		}
 		
 		return mostEqualBlock;
+	}
+	
+	/**
+	 * <p>Get the edge points of the smallest possible hexagon.</p>
+	 * <p>Basically this gets all points around the center position
+	 * and the center itself.</p>
+	 * 
+	 * @return Array of points
+	 * 
+	 * @param center	Center of the small hexagon
+	 * @param radius	Radius of the hexagon
+	 */
+	private Point[] getSmallHexagonSearchPoints(Point center, int radius) {
+		Point[] searchPoints = new Point[9];
+		searchPoints[0] = center;
+		searchPoints[1] = new Point(center.x + radius, center.y);
+		searchPoints[2] = new Point(center.x - radius, center.y);
+		searchPoints[3] = new Point(center.x, center.y + radius);
+		searchPoints[4] = new Point(center.x, center.y - radius);
+		searchPoints[5] = new Point(center.x + radius, center.y + radius);
+		searchPoints[6] = new Point(center.x - radius, center.y - radius);
+		searchPoints[7] = new Point(center.x - radius, center.y + radius);
+		searchPoints[8] = new Point(center.x + radius, center.y - radius);
+		
+		return searchPoints;
+	}
+	
+	/**
+	 * <p>Checks if an edge point of a hexagon is within the boundaries or not.</p>
+	 * 
+	 * @return Flag if the point is in boundary or not.
+	 * <ul><li>true = Point is in boundary
+	 * <li>false = Point is out of boundary
+	 * </ul>
+	 * 
+	 * @param blockPos	Position of the MacroBlock (start position)
+	 * @param searchWindow	Search window
+	 * @param edgeOfHexagon	The point to check
+	 * @param dim	Dimension of the frame
+	 */
+	private boolean isHexagonPointInSearchWindow(Point blockPos, int searchWindow, Point edgeOfHexagon, Dimension dim) {
+		if ((edgeOfHexagon.x > blockPos.x + searchWindow)
+			|| (edgeOfHexagon.x < blockPos.x - searchWindow)
+			|| (edgeOfHexagon.y > blockPos.y + searchWindow)
+			|| (edgeOfHexagon.y < blockPos.y - searchWindow)
+			|| (edgeOfHexagon.x > dim.width)
+			|| (edgeOfHexagon.x < 0)
+			|| (edgeOfHexagon.y > dim.height)
+			|| (edgeOfHexagon.y < 0)) {
+			return false;
+		}
+		
+		return true;
 	}
 	
 	/**
@@ -306,12 +392,12 @@ public class VectorEngine {
 			return null;
 		}
 		
-		Dimension dim = ref.getDimension();
-		MacroBlock mostEqualBlock = null;
-		double lowestMSE = bestMatchTillNow.getMSE();
-		Point pos = blockToSearch.getPosition();
 		int searchWindow = 2;
 		int size = blockToSearch.getSize();
+		double lowestMSE = bestMatchTillNow.getMSE();
+		Dimension dim = ref.getDimension();
+		MacroBlock mostEqualBlock = null;
+		Point pos = blockToSearch.getPosition();
 		double[][][] cache = null;
 		
 		for (int y = pos.y - searchWindow; y < pos.y + searchWindow; y++) {
