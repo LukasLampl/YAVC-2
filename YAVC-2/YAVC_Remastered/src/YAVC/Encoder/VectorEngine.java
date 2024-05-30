@@ -49,7 +49,8 @@ import YAVC.Utils.Vector;
  * amount of data on larger frames.</p>
  * 
  * @author Lukas Lampl
- * @since 1.0
+ * @since 17.0
+ * @version 1.0 29 May 2024
  */
 
 public class VectorEngine {
@@ -469,7 +470,7 @@ public class VectorEngine {
 		double[][] U = new double[halfSize][halfSize];
 		double[][] V = new double[halfSize][halfSize];
 		
-		double YThreshold = 6.0, UVThreshold = 7.0;
+		double YThreshold = 2.0, UVThreshold = 3.0;
 		
 		for (int y = 0; y < size; y++) {
 			for (int x = 0; x < size; x++) {

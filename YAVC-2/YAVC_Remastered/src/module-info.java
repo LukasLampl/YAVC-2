@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * @version 1.0
+ * @since 17.0
  * 
  * @author Lukas Lampl
  * @author Hans Lampl

@@ -43,7 +43,8 @@ import YAVC.Encoder.DCTEngine;
  * due to the recalculation of all DCT-II coefficients.</p>
  * 
  * @author Lukas Lampl
- * @since 1.0
+ * @since 17.0
+ * @version 1.0 29 May 2024
  */
 
 

@@ -44,7 +44,8 @@ import java.util.stream.IntStream;
  * chroma.</p>
  * 
  * @author Lukas Lampl
- * @since 1.0
+ * @since 17.0
+ * @version 1.0 29 May 2024
  */
 
 public class PixelRaster {
