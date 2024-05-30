@@ -32,7 +32,8 @@ import java.util.concurrent.TimeUnit;
  * in the YAVC video compressor.</p>
  * 
  * @author Lukas Lampl
- * @since 1.0
+ * @since 17.0
+ * @version 1.0 29 May 2024
  */
 
 public class MacroBlock {
@@ -565,36 +566,12 @@ public class MacroBlock {
 		int[][][] argbs = new int[this.size][this.size][3];
 		ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 		
-		for (int u = 0; u < this.size; u += 4) {
-			for (int v = 0; v < this.size; v += 4) {
-				final int startX = u;
-				final int startY = v;
-				
-				Runnable task = () -> {
-					int sumR = 0;
-					int sumG = 0;
-					int sumB = 0;
-					
-					for (int x = 0; x < 4; x++) {
-						for (int y = 0; y < 4; y++) {
-							int iPosX = startX + x;
-							int iPosY = startY + y;
-							int[] col = this.COLOR_MANAGER.convertYUVToRGB_intARR(getYUV(iPosX, iPosY), null);
-							sumR += col[0];
-							sumG += col[1];
-							sumB += col[2];
-							argbs[iPosX][iPosY] = col;
-						}
-					}
-					
-					int meanColor = ((sumR / 16) << 16) | ((sumG / 16) << 8) | (sumB / 16);
-					meanArgbs[startX / 4][startY / 4] = meanColor;
-				};
-				
-				executor.submit(task);
+		for (int i = 0; i < this.size; i += 32) {
+			for (int j = 0; j < this.size; j += 32) {
+				executor.submit(create4x4MeansFractionTask(i, j, 32, argbs, meanArgbs));
 			}
 		}
-		
+
 		executor.shutdown();
 		
 		try {
@@ -604,6 +581,48 @@ public class MacroBlock {
 		}
 		
 		return new MeanStructure(meanArgbs, argbs);
+	}
+	
+	/**
+	 * <p>Creates a task for working a fraction of the means from the MacroBlock down.</p>
+	 * <p>This function changes to values in the two provided arrays!</p>
+	 * 
+	 * @return Runnable that calculates the 4x4 means as well as the RGB color for an area
+	 * within the MacroBlock, starting from startX and startY with the size frac.
+	 * 
+	 * @param startX	Start position X within the MacroBlock
+	 * @param startY	Start position Y within the MacroBlock
+	 * @param frac	Size of the fraction that should be worked down
+	 * @param argbs	Array for storing all RGB colors in the fraction
+	 * @param meanArgbs	Array for storing all 4x4 means
+	 */
+	private Runnable create4x4MeansFractionTask(final int startX, final int startY, final int frac, int[][][] argbs, int[][] meanArgbs) {
+		Runnable task = () -> {
+			for (int u = 0; u < frac; u += 4) {
+				for (int v = 0; v < frac; v += 4) {
+					int sumR = 0;
+					int sumG = 0;
+					int sumB = 0;
+					
+					for (int x = 0; x < 4; x++) {
+						for (int y = 0; y < 4; y++) {
+							int iPosX = startX + u + x;
+							int iPosY = startY + v + y;
+							int[] col = this.COLOR_MANAGER.convertYUVToRGB_intARR(getYUV(iPosX, iPosY), null);
+							sumR += col[0];
+							sumG += col[1];
+							sumB += col[2];
+							argbs[iPosX][iPosY] = col;
+						}
+					}
+					
+					int meanColor = ((sumR / 16) << 16) | ((sumG / 16) << 8) | (sumB / 16);
+					meanArgbs[(startX + u) / 4][(startY + v) / 4] = meanColor;
+				}
+			}
+		};
+		
+		return task;
 	}
 
 	/**
