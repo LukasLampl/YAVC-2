@@ -40,7 +40,7 @@ import YAVC.Main.config;
  * 
  * @author Lukas Lampl
  * @since 17.0
- * @version 1.0 29 May 2024
+ * @version 1.0 31 May 2024
  */
 
 public class DCTEngine {
@@ -291,6 +291,8 @@ public class DCTEngine {
 	private void writeSubArrayInArray(double[][][] subArray, double[][][] dest, int posX, int posY) {
 		int size = subArray[0].length;
 		int halfSize = subArray[1].length;
+		int actualSubSPosX = posX / 2;
+		int actualSubSPosY = posY / 2;
 		
 		for (int x = 0; x < size; x++) {
 			for (int y = 0; y < size; y++) {
@@ -300,8 +302,8 @@ public class DCTEngine {
 		
 		for (int x = 0; x < halfSize; x++) {
 			for (int y = 0; y < halfSize; y++) {
-				int subSX = (posX + x) / 2;
-				int subSY = (posY + y) / 2;
+				int subSX = actualSubSPosX + x;
+				int subSY = actualSubSPosY + y;
 				dest[1][subSX][subSY] = subArray[1][x][y];
 				dest[2][subSX][subSY] = subArray[2][x][y];
 			}
@@ -332,6 +334,8 @@ public class DCTEngine {
 		
 		double arr[][][] = new double[3][][];
 		int halfSize = size / 2;
+		int actualSubSPosX = posX / 2;
+		int actualSubSPosY = posY / 2;
 		
 		arr[0] = new double[size][size];
 		arr[1] = new double[halfSize][halfSize];
@@ -345,7 +349,8 @@ public class DCTEngine {
 		
 		for (int x = 0; x < halfSize; x++) {
 			for (int y = 0; y < halfSize; y++) {
-				int subSX = (posX + x) / 2, subSY = (posY + y) / 2;
+				int subSX = actualSubSPosX + x;
+				int subSY = actualSubSPosY + y;
 				arr[1][x][y] = org[1][subSX][subSY];
 				arr[2][x][y] = org[2][subSX][subSY];
 			}

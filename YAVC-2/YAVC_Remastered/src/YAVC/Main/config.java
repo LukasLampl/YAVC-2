@@ -59,17 +59,17 @@ public class config {
 	};
 	
 	public static final int[][] QUANTIZATION_MATRIX_4x4_Chroma = {
-		{8, 12, 26, 48},
-		{13, 15, 27, 48},
-		{24, 23, 22, 48},
-		{48, 48, 48, 48}
+		{8, 12, 15, 24},
+		{12, 14, 17, 32},
+		{10, 20, 19, 37},
+		{28, 31, 32, 43}
 	};
 	
 	public static final int[][] QUANTIZATION_MATRIX_2x2_Chroma = {
 		{4, 15},
 		{17, 42}
 	};
-	
+
 	public static final int DEBLOCKER_ALPHAS[] = {
 		0, 3, 5, 8, 10, 13, 15, 18, 21, 23, 26, 28, 31, 33,
 		36, 39, 41, 44, 46, 49, 52, 54, 57, 59, 62, 64, 67,

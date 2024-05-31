@@ -412,9 +412,9 @@ public class PixelRaster {
 	 */
 	public void setThreadSafeYUV(final int x, final int y, final double[] YUV, final boolean invokedUV) {
 		if (y < 0 || y >= this.dim.height) {
-			throw new ArrayIndexOutOfBoundsException("(Y) " + y + "is out of bounds!");
+			throw new ArrayIndexOutOfBoundsException("(Y) " + y + " is out of bounds!");
 		} else if (x < 0 || x >= this.dim.width) {
-			throw new ArrayIndexOutOfBoundsException("(X) " + x + "is out of bounds!");
+			throw new ArrayIndexOutOfBoundsException("(X) " + x + " is out of bounds!");
 		}
 		
 		int subSX = x / 2;
@@ -444,9 +444,9 @@ public class PixelRaster {
 	 */
 	public void setChroma(final int x, final int y, final double U, final double V) {
 		if (y < 0 || y >= this.dim.height) {
-			throw new ArrayIndexOutOfBoundsException("(Y) " + y + "is out of bounds!");
+			throw new ArrayIndexOutOfBoundsException("(Y) " + y + " is out of bounds!");
 		} else if (x < 0 || x >= this.dim.width) {
-			throw new ArrayIndexOutOfBoundsException("(X) " + x + "is out of bounds!");
+			throw new ArrayIndexOutOfBoundsException("(X) " + x + " is out of bounds!");
 		}
 		
 		int subSX = x / 2;
@@ -468,9 +468,9 @@ public class PixelRaster {
 	 */
 	public void setLuma(final int x, final int y, final double Y) {
 		if (y < 0 || y >= this.dim.height) {
-			throw new ArrayIndexOutOfBoundsException("(Y) " + y + "is out of bounds!");
+			throw new ArrayIndexOutOfBoundsException("(Y) " + y + " is out of bounds!");
 		} else if (x < 0 || x >= this.dim.width) {
-			throw new ArrayIndexOutOfBoundsException("(X) " + x + "is out of bounds!");
+			throw new ArrayIndexOutOfBoundsException("(X) " + x + " is out of bounds!");
 		}
 		
 		this.Y[x][y] = Y;

@@ -14,7 +14,7 @@ import YAVC.Utils.MacroBlock;
 import YAVC.Utils.PixelRaster;
 
 public class DifferenceEngine {
-	public ArrayList<MacroBlock> computeDifferences(int colorSpectrum, PixelRaster prevFrame, ArrayList<MacroBlock> leaveNodes) {
+	public ArrayList<MacroBlock> computeDifferences(PixelRaster prevFrame, ArrayList<MacroBlock> leaveNodes) {
 		ArrayList<MacroBlock> diffs = new ArrayList<MacroBlock>(leaveNodes.size() / 2);
 		ArrayList<Future<MacroBlock>> futureDiffs = new ArrayList<Future<MacroBlock>>(leaveNodes.size() / 2);
 

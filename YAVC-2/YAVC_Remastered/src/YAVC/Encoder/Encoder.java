@@ -15,7 +15,7 @@ import YAVC.Utils.Vector;
 public class Encoder {
 	public DCTEngine DCT_ENGINE = null;
 	private static QuadtreeEngine QUADTREE_ENGINE = new QuadtreeEngine();
-//	private static DifferenceEngine DIFFERENCE_ENGINE = new DifferenceEngine();
+	private static DifferenceEngine DIFFERENCE_ENGINE = new DifferenceEngine();
 	private static VectorEngine VECTOR_ENGINE = new VectorEngine();
 	
 	public Encoder(DCTEngine dctEngine) {
@@ -63,7 +63,7 @@ public class Encoder {
 				ArrayList<MacroBlock> leaveNodes = QUADTREE_ENGINE.getLeaveNodes(quadtreeRoots);
 				
 //				BufferedImage[] part = QUADTREE_ENGINE.drawMacroBlocks(leaveNodes, curFrame.getDimension());
-//				leaveNodes = DIFFERENCE_ENGINE.computeDifferences(curFrame.getColorSpectrum(), prevFrame, leaveNodes);
+				leaveNodes = DIFFERENCE_ENGINE.computeDifferences(prevFrame, leaveNodes);
 				ArrayList<Vector> movementVectors = VECTOR_ENGINE.computeMovementVectors(leaveNodes, references);
 				
 //				BufferedImage vectors = VECTOR_ENGINE.drawVectors(movementVectors, curFrame.getDimension());
