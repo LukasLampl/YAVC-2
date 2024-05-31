@@ -316,9 +316,9 @@ public class PixelRaster {
 	 */
 	public double[] getYUV(final int x, final int y) {
 		if (y < 0 || y >= this.dim.height) {
-			throw new ArrayIndexOutOfBoundsException("(Y) " + y + "is out of bounds!");
+			throw new ArrayIndexOutOfBoundsException("(Y) " + y + " is out of bounds!");
 		} else if (x < 0 || x >= this.dim.width) {
-			throw new ArrayIndexOutOfBoundsException("(X) " + x + "is out of bounds!");
+			throw new ArrayIndexOutOfBoundsException("(X) " + x + " is out of bounds!");
 		}
 		
 		int subSX = x / 2;

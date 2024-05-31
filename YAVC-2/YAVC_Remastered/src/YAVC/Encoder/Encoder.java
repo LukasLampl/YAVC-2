@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import javax.imageio.ImageIO;
 
 import YAVC.Main.config;
+import YAVC.Utils.Deblocker;
 import YAVC.Utils.MacroBlock;
 import YAVC.Utils.PixelRaster;
 import YAVC.Utils.QueueObject;
@@ -24,6 +25,8 @@ public class Encoder {
 	
 	public void encode(File input, File output) {
 		OutputStream outStream = new OutputStream(new File(input.getParent()));
+		Deblocker deblocker = new Deblocker();
+		
 		ArrayList<PixelRaster> references = new ArrayList<PixelRaster>(config.MAX_REFERENCES);
 		PixelRaster futFrame = null;
 		PixelRaster curFrame = null;
@@ -60,25 +63,26 @@ public class Encoder {
 				ArrayList<MacroBlock> quadtreeRoots = QUADTREE_ENGINE.constructQuadtree(curFrame);
 				ArrayList<MacroBlock> leaveNodes = QUADTREE_ENGINE.getLeaveNodes(quadtreeRoots);
 				
-//				BufferedImage[] part = QUADTREE_ENGINE.drawMacroBlocks(leaveNodes, curFrame.getDimension());
+				BufferedImage[] part = QUADTREE_ENGINE.drawMacroBlocks(leaveNodes, curFrame.getDimension());
 //				leaveNodes = DIFFERENCE_ENGINE.computeDifferences(curFrame.getColorSpectrum(), prevFrame, leaveNodes);
 				ArrayList<Vector> movementVectors = VECTOR_ENGINE.computeMovementVectors(leaveNodes, references);
 				
 //				BufferedImage vectors = VECTOR_ENGINE.drawVectors(movementVectors, curFrame.getDimension());
 				PixelRaster composit = outStream.renderResult(movementVectors, references, leaveNodes, prevFrame);
+				outStream.addObjectToOutputQueue(new QueueObject(movementVectors, leaveNodes));
 				
-//				ImageIO.write(part[0], "png", new File(output.getAbsolutePath() + "/MB_" + i + ".png"));
+				deblocker.deblock(movementVectors, composit, 60);
+				
+				ImageIO.write(part[0], "png", new File(output.getAbsolutePath() + "/MB_" + i + ".png"));
 //				ImageIO.write(part[1], "png", new File(output.getAbsolutePath() + "/MBA_" + i + ".png"));
 //				ImageIO.write(vectors, "png", new File(output.getAbsolutePath() + "/V_" + i + ".png"));
 				ImageIO.write(composit.toBufferedImage(), "png", new File(output.getAbsolutePath() + "/VR_" + i + ".png"));
-
-				outStream.addObjectToOutputQueue(new QueueObject(movementVectors, leaveNodes));
 				
 				long end = System.currentTimeMillis();
 				long time = end - start;
 				sumOfMilliSeconds += time;
 				printStatistics(time, sumOfMilliSeconds, i, movementVectors, leaveNodes);
-
+				
 				references.add(composit.copy());
 				prevFrame = composit.copy();
 				manageReferences(references);
