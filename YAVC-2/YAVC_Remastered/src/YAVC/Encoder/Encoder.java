@@ -67,23 +67,23 @@ public class Encoder {
 				ArrayList<Vector> movementVectors = VECTOR_ENGINE.computeMovementVectors(leaveNodes, references);
 				
 //				BufferedImage vectors = VECTOR_ENGINE.drawVectors(movementVectors, curFrame.getDimension());
-				PixelRaster composit = outStream.renderResult(movementVectors, references, leaveNodes, prevFrame);
+				PixelRaster composite = outStream.renderResult(movementVectors, references, leaveNodes, prevFrame);
 				outStream.addObjectToOutputQueue(new QueueObject(movementVectors, leaveNodes));
 				
-				deblocker.deblock(movementVectors, composit, 7, 4, 51);
+				deblocker.deblock(movementVectors, composite, 7, 4, 51);
 				
 //				ImageIO.write(part[0], "png", new File(output.getAbsolutePath() + "/MB_" + i + ".png"));
 //				ImageIO.write(part[1], "png", new File(output.getAbsolutePath() + "/MBA_" + i + ".png"));
 //				ImageIO.write(vectors, "png", new File(output.getAbsolutePath() + "/V_" + i + ".png"));
-				ImageIO.write(composit.toBufferedImage(), "png", new File(output.getAbsolutePath() + "/VR_" + i + ".png"));
+				ImageIO.write(composite.toBufferedImage(), "png", new File(output.getAbsolutePath() + "/VR_" + i + ".png"));
 				
 				long end = System.currentTimeMillis();
 				long time = end - start;
 				sumOfMilliSeconds += time;
 				printStatistics(time, sumOfMilliSeconds, i, movementVectors, leaveNodes);
 				
-				references.add(composit.copy());
-				prevFrame = composit.copy();
+				references.add(composite.copy());
+				prevFrame = composite.copy();
 				manageReferences(references);
 			}
 			

@@ -62,12 +62,12 @@ public class Deblocker {
 	 * vectors to deblock.</p>
 	 * 
 	 * @param movementVecs	Vectors from the inter-prediction step
-	 * @param composit	Frame that has the encoded vectors in it
+	 * @param composite	Frame that has the encoded vectors in it
 	 * @param strength	Strength of the filter
 	 * @param alphaOffset	Offset of the alpha value to the strength
 	 * @param betaOffset	Offset of the beta value to the strength
 	 */
-	public void deblock(ArrayList<Vector> movementVecs, PixelRaster composit, int strength, int alphaOffset, int betaOffset) {
+	public void deblock(ArrayList<Vector> movementVecs, PixelRaster composite, int strength, int alphaOffset, int betaOffset) {
 		int index = clip(strength, 0, MAX_QUANT);
 		int alpha = config.DEBLOCKER_ALPHAS[index + alphaOffset];
 		int beta = config.DEBLOCKER_BETAS[index + betaOffset];
@@ -83,7 +83,7 @@ public class Deblocker {
 				continue;
 			}
 			
-			executor.submit(createMacroBlockDeblockRunnable(composit, blockPos, vec.getSize(), alpha, beta, c));
+			executor.submit(createMacroBlockDeblockRunnable(composite, blockPos, vec.getSize(), alpha, beta, c));
 		}
 		
 		executor.shutdown();
@@ -96,26 +96,26 @@ public class Deblocker {
 	}
 	
 	/**
-	 * <p>Cretates a runnable task that executes the deblocking filter
+	 * <p>Creates a runnable task that executes the deblocking filter
 	 * for one MacroBlock.</p>
 	 * 
 	 * @return Runnable that executes the deblocking filter for a MacroBlock
 	 * 
-	 * @param composit	Frame that has the encoded vectors in it
+	 * @param composite	Frame that has the encoded vectors in it
 	 * @param blockPos	Position of the block that should be deblocked
 	 * @param offset	Offset to the block position (row and line)
 	 * @param alpha	Threshold for the filter to stop filtering
 	 * @param beta	"Strength" of the filtering
 	 * @param c	Boundary and "strength" of the filter
 	 */
-	private Runnable createMacroBlockDeblockRunnable(PixelRaster composit, Point blockPos, int size, int alpha, int beta, int c) {
+	private Runnable createMacroBlockDeblockRunnable(PixelRaster composite, Point blockPos, int size, int alpha, int beta, int c) {
 		Runnable task = () -> {
 			for (int line = 0; line < size; line++) {
-				executeDeblocking(composit, blockPos, line, alpha, beta, c, false);
+				executeDeblocking(composite, blockPos, line, alpha, beta, c, false);
 			}
 			
 			for (int row = 0; row < size; row++) {
-				executeDeblocking(composit, blockPos, row, alpha, beta, c, true);
+				executeDeblocking(composite, blockPos, row, alpha, beta, c, true);
 			}
 		};
 		
@@ -127,7 +127,7 @@ public class Deblocker {
 	 * <p>The dimension of the deblocking is approximately 6px x 1px. The deblocking only
 	 * occur on the luma channel, due to chroma / color loss.</p>
 	 * 
-	 * @param composit	Frame that has the encoded vectors in it
+	 * @param composite	Frame that has the encoded vectors in it
 	 * @param blockPos	Position of the block that should be deblocked
 	 * @param offset	Offset to the block position (row and line)
 	 * @param alpha	Threshold for the filter to stop filtering
@@ -135,21 +135,21 @@ public class Deblocker {
 	 * @param c	Boundary and "strength" of the filter
 	 * @param vertical	Is the filter applied vertically or horizontally
 	 */
-	private void executeDeblocking(PixelRaster composit, Point blockPos, int offset, int alpha, int beta, int c, boolean vertical) {
+	private void executeDeblocking(PixelRaster composite, Point blockPos, int offset, int alpha, int beta, int c, boolean vertical) {
 		Point[] points = getPositionPoints(vertical, offset, blockPos);
-		double[] q0 = composit.getYUV(points[0].x, points[0].y);
-		double[] q1 = composit.getYUV(points[1].x, points[1].y);
-		double[] q2 = composit.getYUV(points[2].x, points[2].y);
-		double[] p0 = composit.getYUV(points[3].x, points[3].y);
-		double[] p1 = composit.getYUV(points[4].x, points[4].y);
-		double[] p2 = composit.getYUV(points[5].x, points[5].y);
+		double[] q0 = composite.getYUV(points[0].x, points[0].y);
+		double[] q1 = composite.getYUV(points[1].x, points[1].y);
+		double[] q2 = composite.getYUV(points[2].x, points[2].y);
+		double[] p0 = composite.getYUV(points[3].x, points[3].y);
+		double[] p1 = composite.getYUV(points[4].x, points[4].y);
+		double[] p2 = composite.getYUV(points[5].x, points[5].y);
 		
 		double[] YDeblocked = executeDeblocking(q0[0], q1[0], q2[0], p0[0], p1[0], p2[0], beta, alpha, c);
 		
-		composit.setLuma(points[0].x, points[0].y, YDeblocked[0]);
-		composit.setLuma(points[1].x, points[1].y, YDeblocked[1]);
-		composit.setLuma(points[3].x, points[3].y, YDeblocked[2]);
-		composit.setLuma(points[4].x, points[4].y, YDeblocked[3]);
+		composite.setLuma(points[0].x, points[0].y, YDeblocked[0]);
+		composite.setLuma(points[1].x, points[1].y, YDeblocked[1]);
+		composite.setLuma(points[3].x, points[3].y, YDeblocked[2]);
+		composite.setLuma(points[4].x, points[4].y, YDeblocked[3]);
 	}
 
 	/**
