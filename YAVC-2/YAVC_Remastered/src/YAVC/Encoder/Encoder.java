@@ -60,8 +60,8 @@ public class Encoder {
 				
 				ArrayList<MacroBlock> quadtreeRoots = QUADTREE_ENGINE.constructQuadtree(curFrame);
 				ArrayList<MacroBlock> leaveNodes = QUADTREE_ENGINE.getLeaveNodes(quadtreeRoots);
-				INTRA_ENGINE.initialize(curFrame, 4, 4, leaveNodes);
-				INTRA_ENGINE.computeIntraPrediction();
+				double errorThreshold[] = { 2.0e+1, 0.8, 0.8 };
+				INTRA_ENGINE.computeIntraPrediction(leaveNodes, curFrame, errorThreshold);
 				
 				BufferedImage[] part = QUADTREE_ENGINE.drawMacroBlocks(leaveNodes, curFrame.getDimension());
 //				leaveNodes = DIFFERENCE_ENGINE.computeDifferences(curFrame.getColorSpectrum(), prevFrame, leaveNodes);

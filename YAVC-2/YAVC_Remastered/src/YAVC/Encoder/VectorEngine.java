@@ -304,7 +304,7 @@ public class VectorEngine {
 		double[][] U = new double[halfSize][halfSize];
 		double[][] V = new double[halfSize][halfSize];
 		
-		double YThreshold = 6.0, UVThreshold = 7.0;
+		double YThreshold = 1.0, UVThreshold = 2.0;
 		
 		for (int y = 0; y < size; y++) {
 			for (int x = 0; x < size; x++) {

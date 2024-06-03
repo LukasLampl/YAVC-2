@@ -88,7 +88,7 @@ public class QuadtreeEngine {
 		ArrayList<MacroBlock> roots = new ArrayList<MacroBlock>();
 		
 		try {
-			final double errorThreshold = 200;
+			final double errorThreshold = 50;//200;
 			int currentOrderNumber = 0, width = currentFrame.getWidth(), height = currentFrame.getHeight();
 			ArrayList<Future<MacroBlock>> futureRoots = new ArrayList<Future<MacroBlock>>();
 			ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
