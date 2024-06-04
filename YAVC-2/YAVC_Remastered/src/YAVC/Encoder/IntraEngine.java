@@ -24,8 +24,7 @@ public class IntraEngine {
 		HashMap <Integer,double[]> errorMap = new HashMap<Integer,double[]>();
 		HashMap <Integer,ArrayList<MacroBlock>> neighbourMap = new HashMap<Integer,ArrayList<MacroBlock>>();
 		HashMap <Integer,MacroBlock> predictionMap = new HashMap<Integer,MacroBlock>();
-		
-		
+				
 		MacroBlockPrediction(final MacroBlock leaf) {
 			super(leaf);
 			for (int orientation = -2 ; orientation <= 2 ; orientation++) {
