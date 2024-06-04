@@ -15,7 +15,6 @@ public class IntraEngine {
 	private ArrayList<MacroBlock> leaveList = null;
 	private double errorThreshold[] = new double[3];
 
-	@SuppressWarnings("unchecked")
 	public IntraEngine() {
 		this.biasLeft = 0;
 		this.biasRight = 0;
@@ -295,7 +294,7 @@ public class IntraEngine {
 							for (int j = 0 ; j < pred.getSize() ; j++) {
 								double d[] = pred.getYUV(i,j);
 								d[y] = pred.predictionMap.get(orientation).getYUV(i, j)[y];
-								pred.setYUV(i,j,d);
+								pred.setYUV(i, j, d);
 							}
 						}
 					}
@@ -303,5 +302,7 @@ public class IntraEngine {
 			}
 		}
 		System.out.println("*** Y:%s U:%s V:%s ***".formatted(msg[0], msg[1], msg[2]));
+		//double err[] = MSE(pred, this.curFrame);
+		//dump(9999, err);
 	}
 }
