@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import encoder.DCTEngine;
 
 /**
- * <p>The class {@code YAVC.Utils.Vector} is a container structure for storing
+ * <p>The class {@code Vector} is a container structure for storing
  * spatial data, received from the inter-prediction process.</p>
  * <p>It is responsible for further processing and usually contains the following
  * information:</p>
@@ -138,9 +138,9 @@ public class Vector {
 	 * <p>The function sets the spanX of the vector to a given integer.
 	 * The span starts from the origin (startPoint).</p>
 	 * 
-	 * <p><strong>Warning:</strong> the set span might exceed the encoding
+	 * <p><strong>Warning:</strong><br> The set span might exceed the encoding
 	 * maximum of 8 bits = 255. The offset is excluded
-	 * ({@code YAVC.config.CODING_OFFSET}).</p>
+	 * ({@link app.config#CODING_OFFSET}).</p>
 	 * 
 	 * @param span	Span to the x direction
 	 */
@@ -152,9 +152,9 @@ public class Vector {
 	 * <p>The function sets the spanY of the vector to a given integer.
 	 * The span starts from the origin (startPoint).</p>
 	 * 
-	 * <p><strong>Warning:</strong> the set span might exceed the encoding
+	 * <p><strong>Warning:</strong><br> The set span might exceed the encoding
 	 * maximum of 8 bits = 255. The offset is excluded
-	 * ({@code YAVC.config.CODING_OFFSET}).</p>
+	 * ({@link app.config#CODING_OFFSET}).</p>
 	 * 
 	 * @param span	Span to the y direction
 	 */
@@ -167,8 +167,8 @@ public class Vector {
 	 * that this number represents, out of which frame the mostEqualBlock
 	 * was extracted from.</p>
 	 * 
-	 * <p><strong>Warning:</strong> the max reference is set by
-	 * {@code YAVC.config.MAX_REFERENCES}.<br>
+	 * <p><strong>Warning:</strong><br> The max reference is set by
+	 * {@link app.config#MAX_REFERENCES}.<br>
 	 * <u>The encoding only supports till 4 references into the past!</u></p>
 	 * 
 	 * @param reference	reference frame number
@@ -259,7 +259,7 @@ public class Vector {
 	 * After that the AbsoluteColorDifferenceDCTCoefficients is set to
 	 * the result.</p>
 	 * 
-	 * <p><strong>NOTE: </strong> The DCT matrices are always in the sizes
+	 * <p><strong>NOTE: </strong><br> The DCT matrices are always in the sizes
 	 * 2x2, 4x4 and 8x8! If the size of the difference is bigger than that
 	 * the difference is split into equally sized 8x8 blocks. Those are the
 	 * order of the returned ArrayList.

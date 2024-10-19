@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
 import app.config;
 
 /**
- * <p>The class {@code YAVC.Utils.Deblocker} goes into the
+ * <p>The class {@code Deblocker} goes into the
  * category of filters for YAVC. The deblocking filter reduces
  * the block edges from the inter-prediction step by smoothing
  * the pixels out that are at the affected MacroBlock</p>

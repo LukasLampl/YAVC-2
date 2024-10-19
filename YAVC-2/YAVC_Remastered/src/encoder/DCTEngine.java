@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 import app.config;
 
 /**
- * <p>The class {@code YAVC.Encoder.DCTEngine} contains basic functions 
+ * <p>The class {@code DCTEngine} contains basic functions 
  * for calcualting the DCT-II coefficients for a 8x8, 4x4 and 2x2
  * 2 dimensional double array. IT also contains functions for quantization.
  * The used DCTs are the DCT-II and DCT-III (referred as IDCT).</p>
@@ -60,7 +60,8 @@ public class DCTEngine {
 	 * to ensure a faster processing time in the next few steps
 	 * of the DCT-II as well as the IDCT.</p>
 	 * 
-	 * <p><strong>Performance Warning:</strong> Even though there is
+	 * <p><strong>Performance Warning:</strong><br>
+	 * Even though there is
 	 * multithreading involved, the process takes up some time
 	 * especially for larger DCT matrices.</p>
 	 */
@@ -171,10 +172,10 @@ public class DCTEngine {
 	
 	/**
 	 * <p>Computes the DCT Coefficients of the absolute color difference
-	 * received by a vector {@code YAVC.Utils.Vector}. First the coefficients are
+	 * received by a vector {@link utils.Vector} First the coefficients are
 	 * calculated and then they're quantified.</p>
 	 * 
-	 * <p><strong>IMPORTANT:</strong> this function only calculates the DCT coefficients
+	 * <p><strong>IMPORTANT:</strong><br> This function only calculates the DCT coefficients
 	 * for 8x8, 4x4 and 2x2 matrices. If a matrix exceeds that size, then the matrix is
 	 * split into 8x8 matrices and sorted from Left-to-Right and Top-to-Bottom.</p>
 	 * 
@@ -224,13 +225,13 @@ public class DCTEngine {
 	
 	/**
 	 * <p>Computes the IDCT Coefficients of the DCT-II coefficients
-	 * received by the converted AbsoluteColorDifference {@code YAVC.Utils.Vector}.
+	 * received by the converted AbsoluteColorDifference {@link utils.Vector}.
 	 * First the coefficients are dequantizized and then further processed.</p>
 	 * 
 	 * @return Reconstructed AbsoluteColorDifference array
 	 * 
 	 * @param DCTCoeff	Coefficients to reverse.
-	 * For order see {@code YAVC.Encoder.DCTEngine.computeDCTOfVectorColorDifference()}.
+	 * For order see {@code encoder.DCTEngine.computeDCTOfVectorColorDifference()}.
 	 * @param size	Size of the original matrix
 	 */
 	public double[][][] computeIDCTOfVectorColorDifference(ArrayList<double[][][]> DCTCoeff, int size) {

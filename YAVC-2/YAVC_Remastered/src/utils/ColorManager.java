@@ -24,7 +24,7 @@ package utils;
 import java.awt.Color;
 
 /**
- * <p>The class {@code YAVC.Utils.ColorManager} contains basic functions 
+ * <p>The class {@code ColorManager} contains basic functions 
  * for converting RGB-colorspace to the YUV-colorspace and back.</p>
  * The formulas are based on the <u>Rec. 601 (ITU-T T.871)</u> Y'CbCr and
  * have the full 8 bit range from 0 to 255. Due to the
@@ -32,7 +32,8 @@ import java.awt.Color;
  * get reduced to the 8 bit range.
  * Minimum is 0 and maximum is 255.
  * 
- * <p><strong>Performance warning:</strong> The conversion from RGB to
+ * <p><strong>Performance warning:</strong><br>
+ * The conversion from RGB to
  * YUV and back involve floatingpoint-arithmetic, which might impact
  * performance, if used frequently.</p>
  * 

@@ -28,7 +28,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 /**
- * <p>The class {@code YAVC.Utils.MacroBlock} is the main transform unit
+ * <p>The class {@code MacroBlock} is the main transform unit
  * in the YAVC video compressor.</p>
  * 
  * @author Lukas Lampl

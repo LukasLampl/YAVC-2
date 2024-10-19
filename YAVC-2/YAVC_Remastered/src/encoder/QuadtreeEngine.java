@@ -38,17 +38,21 @@ import utils.MeanStructure;
 import utils.PixelRaster;
 
 /**
+ * <p>
  * The class {@code YAVC.Encoder.QuadtreeEngine} contains basic functions 
  * for construction a quadtree based on mean color. The maximum size
  * is 128x128, which gets splitted down by this order:
  * 128x128 -> 64x64 -> 32x32 -> 16x16 -> 8x8 -> 4x4
  * The splitting itself happens in the blocks, the QuadtreeEngine is
  * just functioning as an entry point.
+ * </p>
  * 
- * <strong>Performance warning:</strong> The Quadtree construction involves
+ * <p><strong>Performance warning:</strong><br>
+ * The Quadtree construction involves
  * getting the RGB value off of every pixel, which might impact
- * performance at larger PixelRasters.
+ * performance at larger PixelRasters.<br>
  * Time: O(n)
+ * </p>
  * 
  * @see utils.MacroBlock
  * @see utils.PixelRaster
@@ -67,14 +71,15 @@ public class QuadtreeEngine {
 	 * in an individual subdividing process in the block itself.
 	 * 
 	 * First the roots are searched and initialized using
-	 * {@code YAVC.Util.PixelRaster.getPixelBlock()}. After that
-	 * the block is imaginary split into 4x4 blocks, of which the mean
+	 * {@link utils.PixelRaster#getPixelBlock(Point, int, double[][][])}.
+	 * After that the block is imaginary split into 4x4 blocks, of which the mean
 	 * color is acquired, while also getting the RGB information of the
 	 * whole block. Now the standardDeviation is used to determine,
 	 * whether the block is already good enough without splitting, while
 	 * preserving quality. If not or the size is to big, the block gets
 	 * split. For further details on the splitting section
-	 * @see YAVC.Utils.MacroBlock.subdivide()
+	 * 
+	 * @see utils.MacroBlock#subdivide(double, int, int[][], int[][][], Dimension, Point)
 	 * 
 	 * @return ArrayList<MacroBlock> => All QuadtreeRoots
 	 * 
@@ -238,7 +243,7 @@ public class QuadtreeEngine {
 	/**
 	 * This function draws the outlines of the MacroBlocks and
 	 * the pixels with the assigned mean color of the MacroBlock
-	 * {@code YAVC.Utils.MacroBlock.subdivide()}
+	 * {@link utils.MacroBlock#subdivide(double, int, int[][], int[][][], Dimension, Point)}
 	 * 
 	 * @return BufferedImage[] => Array of BufferedImages, containing the drawn
 	 * images. BufferedImage[0] = MacroBlock outlines;

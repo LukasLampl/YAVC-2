@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 /**
- * <p>The class {@code YAVC.Utils.PixelRaster} is a replacement for
+ * <p>The class {@code PixelRaster} is a replacement for
  * the BufferedImage, due to performance issues and wrong colorspace.
  * The PixelRaster has all important features, like getYUV (getRGB()
  * in YUV) or get PixelBlock() as replacement for getRGB()[].</p>
@@ -305,7 +305,7 @@ public class PixelRaster {
 	 * <li>double[2] = V
 	 * </ul></p>
 	 * 
-	 * @return Adouble containing all color components, for the
+	 * @return A double containing all color components, for the
 	 * order see above.
 	 * 
 	 * @param x	position X from which to get the Pixel
@@ -584,9 +584,9 @@ public class PixelRaster {
 	/**
 	 * <p>Converts the PixelRaster into a BufferedImage.</p>
 	 * 
-	 * <p><strong>Performance Warning:</strong> Even though there is multi-
+	 * <p><strong>Performance Warning:</strong><br> Even though there is multi-
 	 * threading involved, the overall performance is totally dependent
-	 * on the Image dimensions.
+	 * on the Image dimensions.<br>
 	 * Time: O(n)</p>
 	 * 
 	 * @return Reconstructed BufferedImage

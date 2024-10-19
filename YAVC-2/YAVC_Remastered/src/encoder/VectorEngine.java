@@ -40,11 +40,11 @@ import utils.PixelRaster;
 import utils.Vector;
 
 /**
- * <p>The class {@code YAVC.Encoder.VectorEngine} contains all functions
+ * <p>The class {@code VectorEngine} contains all functions
  * for the inter-prediction process in the YAVC video compressor.</p>
  * <p>First hexagonal search is executed followed by exhaustive search.</p>
  * 
- * <p><strong>Performance warning:</strong> Even though this process is
+ * <p><strong>Performance warning:</strong><br> Even though this process is
  * multithreaded, it might impact the overall performance due to increasing
  * amount of data on larger frames.</p>
  * 
