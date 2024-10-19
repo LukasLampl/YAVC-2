@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package YAVC.Utils;
+package utils;
 
 import java.awt.Dimension;
 import java.awt.Graphics2D;
@@ -75,7 +75,7 @@ public class PixelRaster {
 	/**
 	 * <p>Invokes a ColorManager for color conversion from RGB to YUV.</p>
 	 * 
-	 * @see YAVC.Utils.ColorManager
+	 * @see utils.ColorManager
 	 */
 	private ColorManager COLOR_MANAGER = new ColorManager();
 	

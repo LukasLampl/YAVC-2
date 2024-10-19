@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package YAVC.Encoder;
+package encoder;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -33,9 +33,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import YAVC.Utils.MacroBlock;
-import YAVC.Utils.MeanStructure;
-import YAVC.Utils.PixelRaster;
+import utils.MacroBlock;
+import utils.MeanStructure;
+import utils.PixelRaster;
 
 /**
  * The class {@code YAVC.Encoder.QuadtreeEngine} contains basic functions 
@@ -50,8 +50,8 @@ import YAVC.Utils.PixelRaster;
  * performance at larger PixelRasters.
  * Time: O(n)
  * 
- * @see YAVC.Utils.MacroBlock
- * @see YAVC.Utils.PixelRaster
+ * @see utils.MacroBlock
+ * @see utils.PixelRaster
  * 
  * @author Lukas Lampl
  * @since 17.0

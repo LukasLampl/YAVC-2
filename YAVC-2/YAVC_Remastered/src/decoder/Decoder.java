@@ -1,4 +1,4 @@
-package YAVC.Decoder;
+package decoder;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -7,8 +7,8 @@ import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
 
-import YAVC.Main.config;
-import YAVC.Utils.PixelRaster;
+import app.config;
+import utils.PixelRaster;
 
 public class Decoder {
 	public void decode(File input, File output) {

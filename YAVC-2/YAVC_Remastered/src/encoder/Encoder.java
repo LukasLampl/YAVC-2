@@ -1,16 +1,17 @@
-package YAVC.Encoder;
+package encoder;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
 
-import YAVC.Main.config;
-import YAVC.Utils.Deblocker;
-import YAVC.Utils.MacroBlock;
-import YAVC.Utils.PixelRaster;
-import YAVC.Utils.QueueObject;
-import YAVC.Utils.Vector;
+import app.config;
+import utils.Deblocker;
+import utils.MacroBlock;
+import utils.PixelRaster;
+import utils.QueueObject;
+import utils.Vector;
 
 public class Encoder {
 	public DCTEngine DCT_ENGINE = null;
@@ -46,7 +47,7 @@ public class Encoder {
 					System.out.println("Skip: " + i);
 					continue;
 				}
-//				
+				
 				if (prevFrame == null) {
 					prevFrame = new PixelRaster(ImageIO.read(frameFile));
 //					futureFrame = new PixelRaster(ImageIO.read(getAwaitedFile(input, i + 1, ".bmp")));
@@ -62,19 +63,19 @@ public class Encoder {
 				ArrayList<MacroBlock> quadtreeRoots = QUADTREE_ENGINE.constructQuadtree(curFrame);
 				ArrayList<MacroBlock> leaveNodes = QUADTREE_ENGINE.getLeaveNodes(quadtreeRoots);
 				
-//				BufferedImage[] part = QUADTREE_ENGINE.drawMacroBlocks(leaveNodes, curFrame.getDimension());
+				BufferedImage[] part = QUADTREE_ENGINE.drawMacroBlocks(leaveNodes, curFrame.getDimension());
 				leaveNodes = DIFFERENCE_ENGINE.computeDifferences(prevFrame, leaveNodes);
 				ArrayList<Vector> movementVectors = VECTOR_ENGINE.computeMovementVectors(leaveNodes, references);
 				
-//				BufferedImage vectors = VECTOR_ENGINE.drawVectors(movementVectors, curFrame.getDimension());
+				BufferedImage vectors = VECTOR_ENGINE.drawVectors(movementVectors, curFrame.getDimension());
 				PixelRaster composite = outStream.renderResult(movementVectors, references, leaveNodes, prevFrame);
 				outStream.addObjectToOutputQueue(new QueueObject(movementVectors, leaveNodes));
 				
 				deblocker.deblock(movementVectors, composite, 7, 4, 51);
 				
-//				ImageIO.write(part[0], "png", new File(output.getAbsolutePath() + "/MB_" + i + ".png"));
-//				ImageIO.write(part[1], "png", new File(output.getAbsolutePath() + "/MBA_" + i + ".png"));
-//				ImageIO.write(vectors, "png", new File(output.getAbsolutePath() + "/V_" + i + ".png"));
+				ImageIO.write(part[0], "png", new File(output.getAbsolutePath() + "/MB_" + i + ".png"));
+				ImageIO.write(part[1], "png", new File(output.getAbsolutePath() + "/MBA_" + i + ".png"));
+				ImageIO.write(vectors, "png", new File(output.getAbsolutePath() + "/V_" + i + ".png"));
 				ImageIO.write(composite.toBufferedImage(), "png", new File(output.getAbsolutePath() + "/VR_" + i + ".png"));
 				
 				long end = System.currentTimeMillis();

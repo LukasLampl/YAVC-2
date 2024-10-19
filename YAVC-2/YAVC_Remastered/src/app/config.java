@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package YAVC.Main;
+package app;
 
 /**
  * <p>The class {@code YAVC.Main.config} contains all universally used
@@ -59,15 +59,15 @@ public class config {
 	};
 	
 	public static final int[][] QUANTIZATION_MATRIX_4x4_Chroma = {
-		{8, 12, 15, 24},
-		{12, 14, 17, 32},
-		{10, 20, 19, 37},
-		{28, 31, 32, 43}
+		{8, 12, 20, 44},
+		{12, 14, 23, 46},
+		{27, 25, 39, 48},
+		{44, 44, 48, 48}
 	};
 	
 	public static final int[][] QUANTIZATION_MATRIX_2x2_Chroma = {
-		{4, 15},
-		{17, 42}
+		{4, 48},
+		{48, 48}
 	};
 
 	public static final int DEBLOCKER_ALPHAS[] = {

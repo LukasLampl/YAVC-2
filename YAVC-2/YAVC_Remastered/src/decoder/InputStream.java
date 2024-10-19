@@ -1,4 +1,4 @@
-package YAVC.Decoder;
+package decoder;
 
 import java.io.File;
 import java.io.IOException;

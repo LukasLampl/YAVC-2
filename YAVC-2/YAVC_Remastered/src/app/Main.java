@@ -19,15 +19,15 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package YAVC.Main;
+package app;
 
 import java.io.File;
 
 import javax.swing.JFileChooser;
 
-import YAVC.Decoder.Decoder;
-import YAVC.Encoder.DCTEngine;
-import YAVC.Encoder.Encoder;
+import decoder.Decoder;
+import encoder.DCTEngine;
+import encoder.Encoder;
 
 public class Main {
 	public static DCTEngine DCT_ENGINE = new DCTEngine();

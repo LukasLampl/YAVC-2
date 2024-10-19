@@ -1,4 +1,4 @@
-package YAVC.Utils;
+package utils;
 
 public class MeanStructure {
 	private int[][] meanArgbs = null;

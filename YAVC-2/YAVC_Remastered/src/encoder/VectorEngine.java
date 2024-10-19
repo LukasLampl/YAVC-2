@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package YAVC.Encoder;
+package encoder;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -34,10 +34,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import YAVC.Main.config;
-import YAVC.Utils.MacroBlock;
-import YAVC.Utils.PixelRaster;
-import YAVC.Utils.Vector;
+import app.config;
+import utils.MacroBlock;
+import utils.PixelRaster;
+import utils.Vector;
 
 /**
  * <p>The class {@code YAVC.Encoder.VectorEngine} contains all functions
@@ -75,7 +75,7 @@ public class VectorEngine {
 	 * @throws NullPointerException	When no MacroBlocks are passed for prediction or
 	 * if no references to refer to are available
 	 * 
-	 * @see YAVC.Utils.Vector
+	 * @see utils.Vector
 	 */
 	public ArrayList<Vector> computeMovementVectors(final ArrayList<MacroBlock> blocksToInterpredict, final ArrayList<PixelRaster> refs) {
 		if (blocksToInterpredict == null || blocksToInterpredict.size() == 0) {
@@ -184,7 +184,7 @@ public class VectorEngine {
 	 * @param bestMatch	Best matching MacroBlock
 	 * @param blockToBeSearched	MacroBlock that was searched at the beginning
 	 * 
-	 * @see YAVC.Utils.Vector
+	 * @see utils.Vector
 	 */
 	private Vector constructMovementVector(final ArrayList<PixelRaster> refs, MacroBlock bestMatch, MacroBlock blockToBeSearched) {
 		Vector vec = null;
@@ -586,7 +586,7 @@ public class VectorEngine {
 	 * @param vecs	Vectors to draw
 	 * @param dim	Dimension of the frame
 	 * 
-	 * @see YAVC.Utils.Vector
+	 * @see utils.Vector
 	 * @see java.awt.Color
 	 */
 	public BufferedImage drawVectors(ArrayList<Vector> vecs, Dimension dim) {

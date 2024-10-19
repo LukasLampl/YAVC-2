@@ -1,4 +1,4 @@
-package YAVC.Encoder;
+package encoder;
 
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
@@ -9,9 +9,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import YAVC.Utils.ColorManager;
-import YAVC.Utils.MacroBlock;
-import YAVC.Utils.PixelRaster;
+import utils.ColorManager;
+import utils.MacroBlock;
+import utils.PixelRaster;
 
 public class DifferenceEngine {
 	public ArrayList<MacroBlock> computeDifferences(PixelRaster prevFrame, ArrayList<MacroBlock> leaveNodes) {

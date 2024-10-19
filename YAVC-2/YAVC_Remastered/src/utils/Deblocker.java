@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package YAVC.Utils;
+package utils;
 
 import java.awt.Point;
 import java.util.ArrayList;
@@ -27,7 +27,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import YAVC.Main.config;
+import app.config;
 
 /**
  * <p>The class {@code YAVC.Utils.Deblocker} goes into the
@@ -39,15 +39,15 @@ import YAVC.Main.config;
  * @since 17.0
  * @version 1.0 31 May 2024
  * 
- * @see YAVC.Utils.PixelRaster
- * @see YAVC.Utils.MacroBlock
+ * @see utils.PixelRaster
+ * @see utils.MacroBlock
  */
 
 public class Deblocker {
 	/**
 	 * <p>Defines the maximum quantity of coefficients the filter can use.</p>
 	 * 
-	 * @see YAVC.Main.config
+	 * @see app.config
 	 */
 	final static int MAX_QUANT = 100;
 	

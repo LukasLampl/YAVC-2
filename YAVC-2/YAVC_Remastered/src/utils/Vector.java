@@ -19,12 +19,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package YAVC.Utils;
+package utils;
 
 import java.awt.Point;
 import java.util.ArrayList;
 
-import YAVC.Encoder.DCTEngine;
+import encoder.DCTEngine;
 
 /**
  * <p>The class {@code YAVC.Utils.Vector} is a container structure for storing
@@ -109,7 +109,7 @@ public class Vector {
 		
 		this.startingPoint = pos;
 		this.size = size;
-		this.DCT_ENGINE = YAVC.Main.Main.DCT_ENGINE;
+		this.DCT_ENGINE = app.Main.DCT_ENGINE;
 	}
 	
 	/**

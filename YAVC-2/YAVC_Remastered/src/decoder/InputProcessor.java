@@ -1,4 +1,4 @@
-package YAVC.Decoder;
+package decoder;
 
 import java.awt.Dimension;
 import java.awt.Graphics2D;
@@ -6,10 +6,10 @@ import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
-import YAVC.Main.config;
-import YAVC.Utils.ColorManager;
-import YAVC.Utils.PixelRaster;
-import YAVC.Utils.Vector;
+import app.config;
+import utils.ColorManager;
+import utils.PixelRaster;
+import utils.Vector;
 
 public class InputProcessor {
 	private ColorManager COLOR_MANAGER = new ColorManager();

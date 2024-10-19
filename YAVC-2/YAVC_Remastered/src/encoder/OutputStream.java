@@ -1,4 +1,4 @@
-package YAVC.Encoder;
+package encoder;
 
 import java.awt.Dimension;
 import java.awt.Point;
@@ -13,12 +13,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import YAVC.Main.config;
-import YAVC.Utils.ColorManager;
-import YAVC.Utils.MacroBlock;
-import YAVC.Utils.PixelRaster;
-import YAVC.Utils.QueueObject;
-import YAVC.Utils.Vector;
+import app.config;
+import utils.ColorManager;
+import utils.MacroBlock;
+import utils.PixelRaster;
+import utils.QueueObject;
+import utils.Vector;
 
 public class OutputStream {
 	private File OUTPUT_FILE = null;

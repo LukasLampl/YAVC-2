@@ -19,14 +19,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package YAVC.Encoder;
+package encoder;
 
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import YAVC.Main.config;
+import app.config;
 
 /**
  * <p>The class {@code YAVC.Encoder.DCTEngine} contains basic functions 
@@ -218,7 +218,7 @@ public class DCTEngine {
 				coeffs.add(cache);
 			}
 		}
-		
+
 		return coeffs;
 	}
 	
@@ -240,7 +240,7 @@ public class DCTEngine {
 		}
 		
 		double[][][] res = new double[3][][];
-		
+
 		if (size == 4) {
 			double[][][] objToProcess = DCTCoeff.get(0);
 			double[][][] chromaIDCT = new double[][][] {objToProcess[1], objToProcess[2]};
@@ -276,7 +276,7 @@ public class DCTEngine {
 				writeSubArrayInArray(cache, res, x, y);
 			}
 		}
-
+		
 		return res;
 	}
 	
@@ -518,7 +518,7 @@ public class DCTEngine {
 	 * <p>Quantifies all chroma DCT-II coefficients with the according
 	 * quantization table.</p>
 	 * 
-	 * @see YAVC.Main.config
+	 * @see app.config
 	 * 
 	 * @param coefficients	Coefficients to quantify
 	 * @param size	size of the matrix
@@ -538,7 +538,7 @@ public class DCTEngine {
 	 * <p>Quantifies all luma DCT-II coefficients with the according
 	 * quantization table.</p>
 	 * 
-	 * @see YAVC.Main.config
+	 * @see app.config
 	 * 
 	 * @param coefficients	Coefficients to quantify
 	 * @param size	size of the matrix
@@ -557,7 +557,7 @@ public class DCTEngine {
 	 * <p>Dequantizizes all chroma DCT-II coefficients with the according
 	 * quantization table.</p>
 	 * 
-	 * @see YAVC.Main.config
+	 * @see app.config
 	 * 
 	 * @param coefficients	Coefficients to dequantizize
 	 * @param size	size of the matrix
@@ -577,7 +577,7 @@ public class DCTEngine {
 	 * <p>Dequantizizes all luma DCT-II coefficients with the according
 	 * quantization table.</p>
 	 * 
-	 * @see YAVC.Main.config
+	 * @see app.config
 	 * 
 	 * @param coefficients	Coefficients to dequantizize
 	 * @param size	size of the matrix
