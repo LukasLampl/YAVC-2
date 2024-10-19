@@ -32,13 +32,17 @@ public class InputProcessor {
 		System.out.println(this.FRAME_DIM);
 	}
 	
-	public BufferedImage constructStartFrame(String content) {
+	public BufferedImage constructStartFrame(byte[] data) {
 		BufferedImage render = new BufferedImage(this.FRAME_DIM.width, this.FRAME_DIM.height, BufferedImage.TYPE_INT_ARGB);
-		String[] pixels = content.split("\\.");
-		
+
 		for (int x = 0, index = 0; x < this.FRAME_DIM.width; x++) {
 			for (int y = 0; y < this.FRAME_DIM.height; y++) {
-				render.setRGB(x, y, Integer.parseInt(pixels[index++]));
+				byte r = data[index];
+				byte g = data[index + 1];
+				byte b = data[index + 2];
+				int rgb = (0xFF000000 | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF));
+				render.setRGB(x, y, rgb);
+				index += 3;
 			}
 		}
 		

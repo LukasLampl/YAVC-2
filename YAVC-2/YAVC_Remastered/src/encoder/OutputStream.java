@@ -49,12 +49,19 @@ public class OutputStream {
 	}
 	
 	public void writeStartFrame(PixelRaster raster) {
-		StringBuilder img = new StringBuilder(raster.getWidth() * raster.getHeight());
+		byte[] data = new byte[raster.getWidth() * raster.getHeight() * 3];
+		int index = 0;
 		
 		for (int x = 0; x < raster.getWidth(); x++) {
 			for (int y = 0; y < raster.getHeight(); y++) {
-				img.append(this.COLOR_MANAGER.convertYUVToRGB(raster.getYUV(x, y)));
-				img.append(".");
+				int rgb = this.COLOR_MANAGER.convertYUVToRGB(raster.getYUV(x, y));
+				byte r = (byte)((rgb >> 16) & 0xFF);
+				byte g = (byte)((rgb >> 8) & 0xFF);
+				byte b = (byte)(rgb & 0xFF);
+				data[index] = r;
+				data[index + 1] = g;
+				data[index + 2] = b;
+				index += 3;
 			}
 		}
 		
@@ -62,7 +69,7 @@ public class OutputStream {
 			File output = new File(this.OUTPUT_FILE.getAbsolutePath() + "/SF.yavc");
 			output.createNewFile();
 			
-			Files.write(Path.of(output.getAbsolutePath()), img.toString().getBytes(), StandardOpenOption.WRITE);
+			Files.write(Path.of(output.getAbsolutePath()), data, StandardOpenOption.TRUNCATE_EXISTING);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

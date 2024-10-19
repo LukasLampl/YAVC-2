@@ -31,8 +31,8 @@ public class InputStream {
 		return content;
 	}
 	
-	public String getStartFrame() {
-		String content = null;
+	public byte[] getStartFrame() {
+		byte[] content = null;
 		File sf_file = new File(this.cache.getAbsolutePath() + "/SF.yavc");
 
 		if (!sf_file.exists()) {
@@ -41,7 +41,7 @@ public class InputStream {
 		}
 		
 		try {
-			content = new String(Files.readAllBytes(Path.of(sf_file.getAbsolutePath())), StandardCharsets.UTF_8);
+			content = Files.readAllBytes(Path.of(sf_file.getAbsolutePath()));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

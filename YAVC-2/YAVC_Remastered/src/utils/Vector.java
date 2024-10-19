@@ -309,13 +309,13 @@ public class Vector {
 	 * @return Cloned ArrayList with all data.
 	 */
 	private ArrayList<double[][][]> cloneAbsoluteColorDifference() {
-		ArrayList<double[][][]> copy = new ArrayList<double[][][]>(this.AbsoluteColorDifferenceDCTCoefficients.size());
+		int len = this.AbsoluteColorDifferenceDCTCoefficients.size();
+		ArrayList<double[][][]> copy = new ArrayList<double[][][]>(len);
+		int size = this.size;
+		int halfSize = this.size / 2;
 		
-		for (int i = 0; i < this.AbsoluteColorDifferenceDCTCoefficients.size(); i++) {
+		for (int i = 0; i < len; i++) {
 			double[][][] ref = this.AbsoluteColorDifferenceDCTCoefficients.get(i);
-			int size = this.size;
-			int halfSize = this.size / 2;
-			
 			double[][][] clone = new double[3][][];
 			clone[0] = new double[size][size];
 			clone[1] = new double[halfSize][halfSize];
@@ -323,7 +323,7 @@ public class Vector {
 			
 			for (int n = 0; n < ref.length; n++) {
 				for (int j = 0; j < ref[n].length; j++) {
-					clone[n][j] = ref[n][j].clone();
+					System.arraycopy(ref[n][j], 0, clone[n][j], 0, ref[n][j].length);
 				}
 			}
 			

@@ -16,7 +16,7 @@ public class Decoder {
 		InputProcessor processor = new InputProcessor();
 		processor.proessMetadata(inputStream.getMetadata());
 		
-		String startFrame = inputStream.getStartFrame();
+		byte[] startFrame = inputStream.getStartFrame();
 		BufferedImage startFrameImg = processor.constructStartFrame(startFrame);
 		
 		try {

@@ -503,7 +503,7 @@ public class VectorEngine {
 	/**
 	 * <p>Calculates the MSE (Mean Square Error) between two YUV color arrays.</p>
 	 * <p>The MSE is slightly modified, so Y is punished more strictly than Chroma.
-	 * If Alpha occures the MSE is extremely high, due to possible false encodings
+	 * If Alpha occurs the MSE is extremely high, due to possible false encodings
 	 * and by that should be used as equal as "No other exit".</p>
 	 * <p>The color arrays should be ordered like this:
 	 * <ul><li>[0] = Y
@@ -548,9 +548,19 @@ public class VectorEngine {
 			}
 		}
 		
-		resY *= resY;
-		resA = Math.pow(resA, resA);
-		return ((resY + resU + resV + resA) / (size * size * 4));
+		double sizeSQ = size * size;
+		double halfSizeSQ = halfSize * halfSize;
+		
+		resY = (resY / sizeSQ) * 4;
+		resU /= halfSizeSQ;
+		resV /= halfSizeSQ;
+		
+		if (countAlpha) {
+			resA = Math.pow(resA, resA);
+			return ((resY + resU + resV + resA) / 4);
+		}
+		
+		return ((resY + resU + resV) / 3);
 	}
 	
 	/**

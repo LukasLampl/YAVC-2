@@ -105,7 +105,7 @@ public class Encoder {
 	private void printStatistics(long time, long fullTime, int index, ArrayList<Vector> vecs, ArrayList<MacroBlock> diffs) {
 		System.out.println("");
 		System.out.println("Frame " + index + ":");
-		System.out.println("Time: " + time + "ms | Avg. time: " + (fullTime / index) + "ms");
+		System.out.println("- Time: " + time + "ms | Avg. time: " + (fullTime / index) + "ms");
 
 		if (vecs != null) {
 			int vecArea = 0;
@@ -117,7 +117,7 @@ public class Encoder {
 				vecArea += v.getSize() * v.getSize();
 			}
 			
-			System.out.println("Vectors: " + vecs.size() + " | Covered area: " + vecArea + "px | Avg. MSE: " + averageMSE);
+			System.out.println("- Vectors: " + vecs.size() + " | Covered area: " + vecArea + "px | Avg. MSE: " + averageMSE);
 		}
 		
 		if (diffs != null) {
@@ -127,14 +127,14 @@ public class Encoder {
 				diffArea += b.getSize() * b.getSize();
 			}
 			
-			System.out.println("Non-Coded blocks: " + diffs.size() + " | Covered area: " + diffArea + "px");
+			System.out.println("- Non-Coded blocks: " + diffs.size() + " | Covered area: " + diffArea + "px");
 		}
 		
-		System.out.println("Total Avg. MSE of inter prediction: " + (TOTAL_MSE / TOTAL_MSE_ADDITION_COUNT));
+		System.out.println("- Total Avg. MSE of inter prediction: " + (TOTAL_MSE / TOTAL_MSE_ADDITION_COUNT));
 		
 		int usedMemory = (int)(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory());
 		int memory = usedMemory / (1024 * 1024);
-		System.out.println("Memory usage: " + memory + "MB");
+		System.out.println("- Memory usage: " + memory + "MB");
 	}
 	
 	private void manageReferences(ArrayList<?> references) {

@@ -526,12 +526,14 @@ public class PixelRaster {
 		double[][][] res = cache == null ? getArray(size) : size <= cache[0].length ? cache : getArray(size);
 		
 		for (int y = 0; y < size; y++) {
+			int absoluteY = position.y + y;
+			boolean outOfBoundsY = absoluteY >= this.dim.height;
+			
 			for (int x = 0; x < size; x++) {
 				int absoluteX = position.x + x;
-				int absoluteY = position.y + y;
+				boolean outOfBoundsX = absoluteX >= this.dim.width;
 				
-				if (absoluteX >= this.dim.width || x < 0
-					|| absoluteY >= this.dim.height || y < 0) {
+				if (outOfBoundsY || outOfBoundsX) {
 					res[3][x][y] = 1;
 					continue;
 				} 
@@ -548,12 +550,14 @@ public class PixelRaster {
 		int halfDimHeight = this.dim.height / 2;
 		
 		for (int y = 0; y < halfSize; y++) {
+			int absoluteY = halfPosY + y;
+			boolean outOfBoundsY = absoluteY >= halfDimHeight;
+			
 			for (int x = 0; x < halfSize; x++) {
 				int absoluteX = halfPosX + x;
-				int absoluteY = halfPosY + y;
+				boolean outOfBoundsX = absoluteX >= halfDimWidth;
 				
-				if (absoluteX >= halfDimWidth || x < 0
-					|| absoluteY >= halfDimHeight || y < 0) {
+				if (outOfBoundsY || outOfBoundsX) {
 					res[3][x][y] = 1;
 					continue;
 				} 
