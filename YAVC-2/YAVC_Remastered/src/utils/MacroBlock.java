@@ -61,11 +61,6 @@ public class MacroBlock {
 	private double[][] A = null;
 	
 	/**
-	 * <p>ColorManager for color conversion operations.</p>
-	 */
-	private ColorManager COLOR_MANAGER = new ColorManager();
-	
-	/**
 	 * <p>Position of the MacroBlock, originated from the PixelRaster.</p>
 	 */
 	private Point position = null;
@@ -608,7 +603,7 @@ public class MacroBlock {
 						for (int y = 0; y < 4; y++) {
 							int iPosX = startX + u + x;
 							int iPosY = startY + v + y;
-							int[] col = this.COLOR_MANAGER.convertYUVToRGB_intARR(getYUV(iPosX, iPosY), null);
+							int[] col = ColorManager.convertYUVToRGB_intARR(getYUV(iPosX, iPosY), null);
 							sumR += col[0];
 							sumG += col[1];
 							sumB += col[2];

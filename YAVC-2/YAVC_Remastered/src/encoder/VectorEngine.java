@@ -134,9 +134,9 @@ public class VectorEngine {
 	private Callable<Vector> createVectorSearchTask(final ArrayList<PixelRaster> refs, MacroBlock blockToBeSearched) {
 		Callable<Vector> task = () -> {
 			int maxSize = refs.size();
-			MacroBlock[] canidates = new MacroBlock[maxSize + 1];
+			MacroBlock[] canidates = new MacroBlock[maxSize];
 			
-			for (int i = 0, index = 0; i < maxSize; i++, index++) {
+			for (int i = 0, index = 0; i < maxSize && i <= config.MAX_REFERENCES; i++, index++) {
 				MacroBlock bestMatch = getBestMatchingMacroBlock(refs.get(i), blockToBeSearched, i);
 				canidates[index] = bestMatch;
 			}

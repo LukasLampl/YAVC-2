@@ -9,10 +9,10 @@ import java.util.ArrayList;
 import app.config;
 import utils.ColorManager;
 import utils.PixelRaster;
+import utils.Protocol;
 import utils.Vector;
 
 public class InputProcessor {
-	private ColorManager COLOR_MANAGER = new ColorManager();
 	private Dimension FRAME_DIM = null;
 	
 	public void proessMetadata(String stream) {
@@ -49,13 +49,13 @@ public class InputProcessor {
 		return render;
 	}
 	
-	public BufferedImage processFrame(String content, ArrayList<PixelRaster> refs) {
+	public BufferedImage processFrame(byte[] content, ArrayList<PixelRaster> refs) {
 		BufferedImage render = new BufferedImage(this.FRAME_DIM.width, this.FRAME_DIM.height, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D g2d = (Graphics2D)render.createGraphics();
 		g2d.drawImage(refs.get(refs.size() - 1).toBufferedImage(), 0, 0, this.FRAME_DIM.width, this.FRAME_DIM.height, null);
 		g2d.dispose();
 		
-		String[] split = content.split(Character.toString(config.VECTOR_START));
+		byte[][] split = splitFirst(content, config.VECTOR_START);
 		ArrayList<Vector> vecs = split.length > 1 ? getVectors(split[1]) : null;
 
 		if (vecs != null) {
@@ -63,8 +63,11 @@ public class InputProcessor {
 				Point pos = v.getPosition();
 				int EndX = pos.x + v.getSpanX();
 				int EndY = pos.y + v.getSpanY();
-				PixelRaster cache = refs.get(config.MAX_REFERENCES - v.getReference());
-				double[][][] reconstructedColor = reconstructColors(v.getIDCTCoefficientsOfAbsoluteColorDifference(), cache.getPixelBlock(pos, v.getSize(), null), v.getSize());
+				int reference = config.MAX_REFERENCES - v.getReference();
+				PixelRaster cache = refs.get(reference);
+				double[][][] block = cache.getPixelBlock(pos, v.getSize(), null);
+				double[][][] IDCT = v.getIDCTCoefficientsOfAbsoluteColorDifference();
+				double[][][] reconstructedColor = reconstructColors(IDCT, block, v.getSize());
 
 				for (int x = 0; x < v.getSize(); x++) {
 					if (EndX + x >= this.FRAME_DIM.width || EndX + x < 0) {
@@ -82,7 +85,7 @@ public class InputProcessor {
 						
 						int subSX = x / 2, subSY = y / 2;
 						double[] YUV = new double[] {reconstructedColor[0][x][y], reconstructedColor[1][subSX][subSY], reconstructedColor[2][subSX][subSY]};
-						render.setRGB(EndX + x, EndY + y, this.COLOR_MANAGER.convertYUVToRGB(YUV));
+						render.setRGB(EndX + x, EndY + y, ColorManager.convertYUVToRGB(YUV));
 					}
 				}
 			}
@@ -116,58 +119,48 @@ public class InputProcessor {
 		return reconstructedColor;
 	}
 	
-	private ArrayList<Vector> getVectors(String vectorPart) {
+	private ArrayList<Vector> getVectors(byte[] vectorPart) {
 		ArrayList<Vector> vecs = new ArrayList<Vector>();
 		
-		if (vectorPart.length() <= 1) {
+		if (vectorPart == null) {
+			return vecs;
+		} else if (vectorPart.length <= 1) {
 			return vecs;
 		}
-		
-		int offset = config.CODING_OFFSET;
-		String[] vectors = vectorPart.split(Character.toString(config.VECTOR_END));
 		
 		//  LAYOUT:
 		//  POSX ⊥ POSY ⊥ SPANX ⊥ SPANY ⊥ REFERENCE << 4 | SIZE ⊥ DIFFERENCE
 		// ^_____________________________________________________^
 		//                      = 7 Bytes offset
-		
-		for (String vector : vectors) {
-			int posX = getPositionCoordinate(vector.charAt(0), vector.charAt(1));
-			int posY = getPositionCoordinate(vector.charAt(2), vector.charAt(3));
-			int spanX = getVectorSpanInt(vector.charAt(4), offset);
-			int spanY = getVectorSpanInt(vector.charAt(5), offset);
-			int[] refAndSize = getReferenceAndSizeInt((byte)vector.charAt(6), offset);
-			
-			int skip = 6;
-			
-			while (vector.charAt(skip) != config.VECTOR_DCT_START) {
-				skip++;
-			}
-			
-			ArrayList<double[][][]> diffs = getVectorDifferences(vector, ++skip, refAndSize[1]);
-			
-			Vector vec = new Vector(new Point(posX, posY), refAndSize[1]);
+		int i = 0;
+
+		while (i < vectorPart.length) {
+			int posX = Protocol.getPosition(vectorPart[i], vectorPart[i + 1]);
+			int posY = Protocol.getPosition(vectorPart[i + 2], vectorPart[i + 3]);
+			int spanX = Protocol.getVectorSpanInt(vectorPart[i + 4]);
+			int spanY = Protocol.getVectorSpanInt(vectorPart[i + 5]);
+			int[] refAndSize = Protocol.getReferenceAndSizeInt(vectorPart[i + 6]);
+			int ref = refAndSize[0];
+			int size = refAndSize[1];
+
+			ArrayList<double[][][]> diffs = getVectorDifferences(vectorPart, config.VECTOR_HEADER_LENGTH + i, size);
+			//Length of the vector diffs
+			i += ((size * size) + 2 * ((size / 2) * (size / 2))) + config.VECTOR_HEADER_LENGTH;
+
+			Vector vec = new Vector(new Point(posX, posY), size);
 			vec.setAbsolutedifferenceDCTCoefficients(diffs);
 			vec.setSpanX(spanX);
 			vec.setSpanY(spanY);
-			vec.setReference(refAndSize[0]);
+			vec.setReference(ref);
 			vecs.add(vec);
 		}
 		
 		return vecs;
 	}
 	
-	private int getPositionCoordinate(char c1, char c2) {
-		int res = (c1 << 8) | c2;
-		res -= config.CODING_OFFSET;
-		return res;
-	}
-	
-	private ArrayList<double[][][]> getVectorDifferences(String vectorPart, int startPos, int size) {
+	private ArrayList<double[][][]> getVectorDifferences(byte[] vectorPart, int startPos, int size) {
 		ArrayList<double[][][]> DCTCoeffGroups = new ArrayList<double[][][]>();
 		double[][] data = getDCTCoeffsOutOfFile(vectorPart, startPos, size);
-		
-		int halfSize = size / 2;
 		int YLength = size * size;
 		
 		if (size == 4) {
@@ -191,6 +184,8 @@ public class InputProcessor {
 			
 			DCTCoeffGroups.add(res);
 		} else {
+			int halfSize = size / 2;
+			
 			for (int u = 0; u < YLength; u += 64) {
 				double[][][] res = new double[3][][];
 				res[0] = new double[size][size];
@@ -205,8 +200,8 @@ public class InputProcessor {
 				
 				for (int x = 0, i = 0; x < 4; x++) {
 					for (int y = 0; y < 4; y++) {
-						res[1][x][y] = data[1][u + i];
-						res[2][x][y] = data[2][u + i++];
+						res[1][x][y] = data[1][(u / 4) + i];
+						res[2][x][y] = data[2][(u / 4) + i++];
 					}
 				}
 				
@@ -217,7 +212,7 @@ public class InputProcessor {
 		return DCTCoeffGroups;
 	}
 	
-	private double[][] getDCTCoeffsOutOfFile(String vectorPart, int startPos, int size) {
+	private double[][] getDCTCoeffsOutOfFile(byte[] vectorPart, int startPos, int size) {
 		int halfSize = size / 2;
 		int YLength = size * size;
 		int UVLength = halfSize * halfSize;
@@ -226,74 +221,42 @@ public class InputProcessor {
 		double[] UBytes = new double[UVLength];
 		double[] VBytes = new double[UVLength];
 		
-		if (vectorPart.charAt(startPos + 0) == config.VECTOR_DCT_START) System.err.println("Err!");
-		
 		for (int n = 0; n < YLength; n++) {
-			YBytes[n] = getDCTCoeff(vectorPart.charAt(startPos + n));
+			YBytes[n] = Protocol.getDCTCoeff(vectorPart[startPos + n]);
 		}
 		
 		startPos += YLength;
 		
 		for (int n = 0; n < UVLength; n++) {
-			UBytes[n] = getDCTCoeff(vectorPart.charAt(startPos + n));
+			UBytes[n] = Protocol.getDCTCoeff(vectorPart[startPos + n]);
 		}
 		
 		startPos += UVLength;
 		
 		for (int n = 0; n < UVLength; n++) {
-			VBytes[n] = getDCTCoeff(vectorPart.charAt(startPos + n));
+			VBytes[n] = Protocol.getDCTCoeff(vectorPart[startPos + n]);
 		}
 
 		return new double[][] {YBytes, UBytes, VBytes};
 	}
 	
-	private double getDCTCoeff(char coeff) {
-		coeff -= config.CODING_OFFSET;
-		int result = coeff & 0x7F;
+	private byte[][] splitFirst(byte[] data, byte regex) {
+		byte[][] res = new byte[2][];
 		
-		if (((coeff >> 7) & 0x01) == 1) {
-			result *= -1;
-		}
-		
-		return (double)result;
-	}
-	
-	private int getVectorSpanInt(char span, int offset) {
-		span -= offset;
-		int res = span & 0x7F;
-
-		if (((span >> 7) & 0x1) == 1) {
-			res *= -1;
+		for (int i = 0; i < data.length; i++) {
+			if (data[i] != regex) {
+				continue;
+			}
+			
+			byte[] head = new byte[i];
+			byte[] tail = new byte[data.length - (i + 1)];
+			System.arraycopy(data, 0, head, 0, i);
+			System.arraycopy(data, i + 1, tail, 0, data.length - (i + 1));
+			res[0] = head;
+			res[1] = tail;
+			break;
 		}
 		
 		return res;
-	}
-	
-	private int[] getReferenceAndSizeInt(byte refAndSize, int offset) {
-		refAndSize -= config.CODING_OFFSET;
-		int ref = (refAndSize >> 4) & 0x0F, size = refAndSize & 0x0F;
-		
-		switch (size) {
-			case 6:
-				size = 128;
-				break;
-			case 5:
-				size = 64;
-				break;
-			case 4:
-				size = 32;
-				break;
-			case 3: 
-				size = 16;
-				break;
-			case 2:
-				size = 8;
-				break;
-			case 1:
-				size = 4;
-				break;
-		}
-		
-		return new int[] {ref, size};
 	}
 }

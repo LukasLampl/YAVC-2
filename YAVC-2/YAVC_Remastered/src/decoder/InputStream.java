@@ -49,8 +49,8 @@ public class InputStream {
 		return content;
 	}
 	
-	public String getFrame(int frame) {
-		String content = null;
+	public byte[] getFrame(int frame) {
+		byte[] content = null;
 		
 		File f_file = new File(this.cache.getAbsolutePath() + "/F" + frame + ".yavcf");
 		
@@ -60,7 +60,7 @@ public class InputStream {
 		}
 		
 		try {
-			content = new String(Files.readAllBytes(Path.of(f_file.getAbsolutePath())), StandardCharsets.ISO_8859_1);
+			content = Files.readAllBytes(Path.of(f_file.getAbsolutePath()));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

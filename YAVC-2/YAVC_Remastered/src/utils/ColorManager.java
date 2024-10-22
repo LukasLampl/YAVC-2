@@ -58,7 +58,7 @@ public class ColorManager {
 	 * @param color	RGB color that should be
 	 * converted to an YUV color.
 	 */
-	public double[] convertRGBToYUV(Color color) {
+	public static double[] convertRGBToYUV(Color color) {
 		int r = color.getRed();
 		int g = color.getGreen();
 		int b = color.getBlue();
@@ -85,7 +85,7 @@ public class ColorManager {
 	 * @param color	RGB color that should be
 	 * converted to an YUV color.
 	 */
-	public double[] convertRGBToYUV(int color) {
+	public static double[] convertRGBToYUV(int color) {
 		int r = (color >> 16) & 0xFF;
 		int g = (color >> 8) & 0xFF;
 		int b = color & 0xFF;
@@ -116,7 +116,7 @@ public class ColorManager {
 	 * @throws IllegalArgumentException	if the provided YUV is
 	 * null or the length is not 3
 	 */
-	public int convertYUVToRGB(double[] YUV) {
+	public static int convertYUVToRGB(double[] YUV) {
 		if (YUV == null) {
 			throw new IllegalArgumentException("Can't convert NULL to RGB!");
 		} else if (YUV.length != 3) {
@@ -154,7 +154,7 @@ public class ColorManager {
 	 * when the length of the YUV color exceeds 3 or is shorter than 3
 	 * and if the rgbCache is not null, but does not have a length of 3.
 	 */
-	public int[] convertYUVToRGB_intARR(double[] YUV, int[] rgbCache) {
+	public static int[] convertYUVToRGB_intARR(double[] YUV, int[] rgbCache) {
 		if (YUV == null) {
 			throw new IllegalArgumentException("Can't convert NULL to RGB array!");
 		} else if (YUV.length != 3) {
@@ -194,7 +194,7 @@ public class ColorManager {
 	 * @param min	Minimum value that x is allowed to reach
 	 * @param max	Maximum value that x is allowed to reach
 	 */
-	private int range(int x, int min, int max) {
+	private static int range(int x, int min, int max) {
 		return x < min ? min : x > max ? max : x;
 	}
 }

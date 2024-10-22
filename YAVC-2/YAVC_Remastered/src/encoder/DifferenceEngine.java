@@ -82,7 +82,6 @@ public class DifferenceEngine {
 	
 	public BufferedImage drawDifferences(ArrayList<MacroBlock> leaves, Dimension dim) {
 		BufferedImage render = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
-		ColorManager colManager = new ColorManager();
 		
 		for (MacroBlock b : leaves) {
 			for (int x = 0; x < b.getSize(); x++) {
@@ -94,7 +93,7 @@ public class DifferenceEngine {
 						continue;
 					}
 					
-					render.setRGB(x + b.getPosition().x, y + b.getPosition().y, colManager.convertYUVToRGB(b.getYUV(x, y)));
+					render.setRGB(x + b.getPosition().x, y + b.getPosition().y, ColorManager.convertYUVToRGB(b.getYUV(x, y)));
 				}
 			}
 		}

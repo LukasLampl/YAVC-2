@@ -73,13 +73,6 @@ public class PixelRaster {
 	private Dimension dim = null;
 	
 	/**
-	 * <p>Invokes a ColorManager for color conversion from RGB to YUV.</p>
-	 * 
-	 * @see utils.ColorManager
-	 */
-	private ColorManager COLOR_MANAGER = new ColorManager();
-	
-	/**
 	 * <p>Initialize the PixelRaster using the data of a BufferedImage.
 	 * If the image is not a divisor by 4, the image gets resized.</p>
 	 * 
@@ -222,7 +215,7 @@ public class PixelRaster {
 					argb += (((int)buffer[jumper++] & 0xFF) << 8); //Green
 					argb += (((int)buffer[jumper] & 0xFF) << 16); //Red
 					
-					setThreadSafeYUV(innerX++, innerY, this.COLOR_MANAGER.convertRGBToYUV(argb), newInit);
+					setThreadSafeYUV(innerX++, innerY, ColorManager.convertRGBToYUV(argb), newInit);
 				}
 			};
 			
@@ -281,7 +274,7 @@ public class PixelRaster {
 					
 					boolean newInit = (innerX % 2 == 0 && innerY % 2 == 0) ? true : false;
 					int argb = buffer[index + n];
-					setThreadSafeYUV(innerX++, innerY, this.COLOR_MANAGER.convertRGBToYUV(argb), newInit);
+					setThreadSafeYUV(innerX++, innerY, ColorManager.convertRGBToYUV(argb), newInit);
 				}
 			};
 			
@@ -600,7 +593,7 @@ public class PixelRaster {
 		
 		IntStream.range(0, this.dim.height).parallel().forEach(y -> {
 			for (int x = 0; x < this.dim.width; x++) {
-				render.setRGB(x, y, this.COLOR_MANAGER.convertYUVToRGB(getYUV(x, y)));
+				render.setRGB(x, y, ColorManager.convertYUVToRGB(getYUV(x, y)));
 			}
 		});
 		

@@ -51,10 +51,10 @@ public class Main {
 		
 		File out = jfc.getSelectedFile();
 		
-		Encoder encoder = new Encoder(DCT_ENGINE);
-		encoder.encode(in, out);
+//		Encoder encoder = new Encoder(DCT_ENGINE);
+//		encoder.encode(in, out);
 		
 		Decoder decoder = new Decoder();
-		decoder.decode(new File(out.getParent() + "/YAVC-Res.yavc.part"), out);
+		decoder.decode(in, out);
 	}
 }

@@ -30,6 +30,7 @@ package app;
  */
 
 public class config {
+	public static final int VECTOR_HEADER_LENGTH = 7;
 	public static final int CODING_OFFSET = 15;
 	public static final int UTF_8_CODING_SIZE = 8;
 	public static final int MAX_REFERENCES = 4;

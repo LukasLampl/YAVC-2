@@ -1,6 +1,5 @@
 package encoder;
 
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
 
@@ -11,6 +10,7 @@ import utils.Deblocker;
 import utils.MacroBlock;
 import utils.PixelRaster;
 import utils.QueueObject;
+import utils.RenderEngine;
 import utils.Vector;
 
 public class Encoder {
@@ -63,20 +63,20 @@ public class Encoder {
 				ArrayList<MacroBlock> quadtreeRoots = QUADTREE_ENGINE.constructQuadtree(curFrame);
 				ArrayList<MacroBlock> leaveNodes = QUADTREE_ENGINE.getLeaveNodes(quadtreeRoots);
 				
-				BufferedImage[] part = QUADTREE_ENGINE.drawMacroBlocks(leaveNodes, curFrame.getDimension());
+//				BufferedImage[] part = QUADTREE_ENGINE.drawMacroBlocks(leaveNodes, curFrame.getDimension());
 				leaveNodes = DIFFERENCE_ENGINE.computeDifferences(prevFrame, leaveNodes);
 				ArrayList<Vector> movementVectors = VECTOR_ENGINE.computeMovementVectors(leaveNodes, references);
 				
-				BufferedImage vectors = VECTOR_ENGINE.drawVectors(movementVectors, curFrame.getDimension());
-				PixelRaster composite = outStream.renderResult(movementVectors, references, leaveNodes, prevFrame);
+//				BufferedImage vectors = VECTOR_ENGINE.drawVectors(movementVectors, curFrame.getDimension());
+				PixelRaster composite = RenderEngine.renderResult(movementVectors, references, leaveNodes, prevFrame);
 				outStream.addObjectToOutputQueue(new QueueObject(movementVectors, leaveNodes));
 				
 				deblocker.deblock(movementVectors, composite, 7, 4, 51);
 				
-				ImageIO.write(part[0], "png", new File(output.getAbsolutePath() + "/MB_" + i + ".png"));
-				ImageIO.write(part[1], "png", new File(output.getAbsolutePath() + "/MBA_" + i + ".png"));
-				ImageIO.write(vectors, "png", new File(output.getAbsolutePath() + "/V_" + i + ".png"));
-				ImageIO.write(composite.toBufferedImage(), "png", new File(output.getAbsolutePath() + "/VR_" + i + ".png"));
+//				ImageIO.write(part[0], "png", new File(output.getAbsolutePath() + "/MB_" + i + ".png"));
+//				ImageIO.write(part[1], "png", new File(output.getAbsolutePath() + "/MBA_" + i + ".png"));
+//				ImageIO.write(vectors, "png", new File(output.getAbsolutePath() + "/V_" + i + ".png"));
+//				ImageIO.write(composite.toBufferedImage(), "png", new File(output.getAbsolutePath() + "/VR_" + i + ".png"));
 				
 				long end = System.currentTimeMillis();
 				long time = end - start;
@@ -91,7 +91,7 @@ public class Encoder {
 			long endOfTime = System.currentTimeMillis();
 			System.out.println("Time used: " + (endOfTime - startOfTime) + "ms");
 			
-			outStream.waitForFinish();
+			outStream.finishQueue();
 			references.clear();
 		} catch (Exception e) {
 			outStream.shutdown();
@@ -142,11 +142,9 @@ public class Encoder {
 			return;
 		}
 		
-		if (references.size() < config.MAX_REFERENCES) {
-			return;
+		if (references.size() > config.MAX_REFERENCES) {
+			references.remove(0);
 		}
-		
-		references.remove(0);
 	}
 	
 	private File getAwaitedFile(File parent, int index, String format) {

@@ -25,7 +25,8 @@ public class Decoder {
 			refs.add(new PixelRaster(startFrameImg));
 			
 			for (int i = 0; i < 100; i++) {
-				String frame = inputStream.getFrame(i);
+				System.out.println("FRAME: " + i + " (" + refs.size() + ")");
+				byte[] frame = inputStream.getFrame(i);
 				BufferedImage result = processor.processFrame(frame, refs);
 				
 				ImageIO.write(result, "png", new File(input.getAbsolutePath() + "/R_" + i + ".png"));
@@ -42,7 +43,7 @@ public class Decoder {
 			return;
 		}
 		
-		if (references.size() < config.MAX_REFERENCES) {
+		if (references.size() <= config.MAX_REFERENCES) {
 			return;
 		}
 		
