@@ -239,42 +239,4 @@ public class QuadtreeEngine {
 		
 		return blocks;
 	}
-	
-	/**
-	 * This function draws the outlines of the MacroBlocks and
-	 * the pixels with the assigned mean color of the MacroBlock
-	 * {@link utils.MacroBlock#subdivide(double, int, int[][], int[][][], Dimension, Point)}
-	 * 
-	 * @return BufferedImage[] => Array of BufferedImages, containing the drawn
-	 * images. BufferedImage[0] = MacroBlock outlines;
-	 * BufferedImage[1] = Pixels with mean color
-	 * 
-	 * @param ArrayList<MacroBlock> leaveNodes => MacroBlocks to be drawn
-	 * @param Dimension dim => Dimension of the frame for reference	
-	 */
-	public BufferedImage[] drawMacroBlocks(ArrayList<MacroBlock> leaveNodes, Dimension dim) {
-		BufferedImage[] render = new BufferedImage[3];
-		render[0] = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
-		render[1] = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
-		
-		Graphics2D g2d1 = (Graphics2D)render[0].createGraphics();
-		Graphics2D g2d2 = (Graphics2D)render[1].createGraphics();
-		g2d1.setColor(Color.RED);
-		
-		for (MacroBlock leaf : leaveNodes) {
-			Point pos = leaf.getPosition();
-			int size = leaf.getSize();
-			g2d1.drawRect(pos.x, pos.y, size, size);
-			g2d1.drawLine(pos.x, pos.y, pos.x + size, pos.y + size);
-			
-			int[] rgb = leaf.getMeanColor();
-			g2d2.setColor(new Color(rgb[0], rgb[1], rgb[2]));
-			g2d2.fillRect(pos.x, pos.y, size, size);
-		}
-		
-		g2d1.dispose();
-		g2d2.dispose();
-		
-		return render;
-	}
 }

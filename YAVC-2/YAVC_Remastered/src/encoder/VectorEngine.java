@@ -56,9 +56,29 @@ import utils.Vector;
 public class VectorEngine {
 	
 	/**
+	 * <p>Variable to store the PI radian.</p>
+	 */
+	private double PI_RAD = Math.PI / 3;
+	
+	private double[] COS_TABLE_HEXAGON = new double[6];
+	private double[] SIN_TABLE_HEXAGON = new double[6];
+	
+	/**
 	 * <p>Variable to store the total MSE of all "best matches".</p>
 	 */
 	private double TOTAL_MSE = 0;
+	
+	public VectorEngine() {
+		initHexagonValues();
+	}
+	
+	private void initHexagonValues() {
+		for (int i = 0; i < 6; i++) {
+			double rad = this.PI_RAD * (i + 1);
+			this.COS_TABLE_HEXAGON[i] = Math.cos(rad);
+			this.SIN_TABLE_HEXAGON[i] = Math.sin(rad);
+		}
+	}
 	
 	/**
 	 * <p>Calculates all possible movement vectors from the current frame to
@@ -441,11 +461,10 @@ public class VectorEngine {
 		Point[] points = new Point[7];
 		points[6] = pos;
 		
-		double Pirad = Math.PI / 3;
-		
 		for (int i = 0; i < 6; i++) {
-			double rad = Pirad * (i + 1);
-			points[i] = new Point((int)(Math.cos(rad) * radius + pos.x), (int)(Math.sin(rad) * radius + pos.y));
+			double cos = this.COS_TABLE_HEXAGON[i];
+			double sin = this.SIN_TABLE_HEXAGON[i];
+			points[i] = new Point((int)(cos * radius + pos.x), (int)(sin * radius + pos.y));
 		}
 		
 		return points;
@@ -569,65 +588,5 @@ public class VectorEngine {
 	 */
 	public double getVectorMSE() {
 		return this.TOTAL_MSE;
-	}
-	
-	/**
-	 * <p>This function provides a good debugging base. It draws all vectors in the
-	 * ArrayList to an image and returns it.</p>
-	 * 
-	 * <p>For better visualization the vectors have different colors:
-	 * <br><br><table border="1">
-	 * <tr>
-	 * <td>Reference</td> <td>Assigned color</td>
-	 * </tr><tr>
-	 * <td>0</td> <td>Color.Orange</td>
-	 * </tr><tr>
-	 * <td>1</td> <td>Color.Yellow</td>
-	 * </tr><tr>
-	 * <td>2</td> <td>Color.Blue</td>
-	 * </tr><tr>
-	 * <td>3</td> <td>Color.Red</td>
-	 * </tr>
-	 * </table>
-	 * </p>
-	 * 
-	 * @return Image with all vectors drawn on it
-	 * 
-	 * @param vecs	Vectors to draw
-	 * @param dim	Dimension of the frame
-	 * 
-	 * @see utils.Vector
-	 * @see java.awt.Color
-	 */
-	public BufferedImage drawVectors(ArrayList<Vector> vecs, Dimension dim) {
-		BufferedImage render = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
-		Graphics2D g2d = (Graphics2D)render.createGraphics();
-		g2d.setColor(Color.RED);
-		
-		for (Vector v : vecs) {
-			Point pos = v.getPosition();
-			int x1 = pos.x;
-			int y1 = pos.y;
-			int x2 = pos.x + v.getSpanX();
-			int y2 = pos.y + v.getSpanY();
-			
-			switch (v.getReference()) {
-			case -1:
-				g2d.setColor(Color.GREEN); break;
-			case 0:
-				g2d.setColor(Color.ORANGE); break;
-			case 1:
-				g2d.setColor(Color.YELLOW); break;
-			case 2:
-				g2d.setColor(Color.BLUE); break;
-			case 3:
-				g2d.setColor(Color.RED); break;
-			}
-			
-			g2d.drawLine(x1, y1, x2, y2);
-		}
-		
-		g2d.dispose();
-		return render;
 	}
 }

@@ -527,15 +527,19 @@ public class MacroBlock {
 		double[][] resA = new double[size][size];
 		
 		for (int x = 0; x < size; x++) {
+			int posX = pos.x + x;
+			
 			for (int y = 0; y < size; y++) {
-				resY[x][y] = this.Y[pos.x + x][pos.y + y];
-				resA[x][y] = this.A[pos.x + x][pos.y + y];
+				int posY = pos.y + y;
+				resY[x][y] = this.Y[posX][posY];
+				resA[x][y] = this.A[posX][posY];
 			}
 		}
 		
 		for (int x = 0; x < halfSize; x++) {
+			int thisPosX = (pos.x / 2) + x;
+			
 			for (int y = 0; y < halfSize; y++) {
-				int thisPosX = (pos.x / 2) + x;
 				int thisPosY = (pos.y / 2) + y;
 				resU[x][y] = this.U[thisPosX][thisPosY];
 				resV[x][y] = this.V[thisPosX][thisPosY];
@@ -600,8 +604,9 @@ public class MacroBlock {
 					int sumB = 0;
 					
 					for (int x = 0; x < 4; x++) {
+						int iPosX = startX + u + x;
+						
 						for (int y = 0; y < 4; y++) {
-							int iPosX = startX + u + x;
 							int iPosY = startY + v + y;
 							int[] col = ColorManager.convertYUVToRGB_intARR(getYUV(iPosX, iPosY), null);
 							sumR += col[0];
@@ -644,8 +649,11 @@ public class MacroBlock {
 		int actualPosY = pos.y / 4;
 		
 		for (int x = 0; x < actualSize; x++) {
+			int posX = x + actualPosX;
+			
 			for (int y = 0; y < actualSize; y++) {
-				int argb = meanOf4x4Blocks[x + actualPosX][y + actualPosY];
+				int posY = y + actualPosY;
+				int argb = meanOf4x4Blocks[posX][posY];
 				double r = (argb >> 16) & 0xFF;
 				double g = (argb >> 8) & 0xFF;
 				double b = argb & 0xFF;
@@ -682,10 +690,13 @@ public class MacroBlock {
 		int meanB = mean[2];
 		
 		for (int x = 0; x < size; x++) {
+			int posX = x + pos.x;
+			
 			for (int y = 0; y < size; y++) {
-				int r = argbs[x + pos.x][y + pos.y][0] - meanR;
-				int g = argbs[x + pos.x][y + pos.y][1] - meanG;
-				int b = argbs[x + pos.x][y + pos.y][2] - meanB;
+				int posY = y + pos.y;
+				int r = argbs[posX][posY][0] - meanR;
+				int g = argbs[posX][posY][1] - meanG;
+				int b = argbs[posX][posY][2] - meanB;
 				resR += r * r;
 				resG += g * g;
 				resB += b * b;

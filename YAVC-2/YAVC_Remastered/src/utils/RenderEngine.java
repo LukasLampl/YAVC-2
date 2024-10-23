@@ -1,7 +1,10 @@
 package utils;
 
+import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Graphics2D;
 import java.awt.Point;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -97,5 +100,91 @@ public class RenderEngine {
 		}
 		
 		return reconstructedColor;
+	}
+	
+	public static BufferedImage[] renderQuadtree(ArrayList<MacroBlock> leaveNodes, Dimension dim) {
+		BufferedImage[] render = new BufferedImage[3];
+		render[0] = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
+		render[1] = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
+		
+		Graphics2D g2d1 = (Graphics2D)render[0].createGraphics();
+		Graphics2D g2d2 = (Graphics2D)render[1].createGraphics();
+		g2d1.setColor(Color.RED);
+		
+		for (MacroBlock leaf : leaveNodes) {
+			Point pos = leaf.getPosition();
+			int size = leaf.getSize();
+			g2d1.drawRect(pos.x, pos.y, size, size);
+			g2d1.drawLine(pos.x, pos.y, pos.x + size, pos.y + size);
+			
+			int[] rgb = leaf.getMeanColor();
+			g2d2.setColor(new Color(rgb[0], rgb[1], rgb[2]));
+			g2d2.fillRect(pos.x, pos.y, size, size);
+		}
+		
+		g2d1.dispose();
+		g2d2.dispose();
+		
+		return render;
+	}
+	
+	/**
+	 * <p>This function provides a good debugging base. It draws all vectors in the
+	 * ArrayList to an image and returns it.</p>
+	 * 
+	 * <p>For better visualization the vectors have different colors:
+	 * <br><br><table border="1">
+	 * <tr>
+	 * <td>Reference</td> <td>Assigned color</td>
+	 * </tr><tr>
+	 * <td>0</td> <td>Color.Orange</td>
+	 * </tr><tr>
+	 * <td>1</td> <td>Color.Yellow</td>
+	 * </tr><tr>
+	 * <td>2</td> <td>Color.Blue</td>
+	 * </tr><tr>
+	 * <td>3</td> <td>Color.Red</td>
+	 * </tr>
+	 * </table>
+	 * </p>
+	 * 
+	 * @return Image with all vectors drawn on it
+	 * 
+	 * @param vecs	Vectors to draw
+	 * @param dim	Dimension of the frame
+	 * 
+	 * @see utils.Vector
+	 * @see java.awt.Color
+	 */
+	public BufferedImage renderVectors(ArrayList<Vector> vecs, Dimension dim) {
+		BufferedImage render = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g2d = (Graphics2D)render.createGraphics();
+		g2d.setColor(Color.RED);
+		
+		for (Vector v : vecs) {
+			Point pos = v.getPosition();
+			int x1 = pos.x;
+			int y1 = pos.y;
+			int x2 = pos.x + v.getSpanX();
+			int y2 = pos.y + v.getSpanY();
+			
+			switch (v.getReference()) {
+			case -1:
+				g2d.setColor(Color.GREEN); break;
+			case 0:
+				g2d.setColor(Color.ORANGE); break;
+			case 1:
+				g2d.setColor(Color.YELLOW); break;
+			case 2:
+				g2d.setColor(Color.BLUE); break;
+			case 3:
+				g2d.setColor(Color.RED); break;
+			}
+			
+			g2d.drawLine(x1, y1, x2, y2);
+		}
+		
+		g2d.dispose();
+		return render;
 	}
 }
