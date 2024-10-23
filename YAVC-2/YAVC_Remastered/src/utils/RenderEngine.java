@@ -45,7 +45,7 @@ public class RenderEngine {
 						int EndX = pos.x + v.getSpanX();
 						int EndY = pos.y + v.getSpanY();
 						int size = v.getSize();
-						double[][][] reconstructedColor = reconstructColors(v.getIDCTCoefficientsOfAbsoluteColorDifference(), cache.getPixelBlock(pos, size, null), size);
+						double[][][] reconstructedColor = reconstructColors(v.getIDCTCoefficientsOfAbsoluteColorDifference(false), cache.getPixelBlock(pos, size, null), size);
 						
 						for (int x = 0; x < size; x++) {
 							if (EndX + x < 0 || EndX + x >= dim.width) continue;

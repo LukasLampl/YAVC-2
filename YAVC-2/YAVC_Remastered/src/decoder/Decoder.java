@@ -27,10 +27,10 @@ public class Decoder {
 			for (int i = 0; i < 100; i++) {
 				System.out.println("FRAME: " + i + " (" + refs.size() + ")");
 				byte[] frame = inputStream.getFrame(i);
-				BufferedImage result = processor.processFrame(frame, refs);
+				PixelRaster result = processor.processFrame(frame, refs);
 				
-				ImageIO.write(result, "png", new File(input.getAbsolutePath() + "/R_" + i + ".png"));
-				refs.add(new PixelRaster(result));
+				ImageIO.write(result.toBufferedImage(), "png", new File(input.getAbsolutePath() + "/R_" + i + ".png"));
+				refs.add(result);
 				manageReferences(refs);
 			}
 		} catch (IOException e) {

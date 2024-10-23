@@ -519,7 +519,7 @@ public class DCTEngine {
 	 * <p>Quantifies all chroma DCT-II coefficients with the according
 	 * quantization table.</p>
 	 * 
-	 * @see app.config
+	 * @see app.Protocol
 	 * 
 	 * @param coefficients	Coefficients to quantify
 	 * @param size	size of the matrix
@@ -539,7 +539,7 @@ public class DCTEngine {
 	 * <p>Quantifies all luma DCT-II coefficients with the according
 	 * quantization table.</p>
 	 * 
-	 * @see app.config
+	 * @see app.Protocol
 	 * 
 	 * @param coefficients	Coefficients to quantify
 	 * @param size	size of the matrix
@@ -558,7 +558,7 @@ public class DCTEngine {
 	 * <p>Dequantizizes all chroma DCT-II coefficients with the according
 	 * quantization table.</p>
 	 * 
-	 * @see app.config
+	 * @see app.Protocol
 	 * 
 	 * @param coefficients	Coefficients to dequantizize
 	 * @param size	size of the matrix
@@ -578,7 +578,7 @@ public class DCTEngine {
 	 * <p>Dequantizizes all luma DCT-II coefficients with the according
 	 * quantization table.</p>
 	 * 
-	 * @see app.config
+	 * @see app.Protocol
 	 * 
 	 * @param coefficients	Coefficients to dequantizize
 	 * @param size	size of the matrix

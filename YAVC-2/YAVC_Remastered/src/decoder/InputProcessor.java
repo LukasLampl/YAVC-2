@@ -1,13 +1,11 @@
 package decoder;
 
 import java.awt.Dimension;
-import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
 import app.config;
-import utils.ColorManager;
 import utils.PixelRaster;
 import utils.Protocol;
 import utils.Vector;
@@ -49,13 +47,10 @@ public class InputProcessor {
 		return render;
 	}
 	
-	public BufferedImage processFrame(byte[] content, ArrayList<PixelRaster> refs) {
-		BufferedImage render = new BufferedImage(this.FRAME_DIM.width, this.FRAME_DIM.height, BufferedImage.TYPE_INT_ARGB);
-		Graphics2D g2d = (Graphics2D)render.createGraphics();
-		g2d.drawImage(refs.get(refs.size() - 1).toBufferedImage(), 0, 0, this.FRAME_DIM.width, this.FRAME_DIM.height, null);
-		g2d.dispose();
+	public PixelRaster processFrame(byte[] content, ArrayList<PixelRaster> refs) {
+		PixelRaster render = refs.get(refs.size() - 1).copy();
 		
-		byte[][] split = splitFirst(content, config.VECTOR_START);
+		byte[][] split = splitFirst(content, Protocol.VECTOR_START);
 		ArrayList<Vector> vecs = split.length > 1 ? getVectors(split[1]) : null;
 
 		if (vecs != null) {
@@ -66,7 +61,7 @@ public class InputProcessor {
 				int reference = config.MAX_REFERENCES - v.getReference();
 				PixelRaster cache = refs.get(reference);
 				double[][][] block = cache.getPixelBlock(pos, v.getSize(), null);
-				double[][][] IDCT = v.getIDCTCoefficientsOfAbsoluteColorDifference();
+				double[][][] IDCT = v.getIDCTCoefficientsOfAbsoluteColorDifference(true);
 				double[][][] reconstructedColor = reconstructColors(IDCT, block, v.getSize());
 
 				for (int x = 0; x < v.getSize(); x++) {
@@ -85,7 +80,7 @@ public class InputProcessor {
 						
 						int subSX = x / 2, subSY = y / 2;
 						double[] YUV = new double[] {reconstructedColor[0][x][y], reconstructedColor[1][subSX][subSY], reconstructedColor[2][subSX][subSY]};
-						render.setRGB(EndX + x, EndY + y, ColorManager.convertYUVToRGB(YUV));
+						render.setYUV(EndX + x, EndY + y, YUV);
 					}
 				}
 			}
@@ -143,9 +138,9 @@ public class InputProcessor {
 			int ref = refAndSize[0];
 			int size = refAndSize[1];
 
-			ArrayList<double[][][]> diffs = getVectorDifferences(vectorPart, config.VECTOR_HEADER_LENGTH + i, size);
+			ArrayList<double[][][]> diffs = getVectorDifferences(vectorPart, Protocol.VECTOR_HEADER_LENGTH + i, size);
 			//Length of the vector diffs
-			i += ((size * size) + 2 * ((size / 2) * (size / 2))) + config.VECTOR_HEADER_LENGTH;
+			i += ((size * size) + 2 * ((size / 2) * (size / 2))) + Protocol.VECTOR_HEADER_LENGTH;
 
 			Vector vec = new Vector(new Point(posX, posY), size);
 			vec.setAbsolutedifferenceDCTCoefficients(diffs);

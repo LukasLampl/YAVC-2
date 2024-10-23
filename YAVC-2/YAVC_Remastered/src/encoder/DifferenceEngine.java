@@ -25,6 +25,7 @@ public class DifferenceEngine {
 			for (MacroBlock block : leaveNodes) {
 				Callable<MacroBlock> task = () -> {
 					int size = block.getSize();
+					int squaredSize = size * size;
 					double[][][] refCols = prevFrame.getPixelBlock(block.getPosition(), size, null);
 					double[][][] curCols = block.getColors();
 					
@@ -45,9 +46,9 @@ public class DifferenceEngine {
 						}
 					}
 					
-					sumY /= size * size;
-					sumU /= size * size;
-					sumV /= size * size;
+					sumY /= squaredSize;
+					sumU /= squaredSize;
+					sumV /= squaredSize;
 					
 					if (sumY > 1.55 || sumU > 3.6 || sumV > 3.6) {
 						return block;

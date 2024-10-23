@@ -30,16 +30,7 @@ package app;
  */
 
 public class config {
-	public static final int VECTOR_HEADER_LENGTH = 7;
-	public static final int CODING_OFFSET = 15;
-	public static final int UTF_8_CODING_SIZE = 8;
 	public static final int MAX_REFERENCES = 4;
-	
-	public static final byte VECTOR_START = (byte)0x01;
-	public static final byte VECTOR_DCT_START = (byte)0x02;
-	public static final byte VECTOR_U_START = (byte)0x03;
-	public static final byte VECTOR_V_START = (byte)0x04;
-	public static final byte VECTOR_END = (byte)0x05;
 
 	public static final int[][] QUANTIZATION_MATRIX_8x8_Luma = {
 		{16, 11, 10, 16, 24, 40, 51, 61},

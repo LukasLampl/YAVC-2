@@ -9,7 +9,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 
-import app.config;
 import utils.ColorManager;
 import utils.PixelRaster;
 import utils.Protocol;
@@ -73,7 +72,7 @@ public class OutputStream {
 		int size = Protocol.calculateSize(vecs) + 1; //+1 for the VECTOR_START byte
 		int currentIndex = 1;
 		byte[] data = new byte[size];
-		data[0] = config.VECTOR_START;
+		data[0] = Protocol.VECTOR_START;
 		
 		if (vecs == null) {
 			throw new NullPointerException("No vectors were passed for writing.");

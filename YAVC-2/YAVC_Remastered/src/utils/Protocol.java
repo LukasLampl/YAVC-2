@@ -2,9 +2,10 @@ package utils;
 
 import java.util.ArrayList;
 
-import app.config;
-
 public class Protocol {
+	public static final int VECTOR_HEADER_LENGTH = 7;
+	public static final byte VECTOR_START = (byte)0x01;
+	
 	public static byte getDCTCoeffByte(double coeff) {
 		byte result = (byte)((int)Math.abs(coeff) & 0x7F);
 		
@@ -168,7 +169,7 @@ public class Protocol {
 		
 		for (Vector v : vecs) {
 			int refSize = v.getSize();
-			size += config.VECTOR_HEADER_LENGTH;
+			size += Protocol.VECTOR_HEADER_LENGTH;
 			size += (refSize * refSize) + (2 * ((refSize / 2) * (refSize / 2)));
 		}
 		

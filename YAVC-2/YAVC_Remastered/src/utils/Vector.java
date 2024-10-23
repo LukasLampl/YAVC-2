@@ -140,7 +140,7 @@ public class Vector {
 	 * 
 	 * <p><strong>Warning:</strong><br> The set span might exceed the encoding
 	 * maximum of 8 bits = 255. The offset is excluded
-	 * ({@link app.config#CODING_OFFSET}).</p>
+	 * ({@link app.Protocol#CODING_OFFSET}).</p>
 	 * 
 	 * @param span	Span to the x direction
 	 */
@@ -154,7 +154,7 @@ public class Vector {
 	 * 
 	 * <p><strong>Warning:</strong><br> The set span might exceed the encoding
 	 * maximum of 8 bits = 255. The offset is excluded
-	 * ({@link app.config#CODING_OFFSET}).</p>
+	 * ({@link app.Protocol#CODING_OFFSET}).</p>
 	 * 
 	 * @param span	Span to the y direction
 	 */
@@ -168,7 +168,7 @@ public class Vector {
 	 * was extracted from.</p>
 	 * 
 	 * <p><strong>Warning:</strong><br> The max reference is set by
-	 * {@link app.config#MAX_REFERENCES}.<br>
+	 * {@link app.Protocol#MAX_REFERENCES}.<br>
 	 * <u>The encoding only supports till 4 references into the past!</u></p>
 	 * 
 	 * @param reference	reference frame number
@@ -288,13 +288,20 @@ public class Vector {
 	 * of the absolute color difference to reconstruct the absolute
 	 * color difference by using the IDCT.</p>
 	 * 
+	 * @param allowModificationToOriginalData	Flag for whether the
+	 * original data will be copied before processing or not.
+	 * 
 	 * @return Reconstructed YUV color difference
 	 * 
 	 * @throws NullPointerException	if no DCT-Coefficients were invoked
 	 */
-	public double[][][] getIDCTCoefficientsOfAbsoluteColorDifference() {
+	public double[][][] getIDCTCoefficientsOfAbsoluteColorDifference(boolean allowModificationToOriginalData) {
 		if (this.invokedDCTOfDifferences == false) {
 			throw new NullPointerException("No absolute difference were invoked, NULL DCT-Coefficients to process");
+		}
+		
+		if (allowModificationToOriginalData) {
+			return DCT_ENGINE.computeIDCTOfVectorColorDifference(this.AbsoluteColorDifferenceDCTCoefficients, this.size);
 		}
 		
 		return DCT_ENGINE.computeIDCTOfVectorColorDifference(cloneAbsoluteColorDifference(), this.size);

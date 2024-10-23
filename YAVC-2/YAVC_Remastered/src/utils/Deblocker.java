@@ -47,7 +47,7 @@ public class Deblocker {
 	/**
 	 * <p>Defines the maximum quantity of coefficients the filter can use.</p>
 	 * 
-	 * @see app.config
+	 * @see app.Protocol
 	 */
 	final static int MAX_QUANT = 100;
 	
