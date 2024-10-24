@@ -28,6 +28,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import app.config;
+import interprediction.Vector;
 
 /**
  * <p>The class {@code Deblocker} goes into the

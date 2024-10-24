@@ -6,12 +6,13 @@ import java.util.ArrayList;
 import javax.imageio.ImageIO;
 
 import app.config;
+import interprediction.Vector;
+import interprediction.VectorEngine;
 import utils.Deblocker;
 import utils.MacroBlock;
 import utils.PixelRaster;
 import utils.QueueObject;
 import utils.RenderEngine;
-import utils.Vector;
 
 public class Encoder {
 	public DCTEngine DCT_ENGINE = null;

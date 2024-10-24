@@ -19,13 +19,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package encoder;
+package interprediction;
 
-import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Graphics2D;
 import java.awt.Point;
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.concurrent.Callable;
@@ -37,7 +34,6 @@ import java.util.concurrent.TimeUnit;
 import app.config;
 import utils.MacroBlock;
 import utils.PixelRaster;
-import utils.Vector;
 
 /**
  * <p>The class {@code VectorEngine} contains all functions
@@ -54,6 +50,8 @@ import utils.Vector;
  */
 
 public class VectorEngine {
+	
+	private static final int PIXELS_TO_PROCESS_PER_THREAD = 1024;
 	
 	/**
 	 * <p>Variable to store the PI radian.</p>
@@ -107,23 +105,39 @@ public class VectorEngine {
 		this.TOTAL_MSE = 0;
 		
 		ArrayList<Vector> vecs = new ArrayList<Vector>(blocksToInterpredict.size());
-		ArrayList<Future<Vector>> futureVecs = new ArrayList<Future<Vector>>(blocksToInterpredict.size());
+		ArrayList<Future<Vector[]>> futureVecs = new ArrayList<Future<Vector[]>>(blocksToInterpredict.size());
+		ArrayList<MacroBlock> blocksToRemove = new ArrayList<MacroBlock>();
 		
 		int threads = Runtime.getRuntime().availableProcessors();
 		ExecutorService executor = Executors.newFixedThreadPool(threads);
 		
-		for (MacroBlock block : blocksToInterpredict) {
-			Callable<Vector> searchTask = createVectorSearchTask(refs, block);
+		for (int i = 0, c = 0, n = 0; i < blocksToInterpredict.size(); i++) {
+			n += blocksToInterpredict.get(i).getSquaredSize();
+			
+			if (n < PIXELS_TO_PROCESS_PER_THREAD
+				&& (i + 1) < blocksToInterpredict.size()) {
+				continue;
+			}
+			
+			Callable<Vector[]> searchTask = createVectorSearchTask(refs, blocksToInterpredict, c, i);
 			futureVecs.add(executor.submit(searchTask));
+			n = 0;
+			c = i;
 		}
-		
-		for (Future<Vector> fvec : futureVecs) {
+
+		for (Future<Vector[]> fvec : futureVecs) {
 			try {
-				Vector vec = fvec.get();
+				Vector[] vecArr = fvec.get();
 				
-				if (vec != null) {
-					vecs.add(vec);
-					blocksToInterpredict.remove(vec.getAppendedBlock());
+				if (vecArr != null) {
+					for (Vector vec : vecArr) {
+						if (vec == null) {
+							continue;
+						}
+						
+						vecs.add(vec);
+						blocksToRemove.add(vec.getAppendedBlock());
+					}
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -138,6 +152,7 @@ public class VectorEngine {
 			e.printStackTrace();
 		}
 		
+		blocksToInterpredict.removeAll(blocksToRemove);
 		return vecs;
 	}
 	
@@ -151,20 +166,34 @@ public class VectorEngine {
 	 * @param refs	Reference frames
 	 * @param blockToBeSearched	MacroBlock that should be searched
 	 */
-	private Callable<Vector> createVectorSearchTask(final ArrayList<PixelRaster> refs, MacroBlock blockToBeSearched) {
-		Callable<Vector> task = () -> {
+	private Callable<Vector[]> createVectorSearchTask(final ArrayList<PixelRaster> refs, ArrayList<MacroBlock> blocksToBeSearched, int start, int stop) {
+		Callable<Vector[]> task = () -> {
 			int maxSize = refs.size();
+			int length = stop - start;
 			MacroBlock[] canidates = new MacroBlock[maxSize];
+			Vector[] vecs = new Vector[length];
+			int vectorIndex = 0;
+			int canidate = 0;
 			
-			for (int i = 0, index = 0; i < maxSize && i <= config.MAX_REFERENCES; i++, index++) {
-				MacroBlock bestMatch = getBestMatchingMacroBlock(refs.get(i), blockToBeSearched, i);
-				canidates[index] = bestMatch;
+			for (int i = start; i < stop; i++) {
+				if (i >= blocksToBeSearched.size()) {
+					break;
+				}
+				
+				MacroBlock block = blocksToBeSearched.get(i);
+				canidate = 0;
+				
+				for (int n = 0; n < maxSize && n <= config.MAX_REFERENCES; n++) {
+					MacroBlock bestMatch = getBestMatchingMacroBlock(refs.get(n), block, n);
+					canidates[canidate++] = bestMatch;
+				}
+				
+				MacroBlock best = evaluateBestGuess(canidates);
+				Vector vec = constructMovementVector(refs, best, block);
+				vecs[vectorIndex++] = vec;
 			}
 			
-			MacroBlock best = evaluateBestGuess(canidates);
-			Vector vec = constructMovementVector(refs, best, blockToBeSearched);
-			
-			return vec;
+			return vecs;
 		};
 		
 		return task;
@@ -183,8 +212,9 @@ public class VectorEngine {
 	 * @param referenceNumber	Number of the reference frame
 	 */
 	private MacroBlock getBestMatchingMacroBlock(final PixelRaster ref, MacroBlock blockToBeSearched, final int referenceNumber) {
-		MacroBlock bestMatch = computeHexagonSearch(ref, blockToBeSearched);
-		bestMatch = computeExhaustiveSearch(blockToBeSearched, bestMatch, ref);
+		double[][][] cache = null;
+		MacroBlock bestMatch = computeHexagonSearch(ref, blockToBeSearched, cache);
+		bestMatch = computeExhaustiveSearch(blockToBeSearched, bestMatch, ref, cache);
 		
 		if (bestMatch != null) {
 			bestMatch.setReference(config.MAX_REFERENCES - referenceNumber);
@@ -269,10 +299,11 @@ public class VectorEngine {
 	 * 
 	 * @return Best match in the reference image
 	 * 
-	 * @param ref	Reference image
-	 * @param blockToBeSearched	MacroBlock for which a match should be searched
+	 * @param ref				Reference image.
+	 * @param blockToBeSearched	MacroBlock for which a match should be searched.
+	 * @param cache				Cache for color values.
 	 */
-	private MacroBlock computeHexagonSearch(PixelRaster ref, MacroBlock blockToBeSearched) {
+	private MacroBlock computeHexagonSearch(PixelRaster ref, MacroBlock blockToBeSearched, double[][][] cache) {
 		double lowestMSE = Double.MAX_VALUE;
 		int radius = 4;
 		int searchWindow = 48;
@@ -287,7 +318,6 @@ public class VectorEngine {
 		
 		Point initPos = new Point(0, 0);
 		Point[] searchPoints = new Point[7];
-		double[][][] cache = null;
 		
 		while (radius > 1) {
 			searchPoints = getHexagonPoints(radius, centerPoint);
@@ -404,11 +434,12 @@ public class VectorEngine {
 	 * 
 	 * @return Best match in the reference image
 	 * 
-	 * @param ref	Reference image
+	 * @param ref				Reference image
 	 * @param blockToBeSearched	MacroBlock for which a match should be searched
 	 * @param bestMatchTillNow	Best matching MacroBlock from the previous hexagonal search
+	 * @param cache				Cache for storing color values.
 	 */
-	private MacroBlock computeExhaustiveSearch(MacroBlock blockToSearch, MacroBlock bestMatchTillNow, PixelRaster ref) {
+	private MacroBlock computeExhaustiveSearch(MacroBlock blockToSearch, MacroBlock bestMatchTillNow, PixelRaster ref, double[][][] cache) {
 		if (bestMatchTillNow == null) {
 			return null;
 		}
@@ -419,7 +450,6 @@ public class VectorEngine {
 		Dimension dim = ref.getDimension();
 		MacroBlock mostEqualBlock = null;
 		Point pos = blockToSearch.getPosition();
-		double[][][] cache = null;
 		
 		for (int y = pos.y - searchWindow; y < pos.y + searchWindow; y++) {
 			if (y < 0 || y >= dim.height) {

@@ -19,12 +19,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package utils;
+package interprediction;
 
 import java.awt.Point;
 import java.util.ArrayList;
 
 import encoder.DCTEngine;
+import utils.MacroBlock;
 
 /**
  * <p>The class {@code Vector} is a container structure for storing

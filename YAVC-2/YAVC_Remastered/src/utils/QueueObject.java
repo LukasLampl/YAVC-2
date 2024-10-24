@@ -2,6 +2,8 @@ package utils;
 
 import java.util.ArrayList;
 
+import interprediction.Vector;
+
 public class QueueObject {
 	private ArrayList<Vector> Vectors = null;
 	private ArrayList<MacroBlock> Differences = null;

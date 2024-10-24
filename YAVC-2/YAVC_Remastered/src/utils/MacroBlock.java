@@ -71,6 +71,11 @@ public class MacroBlock {
 	private int size = 0;
 	
 	/**
+	 * <p>Squared size of the MacroBlock.</p>
+	 */
+	private int squared_size = 0;
+	
+	/**
 	 * <p>Sets a flag, whether it is subdivided into 4 more blocks or not.</p>
 	 * <ul><li><b>true</b> = Is subdivided
 	 * <li><b>false</b> = Is not subdivided
@@ -127,6 +132,7 @@ public class MacroBlock {
 		
 		this.position = position;
 		this.size = size;
+		this.squared_size = size * size;
 	}
 	
 	/**
@@ -167,6 +173,7 @@ public class MacroBlock {
 		
 		this.position = position;
 		this.size = size;
+		this.squared_size = size * size;
 		this.Y = Y;
 		this.U = U;
 		this.V = V;
@@ -216,6 +223,7 @@ public class MacroBlock {
 		
 		this.position = position;
 		this.size = size;
+		this.squared_size = size * size;
 		this.Y = colors[0];
 		this.U = colors[1];
 		this.V = colors[2];
@@ -248,6 +256,8 @@ public class MacroBlock {
 			throw new NullPointerException("MacroBlock can't have a NULL Alpha channel");
 		}
 		
+		this.size = Y.length;
+		this.squared_size = this.size * this.size;
 		this.Y = Y;
 		this.U = U;
 		this.V = V;
@@ -416,6 +426,14 @@ public class MacroBlock {
 	 */
 	public int getSize() {
 		return this.size;
+	}
+	
+	/**
+	 * <p>Get the squared size of the MacroBlock.</p>
+	 * @return Squared size of the MacroBlock
+	 */
+	public int getSquaredSize() {
+		return this.squared_size;
 	}
 	
 	/**

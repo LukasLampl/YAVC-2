@@ -9,11 +9,11 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 
+import interprediction.Vector;
 import utils.ColorManager;
 import utils.PixelRaster;
 import utils.Protocol;
 import utils.QueueObject;
-import utils.Vector;
 
 public class OutputStream {
 	private File OUTPUT_FILE = null;

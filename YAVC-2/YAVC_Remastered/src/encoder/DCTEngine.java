@@ -172,7 +172,7 @@ public class DCTEngine {
 	
 	/**
 	 * <p>Computes the DCT Coefficients of the absolute color difference
-	 * received by a vector {@link utils.Vector} First the coefficients are
+	 * received by a vector {@link interprediction.Vector} First the coefficients are
 	 * calculated and then they're quantified.</p>
 	 * 
 	 * <p><strong>IMPORTANT:</strong><br> This function only calculates the DCT coefficients
@@ -225,7 +225,7 @@ public class DCTEngine {
 	
 	/**
 	 * <p>Computes the IDCT Coefficients of the DCT-II coefficients
-	 * received by the converted AbsoluteColorDifference {@link utils.Vector}.
+	 * received by the converted AbsoluteColorDifference {@link interprediction.Vector}.
 	 * First the coefficients are dequantizized and then further processed.</p>
 	 * 
 	 * @return Reconstructed AbsoluteColorDifference array

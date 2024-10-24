@@ -2,6 +2,8 @@ package utils;
 
 import java.util.ArrayList;
 
+import interprediction.Vector;
+
 public class Protocol {
 	public static final int VECTOR_HEADER_LENGTH = 7;
 	public static final byte VECTOR_START = (byte)0x01;

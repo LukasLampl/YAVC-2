@@ -6,9 +6,9 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
 import app.config;
+import interprediction.Vector;
 import utils.PixelRaster;
 import utils.Protocol;
-import utils.Vector;
 
 public class InputProcessor {
 	private Dimension FRAME_DIM = null;
