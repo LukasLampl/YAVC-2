@@ -107,9 +107,7 @@ public class VectorEngine {
 		ArrayList<Vector> vecs = new ArrayList<Vector>(blocksToInterpredict.size());
 		ArrayList<Future<Vector[]>> futureVecs = new ArrayList<Future<Vector[]>>(blocksToInterpredict.size());
 		ArrayList<MacroBlock> blocksToRemove = new ArrayList<MacroBlock>();
-		
-		int threads = Runtime.getRuntime().availableProcessors();
-		ExecutorService executor = Executors.newFixedThreadPool(threads);
+		ExecutorService executor = Executors.newWorkStealingPool();
 		
 		for (int i = 0, c = 0, n = 0; i < blocksToInterpredict.size(); i++) {
 			n += blocksToInterpredict.get(i).getSquaredSize();
@@ -600,7 +598,7 @@ public class VectorEngine {
 		double sizeSQ = size * size;
 		double halfSizeSQ = halfSize * halfSize;
 		
-		resY = (resY / sizeSQ) * 4;
+		resY /= sizeSQ;
 		resU /= halfSizeSQ;
 		resV /= halfSizeSQ;
 		

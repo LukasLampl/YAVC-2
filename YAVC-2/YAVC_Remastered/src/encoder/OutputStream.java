@@ -2,12 +2,12 @@ package encoder;
 
 import java.awt.Dimension;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import interprediction.Vector;
 import utils.ColorManager;
@@ -17,25 +17,39 @@ import utils.QueueObject;
 
 public class OutputStream {
 	private File OUTPUT_FILE = null;
+	private File TEMP_OUTPUT_FILE = null;
 	private boolean canWrite = false;
 	private boolean finishQueue = false;
-	private ArrayList<QueueObject> QUEUE = new ArrayList<QueueObject>();
-	private int fileCounter = 0;
+	private ConcurrentLinkedQueue<QueueObject> QUEUE = new ConcurrentLinkedQueue<QueueObject>();
+	
+	private ArrayList<Integer> indexesOfEachPart = new ArrayList<Integer>();
 	
 	public OutputStream(File file) {
-		File out = new File(file.getAbsolutePath() + "/YAVC-Res.yavc.part");
-		out.mkdir();
-		this.OUTPUT_FILE = out;
+		try {
+			File out = new File(file.getAbsolutePath() + "/YAVC.yavcv");
+			out.createNewFile();
+			
+			File tempOut = new File(file.getAbsolutePath() + "/YAVC_TEMP.yavcv");
+			tempOut.createNewFile();
+			
+			this.OUTPUT_FILE = out;
+			this.TEMP_OUTPUT_FILE = tempOut;
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public void writeMetadata(Dimension dim, int filesCount) {
 		try {
-			String content = "{DIM:" + dim.width + "," + dim.height + "}" +
-							"{FC:" + filesCount + "}";
-			File output = new File(this.OUTPUT_FILE.getAbsolutePath() + "/META.yavc");
-			output.createNewFile();
+			byte[] data = new byte[3 * 4];//4 Bytes per integer.
+			byte[] width = Protocol.getIntBytes(dim.width);
+			byte[] height = Protocol.getIntBytes(dim.height);
+			byte[] numberOfFrames = Protocol.getIntBytes(filesCount);
+			writeBytesToByteArray(width, data, 0);
+			writeBytesToByteArray(height, data, 4);
+			writeBytesToByteArray(numberOfFrames, data, 8);
 			
-			Files.write(Path.of(output.getAbsolutePath()), content.getBytes(), StandardOpenOption.WRITE);
+			Files.write(Path.of(this.OUTPUT_FILE.getAbsolutePath()), data, StandardOpenOption.TRUNCATE_EXISTING);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -59,10 +73,8 @@ public class OutputStream {
 		}
 		
 		try {
-			File output = new File(this.OUTPUT_FILE.getAbsolutePath() + "/SF.yavc");
-			output.createNewFile();
-			
-			Files.write(Path.of(output.getAbsolutePath()), data, StandardOpenOption.TRUNCATE_EXISTING);
+			Files.write(Path.of(this.TEMP_OUTPUT_FILE.getAbsolutePath()), data, StandardOpenOption.TRUNCATE_EXISTING);
+			this.indexesOfEachPart.add(data.length);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -101,9 +113,8 @@ public class OutputStream {
 		}
 
 		try {
-			FileOutputStream outStream = new FileOutputStream(file);
-			outStream.write(data);
-			outStream.close();
+			Files.write(Path.of(file.getAbsolutePath()), data, StandardOpenOption.APPEND);
+			this.indexesOfEachPart.add(data.length);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -140,24 +151,41 @@ public class OutputStream {
 						e.printStackTrace();
 					}
 				} else {
-					try {
-						QueueObject obj = QUEUE.remove(0);
-						File f = new File(OUTPUT_FILE.getAbsolutePath() + "/F" + fileCounter++ + ".yavcf");
-						
-						if (f.createNewFile() == false) {
-							throw new IOException("Couldn't create frame-file \"" + f.getName() + "\"!");
-						}
-						
-						writeVectors(f, obj.getVectors());
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
+					QueueObject obj = this.QUEUE.poll();
+					writeVectors(this.TEMP_OUTPUT_FILE, obj.getVectors());
 				}
 			}
+			
+			writeLens();
+			transferVectors();
 		});
 		
 		writer.setName("YAVC_Frame_Output_Stream");
 		writer.start();
+	}
+	
+	private void writeLens() {
+		byte[] data = new byte[this.indexesOfEachPart.size() * 4];
+		
+		for (int i = 0; i < this.indexesOfEachPart.size(); i++) {
+			byte[] index = Protocol.getIntBytes(this.indexesOfEachPart.get(i));
+			writeBytesToByteArray(index, data, i * 4);
+		}
+		
+		try {
+			Files.write(Path.of(this.OUTPUT_FILE.getAbsolutePath()), data, StandardOpenOption.APPEND);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void transferVectors() {
+		try {
+			Files.write(Path.of(this.OUTPUT_FILE.getAbsolutePath()), Files.readAllBytes(Path.of(this.TEMP_OUTPUT_FILE.getAbsolutePath())), StandardOpenOption.APPEND);
+			this.TEMP_OUTPUT_FILE.delete();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public void shutdown() {

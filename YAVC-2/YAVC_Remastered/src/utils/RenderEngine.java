@@ -157,7 +157,7 @@ public class RenderEngine {
 	 * @see interprediction.Vector
 	 * @see java.awt.Color
 	 */
-	public BufferedImage renderVectors(ArrayList<Vector> vecs, Dimension dim) {
+	public static BufferedImage renderVectors(ArrayList<Vector> vecs, Dimension dim) {
 		BufferedImage render = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D g2d = (Graphics2D)render.createGraphics();
 		g2d.setColor(Color.RED);

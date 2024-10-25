@@ -583,8 +583,8 @@ public class MacroBlock {
 		int[][][] argbs = new int[this.size][this.size][3];
 		ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 		
-		for (int i = 0; i < this.size; i += 32) {
-			for (int j = 0; j < this.size; j += 32) {
+		for (int i = 0; i < this.size; i += 64) {
+			for (int j = 0; j < this.size; j += 64) {
 				executor.submit(create4x4MeansFractionTask(i, j, 32, argbs, meanArgbs));
 			}
 		}

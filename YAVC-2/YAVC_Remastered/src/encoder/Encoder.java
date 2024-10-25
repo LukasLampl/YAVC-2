@@ -8,6 +8,7 @@ import javax.imageio.ImageIO;
 import app.config;
 import interprediction.Vector;
 import interprediction.VectorEngine;
+import quadtree.QuadtreeEngine;
 import utils.Deblocker;
 import utils.MacroBlock;
 import utils.PixelRaster;
@@ -64,11 +65,11 @@ public class Encoder {
 				ArrayList<MacroBlock> quadtreeRoots = QUADTREE_ENGINE.constructQuadtree(curFrame);
 				ArrayList<MacroBlock> leaveNodes = QUADTREE_ENGINE.getLeaveNodes(quadtreeRoots);
 				
-//				BufferedImage[] part = QUADTREE_ENGINE.drawMacroBlocks(leaveNodes, curFrame.getDimension());
+//				BufferedImage[] part = RenderEngine.renderQuadtree(leaveNodes, curFrame.getDimension());
 				leaveNodes = DIFFERENCE_ENGINE.computeDifferences(prevFrame, leaveNodes);
 				ArrayList<Vector> movementVectors = VECTOR_ENGINE.computeMovementVectors(leaveNodes, references);
 				
-//				BufferedImage vectors = VECTOR_ENGINE.drawVectors(movementVectors, curFrame.getDimension());
+//				BufferedImage vectors = RenderEngine.renderVectors(movementVectors, curFrame.getDimension());
 				PixelRaster composite = RenderEngine.renderResult(movementVectors, references, leaveNodes, prevFrame);
 				outStream.addObjectToOutputQueue(new QueueObject(movementVectors, leaveNodes));
 				
@@ -115,7 +116,7 @@ public class Encoder {
 			TOTAL_MSE_ADDITION_COUNT++;
 			
 			for (Vector v : vecs) {
-				vecArea += v.getSize() * v.getSize();
+				vecArea += v.getAppendedBlock().getSquaredSize();
 			}
 			
 			System.out.println("- Vectors: " + vecs.size() + " | Covered area: " + vecArea + "px | Avg. MSE: " + averageMSE);
@@ -125,7 +126,7 @@ public class Encoder {
 			int diffArea = 0;
 			
 			for (MacroBlock b : diffs) {
-				diffArea += b.getSize() * b.getSize();
+				diffArea += b.getSquaredSize();
 			}
 			
 			System.out.println("- Non-Coded blocks: " + diffs.size() + " | Covered area: " + diffArea + "px");
@@ -133,8 +134,8 @@ public class Encoder {
 		
 		System.out.println("- Total Avg. MSE of inter prediction: " + (TOTAL_MSE / TOTAL_MSE_ADDITION_COUNT));
 		
-		int usedMemory = (int)(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory());
-		int memory = usedMemory / (1024 * 1024);
+		int usedMemory = (int)Runtime.getRuntime().totalMemory();
+		int memory = usedMemory / 1000000;
 		System.out.println("- Memory usage: " + memory + "MB");
 	}
 	

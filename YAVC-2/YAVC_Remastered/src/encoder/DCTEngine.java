@@ -47,14 +47,13 @@ public class DCTEngine {
 	/**
 	 * <p>This array stores the pre-calculated cosines to
 	 * ensure a shorter calculation time in further processing.
-	 * The first dimension describes, whether the coefficients
-	 * are DCT-II ([0]) or IDCT ([1]). Followed by that is the
-	 * dimension of the matrix itself with 8x8 at [0], 4x4
-	 * at [1] and 2x2 at [2]. The rest stores the individual
+	 * The order is like this: 8x8 at [0]; 4x4 at [1] and 2x2 at [2].
+	 * The rest stores the individual
 	 * coefficients.</p>
 	 */
-	public static double[][][][][][] DCT_COEFFICIENTS = new double[2][][][][][]; //Position at [0][][][]... is for DCT; Position at [1][][][]... is for IDCT
-
+	public static double[][][][][] DCT_COEFFICIENTS = null;
+	public static double[][][][][] IDCT_COEFFICIENTS = null;
+	
 	/**
 	 * <p>The constructor pre-calculates all cosine values
 	 * to ensure a faster processing time in the next few steps
@@ -72,20 +71,20 @@ public class DCTEngine {
 		try {
 			//Sizes that are used for the DCT in YAVC
 			int[] sizes = {8, 4, 2};
-			DCT_COEFFICIENTS[0] = new double[sizes.length][][][][];
-			DCT_COEFFICIENTS[1] = new double[sizes.length][][][][];
+			DCT_COEFFICIENTS = new double[sizes.length][][][][];
+			IDCT_COEFFICIENTS = new double[sizes.length][][][][];
 			
 			for (int i = 0; i < sizes.length; i++) {
 				int index = i;
 				int m = sizes[index];
-				DCT_COEFFICIENTS[0][i] = new double[m][m][m][m];
-				DCT_COEFFICIENTS[1][i] = new double[m][m][m][m];
+				DCT_COEFFICIENTS[i] = new double[m][m][m][m];
+				IDCT_COEFFICIENTS[i] = new double[m][m][m][m];
 				
 				executor.submit(getDCTCoeffs(m, index));
 			}
 			
 			executor.shutdown();
-			while (!executor.awaitTermination(20, TimeUnit.MICROSECONDS));
+			while (!executor.awaitTermination(20, TimeUnit.MILLISECONDS));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -121,8 +120,8 @@ public class DCTEngine {
 						for (int y = 0; y < m; y++) {
 							double cos2 = Math.cos(((double)(2 * y + 1) * (double)u * Math.PI) / m2);
 							double cos = cos1 * cos2;
-							DCT_COEFFICIENTS[0][index][v][u][x][y] = cos;
-							DCT_COEFFICIENTS[1][index][x][y][v][u] = cos;
+							DCT_COEFFICIENTS[index][v][u][x][y] = cos;
+							IDCT_COEFFICIENTS[index][x][y][v][u] = cos;
 						}
 					}
 				}
@@ -387,7 +386,7 @@ public class DCTEngine {
 
 				for (int x = 0; x < m; x++) {
 					for (int y = 0; y < m; y++) {
-						double cos = DCT_COEFFICIENTS[0][index][v][u][x][y];
+						double cos = DCT_COEFFICIENTS[index][v][u][x][y];
 						sumU += (U[x][y] - 128) * cos;
 						sumV += (V[x][y] - 128) * cos;
 					}
@@ -430,7 +429,7 @@ public class DCTEngine {
 				for (int u = 0; u < m; u++) {
 					for (int v = 0; v < m; v++) {
 						double step = (u == 0 ? steps[0] : steps[1]) * (v == 0 ? steps[0] : steps[1]);
-						double cos = DCT_COEFFICIENTS[1][index][x][y][u][v];
+						double cos = IDCT_COEFFICIENTS[index][x][y][u][v];
 						sumU += U[u][v] * step * cos;
 						sumV += V[u][v] * step * cos;
 					}
@@ -467,7 +466,7 @@ public class DCTEngine {
 				
 				for (int x = 0; x < m; x++) {
 					for (int y = 0; y < m; y++) {
-						double cos = DCT_COEFFICIENTS[0][index][v][u][x][y];
+						double cos = DCT_COEFFICIENTS[index][v][u][x][y];
 						sum += (Y[x][y] - 128) * cos;
 					}
 				}
@@ -503,7 +502,7 @@ public class DCTEngine {
 				for (int u = 0; u < m; u++) {
 					for (int v = 0; v < m; v++) {
 						double step = (u == 0 ? steps[0] : steps[1]) * (v == 0 ? steps[0] : steps[1]);
-						double cos = DCT_COEFFICIENTS[1][index][x][y][u][v];
+						double cos = IDCT_COEFFICIENTS[index][x][y][u][v];
 						sum += Y[u][v] * step * cos;
 					}
 				}

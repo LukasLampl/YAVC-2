@@ -207,4 +207,13 @@ public class Protocol {
 		
 		return new byte[][] {YBytes, UBytes, VBytes};
 	}
+	
+	public static byte[] getIntBytes(int integer) {
+		byte[] arr = new byte[4];
+		arr[0] = (byte)((integer >> 24) & 0xFF);
+		arr[1] = (byte)((integer >> 16) & 0xFF);
+		arr[2] = (byte)((integer >> 8) & 0xFF);
+		arr[3] = (byte)(integer & 0xFF);
+		return arr;
+	}
 }

@@ -25,7 +25,7 @@ public class DifferenceEngine {
 			for (MacroBlock block : leaveNodes) {
 				Callable<MacroBlock> task = () -> {
 					int size = block.getSize();
-					int squaredSize = size * size;
+					int squaredSize = block.getSquaredSize();
 					double[][][] refCols = prevFrame.getPixelBlock(block.getPosition(), size, null);
 					double[][][] curCols = block.getColors();
 					
