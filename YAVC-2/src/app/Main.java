@@ -23,6 +23,8 @@ package app;
 
 import java.util.Arrays;
 
+import javax.swing.JOptionPane;
+
 import encoder.DCTEngine;
 
 public class Main {
@@ -30,6 +32,8 @@ public class Main {
 	
 	public static void main(String [] args) {
 		System.out.println("Args: " + Arrays.toString(args));
+		JOptionPane.showConfirmDialog(null, "Start on confirmation");
+		
 		ArgumentProcessor processor = new ArgumentProcessor();
 		
 		try {

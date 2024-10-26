@@ -45,6 +45,10 @@ import interprediction.Vector;
  */
 
 public class Deblocker {
+	private static int ALPHA_OFFSET = 4;
+	private static int BETA_OFFSET = 51;
+	private static int STRENGTH = 7;
+	
 	/**
 	 * <p>Defines the maximum quantity of coefficients the filter can use.</p>
 	 * 
@@ -64,14 +68,15 @@ public class Deblocker {
 	 * 
 	 * @param movementVecs	Vectors from the inter-prediction step
 	 * @param composite	Frame that has the encoded vectors in it
-	 * @param strength	Strength of the filter
-	 * @param alphaOffset	Offset of the alpha value to the strength
-	 * @param betaOffset	Offset of the beta value to the strength
 	 */
-	public void deblock(ArrayList<Vector> movementVecs, PixelRaster composite, int strength, int alphaOffset, int betaOffset) {
-		int index = clip(strength, 0, MAX_QUANT);
-		int alpha = config.DEBLOCKER_ALPHAS[index + alphaOffset];
-		int beta = config.DEBLOCKER_BETAS[index + betaOffset];
+	public void deblock(ArrayList<Vector> movementVecs, PixelRaster composite) {
+		if (movementVecs.isEmpty()) {
+			return;
+		}
+		
+		int index = clip(STRENGTH, 0, MAX_QUANT);
+		int alpha = config.DEBLOCKER_ALPHAS[index + ALPHA_OFFSET];
+		int beta = config.DEBLOCKER_BETAS[index + BETA_OFFSET];
 		int c = config.DEBLOCKER_CS[index];
 		int threads = Runtime.getRuntime().availableProcessors();
 		ExecutorService executor = Executors.newFixedThreadPool(threads);

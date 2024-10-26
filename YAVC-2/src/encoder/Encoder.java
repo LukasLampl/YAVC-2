@@ -73,12 +73,12 @@ public class Encoder {
 				PixelRaster composite = RenderEngine.renderResult(movementVectors, references, leaveNodes, prevFrame);
 				outStream.addObjectToOutputQueue(new QueueObject(movementVectors, leaveNodes));
 				
-				deblocker.deblock(movementVectors, composite, 7, 4, 51);
+				deblocker.deblock(movementVectors, composite);
 				
 //				ImageIO.write(part[0], "png", new File(output.getAbsolutePath() + "/MB_" + i + ".png"));
 //				ImageIO.write(part[1], "png", new File(output.getAbsolutePath() + "/MBA_" + i + ".png"));
 //				ImageIO.write(vectors, "png", new File(output.getAbsolutePath() + "/V_" + i + ".png"));
-//				ImageIO.write(composite.toBufferedImage(), "png", new File(output.getAbsolutePath() + "/VR_" + i + ".png"));
+//				ImageIO.write(composite.toBufferedImage(), "png", new File(output.getParent() + "/VR_" + i + ".png"));
 				
 				long end = System.currentTimeMillis();
 				long time = end - start;

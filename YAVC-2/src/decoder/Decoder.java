@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import javax.imageio.ImageIO;
 
 import app.config;
+import utils.Deblocker;
 import utils.PixelRaster;
 
 public class Decoder {
@@ -27,7 +28,7 @@ public class Decoder {
 			ArrayList<PixelRaster> refs = new ArrayList<PixelRaster>();
 			refs.add(new PixelRaster(startFrameImg));
 			
-			for (int i = 0; i < 100; i++) {
+			for (int i = 0; i < InputProcessor.FrameCount; i++) {
 				System.out.println("FRAME: " + i + " (" + refs.size() + ")");
 				int lengthOfData = processor.getNextLength();
 				byte[] frame = inputStream.getChunk(lengthOfData);

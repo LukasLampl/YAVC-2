@@ -5,12 +5,14 @@ import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
-import app.config;
 import interprediction.Vector;
+import utils.Deblocker;
 import utils.PixelRaster;
 import utils.Protocol;
+import utils.RenderEngine;
 
 public class InputProcessor {
+	public static int FrameCount = 0;
 	private Dimension FRAME_DIM = null;
 	private ArrayList<Integer> lengthOfFrames = new ArrayList<Integer>();
 	
@@ -25,6 +27,7 @@ public class InputProcessor {
 		int frames = Protocol.getIntFromBytes(parts[2]);
 
 		this.FRAME_DIM = new Dimension(width, height);
+		FrameCount = frames;
 		System.out.println("DIM: " + this.FRAME_DIM);
 		System.out.println("FRAMES: " + frames);
 	}
@@ -65,69 +68,16 @@ public class InputProcessor {
 	
 	public PixelRaster processFrame(byte[] content, ArrayList<PixelRaster> refs) {
 		PixelRaster render = refs.get(refs.size() - 1).copy();
-		
+		Deblocker deblocker = new Deblocker();
 		byte[][] split = splitFirst(content, Protocol.VECTOR_START);
 		ArrayList<Vector> vecs = split.length > 1 ? getVectors(split[1]) : null;
 
 		if (vecs != null) {
-			for (Vector v : vecs) {
-				Point pos = v.getPosition();
-				int EndX = pos.x + v.getSpanX();
-				int EndY = pos.y + v.getSpanY();
-				int reference = config.MAX_REFERENCES - v.getReference();
-				PixelRaster cache = refs.get(reference);
-				double[][][] block = cache.getPixelBlock(pos, v.getSize(), null);
-				double[][][] IDCT = v.getIDCTCoefficientsOfAbsoluteColorDifference(true);
-				double[][][] reconstructedColor = reconstructColors(IDCT, block, v.getSize());
-
-				for (int x = 0; x < v.getSize(); x++) {
-					if (EndX + x >= this.FRAME_DIM.width || EndX + x < 0) {
-						continue;
-					} else if (pos.x + x >= this.FRAME_DIM.width || pos.x + x < 0) {
-						continue;
-					}
-					
-					for (int y = 0; y < v.getSize(); y++) {
-						if (EndY + y >= this.FRAME_DIM.height || EndY + y < 0) {
-							continue;
-						} else if (pos.y + y >= this.FRAME_DIM.height || pos.y + y < 0) {
-							continue;
-						}
-						
-						int subSX = x / 2, subSY = y / 2;
-						double[] YUV = new double[] {reconstructedColor[0][x][y], reconstructedColor[1][subSX][subSY], reconstructedColor[2][subSX][subSY]};
-						render.setYUV(EndX + x, EndY + y, YUV);
-					}
-				}
-			}
+			render = RenderEngine.renderResult(vecs, refs, null, refs.get(refs.size() - 1));
 		}
 
+		deblocker.deblock(vecs, render);
 		return render;
-	}
-	
-	private double[][][] reconstructColors(double[][][] differenceOfColor, double[][][] referenceColor, int size) {
-		int halfSize = size / 2;
-		double[][][] reconstructedColor = new double[3][][];
-		reconstructedColor[0] = new double[size][size];
-		reconstructedColor[1] = new double[halfSize][halfSize];
-		reconstructedColor[2] = new double[halfSize][halfSize];
-		
-		//Reconstruct Y-Comp
-		for (int x = 0; x < size; x++) {
-			for (int y = 0; y < size; y++) {
-				reconstructedColor[0][x][y] = referenceColor[0][x][y] + differenceOfColor[0][x][y];
-			}
-		}
-		
-		//Reconstruct U,V-Comp
-		for (int x = 0; x < halfSize; x++) {
-			for (int y = 0; y < halfSize; y++) {
-				reconstructedColor[1][x][y] = referenceColor[1][x][y] + differenceOfColor[1][x][y];
-				reconstructedColor[2][x][y] = referenceColor[2][x][y] + differenceOfColor[2][x][y];
-			}
-		}
-		
-		return reconstructedColor;
 	}
 	
 	private ArrayList<Vector> getVectors(byte[] vectorPart) {
@@ -227,25 +177,21 @@ public class InputProcessor {
 		int halfSize = size / 2;
 		int YLength = size * size;
 		int UVLength = halfSize * halfSize;
+		int YStart = startPos;
+		int UStart = YStart + YLength;
+		int VStart = UStart + UVLength;
 		
 		double[] YBytes = new double[YLength];
 		double[] UBytes = new double[UVLength];
 		double[] VBytes = new double[UVLength];
 		
 		for (int n = 0; n < YLength; n++) {
-			YBytes[n] = Protocol.getDCTCoeff(vectorPart[startPos + n]);
+			YBytes[n] = Protocol.getDCTCoeff(vectorPart[YStart + n]);
 		}
-		
-		startPos += YLength;
-		
+
 		for (int n = 0; n < UVLength; n++) {
-			UBytes[n] = Protocol.getDCTCoeff(vectorPart[startPos + n]);
-		}
-		
-		startPos += UVLength;
-		
-		for (int n = 0; n < UVLength; n++) {
-			VBytes[n] = Protocol.getDCTCoeff(vectorPart[startPos + n]);
+			UBytes[n] = Protocol.getDCTCoeff(vectorPart[UStart + n]);
+			VBytes[n] = Protocol.getDCTCoeff(vectorPart[VStart + n]);
 		}
 
 		return new double[][] {YBytes, UBytes, VBytes};

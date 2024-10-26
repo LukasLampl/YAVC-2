@@ -215,7 +215,7 @@ public class PixelRaster {
 					argb += (((int)buffer[jumper++] & 0xFF) << 8); //Green
 					argb += (((int)buffer[jumper] & 0xFF) << 16); //Red
 					
-					setThreadSafeYUV(innerX++, innerY, ColorManager.convertRGBToYUV(argb), newInit);
+					setYUV(innerX++, innerY, ColorManager.convertRGBToYUV(argb), newInit);
 				}
 			};
 			
@@ -274,7 +274,7 @@ public class PixelRaster {
 					
 					boolean newInit = (innerX % 2 == 0 && innerY % 2 == 0) ? true : false;
 					int argb = buffer[index + n];
-					setThreadSafeYUV(innerX++, innerY, ColorManager.convertRGBToYUV(argb), newInit);
+					setYUV(innerX++, innerY, ColorManager.convertRGBToYUV(argb), newInit);
 				}
 			};
 			
@@ -403,7 +403,7 @@ public class PixelRaster {
 	 * @throws ArrayIndexOutOfBoundsException	when either the x
 	 * or y coordinate is out of the raster
 	 */
-	public void setThreadSafeYUV(final int x, final int y, final double[] YUV, final boolean invokedUV) {
+	public void setYUV(final int x, final int y, final double[] YUV, final boolean invokedUV) {
 		if (y < 0 || y >= this.dim.height) {
 			throw new ArrayIndexOutOfBoundsException("(Y) " + y + " is out of bounds!");
 		} else if (x < 0 || x >= this.dim.width) {
