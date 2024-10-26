@@ -119,20 +119,28 @@ public class MacroBlock {
 	 * 
 	 * @param position	Position of the MacroBlock based on the PixelRaster
 	 * @param size	Size of the MacroBlock
+	 * @param initColor		Flag for whether the Y, U and V components are initialized or not.
 	 * 
 	 * @throws NullPointerException	When the position is null
 	 * @throws IllegalArgumentException	If the size is below 0
 	 */
-	public MacroBlock(Point position, int size) {
+	public MacroBlock(Point position, int size, boolean initColor) {
 		if (position == null) {
 			throw new NullPointerException("MacroBlock can't have position NULL");
-		} else if (size < 0) {
+		} else if (size < 0 || size > 65535) {
 			throw new IllegalArgumentException("The size of " + size + " is not supported!");
 		}
 		
 		this.position = position;
 		this.size = size;
 		this.squared_size = size * size;
+		
+		if (initColor) {
+			int halfSize = size / 2;
+			this.Y = new double[size][size];
+			this.U = new double[halfSize][halfSize];
+			this.V = new double[halfSize][halfSize];
+		}
 	}
 	
 	/**
@@ -159,7 +167,7 @@ public class MacroBlock {
 	public MacroBlock(Point position, int size, double[][] Y, double[][] U, double[][] V, double[][] A) {
 		if (position == null) {
 			throw new NullPointerException("MacroBlock can't have position NULL");
-		} else if (size < 0) {
+		} else if (size < 0 || size > 65535) {
 			throw new IllegalArgumentException("The size of " + size + " is not supported!");
 		} else if (Y == null) {
 			throw new NullPointerException("MacroBlock can't have a NULL Luma-Y channel");
@@ -209,7 +217,7 @@ public class MacroBlock {
 	public MacroBlock(Point position, int size, double[][][] colors) {
 		if (position == null) {
 			throw new NullPointerException("MacroBlock can't have position NULL");
-		} else if (size < 0) {
+		} else if (size < 0 || size > 65535) {
 			throw new IllegalArgumentException("The size of " + size + " is not supported!");
 		} else if (colors[0] == null) {
 			throw new NullPointerException("MacroBlock can't have a NULL Luma-Y channel");

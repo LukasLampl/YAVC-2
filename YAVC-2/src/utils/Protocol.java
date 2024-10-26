@@ -5,11 +5,11 @@ import java.util.ArrayList;
 import interprediction.Vector;
 
 public class Protocol {
-	public static final int VECTOR_HEADER_LENGTH = 7;
-	public static final byte VECTOR_START = (byte)0x01;
-	
 	public static final int SIZE_OF_INT = 4;
 	public static final int META_DATA_LEN = 3 * SIZE_OF_INT;
+	
+	public static final int VECTOR_HEADER_LENGTH = 7;
+	public static final int RAW_BLOCK_HEADER_LENGTH = 5;
 	
 	public static byte getDCTCoeffByte(double coeff) {
 		byte result = (byte)((int)Math.abs(coeff) & 0x7F);

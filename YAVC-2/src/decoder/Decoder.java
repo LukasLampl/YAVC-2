@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import javax.imageio.ImageIO;
 
 import app.config;
-import utils.Deblocker;
 import utils.PixelRaster;
 
 public class Decoder {
@@ -30,9 +29,11 @@ public class Decoder {
 			
 			for (int i = 0; i < InputProcessor.FrameCount; i++) {
 				System.out.println("FRAME: " + i + " (" + refs.size() + ")");
-				int lengthOfData = processor.getNextLength();
-				byte[] frame = inputStream.getChunk(lengthOfData);
-				PixelRaster result = processor.processFrame(frame, refs);
+				int lengthOfVectors = processor.getNextLength();
+				int lengthOfRawBlocks = processor.getNextLength();
+				byte[] vectors = inputStream.getChunk(lengthOfVectors);
+				byte[] rawBlocks = inputStream.getChunk(lengthOfRawBlocks);
+				PixelRaster result = processor.processFrame(vectors, rawBlocks, refs);
 				
 				ImageIO.write(result.toBufferedImage(), "png", new File(output.getAbsolutePath() + "/R_" + i + ".png"));
 				refs.add(result);

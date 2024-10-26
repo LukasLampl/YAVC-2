@@ -1,6 +1,7 @@
 package encoder;
 
 import java.awt.Dimension;
+import java.awt.Point;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -11,6 +12,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import interprediction.Vector;
 import utils.ColorManager;
+import utils.MacroBlock;
 import utils.PixelRaster;
 import utils.Protocol;
 import utils.QueueObject;
@@ -78,11 +80,58 @@ public class OutputStream {
 		}
 	}
 	
-	private void writeVectors(File file, ArrayList<Vector> vecs) {
-		int size = Protocol.calculateSize(vecs) + 1; //+1 for the VECTOR_START byte
-		int currentIndex = 1;
+	private void writeRawBlocks(File file, ArrayList<MacroBlock> blocks) {
+		int size = 0;
+		
+		for (MacroBlock b : blocks) {
+			size += (b.getSquaredSize() * 3) + Protocol.RAW_BLOCK_HEADER_LENGTH;
+		}
+		
 		byte[] data = new byte[size];
-		data[0] = Protocol.VECTOR_START;
+		int currentIndex = 0;
+		
+		for (MacroBlock block : blocks) {
+			Point pos = block.getPosition();
+			byte[] posX = Protocol.getPositionBytes(pos.x);
+			byte[] posY = Protocol.getPositionBytes(pos.y);
+			byte sizeBytes = Protocol.getReferenceAndSizeByte(0, block.getSize());
+			byte[] differences = new byte[block.getSquaredSize() * 3];
+			
+			for (int x = 0, index = 0; x < block.getSize(); x++) {
+				for (int y = 0; y < block.getSize(); y++) {
+					int argb = ColorManager.convertYUVToRGB(block.getYUV(x, y));
+					byte r = (byte)((argb >> 16) & 0xFF);
+					byte g = (byte)((argb >> 8) & 0xFF);
+					byte b = (byte)(argb & 0xFF);
+					differences[index] = r;
+					differences[index + 1] = g;
+					differences[index + 2] = b;
+					index += 3;
+				}
+			}
+			
+			writeBytesToByteArray(posX, data, currentIndex);
+			currentIndex += posX.length;
+			writeBytesToByteArray(posY, data, currentIndex);
+			currentIndex += posY.length;
+			data[currentIndex] = sizeBytes;
+			currentIndex += 1;
+			writeBytesToByteArray(differences, data, currentIndex);
+			currentIndex += differences.length;
+		}
+		
+		try {
+			Files.write(Path.of(file.getAbsolutePath()), data, StandardOpenOption.APPEND);
+			this.indexesOfEachPart.add(data.length);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void writeVectors(File file, ArrayList<Vector> vecs) {
+		int size = Protocol.calculateSize(vecs);
+		int currentIndex = 0;
+		byte[] data = new byte[size];
 		
 		if (vecs == null) {
 			throw new NullPointerException("No vectors were passed for writing.");
@@ -151,6 +200,7 @@ public class OutputStream {
 				} else {
 					QueueObject obj = this.QUEUE.poll();
 					writeVectors(this.TEMP_OUTPUT_FILE, obj.getVectors());
+					writeRawBlocks(this.TEMP_OUTPUT_FILE, obj.getDifferences());
 				}
 			}
 			

@@ -6,7 +6,9 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
 import interprediction.Vector;
+import utils.ColorManager;
 import utils.Deblocker;
+import utils.MacroBlock;
 import utils.PixelRaster;
 import utils.Protocol;
 import utils.RenderEngine;
@@ -66,18 +68,52 @@ public class InputProcessor {
 		return render;
 	}
 	
-	public PixelRaster processFrame(byte[] content, ArrayList<PixelRaster> refs) {
+	public PixelRaster processFrame(byte[] content, byte[] rawBlocks, ArrayList<PixelRaster> refs) {
 		PixelRaster render = refs.get(refs.size() - 1).copy();
 		Deblocker deblocker = new Deblocker();
-		byte[][] split = splitFirst(content, Protocol.VECTOR_START);
-		ArrayList<Vector> vecs = split.length > 1 ? getVectors(split[1]) : null;
+		ArrayList<Vector> vecs = content.length > 1 ? getVectors(content) : null;
+		ArrayList<MacroBlock> blocks = getRawBlocks(rawBlocks);
 
 		if (vecs != null) {
-			render = RenderEngine.renderResult(vecs, refs, null, refs.get(refs.size() - 1));
+			render = RenderEngine.renderResult(vecs, refs, blocks, refs.get(refs.size() - 1));
 		}
 
 		deblocker.deblock(vecs, render);
 		return render;
+	}
+	
+	private ArrayList<MacroBlock> getRawBlocks(byte[] rawBlocks) {
+		ArrayList<MacroBlock> blocks = new ArrayList<MacroBlock>();
+		int i = 0;
+		
+		while (i < rawBlocks.length) {
+			int posX = Protocol.getPosition(rawBlocks[i], rawBlocks[i + 1]);
+			int posY = Protocol.getPosition(rawBlocks[i + 2], rawBlocks[i + 3]);
+			int[] sizeBytes = Protocol.getReferenceAndSizeInt(rawBlocks[i + 4]);
+			int size = sizeBytes[1];
+			int length = size * size * 3;
+			MacroBlock block = new MacroBlock(new Point(posX, posY), size, true);
+			int x = 0;
+			int y = 0;
+			
+			for (int n = Protocol.RAW_BLOCK_HEADER_LENGTH; n < length + Protocol.RAW_BLOCK_HEADER_LENGTH; n += 3) {
+				int r = rawBlocks[n] & 0xFF;
+				int g = rawBlocks[n + 1] & 0xFF;
+				int b = rawBlocks[n + 2] & 0xFF;
+				int argb = (0xFF000000 | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF));
+				block.setYUV(x++, y, ColorManager.convertRGBToYUV(argb));
+				
+				if (x >= size) {
+					x = 0;
+					y++;
+				}
+			}
+			
+			i += Protocol.RAW_BLOCK_HEADER_LENGTH + length;
+			blocks.add(block);
+		}
+		
+		return blocks;
 	}
 	
 	private ArrayList<Vector> getVectors(byte[] vectorPart) {
