@@ -21,61 +21,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package app;
 
-import java.io.File;
+import java.util.Arrays;
 
-import javax.swing.JFileChooser;
-
-import decoder.Decoder;
 import encoder.DCTEngine;
-import encoder.Encoder;
 
 public class Main {
 	public static DCTEngine DCT_ENGINE = new DCTEngine();
-	private static boolean encode = false;
 	
 	public static void main(String [] args) {
-		if (encode) {
-			JFileChooser jfc = new JFileChooser();
-			jfc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-			jfc.showDialog(null, null);
-			
-			if (jfc.getSelectedFile() == null) {
-				return;
-			}
-			
-			File in = jfc.getSelectedFile();
-			
-			jfc.showDialog(null, null);
-			
-			if (jfc.getSelectedFile() == null) {
-				return;
-			}
-			
-			File out = jfc.getSelectedFile();
-			
-			Encoder encoder = new Encoder(DCT_ENGINE);
-			encoder.encode(in, out);
-		} else {
-			JFileChooser jfc = new JFileChooser();
-			jfc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-			jfc.showDialog(null, null);
-			
-			if (jfc.getSelectedFile() == null) {
-				return;
-			}
-			
-			File in = jfc.getSelectedFile();
-			
-			jfc.showDialog(null, null);
-			
-			if (jfc.getSelectedFile() == null) {
-				return;
-			}
-			
-			File out = jfc.getSelectedFile();
-			
-			Decoder decoder = new Decoder();
-			decoder.decode(in, out);
+		System.out.println("Args: " + Arrays.toString(args));
+		ArgumentProcessor processor = new ArgumentProcessor();
+		
+		try {
+			processor.processArgs(args);
+			processor.run();
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 }

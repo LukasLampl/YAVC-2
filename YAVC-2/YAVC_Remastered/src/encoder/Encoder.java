@@ -26,7 +26,7 @@ public class Encoder {
 	}
 	
 	public void encode(File input, File output) {
-		OutputStream outStream = new OutputStream(new File(input.getParent()));
+		OutputStream outStream = new OutputStream(output);
 		Deblocker deblocker = new Deblocker();
 		
 		ArrayList<PixelRaster> references = new ArrayList<PixelRaster>(config.MAX_REFERENCES);

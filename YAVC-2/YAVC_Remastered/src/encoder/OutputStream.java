@@ -24,15 +24,14 @@ public class OutputStream {
 	
 	private ArrayList<Integer> indexesOfEachPart = new ArrayList<Integer>();
 	
-	public OutputStream(File file) {
-		try {
-			File out = new File(file.getAbsolutePath() + "/YAVC.yavcv");
-			out.createNewFile();
+	public OutputStream(File output) {
+		try {			
+			File dir = new File(output.getParent());
 			
-			File tempOut = new File(file.getAbsolutePath() + "/YAVC_TEMP.yavcv");
+			File tempOut = new File(dir.getAbsolutePath() + "/YAVC_TEMP.yavcv");
 			tempOut.createNewFile();
 			
-			this.OUTPUT_FILE = out;
+			this.OUTPUT_FILE = output;
 			this.TEMP_OUTPUT_FILE = tempOut;
 		} catch (IOException e) {
 			e.printStackTrace();
