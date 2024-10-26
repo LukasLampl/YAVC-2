@@ -41,14 +41,13 @@ public class OutputStream {
 	
 	public void writeMetadata(Dimension dim, int filesCount) {
 		try {
-			byte[] data = new byte[3 * 4];//4 Bytes per integer.
+			byte[] data = new byte[Protocol.META_DATA_LEN];//4 Bytes per integer.
 			byte[] width = Protocol.getIntBytes(dim.width);
 			byte[] height = Protocol.getIntBytes(dim.height);
 			byte[] numberOfFrames = Protocol.getIntBytes(filesCount);
 			writeBytesToByteArray(width, data, 0);
 			writeBytesToByteArray(height, data, 4);
 			writeBytesToByteArray(numberOfFrames, data, 8);
-			
 			Files.write(Path.of(this.OUTPUT_FILE.getAbsolutePath()), data, StandardOpenOption.TRUNCATE_EXISTING);
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -165,11 +164,17 @@ public class OutputStream {
 	}
 	
 	private void writeLens() {
-		byte[] data = new byte[this.indexesOfEachPart.size() * 4];
+		byte[] data = new byte[this.indexesOfEachPart.size() * Protocol.SIZE_OF_INT + Protocol.SIZE_OF_INT];
+		int currentIndex = 0;
 		
-		for (int i = 0; i < this.indexesOfEachPart.size(); i++) {
-			byte[] index = Protocol.getIntBytes(this.indexesOfEachPart.get(i));
-			writeBytesToByteArray(index, data, i * 4);
+		byte[] lenOfIndexes = Protocol.getIntBytes(this.indexesOfEachPart.size());
+		writeBytesToByteArray(lenOfIndexes, data, currentIndex);
+		currentIndex += Protocol.SIZE_OF_INT;
+		
+		for (int i : this.indexesOfEachPart) {
+			byte[] index = Protocol.getIntBytes(i);
+			writeBytesToByteArray(index, data, currentIndex);
+			currentIndex += Protocol.SIZE_OF_INT;
 		}
 		
 		try {

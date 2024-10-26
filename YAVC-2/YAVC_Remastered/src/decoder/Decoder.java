@@ -15,21 +15,25 @@ public class Decoder {
 		InputStream inputStream = new InputStream(input);
 		InputProcessor processor = new InputProcessor();
 		processor.proessMetadata(inputStream.getMetadata());
+		int lenOfIndexes = processor.initFrameReader(inputStream.getNumberOfIndexes());
+		processor.getIndexes(inputStream.getIndexes(lenOfIndexes));
 		
-		byte[] startFrame = inputStream.getStartFrame();
+		int lengthOfStartFrame = processor.getNextLength();
+		byte[] startFrame = inputStream.getChunk(lengthOfStartFrame);
 		BufferedImage startFrameImg = processor.constructStartFrame(startFrame);
 		
 		try {
-			ImageIO.write(startFrameImg, "png", new File(input.getAbsolutePath() + "/SF.png"));
+			ImageIO.write(startFrameImg, "png", new File(output.getAbsolutePath() + "/SF.png"));
 			ArrayList<PixelRaster> refs = new ArrayList<PixelRaster>();
 			refs.add(new PixelRaster(startFrameImg));
 			
 			for (int i = 0; i < 100; i++) {
 				System.out.println("FRAME: " + i + " (" + refs.size() + ")");
-				byte[] frame = inputStream.getFrame(i);
+				int lengthOfData = processor.getNextLength();
+				byte[] frame = inputStream.getChunk(lengthOfData);
 				PixelRaster result = processor.processFrame(frame, refs);
 				
-				ImageIO.write(result.toBufferedImage(), "png", new File(input.getAbsolutePath() + "/R_" + i + ".png"));
+				ImageIO.write(result.toBufferedImage(), "png", new File(output.getAbsolutePath() + "/R_" + i + ".png"));
 				refs.add(result);
 				manageReferences(refs);
 			}

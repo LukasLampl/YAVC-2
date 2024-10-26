@@ -31,30 +31,51 @@ import encoder.Encoder;
 
 public class Main {
 	public static DCTEngine DCT_ENGINE = new DCTEngine();
+	private static boolean encode = false;
 	
 	public static void main(String [] args) {
-		JFileChooser jfc = new JFileChooser();
-		jfc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-		jfc.showDialog(null, null);
-		
-		if (jfc.getSelectedFile() == null) {
-			return;
+		if (encode) {
+			JFileChooser jfc = new JFileChooser();
+			jfc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+			jfc.showDialog(null, null);
+			
+			if (jfc.getSelectedFile() == null) {
+				return;
+			}
+			
+			File in = jfc.getSelectedFile();
+			
+			jfc.showDialog(null, null);
+			
+			if (jfc.getSelectedFile() == null) {
+				return;
+			}
+			
+			File out = jfc.getSelectedFile();
+			
+			Encoder encoder = new Encoder(DCT_ENGINE);
+			encoder.encode(in, out);
+		} else {
+			JFileChooser jfc = new JFileChooser();
+			jfc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+			jfc.showDialog(null, null);
+			
+			if (jfc.getSelectedFile() == null) {
+				return;
+			}
+			
+			File in = jfc.getSelectedFile();
+			
+			jfc.showDialog(null, null);
+			
+			if (jfc.getSelectedFile() == null) {
+				return;
+			}
+			
+			File out = jfc.getSelectedFile();
+			
+			Decoder decoder = new Decoder();
+			decoder.decode(in, out);
 		}
-		
-		File in = jfc.getSelectedFile();
-		
-		jfc.showDialog(null, null);
-		
-		if (jfc.getSelectedFile() == null) {
-			return;
-		}
-		
-		File out = jfc.getSelectedFile();
-		
-		Encoder encoder = new Encoder(DCT_ENGINE);
-		encoder.encode(in, out);
-		
-//		Decoder decoder = new Decoder();
-//		decoder.decode(in, out);
 	}
 }

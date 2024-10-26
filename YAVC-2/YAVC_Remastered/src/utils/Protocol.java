@@ -8,6 +8,9 @@ public class Protocol {
 	public static final int VECTOR_HEADER_LENGTH = 7;
 	public static final byte VECTOR_START = (byte)0x01;
 	
+	public static final int SIZE_OF_INT = 4;
+	public static final int META_DATA_LEN = 3 * SIZE_OF_INT;
+	
 	public static byte getDCTCoeffByte(double coeff) {
 		byte result = (byte)((int)Math.abs(coeff) & 0x7F);
 		
@@ -214,6 +217,37 @@ public class Protocol {
 		arr[1] = (byte)((integer >> 16) & 0xFF);
 		arr[2] = (byte)((integer >> 8) & 0xFF);
 		arr[3] = (byte)(integer & 0xFF);
+		return arr;
+	}
+	
+	public static int getIntFromBytes(byte[] data) {
+		int num = 0;
+		num |= (data[0] & 0xFF) << 24;
+		num |= (data[1] & 0xFF) << 16;
+		num |= (data[2] & 0xFF) << 8;
+		num |= data[3] & 0xFF;
+		return num;
+	}
+	
+	public static byte[][] splitArrayEvenly(byte[] data, int sizeOfChunk) {
+		int estimatedLen = data.length / sizeOfChunk;
+		byte[][] arr = new byte[estimatedLen][];
+		int index = 0;
+		
+		for (int i = 0; i < data.length; i += sizeOfChunk) {
+			byte[] subArr = new byte[sizeOfChunk];
+			
+			for (int n = 0; n < sizeOfChunk; n++) {
+				if (i + n >= data.length) {
+					continue;
+				}
+				
+				subArr[n] = data[i + n];
+			}
+			
+			arr[index++] = subArr;
+		}
+		
 		return arr;
 	}
 }

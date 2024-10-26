@@ -12,22 +12,38 @@ import utils.Protocol;
 
 public class InputProcessor {
 	private Dimension FRAME_DIM = null;
+	private ArrayList<Integer> lengthOfFrames = new ArrayList<Integer>();
 	
-	public void proessMetadata(String stream) {
-		int dimPos = stream.indexOf("DIM:") + 4;
-		String part = "";
-		
-		for (int i = dimPos; i < stream.length(); i++) {
-			if (stream.charAt(i) == '}') {
-				break;
-			}
-			
-			part += stream.charAt(i);
+	public void proessMetadata(byte[] stream) {
+		if (stream.length < Protocol.META_DATA_LEN) {
+			throw new IllegalArgumentException("Metadata has to be " + 4 + " bytes long.");
 		}
 		
-		String[] dimSizes = part.split(",");
-		this.FRAME_DIM = new Dimension(Integer.parseInt(dimSizes[0]), Integer.parseInt(dimSizes[1]));
-		System.out.println(this.FRAME_DIM);
+		byte[][] parts = Protocol.splitArrayEvenly(stream, Protocol.SIZE_OF_INT);
+		int width = Protocol.getIntFromBytes(parts[0]);
+		int height = Protocol.getIntFromBytes(parts[1]);
+		int frames = Protocol.getIntFromBytes(parts[2]);
+
+		this.FRAME_DIM = new Dimension(width, height);
+		System.out.println("DIM: " + this.FRAME_DIM);
+		System.out.println("FRAMES: " + frames);
+	}
+	
+	public int initFrameReader(byte[] stream) {
+		return Protocol.getIntFromBytes(stream);
+	}
+	
+	public void getIndexes(byte[] stream) {
+		byte[][] data = Protocol.splitArrayEvenly(stream, Protocol.SIZE_OF_INT);
+		
+		for (byte[] byteNum : data) {
+			int length = Protocol.getIntFromBytes(byteNum);
+			this.lengthOfFrames.add(length);
+		}
+	}
+	
+	public int getNextLength() {
+		return this.lengthOfFrames.remove(0);
 	}
 	
 	public BufferedImage constructStartFrame(byte[] data) {
