@@ -31,7 +31,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import utils.MacroBlock;
-import utils.MeanStructure;
 import utils.PixelRaster;
 
 /**
@@ -94,7 +93,6 @@ public class QuadtreeEngine {
 		
 		try {
 			final int errorThreshold = 45;
-			int currentOrderNumber = 0;
 			int width = currentFrame.getWidth();
 			int height = currentFrame.getHeight();
 			int threads = Runtime.getRuntime().availableProcessors();
@@ -104,8 +102,7 @@ public class QuadtreeEngine {
 			
 			for (int x = 0; x < width; x += this.MAX_SIZE) {
 				for (int y = 0; y < height; y += this.MAX_SIZE) {
-					final int currentOrder = currentOrderNumber++;
-					Callable<MacroBlock> task = createQuadtreeConstructionTask(new Point(x, y), currentFrame, errorThreshold, currentOrder);
+					Callable<MacroBlock> task = createQuadtreeConstructionTask(new Point(x, y), currentFrame, errorThreshold);
 					futureRoots.add(executor.submit(task));
 				}
 			}
@@ -123,7 +120,7 @@ public class QuadtreeEngine {
 			}
 			
 			executor.shutdown();
-			while (!executor.awaitTermination(10, TimeUnit.MICROSECONDS));
+			while (!executor.awaitTermination(5, TimeUnit.MILLISECONDS));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -141,24 +138,14 @@ public class QuadtreeEngine {
 	 * @param errorThreshold	Maximum error before subdivision
 	 * @param currentOrder	Order of the root
 	 */
-	private Callable<MacroBlock> createQuadtreeConstructionTask(final Point pos, final PixelRaster frame, final int errorThreshold, final int currentOrder) {
+	private Callable<MacroBlock> createQuadtreeConstructionTask(final Point pos, final PixelRaster frame, final int errorThreshold) {
 		Callable<MacroBlock> task = () -> {
 			MacroBlock origin = new MacroBlock(new Point(pos.x, pos.y), this.MAX_SIZE, false);
-			double[][][] comps = frame.getPixelBlock(new Point(pos.x, pos.y), this.MAX_SIZE, null);
+			double[][][] comps = frame.getPixelBlock(new Point(pos.x, pos.y), origin.getSize(), null);
 			origin.setColorComponents(comps[0], comps[1], comps[2], comps[3]);
-			origin.setOrder(currentOrder);
 			
-			MeanStructure meanOf4x4BlocksInBlock = origin.calculate4x4Means();
-			int[] curMean = origin.calculateMeanOfCurrentBlock(meanOf4x4BlocksInBlock.get4x4Means(), new Point(0, 0), this.MAX_SIZE);
-			double originStdDeviation = origin.computeStandardDeviation(curMean, meanOf4x4BlocksInBlock.getArgbs(), new Point(0, 0), this.MAX_SIZE);
-			origin.setMeanColor(curMean);
-			
-			if (originStdDeviation > errorThreshold
-				|| pos.x + this.MAX_SIZE > frame.getWidth()
-				|| pos.y + this.MAX_SIZE > frame.getHeight()) {
-				origin.subdivide(errorThreshold, 0, meanOf4x4BlocksInBlock.get4x4Means(), meanOf4x4BlocksInBlock.getArgbs(), frame.getDimension(), new Point(0, 0));
-			}
-			
+			QuadtreeTask treeTask = new QuadtreeTask();
+			treeTask.splitOriginBlock(origin, frame.getDimension(), errorThreshold);
 			return origin;
 		};
 		
