@@ -96,10 +96,10 @@ public class VectorEngine {
 	 * @see utils.Vector
 	 */
 	public ArrayList<Vector> computeMovementVectors(final ArrayList<MacroBlock> blocksToInterpredict, final ArrayList<PixelRaster> refs) {
-		if (blocksToInterpredict == null || blocksToInterpredict.size() == 0) {
+		if (blocksToInterpredict == null) {
 			throw new NullPointerException("No blocks to inter-predict");
 		} else if (refs == null || refs.size() == 0) {
-			throw new NullPointerException("No reference frame to refere to");
+			throw new NullPointerException("No reference frame to refer to");
 		}
 		
 		this.TOTAL_MSE = 0;
