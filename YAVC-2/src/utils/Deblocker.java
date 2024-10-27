@@ -95,7 +95,7 @@ public class Deblocker {
 		executor.shutdown();
 		
 		try {
-			while (!executor.awaitTermination(20, TimeUnit.MICROSECONDS));
+			while (!executor.awaitTermination(20, TimeUnit.MILLISECONDS));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
