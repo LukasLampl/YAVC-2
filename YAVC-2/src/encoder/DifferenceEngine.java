@@ -14,6 +14,10 @@ import utils.MacroBlock;
 import utils.PixelRaster;
 
 public class DifferenceEngine {
+	private static final double DELTA_Y = 1.4;
+	private static final double DELTA_U = 3.2;
+	private static final double DELTA_V = 3.2;
+	
 	public ArrayList<MacroBlock> computeDifferences(PixelRaster prevFrame, ArrayList<MacroBlock> leaveNodes) {
 		ArrayList<MacroBlock> diffs = new ArrayList<MacroBlock>(leaveNodes.size() / 2);
 		ArrayList<Future<MacroBlock>> futureDiffs = new ArrayList<Future<MacroBlock>>(leaveNodes.size() / 2);
@@ -50,7 +54,7 @@ public class DifferenceEngine {
 					sumU /= squaredSize;
 					sumV /= squaredSize;
 					
-					if (sumY > 1.55 || sumU > 3.6 || sumV > 3.6) {
+					if (sumY > DELTA_Y || sumU > DELTA_U || sumV > DELTA_V) {
 						return block;
 					}
 					
