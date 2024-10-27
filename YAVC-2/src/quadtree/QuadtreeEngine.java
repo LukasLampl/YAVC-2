@@ -120,7 +120,7 @@ public class QuadtreeEngine {
 			}
 			
 			executor.shutdown();
-			while (!executor.awaitTermination(5, TimeUnit.MILLISECONDS));
+			while (!executor.awaitTermination(1, TimeUnit.MILLISECONDS));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -165,32 +165,42 @@ public class QuadtreeEngine {
 	 */
 	public ArrayList<MacroBlock> getLeaveNodes(ArrayList<MacroBlock> roots) {
 		if (roots == null) {
-			throw new NullPointerException("No QuadtreeRoots to process");
+			throw new NullPointerException("No QuadtreeRoots to process.");
 		}
 		
 		ArrayList<MacroBlock> leaveNodes = new ArrayList<MacroBlock>();
-		ArrayList<Future<ArrayList<MacroBlock>>> futureLeavesList = new ArrayList<Future<ArrayList<MacroBlock>>>();
-		int threads = Runtime.getRuntime().availableProcessors();
-		ExecutorService executor = Executors.newFixedThreadPool(threads);
 
-		for (MacroBlock root : roots) {
-			Callable<ArrayList<MacroBlock>> task = () -> {
-				return getLeaves(root);
-			};
-			
-			futureLeavesList.add(executor.submit(task));
-		}
-		
-		for (Future<ArrayList<MacroBlock>> flist : futureLeavesList) {
-			try {
-				ArrayList<MacroBlock> nodes = flist.get();
-				if (nodes != null) leaveNodes.addAll(nodes);
-			} catch (Exception e) {
-				e.printStackTrace();
+		try {
+			ArrayList<Future<ArrayList<MacroBlock>>> futureLeavesList = new ArrayList<Future<ArrayList<MacroBlock>>>();
+			int threads = Runtime.getRuntime().availableProcessors();
+			ExecutorService executor = Executors.newFixedThreadPool(threads);
+	
+			for (MacroBlock root : roots) {
+				Callable<ArrayList<MacroBlock>> task = () -> {
+					return getLeaves(root);
+				};
+				
+				futureLeavesList.add(executor.submit(task));
 			}
+			
+			for (Future<ArrayList<MacroBlock>> flist : futureLeavesList) {
+				try {
+					ArrayList<MacroBlock> nodes = flist.get();
+					
+					if (nodes != null) {
+						leaveNodes.addAll(nodes);
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+			
+			executor.shutdown();
+			while (!executor.awaitTermination(1, TimeUnit.MILLISECONDS));
+		} catch (InterruptedException e) {
+			e.printStackTrace();
 		}
 		
-		executor.shutdown();
 		return leaveNodes;
 	}
 	
