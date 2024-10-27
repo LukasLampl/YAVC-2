@@ -9,7 +9,12 @@ public class Protocol {
 	public static final int META_DATA_LEN = 3 * SIZE_OF_INT;
 	
 	public static final int VECTOR_HEADER_LENGTH = 7;
+	public static final int VECTOR_SIZE_CHECK_LENGTH = SIZE_OF_INT;
 	public static final int RAW_BLOCK_HEADER_LENGTH = 5;
+	public static final int RAW_BLOCK_SIZE_CHECK_LENGTH = SIZE_OF_INT;
+	
+	public static final byte VECTOR_INDICATOR = (byte)0xF0;
+	public static final byte RAW_BLOCK_INDICATOR = (byte)0xA0;
 	
 	public static byte getDCTCoeffByte(double coeff) {
 		byte result = (byte)((int)Math.abs(coeff) & 0x7F);
@@ -31,11 +36,14 @@ public class Protocol {
 		return (double)result;
 	}
 	
-	public static byte[] getVectorSpanBytes(int spanX, int spanY) {
+	public static byte[] getVectorSpanBytes(int spanX, int spanY) throws IllegalArgumentException {
+		if (spanX > 127 || spanY > 127
+			|| spanX < -127 || spanY < -127) {
+			throw new IllegalArgumentException("Span has to be in this boundary: -127 >= span <= 127.");
+		}
+		
 		byte bytespany = (byte)((int)Math.abs(spanY) & 0x7F);
 		byte bytespanx = (byte)((int)Math.abs(spanX) & 0x7F);
-		
-		if (bytespany > 127 || bytespanx > 127) System.err.println("Span to big (|Span| > 127)!");
 		
 		if (spanY < 0) {
 			bytespany = (byte)((1 << 7) | bytespany);
@@ -170,7 +178,7 @@ public class Protocol {
 	}
 	
 	public static int calculateSize(ArrayList<Vector> vecs) {
-		int size = 0;
+		int size = Protocol.VECTOR_SIZE_CHECK_LENGTH;
 		
 		for (Vector v : vecs) {
 			int refSize = v.getSize();
