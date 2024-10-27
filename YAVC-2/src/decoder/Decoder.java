@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import javax.imageio.ImageIO;
 
 import app.config;
+import exceptions.CorruptedFileException;
+import exceptions.WrongBlockAssignedException;
 import utils.PixelRaster;
 
 public class Decoder {
@@ -24,10 +26,11 @@ public class Decoder {
 		
 		try {
 			ImageIO.write(startFrameImg, "png", new File(output.getAbsolutePath() + "/SF.png"));
+			int totalLen = InputProcessor.FrameCount - 1; //-1 Because of SF (Start frame)
 			ArrayList<PixelRaster> refs = new ArrayList<PixelRaster>();
 			refs.add(new PixelRaster(startFrameImg));
 			
-			for (int i = 0; i < InputProcessor.FrameCount; i++) {
+			for (int i = 0; i < totalLen; i++) {
 				System.out.println("FRAME: " + i + " (" + refs.size() + ")");
 				int lengthOfVectors = processor.getNextLength();
 				int lengthOfRawBlocks = processor.getNextLength();
@@ -40,6 +43,10 @@ public class Decoder {
 				manageReferences(refs);
 			}
 		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (CorruptedFileException e) {
+			e.printStackTrace();
+		} catch (WrongBlockAssignedException e) {
 			e.printStackTrace();
 		}
 	}

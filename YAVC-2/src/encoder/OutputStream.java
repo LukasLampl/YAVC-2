@@ -56,7 +56,7 @@ public class OutputStream {
 	}
 	
 	public void writeStartFrame(PixelRaster raster) {
-		byte[] data = new byte[raster.getWidth() * raster.getHeight() * 3];
+		byte[] data = new byte[raster.getWidth() * raster.getHeight() * 3 + 1];
 		int index = 0;
 		
 		for (int x = 0; x < raster.getWidth(); x++) {
@@ -81,7 +81,7 @@ public class OutputStream {
 	}
 	
 	private void writeRawBlocks(File file, ArrayList<MacroBlock> blocks) {
-		int size = 0;
+		int size = Protocol.RAW_BLOCK_SIZE_CHECK_LENGTH;
 		
 		for (MacroBlock b : blocks) {
 			size += (b.getSquaredSize() * 3) + Protocol.RAW_BLOCK_HEADER_LENGTH;
@@ -89,6 +89,8 @@ public class OutputStream {
 		
 		byte[] data = new byte[size];
 		int currentIndex = 0;
+		writeBytesToByteArray(Protocol.getIntBytes(blocks.size()), data, currentIndex);
+		currentIndex += Protocol.RAW_BLOCK_SIZE_CHECK_LENGTH;
 		
 		for (MacroBlock block : blocks) {
 			Point pos = block.getPosition();
@@ -97,8 +99,8 @@ public class OutputStream {
 			byte sizeBytes = Protocol.getReferenceAndSizeByte(0, block.getSize());
 			byte[] differences = new byte[block.getSquaredSize() * 3];
 			
-			for (int x = 0, index = 0; x < block.getSize(); x++) {
-				for (int y = 0; y < block.getSize(); y++) {
+			for (int y = 0, index = 0; y < block.getSize(); y++) {
+				for (int x = 0; x < block.getSize(); x++) {
 					int argb = ColorManager.convertYUVToRGB(block.getYUV(x, y));
 					byte r = (byte)((argb >> 16) & 0xFF);
 					byte g = (byte)((argb >> 8) & 0xFF);
@@ -129,13 +131,15 @@ public class OutputStream {
 	}
 	
 	private void writeVectors(File file, ArrayList<Vector> vecs) {
-		int size = Protocol.calculateSize(vecs);
-		int currentIndex = 0;
-		byte[] data = new byte[size];
-		
 		if (vecs == null) {
 			throw new NullPointerException("No vectors were passed for writing.");
 		}
+		
+		int size = Protocol.calculateSize(vecs);
+		int currentIndex = 0;
+		byte[] data = new byte[size];
+		writeBytesToByteArray(Protocol.getIntBytes(vecs.size()), data, currentIndex);
+		currentIndex += Protocol.VECTOR_SIZE_CHECK_LENGTH;
 		
 		for (Vector v : vecs) {
 			byte[] posX = Protocol.getPositionBytes(v.getPosition().x);

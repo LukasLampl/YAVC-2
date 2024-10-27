@@ -3,8 +3,14 @@ package decoder;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 
+import javax.imageio.ImageIO;
+
+import exceptions.CorruptedFileException;
+import exceptions.WrongBlockAssignedException;
 import interprediction.Vector;
 import utils.ColorManager;
 import utils.Deblocker;
@@ -67,36 +73,70 @@ public class InputProcessor {
 		
 		return render;
 	}
-	
-	public PixelRaster processFrame(byte[] content, byte[] rawBlocks, ArrayList<PixelRaster> refs) {
+	private int calls = 0;
+	public PixelRaster processFrame(byte[] content, byte[] rawBlocks, ArrayList<PixelRaster> refs) throws CorruptedFileException, WrongBlockAssignedException {
 		PixelRaster render = refs.get(refs.size() - 1).copy();
 		Deblocker deblocker = new Deblocker();
-		ArrayList<Vector> vecs = content.length > 1 ? getVectors(content) : null;
+		ArrayList<Vector> vecs = content.length > 1 ? getVectors(content) : new ArrayList<Vector>();
 		ArrayList<MacroBlock> blocks = getRawBlocks(rawBlocks);
-
+		
+		////////////////////////////////////////////////////////////////
+		ArrayList<MacroBlock> all = new ArrayList<MacroBlock>();
+		all.addAll(blocks);
+		
+		for (Vector v : vecs) {
+			Point p = new Point(v.getPosition().x + v.getSpanX(), v.getPosition().y + v.getSpanY());
+			MacroBlock b = new MacroBlock(p, v.getSize(), false);
+			all.add(b);
+		}
+		
+		for (MacroBlock b : all) {
+			Point p = b.getPosition();
+			if (p.getX() == 144 && p.getY() == 0) {
+				System.err.println("YES: " + b.getSize());
+			}
+		}
+		
+		System.out.println(">>> Vecs: " + vecs.size());
+		System.out.println(">>> Raw: " + blocks.size());
+		System.out.println(">>> ALL: " + all.size());
+		BufferedImage[] sideRen = RenderEngine.renderQuadtree(all, this.FRAME_DIM);
+		BufferedImage vectorImg = RenderEngine.renderVectors(vecs, FRAME_DIM);
+		try {
+			ImageIO.write(vectorImg, "png", new File("C:\\Users\\Lukas Lampl\\Documents\\Frames Conv\\V_" + calls + ".png"));
+			ImageIO.write(sideRen[0], "png", new File("C:\\Users\\Lukas Lampl\\Documents\\Frames Conv\\MB_" + calls++ + ".png"));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		////////////////////////////////////////////////////////////////
+		
 		if (vecs != null) {
 			render = RenderEngine.renderResult(vecs, refs, blocks, refs.get(refs.size() - 1));
 		}
 
-		deblocker.deblock(vecs, render);
+		deblocker.deblock(vecs, render);		
 		return render;
 	}
 	
-	private ArrayList<MacroBlock> getRawBlocks(byte[] rawBlocks) {
+	private ArrayList<MacroBlock> getRawBlocks(byte[] rawBlocks) throws CorruptedFileException, WrongBlockAssignedException {
 		ArrayList<MacroBlock> blocks = new ArrayList<MacroBlock>();
 		int i = 0;
+		byte[] lenOfBlocks = {rawBlocks[0], rawBlocks[1], rawBlocks[2], rawBlocks[3]};
+		int estimatedLength = Protocol.getIntFromBytes(lenOfBlocks);
+		i += Protocol.RAW_BLOCK_SIZE_CHECK_LENGTH;
 		
 		while (i < rawBlocks.length) {
 			int posX = Protocol.getPosition(rawBlocks[i], rawBlocks[i + 1]);
 			int posY = Protocol.getPosition(rawBlocks[i + 2], rawBlocks[i + 3]);
 			int[] sizeBytes = Protocol.getReferenceAndSizeInt(rawBlocks[i + 4]);
 			int size = sizeBytes[1];
-			int length = size * size * 3;
 			MacroBlock block = new MacroBlock(new Point(posX, posY), size, true);
+			int length = block.getSquaredSize() * 3;
+			int offset = i + Protocol.RAW_BLOCK_HEADER_LENGTH;
 			int x = 0;
 			int y = 0;
 			
-			for (int n = Protocol.RAW_BLOCK_HEADER_LENGTH; n < length + Protocol.RAW_BLOCK_HEADER_LENGTH; n += 3) {
+			for (int n = offset; n < length + offset; n += 3) {
 				int r = rawBlocks[n] & 0xFF;
 				int g = rawBlocks[n + 1] & 0xFF;
 				int b = rawBlocks[n + 2] & 0xFF;
@@ -113,15 +153,17 @@ public class InputProcessor {
 			blocks.add(block);
 		}
 		
+		if (blocks.size() != estimatedLength) {
+			throw new CorruptedFileException("The amount of the read-in raw-blocks appears to be unequal to the written raw-blocks.");
+		}
+		
 		return blocks;
 	}
 	
-	private ArrayList<Vector> getVectors(byte[] vectorPart) {
+	private ArrayList<Vector> getVectors(byte[] vectorPart) throws CorruptedFileException, WrongBlockAssignedException {
 		ArrayList<Vector> vecs = new ArrayList<Vector>();
 		
-		if (vectorPart == null) {
-			return vecs;
-		} else if (vectorPart.length <= 1) {
+		if (vectorPart.length <= 1) {
 			return vecs;
 		}
 		
@@ -130,6 +172,9 @@ public class InputProcessor {
 		// ^_____________________________________________________^
 		//                      = 7 Bytes offset
 		int i = 0;
+		byte[] lenOfVecs = {vectorPart[0], vectorPart[1], vectorPart[2], vectorPart[3]};
+		int estimatedLength = Protocol.getIntFromBytes(lenOfVecs);
+		i += Protocol.VECTOR_SIZE_CHECK_LENGTH;
 
 		while (i < vectorPart.length) {
 			int posX = Protocol.getPosition(vectorPart[i], vectorPart[i + 1]);
@@ -150,6 +195,10 @@ public class InputProcessor {
 			vec.setSpanY(spanY);
 			vec.setReference(ref);
 			vecs.add(vec);
+		}
+		
+		if (vecs.size() != estimatedLength) {
+			throw new CorruptedFileException("The amount of the read-in vectors appears to be unequal to the written vectors.");
 		}
 		
 		return vecs;
@@ -231,25 +280,5 @@ public class InputProcessor {
 		}
 
 		return new double[][] {YBytes, UBytes, VBytes};
-	}
-	
-	private byte[][] splitFirst(byte[] data, byte regex) {
-		byte[][] res = new byte[2][];
-		
-		for (int i = 0; i < data.length; i++) {
-			if (data[i] != regex) {
-				continue;
-			}
-			
-			byte[] head = new byte[i];
-			byte[] tail = new byte[data.length - (i + 1)];
-			System.arraycopy(data, 0, head, 0, i);
-			System.arraycopy(data, i + 1, tail, 0, data.length - (i + 1));
-			res[0] = head;
-			res[1] = tail;
-			break;
-		}
-		
-		return res;
 	}
 }
