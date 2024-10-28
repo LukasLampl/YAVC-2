@@ -1,11 +1,11 @@
-package decoder;
+package app.decoder;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
-import utils.Protocol;
+import app.utils.Protocol;
 
 public class InputStream {
 	private FileInputStream fis = null;

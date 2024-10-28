@@ -1,4 +1,4 @@
-package encoder;
+package app.encoder;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -6,14 +6,14 @@ import java.util.ArrayList;
 import javax.imageio.ImageIO;
 
 import app.config;
-import interprediction.Vector;
-import interprediction.VectorEngine;
-import quadtree.QuadtreeEngine;
-import utils.Deblocker;
-import utils.MacroBlock;
-import utils.PixelRaster;
-import utils.QueueObject;
-import utils.RenderEngine;
+import app.interprediction.Vector;
+import app.interprediction.VectorEngine;
+import app.quadtree.QuadtreeEngine;
+import app.utils.Deblocker;
+import app.utils.MacroBlock;
+import app.utils.PixelRaster;
+import app.utils.QueueObject;
+import app.utils.RenderEngine;
 
 public class Encoder {
 	public DCTEngine DCT_ENGINE = null;

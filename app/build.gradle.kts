@@ -34,7 +34,18 @@ java {
 
 application {
     // Define the main class for the application.
-    mainClass = "org.example.App"
+    mainClass = "app.Main"
+}
+
+tasks.jar {
+        manifest.attributes["Main-Class"] = application.mainClass
+        from("configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }")
+        manifest.attributes["Class-Path"] = configurations
+        .runtimeClasspath
+        .get()
+        .joinToString(separator = " ") { file ->
+            "libs/${file.name}"
+        }
 }
 
 tasks.named<Test>("test") {

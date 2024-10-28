@@ -1,8 +1,8 @@
-package utils;
+package app.utils;
 
 import java.util.ArrayList;
 
-import interprediction.Vector;
+import app.interprediction.Vector;
 
 public class Protocol {
 	public static final int SIZE_OF_INT = 4;

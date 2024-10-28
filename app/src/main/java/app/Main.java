@@ -25,7 +25,7 @@ import java.util.Arrays;
 
 import javax.swing.JOptionPane;
 
-import encoder.DCTEngine;
+import app.encoder.DCTEngine;
 
 public class Main {
 	public static DCTEngine DCT_ENGINE = new DCTEngine();

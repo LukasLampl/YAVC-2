@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package quadtree;
+package app.quadtree;
 
 import java.awt.Dimension;
 import java.awt.Point;
@@ -30,8 +30,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import utils.MacroBlock;
-import utils.PixelRaster;
+import app.utils.MacroBlock;
+import app.utils.PixelRaster;
 
 /**
  * <p>
@@ -50,8 +50,8 @@ import utils.PixelRaster;
  * Time: O(n)
  * </p>
  * 
- * @see utils.MacroBlock
- * @see utils.PixelRaster
+ * @see app.utils.MacroBlock
+ * @see app.utils.PixelRaster
  * 
  * @author Lukas Lampl
  * @since 17.0
@@ -67,7 +67,7 @@ public class QuadtreeEngine {
 	 * in an individual subdividing process in the block itself.
 	 * 
 	 * First the roots are searched and initialized using
-	 * {@link utils.PixelRaster#getPixelBlock(Point, int, double[][][])}.
+	 * {@link app.utils.PixelRaster#getPixelBlock(Point, int, double[][][])}.
 	 * After that the block is imaginary split into 4x4 blocks, of which the mean
 	 * color is acquired, while also getting the RGB information of the
 	 * whole block. Now the standardDeviation is used to determine,
@@ -75,7 +75,7 @@ public class QuadtreeEngine {
 	 * preserving quality. If not or the size is to big, the block gets
 	 * split. For further details on the splitting section
 	 * 
-	 * @see utils.MacroBlock#subdivide(double, int, int[][], int[][][], Dimension, Point)
+	 * @see app.utils.MacroBlock#subdivide(double, int, int[][], int[][][], Dimension, Point)
 	 * 
 	 * @return ArrayList<MacroBlock> => All QuadtreeRoots
 	 * 

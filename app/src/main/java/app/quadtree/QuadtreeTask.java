@@ -1,4 +1,4 @@
-package quadtree;
+package app.quadtree;
 
 import java.awt.Dimension;
 import java.awt.Point;
@@ -6,9 +6,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import utils.ColorManager;
-import utils.MacroBlock;
-import utils.MeanStructure;
+import app.utils.ColorManager;
+import app.utils.MacroBlock;
+import app.utils.MeanStructure;
 
 public class QuadtreeTask {
 	private MeanStructure meanOf4x4Blocks = null;

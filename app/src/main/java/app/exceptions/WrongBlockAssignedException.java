@@ -1,4 +1,4 @@
-package exceptions;
+package app.exceptions;
 
 public class WrongBlockAssignedException extends Exception {
 	private static final long serialVersionUID = -997523861183991250L;

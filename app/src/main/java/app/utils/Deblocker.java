@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package utils;
+package app.utils;
 
 import java.awt.Point;
 import java.util.ArrayList;
@@ -28,7 +28,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import app.config;
-import interprediction.Vector;
+import app.interprediction.Vector;
 
 /**
  * <p>The class {@code Deblocker} goes into the
@@ -40,8 +40,8 @@ import interprediction.Vector;
  * @since 17.0
  * @version 1.0 31 May 2024
  * 
- * @see utils.PixelRaster
- * @see utils.MacroBlock
+ * @see app.utils.PixelRaster
+ * @see app.utils.MacroBlock
  */
 
 public class Deblocker {

@@ -1,4 +1,4 @@
-package encoder;
+package app.encoder;
 
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
@@ -9,9 +9,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import utils.ColorManager;
-import utils.MacroBlock;
-import utils.PixelRaster;
+import app.utils.ColorManager;
+import app.utils.MacroBlock;
+import app.utils.PixelRaster;
 
 public class DifferenceEngine {
 	private static final double DELTA_Y = 1.4;

@@ -1,4 +1,4 @@
-package utils;
+package app.utils;
 
 public class MeanStructure {
 	private int[][] meanArgbs = null;

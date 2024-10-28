@@ -1,4 +1,4 @@
-package decoder;
+package app.decoder;
 
 import java.awt.Dimension;
 import java.awt.Point;
@@ -9,15 +9,15 @@ import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
 
-import exceptions.CorruptedFileException;
-import exceptions.WrongBlockAssignedException;
-import interprediction.Vector;
-import utils.ColorManager;
-import utils.Deblocker;
-import utils.MacroBlock;
-import utils.PixelRaster;
-import utils.Protocol;
-import utils.RenderEngine;
+import app.exceptions.CorruptedFileException;
+import app.exceptions.WrongBlockAssignedException;
+import app.interprediction.Vector;
+import app.utils.ColorManager;
+import app.utils.Deblocker;
+import app.utils.MacroBlock;
+import app.utils.PixelRaster;
+import app.utils.Protocol;
+import app.utils.RenderEngine;
 
 public class InputProcessor {
 	public static int FrameCount = 0;
@@ -73,42 +73,12 @@ public class InputProcessor {
 		
 		return render;
 	}
-	private int calls = 0;
+	
 	public PixelRaster processFrame(byte[] content, byte[] rawBlocks, ArrayList<PixelRaster> refs) throws CorruptedFileException, WrongBlockAssignedException {
 		PixelRaster render = refs.get(refs.size() - 1).copy();
 		Deblocker deblocker = new Deblocker();
 		ArrayList<Vector> vecs = content.length > 1 ? getVectors(content) : new ArrayList<Vector>();
 		ArrayList<MacroBlock> blocks = getRawBlocks(rawBlocks);
-		
-		////////////////////////////////////////////////////////////////
-		ArrayList<MacroBlock> all = new ArrayList<MacroBlock>();
-		all.addAll(blocks);
-		
-		for (Vector v : vecs) {
-			Point p = new Point(v.getPosition().x + v.getSpanX(), v.getPosition().y + v.getSpanY());
-			MacroBlock b = new MacroBlock(p, v.getSize(), false);
-			all.add(b);
-		}
-		
-		for (MacroBlock b : all) {
-			Point p = b.getPosition();
-			if (p.getX() == 144 && p.getY() == 0) {
-				System.err.println("YES: " + b.getSize());
-			}
-		}
-		
-		System.out.println(">>> Vecs: " + vecs.size());
-		System.out.println(">>> Raw: " + blocks.size());
-		System.out.println(">>> ALL: " + all.size());
-		BufferedImage[] sideRen = RenderEngine.renderQuadtree(all, this.FRAME_DIM);
-		BufferedImage vectorImg = RenderEngine.renderVectors(vecs, FRAME_DIM);
-		try {
-			ImageIO.write(vectorImg, "png", new File("C:\\Users\\Lukas Lampl\\Documents\\Frames Conv\\V_" + calls + ".png"));
-			ImageIO.write(sideRen[0], "png", new File("C:\\Users\\Lukas Lampl\\Documents\\Frames Conv\\MB_" + calls++ + ".png"));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		////////////////////////////////////////////////////////////////
 		
 		if (vecs != null) {
 			render = RenderEngine.renderResult(vecs, refs, blocks, refs.get(refs.size() - 1));

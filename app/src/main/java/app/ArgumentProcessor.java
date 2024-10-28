@@ -7,8 +7,8 @@ import java.util.HashMap;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import decoder.Decoder;
-import encoder.Encoder;
+import app.decoder.Decoder;
+import app.encoder.Encoder;
 
 public class ArgumentProcessor {
 	public static final String INPUT_DEL = "-i";

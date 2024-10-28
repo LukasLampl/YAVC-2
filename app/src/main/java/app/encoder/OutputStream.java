@@ -1,4 +1,4 @@
-package encoder;
+package app.encoder;
 
 import java.awt.Dimension;
 import java.awt.Point;
@@ -10,12 +10,12 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import interprediction.Vector;
-import utils.ColorManager;
-import utils.MacroBlock;
-import utils.PixelRaster;
-import utils.Protocol;
-import utils.QueueObject;
+import app.interprediction.Vector;
+import app.utils.ColorManager;
+import app.utils.MacroBlock;
+import app.utils.PixelRaster;
+import app.utils.Protocol;
+import app.utils.QueueObject;
 
 public class OutputStream {
 	private File OUTPUT_FILE = null;

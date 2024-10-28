@@ -1,4 +1,4 @@
-package utils;
+package app.utils;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -11,7 +11,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import app.config;
-import interprediction.Vector;
+import app.interprediction.Vector;
 
 public class RenderEngine {
 	public static PixelRaster renderResult(ArrayList<Vector> vecs, ArrayList<PixelRaster> refs, ArrayList<MacroBlock> diffs, PixelRaster prevFrame) {
@@ -154,7 +154,7 @@ public class RenderEngine {
 	 * @param vecs	Vectors to draw
 	 * @param dim	Dimension of the frame
 	 * 
-	 * @see interprediction.Vector
+	 * @see app.interprediction.Vector
 	 * @see java.awt.Color
 	 */
 	public static BufferedImage renderVectors(ArrayList<Vector> vecs, Dimension dim) {

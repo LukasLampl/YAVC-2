@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package interprediction;
+package app.interprediction;
 
 import java.awt.Dimension;
 import java.awt.Point;
@@ -32,8 +32,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import app.config;
-import utils.MacroBlock;
-import utils.PixelRaster;
+import app.utils.MacroBlock;
+import app.utils.PixelRaster;
 
 /**
  * <p>The class {@code VectorEngine} contains all functions

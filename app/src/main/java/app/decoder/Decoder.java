@@ -1,4 +1,4 @@
-package decoder;
+package app.decoder;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -8,9 +8,9 @@ import java.util.ArrayList;
 import javax.imageio.ImageIO;
 
 import app.config;
-import exceptions.CorruptedFileException;
-import exceptions.WrongBlockAssignedException;
-import utils.PixelRaster;
+import app.exceptions.CorruptedFileException;
+import app.exceptions.WrongBlockAssignedException;
+import app.utils.PixelRaster;
 
 public class Decoder {
 	public void decode(File input, File output) {
