@@ -1,5 +1,6 @@
 package app.encoder;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
 
@@ -51,7 +52,8 @@ public class Encoder {
 				}
 				
 				if (prevFrame == null) {
-					prevFrame = new PixelRaster(ImageIO.read(frameFile));
+					BufferedImage inputImg = ImageIO.read(frameFile);
+					prevFrame = new PixelRaster(inputImg);
 //					futureFrame = new PixelRaster(ImageIO.read(getAwaitedFile(input, i + 1, ".bmp")));
 					outStream.writeMetadata(prevFrame.getDimension(), files - 1);
 					outStream.writeStartFrame(prevFrame);
@@ -59,33 +61,55 @@ public class Encoder {
 					continue;
 				}
 				
-				curFrame = new PixelRaster(ImageIO.read(frameFile));
+				long start_t = System.currentTimeMillis();
+				BufferedImage inputImg = ImageIO.read(frameFile);
+				long end_t = System.currentTimeMillis();
+				System.out.println("IO: " + (end_t - start_t) + "ms");
+				curFrame = new PixelRaster(inputImg);
 //				futureFrame = new PixelRaster(ImageIO.read(getAwaitedFile(input, i + 1, ".bmp")));
 				
+				long start_construct_quadtree = System.currentTimeMillis();
 				ArrayList<MacroBlock> quadtreeRoots = QUADTREE_ENGINE.constructQuadtree(curFrame);
+				long end_construct_quadtree = System.currentTimeMillis();
+				long start_get_leave_nodes = System.currentTimeMillis();
 				ArrayList<MacroBlock> leaveNodes = QUADTREE_ENGINE.getLeaveNodes(quadtreeRoots);
+				long end_get_leave_nodes = System.currentTimeMillis();
 				
 //				BufferedImage[] part = RenderEngine.renderQuadtree(leaveNodes, curFrame.getDimension());
+				long start_difference = System.currentTimeMillis();
 				leaveNodes = DIFFERENCE_ENGINE.computeDifferences(prevFrame, leaveNodes);
+				long end_difference = System.currentTimeMillis();
 //				BufferedImage[] part = RenderEngine.renderQuadtree(leaveNodes, curFrame.getDimension());
 				
+				long start_vector_movement = System.currentTimeMillis();
 				ArrayList<Vector> movementVectors = VECTOR_ENGINE.computeMovementVectors(leaveNodes, references);
+				long end_vector_movement = System.currentTimeMillis();
 				
 //				BufferedImage vectors = RenderEngine.renderVectors(movementVectors, curFrame.getDimension());
+				long start_render = System.currentTimeMillis();
 				PixelRaster composite = RenderEngine.renderResult(movementVectors, references, leaveNodes, prevFrame);
 				outStream.addObjectToOutputQueue(new QueueObject(movementVectors, leaveNodes));
+//				ImageIO.write(composite.toBufferedImage(), "png", new File(output.getParent() + "/VR_" + i + ".png"));
+				long end_render = System.currentTimeMillis();
 				
+				long start_deblock = System.currentTimeMillis();
 				deblocker.deblock(movementVectors, composite);
+				long end_deblock = System.currentTimeMillis();
 				
 //				ImageIO.write(part[0], "png", new File(output.getParent() + "/MB_" + i + ".png"));
 //				ImageIO.write(part[1], "png", new File(output.getParent() + "/MBA_" + i + ".png"));
 //				ImageIO.write(vectors, "png", new File(output.getParent() + "/V_" + i + ".png"));
-				ImageIO.write(composite.toBufferedImage(), "png", new File(output.getParent() + "/VR_" + i + ".png"));
 				
 				long end = System.currentTimeMillis();
 				long time = end - start;
+				long quadtreeConstructionTime = (end_construct_quadtree - start_construct_quadtree);
+				long leaveNodesTime = (end_get_leave_nodes - start_get_leave_nodes);
+				long differenceTime = (end_difference - start_difference);
+				long vectorTime = (end_vector_movement - start_vector_movement);
+				long renderTime = (end_render - start_render);
+				long deblockTime = (end_deblock - start_deblock);
 				sumOfMilliSeconds += time;
-				printStatistics(time, sumOfMilliSeconds, i, movementVectors, leaveNodes);
+				printStatistics(time, sumOfMilliSeconds, i, movementVectors, leaveNodes, quadtreeConstructionTime, leaveNodesTime, differenceTime, vectorTime, renderTime, deblockTime);
 				
 				references.add(composite.copy());
 				prevFrame = composite.copy();
@@ -106,11 +130,21 @@ public class Encoder {
 	private static double TOTAL_MSE = 0;
 	private static int TOTAL_MSE_ADDITION_COUNT = 0;
 	
-	private void printStatistics(long time, long fullTime, int index, ArrayList<Vector> vecs, ArrayList<MacroBlock> diffs) {
+	private void printStatistics(long time, long fullTime, int index, ArrayList<Vector> vecs, ArrayList<MacroBlock> diffs,
+			long quadtreeConstructionTime, long leaveNodeTime, long differenceTime, long vectorTime, long renderTime, long deblockTime) {
+		long startOutput = System.currentTimeMillis();
 		System.out.println("");
 		System.out.println("Frame " + index + ":");
 		System.out.println("- Time: " + time + "ms | Avg. time: " + (fullTime / index) + "ms");
-
+		System.out.println("   > Quadtree construction time: " + quadtreeConstructionTime + "ms");
+		System.out.println("   > Leave node time: " + leaveNodeTime + "ms");
+		System.out.println("   > Difference analysis time: " + differenceTime + "ms");
+		System.out.println("   > Vector calculation time: " + vectorTime + "ms");
+		System.out.println("   > Rendering time of frame (with coding errors): " + renderTime + "ms");
+		System.out.println("   > Deblocking filter time: " + deblockTime + "ms");
+		System.out.println("   >>>>>>>>>> Sum (process only, no output): " + (quadtreeConstructionTime + leaveNodeTime + differenceTime + vectorTime + renderTime + deblockTime) + "ms");
+		System.out.println();
+		
 		if (vecs != null) {
 			int vecArea = 0;
 			double averageMSE = (VECTOR_ENGINE.getVectorMSE() / vecs.size());
@@ -139,6 +173,8 @@ public class Encoder {
 		int usedMemory = (int)Runtime.getRuntime().totalMemory();
 		int memory = usedMemory / 1000000;
 		System.out.println("- Memory usage: " + memory + "MB");
+		long endOutput = System.currentTimeMillis();
+		System.out.println("- Total time used for writing statistics: " + (endOutput - startOutput) + "ms");
 	}
 	
 	private void manageReferences(ArrayList<?> references) {

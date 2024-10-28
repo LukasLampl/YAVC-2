@@ -38,8 +38,9 @@ public class DifferenceEngine {
 					double sumV = 0;
 					
 					for (int x = 0; x < size; x++) {
+						int subSX = x / 2;
+						
 						for (int y = 0; y < size; y++) {
-							int subSX = x / 2;
 							int subSY = y / 2;
 							double deltaY = refCols[0][x][y] - curCols[0][x][y];
 							double deltaU = refCols[1][subSX][subSY] - curCols[1][subSX][subSY];
@@ -77,32 +78,11 @@ public class DifferenceEngine {
 			}
 			
 			executor.shutdown();
-			while (!executor.awaitTermination(20, TimeUnit.NANOSECONDS));
+			while (!executor.awaitTermination(250, TimeUnit.MICROSECONDS));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		
 		return diffs;
-	}
-	
-	public BufferedImage drawDifferences(ArrayList<MacroBlock> leaves, Dimension dim) {
-		BufferedImage render = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
-		
-		for (MacroBlock b : leaves) {
-			for (int x = 0; x < b.getSize(); x++) {
-				for (int y = 0; y < b.getSize(); y++) {
-					if (x + b.getPosition().x >= dim.width
-						|| x + b.getPosition().x < 0
-						|| y + b.getPosition().y >= dim.height
-						|| y + b.getPosition().y < 0) {
-						continue;
-					}
-					
-					render.setRGB(x + b.getPosition().x, y + b.getPosition().y, ColorManager.convertYUVToRGB(b.getYUV(x, y)));
-				}
-			}
-		}
-		
-		return render;
 	}
 }

@@ -27,6 +27,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import app.config;
+import app.utils.MathUtils;
 
 /**
  * <p>The class {@code DCTEngine} contains basic functions 
@@ -44,6 +45,26 @@ import app.config;
  */
 
 public class DCTEngine {
+	private static double[] STEP_X_EQUALS_ZERO = new double[] { 
+			 1.0 / Math.sqrt(2),
+			 1.0 / Math.sqrt(4),
+			 1.0 / Math.sqrt(8),
+			 1.0 / Math.sqrt(16),
+			 1.0 / Math.sqrt(32),
+			 1.0 / Math.sqrt(64),
+			 1.0 / Math.sqrt(128)
+	};
+	
+	private static double[] STEP_X_NOT_EQUALS_ZERO = new double[] {
+				1.0,
+				Math.sqrt(2.0 / 4.0),
+				Math.sqrt(2.0 / 8.0),
+				Math.sqrt(2.0 / 16.0),
+				Math.sqrt(2.0 / 32.0),
+				Math.sqrt(2.0 / 64.0),
+				Math.sqrt(2.0 / 128.0),
+	};
+
 	/**
 	 * <p>This array stores the pre-calculated cosines to
 	 * ensure a shorter calculation time in further processing.
@@ -53,7 +74,7 @@ public class DCTEngine {
 	 */
 	public static double[][][][][] DCT_COEFFICIENTS = null;
 	public static double[][][][][] IDCT_COEFFICIENTS = null;
-	
+
 	/**
 	 * <p>The constructor pre-calculates all cosine values
 	 * to ensure a faster processing time in the next few steps
@@ -142,7 +163,34 @@ public class DCTEngine {
 	 * @param m	size of the coefficient matrix
 	 */
 	private double step(int x, int m) {
-		return x == 0 ? 1 / Math.sqrt(m) : Math.sqrt(2.0 / (double)m);
+		int i;
+		
+		switch (m) {
+		case 2:
+			i = 0; 
+			break;
+		case 4:
+			i = 1;
+			break;
+		case 8:
+			i = 2;
+			break;
+		case 16:
+			i = 3;
+			break;
+		case 32:
+			i = 4;
+			break;
+		case 64:
+			i = 5;
+			break;
+		case 128:
+			i = 6;
+			break;
+		default:
+			throw new IllegalArgumentException("Illegal size " + m + ". Must be a power of 2 (from 2 to 128).");
+		}
+		return x == 0 ? STEP_X_EQUALS_ZERO[i] : STEP_X_NOT_EQUALS_ZERO[i];
 	}
 	
 	/**
@@ -295,14 +343,17 @@ public class DCTEngine {
 		int actualSubSPosY = posY / 2;
 		
 		for (int x = 0; x < size; x++) {
+			int actualX = posX + x;
+			
 			for (int y = 0; y < size; y++) {
-				dest[0][posX + x][posY + y] = subArray[0][x][y];
+				dest[0][actualX][posY + y] = subArray[0][x][y];
 			}
 		}
 		
 		for (int x = 0; x < halfSize; x++) {
+			int subSX = actualSubSPosX + x;
+
 			for (int y = 0; y < halfSize; y++) {
-				int subSX = actualSubSPosX + x;
 				int subSY = actualSubSPosY + y;
 				dest[1][subSX][subSY] = subArray[1][x][y];
 				dest[2][subSX][subSY] = subArray[2][x][y];
@@ -348,8 +399,9 @@ public class DCTEngine {
 		}
 		
 		for (int x = 0; x < halfSize; x++) {
+			int subSX = actualSubSPosX + x;
+
 			for (int y = 0; y < halfSize; y++) {
-				int subSX = actualSubSPosX + x;
 				int subSY = actualSubSPosY + y;
 				arr[1][x][y] = org[1][subSX][subSY];
 				arr[2][x][y] = org[2][subSX][subSY];
@@ -528,8 +580,8 @@ public class DCTEngine {
 		
 		for (int x = 0; x < size; x++) {
 			for (int y = 0; y < size; y++) {
-				coefficients[0][x][y] = (int)Math.round(coefficients[0][x][y] / (double)chromaQuant[x][y]);
-				coefficients[1][x][y] = (int)Math.round(coefficients[1][x][y] / (double)chromaQuant[x][y]);
+				coefficients[0][x][y] = (int)MathUtils.round(coefficients[0][x][y] / (double)chromaQuant[x][y]);
+				coefficients[1][x][y] = (int)MathUtils.round(coefficients[1][x][y] / (double)chromaQuant[x][y]);
 			}
 		}
 	}
@@ -548,7 +600,7 @@ public class DCTEngine {
 		
 		for (int x = 0; x < size; x++) {
 			for (int y = 0; y < size; y++) {
-				coefficients[x][y] = (int)Math.round(coefficients[x][y] / (double)lumaQuant[x][y]);
+				coefficients[x][y] = (int)MathUtils.round(coefficients[x][y] / (double)lumaQuant[x][y]);
 			}
 		}
 	}

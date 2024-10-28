@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 
 import app.config;
 import app.utils.MacroBlock;
+import app.utils.MathUtils;
 import app.utils.PixelRaster;
 
 /**
@@ -51,7 +52,7 @@ import app.utils.PixelRaster;
 
 public class VectorEngine {
 	
-	private static final int PIXELS_TO_PROCESS_PER_THREAD = 1024;
+	private static final int PIXELS_TO_PROCESS_PER_THREAD = 128 * 128;
 	
 	/**
 	 * <p>Variable to store the PI radian.</p>
@@ -145,7 +146,7 @@ public class VectorEngine {
 		executor.shutdown();
 		
 		try {
-			while (!executor.awaitTermination(20, TimeUnit.MICROSECONDS));
+			while (!executor.awaitTermination(1, TimeUnit.MILLISECONDS));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -523,9 +524,9 @@ public class VectorEngine {
 			for (int x = 0; x < size; x++) {
 				double diff = col1[0][x][y] - col2[0][x][y];
 				
-				if (Math.abs(diff) > YThreshold) {
+				if (MathUtils.abs(diff) > YThreshold) {
 					Y[x][y] = diff;
-				}
+				} 
 			}
 		}
 		
@@ -534,11 +535,11 @@ public class VectorEngine {
 				double diffU = col1[1][x][y] - col2[1][x][y];
 				double diffV = col1[2][x][y] - col2[2][x][y];
 				
-				if (Math.abs(diffU) > UVThreshold) {
+				if (MathUtils.abs(diffU) > UVThreshold) {
 					U[x][y] = diffU;
 				}
 				
-				if (Math.abs(diffV) > UVThreshold) {
+				if (MathUtils.abs(diffV) > UVThreshold) {
 					V[x][y] = diffV;
 				}
 			}

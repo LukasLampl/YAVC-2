@@ -139,7 +139,7 @@ public class QuadtreeTask {
 						}
 					}
 					
-					int meanColor = ((sumR / 16) << 16) | ((sumG / 16) << 8) | (sumB / 16);
+					int meanColor = (((sumR / 16) & 0xFF) << 16) | (((sumG / 16) & 0xFF) << 8) | ((sumB / 16) & 0xFF);
 					meanArgbs[(startX + u) / 4][(startY + v) / 4] = meanColor;
 				}
 			}

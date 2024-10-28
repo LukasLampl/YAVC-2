@@ -53,7 +53,7 @@ public class Vector {
 	/**
 	 * Provides a DCTEngine with pre-calculated cosine table
 	 */
-	private DCTEngine DCT_ENGINE = null;
+	private static DCTEngine DCT_ENGINE = app.Main.DCT_ENGINE;
 	
 	/**
 	 * The starting point of the vector
@@ -110,7 +110,6 @@ public class Vector {
 		
 		this.startingPoint = pos;
 		this.size = size;
-		this.DCT_ENGINE = app.Main.DCT_ENGINE;
 	}
 	
 	/**
