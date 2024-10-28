@@ -162,7 +162,7 @@ public class DCTEngine {
 	 * @param x	position of the coefficient in one dimension
 	 * @param m	size of the coefficient matrix
 	 */
-	private double step(int x, int m) {
+	protected double step(int x, int m) {
 		int i;
 		
 		switch (m) {
