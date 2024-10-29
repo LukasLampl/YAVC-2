@@ -19,7 +19,7 @@ public class RenderEngine {
 	static long totalTime = 0L;
 	static long numThreads = 0L;
 
-	public static PixelRaster renderResult(ArrayList<Vector> vecs, ArrayList<PixelRaster> refs, ThreadLoadManager differenceManager, PixelRaster prevFrame) {
+	public static PixelRaster renderResult(ThreadLoadManager<Vector> vecs, ArrayList<PixelRaster> refs, ThreadLoadManager<MacroBlock> differenceManager, PixelRaster prevFrame) {
 		PixelRaster render = prevFrame.copy();
 		Dimension dim = prevFrame.getDimension();
 		ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
@@ -51,37 +51,42 @@ public class RenderEngine {
 			}
 						
 			if (vecs != null) {
-				Runnable task = () -> {
-					numThreads++;
+				for (int i = 0; i < vecs.getNumberOfChunks(); i++) {
+					final int index = i;
 					
-					for (Vector v : vecs) {
-						PixelRaster cache = v.getReference() == -1 ? null : refs.get(config.MAX_REFERENCES - v.getReference());
-						Point pos = v.getPosition();
-						int EndX = pos.x + v.getSpanX();
-						int EndY = pos.y + v.getSpanY();
-						int size = v.getSize();
-						long t_start = System.currentTimeMillis();
-						double[][][] reconstructedColor = reconstructColors(v.getIDCTCoefficientsOfAbsoluteColorDifference(false), cache.getPixelBlock(pos, size, null), size);
-						long t_end = System.currentTimeMillis();
-						totalTime += (t_end - t_start);
+					Runnable task = () -> {
+						ArrayList<Vector> vecList = vecs.getLoadOf(index);
+						numThreads++;
 						
-						for (int x = 0; x < size; x++) {
-							if (EndX + x < 0 || EndX + x >= dim.width) continue;
-							if (pos.x + x < 0 || pos.x + x >= dim.width) continue;
-							int subSX = x / 2;
+						for (Vector v : vecList) {
+							PixelRaster cache = v.getReference() == -1 ? null : refs.get(config.MAX_REFERENCES - v.getReference());
+							Point pos = v.getPosition();
+							int EndX = pos.x + v.getSpanX();
+							int EndY = pos.y + v.getSpanY();
+							int size = v.getSize();
+							long t_start = System.currentTimeMillis();
+							double[][][] reconstructedColor = reconstructColors(v.getIDCTCoefficientsOfAbsoluteColorDifference(false), cache.getPixelBlock(pos, size, null), size);
+							long t_end = System.currentTimeMillis();
+							totalTime += (t_end - t_start);
 							
-							for (int y = 0; y < size; y++) {
-								if (EndY + y < 0 || EndY + y >= dim.height) continue;
-								if (pos.y + y < 0 || pos.y + y >= dim.height) continue;
-								int subSY = y / 2;
-								double[] YUV = new double[] {reconstructedColor[0][x][y], reconstructedColor[1][subSX][subSY], reconstructedColor[2][subSX][subSY]};
-								render.setYUV(x + EndX, y + EndY, YUV);
+							for (int x = 0; x < size; x++) {
+								if (EndX + x < 0 || EndX + x >= dim.width) continue;
+								if (pos.x + x < 0 || pos.x + x >= dim.width) continue;
+								int subSX = x / 2;
+								
+								for (int y = 0; y < size; y++) {
+									if (EndY + y < 0 || EndY + y >= dim.height) continue;
+									if (pos.y + y < 0 || pos.y + y >= dim.height) continue;
+									int subSY = y / 2;
+									double[] YUV = new double[] {reconstructedColor[0][x][y], reconstructedColor[1][subSX][subSY], reconstructedColor[2][subSX][subSY]};
+									render.setYUV(x + EndX, y + EndY, YUV);
+								}
 							}
 						}
-					}
-				};
+					};
 				
-				executor.submit(task);
+					executor.submit(task);
+				}
 			}
 			
 			executor.shutdown();

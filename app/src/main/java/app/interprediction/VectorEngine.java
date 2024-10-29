@@ -33,7 +33,6 @@ import java.util.concurrent.TimeUnit;
 
 import app.config;
 import app.encoder.ThreadLoadManager;
-import app.quadtree.QuadtreeEngine;
 import app.utils.MacroBlock;
 import app.utils.MathUtils;
 import app.utils.PixelRaster;
@@ -53,8 +52,6 @@ import app.utils.PixelRaster;
  */
 
 public class VectorEngine {
-	
-	private static final int PIXELS_TO_PROCESS_PER_THREAD = 128 * 128;
 	
 	/**
 	 * <p>Variable to store the PI radian.</p>
@@ -98,7 +95,7 @@ public class VectorEngine {
 	 * 
 	 * @see utils.Vector
 	 */
-	public ArrayList<Vector> computeMovementVectors(ThreadLoadManager differenceManager, final ArrayList<PixelRaster> refs) {
+	public ThreadLoadManager<?>[] computeMovementVectors(ThreadLoadManager<MacroBlock> differenceManager, final ArrayList<PixelRaster> refs) {
 		if (refs == null || refs.size() == 0) {
 			throw new NullPointerException("No reference frame to refer to");
 		}
@@ -106,8 +103,9 @@ public class VectorEngine {
 		this.TOTAL_MSE = 0;
 		
 		int restLoad = 0;
-		ArrayList<ArrayList<MacroBlock>> restBlocks = new ArrayList<ArrayList<MacroBlock>>();
-		ArrayList<Vector> vecs = new ArrayList<Vector>(differenceManager.getLoadNumber());
+		int vectorPixels = 0;
+		ThreadLoadManager<Vector> vecManager = new ThreadLoadManager<Vector>();
+		ThreadLoadManager<MacroBlock> restBlocks = new ThreadLoadManager<MacroBlock>();
 		ArrayList<Future<Vector[]>> futureVecs = new ArrayList<Future<Vector[]>>(differenceManager.getLoadNumber());
 		ExecutorService executor = Executors.newWorkStealingPool();
 		
@@ -128,7 +126,8 @@ public class VectorEngine {
 							continue;
 						}
 						
-						vecs.add(vec);
+						vectorPixels += vec.getSize() * vec.getSize();
+						vecManager.setObj(vec);
 					}
 				}
 			} catch (Exception e) {
@@ -149,21 +148,15 @@ public class VectorEngine {
 			
 			for (MacroBlock block : blockList) {
 				if (!block.isConvertedToVector()) {
-					int index = QuadtreeEngine.getIndexBySize(block.getSize());
-					ArrayList<MacroBlock> list = restBlocks.get(index);
-					
-					if (list == null) {
-						list = new ArrayList<MacroBlock>();
-					}
-					
 					restLoad += block.getSquaredSize();
-					list.add(block);
+					restBlocks.setObj(block);
 				}
 			}
 		}
 		
-		differenceManager.update(restBlocks, restLoad);
-		return vecs;
+		restBlocks.compute(restLoad);
+		vecManager.compute(vectorPixels);
+		return new ThreadLoadManager<?>[] {vecManager, restBlocks};
 	}
 	
 	/**

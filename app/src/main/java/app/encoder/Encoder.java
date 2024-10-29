@@ -67,18 +67,20 @@ public class Encoder {
 				ArrayList<MacroBlock> quadtreeRoots = QUADTREE_ENGINE.constructQuadtree(curFrame);
 				long end_construct_quadtree = System.currentTimeMillis();
 				long start_get_leave_nodes = System.currentTimeMillis();
-				ThreadLoadManager threadLoadManager = QUADTREE_ENGINE.getLeaveNodes(quadtreeRoots);
+				ThreadLoadManager<MacroBlock> threadLoadManager = QUADTREE_ENGINE.getLeaveNodes(quadtreeRoots);
 				threadLoadManager.compute(frame.getWidth() * frame.getHeight());
 				long end_get_leave_nodes = System.currentTimeMillis();
 				
 //				BufferedImage[] part = RenderEngine.renderQuadtree(leaveNodes, curFrame.getDimension());
 				long start_difference = System.currentTimeMillis();
-				ThreadLoadManager differenceManager = DIFFERENCE_ENGINE.computeDifferences(prevFrame, threadLoadManager);
+				ThreadLoadManager<MacroBlock> differenceManager = DIFFERENCE_ENGINE.computeDifferences(prevFrame, threadLoadManager);
 				long end_difference = System.currentTimeMillis();
 //				BufferedImage[] part = RenderEngine.renderQuadtree(leaveNodes, curFrame.getDimension());
 				
 				long start_vector_movement = System.currentTimeMillis();
-				ArrayList<Vector> movementVectors = VECTOR_ENGINE.computeMovementVectors(differenceManager, references);
+				ThreadLoadManager<?>[] resultAfterInterpred = VECTOR_ENGINE.computeMovementVectors(differenceManager, references);
+				ThreadLoadManager<Vector> movementVectors = (ThreadLoadManager<Vector>)resultAfterInterpred[0];
+				differenceManager = (ThreadLoadManager<MacroBlock>)resultAfterInterpred[1];
 				long end_vector_movement = System.currentTimeMillis();
 				
 //				BufferedImage vectors = RenderEngine.renderVectors(movementVectors, curFrame.getDimension());
@@ -127,7 +129,7 @@ public class Encoder {
 	private static double TOTAL_MSE = 0;
 	private static int TOTAL_MSE_ADDITION_COUNT = 0;
 	
-	private void printStatistics(long time, long fullTime, int index, ArrayList<Vector> vecs, ThreadLoadManager diffs,
+	private void printStatistics(long time, long fullTime, int index, ThreadLoadManager<Vector> vecs, ThreadLoadManager<MacroBlock> diffs,
 			long imgReadTime, long quadtreeConstructionTime, long leaveNodeTime, long differenceTime, long vectorTime, long renderTime, long deblockTime) {
 		long startOutput = System.currentTimeMillis();
 		System.out.println("");
@@ -145,15 +147,19 @@ public class Encoder {
 		
 		if (vecs != null) {
 			int vecArea = 0;
-			double averageMSE = (VECTOR_ENGINE.getVectorMSE() / vecs.size());
+			double averageMSE = (VECTOR_ENGINE.getVectorMSE() / vecs.getLoadNumber());
 			TOTAL_MSE += averageMSE;
 			TOTAL_MSE_ADDITION_COUNT++;
 			
-			for (Vector v : vecs) {
-				vecArea += v.getAppendedBlock().getSquaredSize();
+			for (int i = 0; i < vecs.getNumberOfChunks(); i++) {
+				ArrayList<Vector> vecList = vecs.getLoadOf(i);
+				
+				for (Vector v : vecList) {
+					vecArea += v.getAppendedBlock().getSquaredSize();
+				}
 			}
 			
-			System.out.println("- Vectors: " + vecs.size() + " | Covered area: " + vecArea + "px | Avg. MSE: " + averageMSE);
+			System.out.println("- Vectors: " + vecs.getLoadNumber() + " | Covered area: " + vecArea + "px | Avg. MSE: " + averageMSE);
 		}
 		
 		if (diffs != null) {

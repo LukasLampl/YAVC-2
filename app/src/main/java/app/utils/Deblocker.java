@@ -28,6 +28,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import app.config;
+import app.encoder.ThreadLoadManager;
 import app.interprediction.Vector;
 
 /**
@@ -69,11 +70,7 @@ public class Deblocker {
 	 * @param movementVecs	Vectors from the inter-prediction step
 	 * @param composite	Frame that has the encoded vectors in it
 	 */
-	public void deblock(ArrayList<Vector> movementVecs, PixelRaster composite) {
-		if (movementVecs.isEmpty()) {
-			return;
-		}
-		
+	public void deblock(ThreadLoadManager<Vector> movementVecs, PixelRaster composite) {
 		int index = clip(STRENGTH, 0, MAX_QUANT);
 		int alpha = config.DEBLOCKER_ALPHAS[index + ALPHA_OFFSET];
 		int beta = config.DEBLOCKER_BETAS[index + BETA_OFFSET];
@@ -81,15 +78,19 @@ public class Deblocker {
 		int threads = Runtime.getRuntime().availableProcessors();
 		ExecutorService executor = Executors.newFixedThreadPool(threads);
 		
-		for (Vector vec : movementVecs) {
-			Point vecPos = vec.getPosition();
-			Point blockPos = new Point(vecPos.x + vec.getSpanX(), vecPos.y + vec.getSpanY());
+		for (int i = 0; i < movementVecs.getNumberOfChunks(); i++) {
+			ArrayList<Vector> vecList = movementVecs.getLoadOf(i);
 			
-			if (blockPos.x == 0 || blockPos.y == 0) {
-				continue;
+			for (Vector vec : vecList) {
+				Point vecPos = vec.getPosition();
+				Point blockPos = new Point(vecPos.x + vec.getSpanX(), vecPos.y + vec.getSpanY());
+				
+				if (blockPos.x == 0 || blockPos.y == 0) {
+					continue;
+				}
+				
+				executor.submit(createMacroBlockDeblockRunnable(composite, blockPos, vec.getSize(), alpha, beta, c));
 			}
-			
-			executor.submit(createMacroBlockDeblockRunnable(composite, blockPos, vec.getSize(), alpha, beta, c));
 		}
 		
 		executor.shutdown();

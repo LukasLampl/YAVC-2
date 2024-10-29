@@ -172,12 +172,12 @@ public class QuadtreeEngine {
 	 * 
 	 * @throws NullPointerException, when no root is provided
 	 */
-	public ThreadLoadManager getLeaveNodes(ArrayList<MacroBlock> roots) {
+	public ThreadLoadManager<MacroBlock> getLeaveNodes(ArrayList<MacroBlock> roots) {
 		if (roots == null) {
 			throw new NullPointerException("No QuadtreeRoots to process.");
 		}
 		
-		ThreadLoadManager loadManager = new ThreadLoadManager();
+		ThreadLoadManager<MacroBlock> loadManager = new ThreadLoadManager<MacroBlock>();
 		
 		try {
 			ArrayList<Future<ArrayList<MacroBlock>>> futureLeavesList = new ArrayList<Future<ArrayList<MacroBlock>>>();
@@ -201,7 +201,7 @@ public class QuadtreeEngine {
 					}
 					
 					for (MacroBlock block : nodes) {
-						loadManager.setBlock(block);
+						loadManager.setObj(block);
 					}
 				} catch (Exception e) {
 					e.printStackTrace();

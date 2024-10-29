@@ -84,7 +84,7 @@ public class InputProcessor {
 //			render = RenderEngine.renderResult(vecs, refs, blocks, refs.get(refs.size() - 1));
 		}
 
-		deblocker.deblock(vecs, render);		
+//		deblocker.deblock(vecs, render);
 		return render;
 	}
 	

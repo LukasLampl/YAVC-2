@@ -7,7 +7,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import app.quadtree.QuadtreeEngine;
 import app.utils.MacroBlock;
 import app.utils.PixelRaster;
 
@@ -16,11 +15,10 @@ public class DifferenceEngine {
 	private static final double DELTA_U = 3.2;
 	private static final double DELTA_V = 3.2;
 	
-	public ThreadLoadManager computeDifferences(PixelRaster prevFrame, ThreadLoadManager threadLoadManager) {
+	public ThreadLoadManager<MacroBlock> computeDifferences(PixelRaster prevFrame, ThreadLoadManager<MacroBlock> threadLoadManager) {
 		int predictedSize = threadLoadManager.getLoadNumber() / 2;
 		int totalDiffSize = 0;
-		ThreadLoadManager diffManager = new ThreadLoadManager();
-		ArrayList<ArrayList<MacroBlock>> diffs = new ArrayList<ArrayList<MacroBlock>>();
+		ThreadLoadManager<MacroBlock> diffManager = new ThreadLoadManager<MacroBlock>();
 		ArrayList<Future<ArrayList<MacroBlock>>> futureDiffs = new ArrayList<Future<ArrayList<MacroBlock>>>(predictedSize);
 		
 		try {
@@ -84,7 +82,7 @@ public class DifferenceEngine {
 					}
 					
 					for (MacroBlock block : blockList) {
-						diffManager.setBlock(block);
+						diffManager.setObj(block);
 						totalDiffSize += block.getSquaredSize();
 					}
 				} catch (Exception e) {

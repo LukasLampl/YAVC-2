@@ -6,14 +6,16 @@ import app.encoder.ThreadLoadManager;
 import app.interprediction.Vector;
 
 public class QueueObject {
-	private ArrayList<Vector> vectors = null;
+	private ArrayList<Vector> vectors = new ArrayList<Vector>();
 	private ArrayList<MacroBlock> differences = new ArrayList<MacroBlock>();
 	
-	public QueueObject(ArrayList<Vector> vecs, ThreadLoadManager manager) {
-		this.vectors = vecs;
+	public QueueObject(ThreadLoadManager<Vector> vecManager, ThreadLoadManager<MacroBlock> diffManager) {
+		for (int i = 0; i < vecManager.getNumberOfChunks(); i++) {
+			this.vectors.addAll(vecManager.getLoadOf(i));
+		}
 		
-		for (int i = 0; i < manager.getNumberOfChunks(); i++) {
-			this.differences.addAll(manager.getLoadOf(i));
+		for (int i = 0; i < diffManager.getNumberOfChunks(); i++) {
+			this.differences.addAll(diffManager.getLoadOf(i));
 		}
 	}
 	
