@@ -14,10 +14,16 @@ import app.config;
 import app.interprediction.Vector;
 
 public class RenderEngine {
+
+	static long totalTime = 0L;
+	static long numThreads = 0L;
+
 	public static PixelRaster renderResult(ArrayList<Vector> vecs, ArrayList<PixelRaster> refs, ArrayList<MacroBlock> diffs, PixelRaster prevFrame) {
 		PixelRaster render = prevFrame.copy();
 		Dimension dim = prevFrame.getDimension();
-		ExecutorService executor = Executors.newCachedThreadPool();
+		ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+		totalTime = 0L;
+		numThreads = 0L;
 		
 		try {
 			if (diffs != null) {
@@ -40,7 +46,7 @@ public class RenderEngine {
 					executor.submit(task);
 				}
 			}
-			
+						
 			if (vecs != null) {
 				for (Vector v : vecs) {
 					Runnable task = () -> {
@@ -49,16 +55,21 @@ public class RenderEngine {
 						int EndX = pos.x + v.getSpanX();
 						int EndY = pos.y + v.getSpanY();
 						int size = v.getSize();
+						numThreads++;
+						long t_start = System.currentTimeMillis();
 						double[][][] reconstructedColor = reconstructColors(v.getIDCTCoefficientsOfAbsoluteColorDifference(false), cache.getPixelBlock(pos, size, null), size);
+						long t_end = System.currentTimeMillis();
+						totalTime += (t_end - t_start);
 						
 						for (int x = 0; x < size; x++) {
 							if (EndX + x < 0 || EndX + x >= dim.width) continue;
 							if (pos.x + x < 0 || pos.x + x >= dim.width) continue;
+							int subSX = x / 2;
 							
 							for (int y = 0; y < size; y++) {
 								if (EndY + y < 0 || EndY + y >= dim.height) continue;
 								if (pos.y + y < 0 || pos.y + y >= dim.height) continue;
-								int subSX = x / 2, subSY = y / 2;
+								int subSY = y / 2;
 								double[] YUV = new double[] {reconstructedColor[0][x][y], reconstructedColor[1][subSX][subSY], reconstructedColor[2][subSX][subSY]};
 								render.setYUV(x + EndX, y + EndY, YUV);
 							}
@@ -74,7 +85,9 @@ public class RenderEngine {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		
+		System.out.println("- Total rendering time: " + totalTime + "ms");
+		if (numThreads > 0L)
+			System.out.println("- Avg. rendering time: " + ((double)totalTime/(double)numThreads) + "ms (" + numThreads + " threads)");
 		return render;
 	}
 	

@@ -18,7 +18,7 @@ public class DifferenceEngine {
 	private static final double DELTA_U = 3.2;
 	private static final double DELTA_V = 3.2;
 	
-	public ArrayList<MacroBlock> computeDifferences(PixelRaster prevFrame, ArrayList<MacroBlock> leaveNodes) {
+	public ArrayList<MacroBlock> computeDifferences(PixelRaster prevFrame, ArrayList<ArrayList<MacroBlock>> leaveNodes) {
 		ArrayList<MacroBlock> diffs = new ArrayList<MacroBlock>(leaveNodes.size() / 2);
 		ArrayList<Future<MacroBlock>> futureDiffs = new ArrayList<Future<MacroBlock>>(leaveNodes.size() / 2);
 

@@ -21,8 +21,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package app;
 
+import java.io.File;
 import java.util.Arrays;
 
+import javax.imageio.ImageIO;
 import javax.swing.JOptionPane;
 
 import app.encoder.DCTEngine;
@@ -31,6 +33,16 @@ public class Main {
 	public static DCTEngine DCT_ENGINE = new DCTEngine();
 	
 	public static void main(String [] args) {
+		File f = new File("/tmp/Temp_ImageIO");
+		
+		if (f.exists()) {
+			System.out.println("Existiert!");
+		}
+		
+		ImageIO.setCacheDirectory(f);
+		System.setProperty("java.io.tmpdir", f.getAbsolutePath());
+		
+		System.out.println("TMPDIR=" + System.getProperty("java.io.tmpdir"));
 		System.out.println("Args: " + Arrays.toString(args));
 		JOptionPane.showConfirmDialog(null, "Start on confirmation");
 		

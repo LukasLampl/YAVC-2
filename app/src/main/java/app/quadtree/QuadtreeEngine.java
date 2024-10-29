@@ -61,6 +61,14 @@ import app.utils.PixelRaster;
 public class QuadtreeEngine {
 	private final int MAX_SIZE = 128;
 	
+	public static final int NUMBER_OF_SIZES = 6;
+	public static final int INDEX_4x4 = 0;
+	public static final int INDEX_8x8 = 1;
+	public static final int INDEX_16x16 = 2;
+	public static final int INDEX_32x32 = 3;
+	public static final int INDEX_64x64 = 4;
+	public static final int INDEX_128x128 = 5;
+	
 	/**
 	 * Entry point of the quadtree construction.
 	 * The image is split into 128x128 blocks, that are processed
@@ -163,12 +171,12 @@ public class QuadtreeEngine {
 	 * 
 	 * @throws NullPointerException, when no root is provided
 	 */
-	public ArrayList<MacroBlock> getLeaveNodes(ArrayList<MacroBlock> roots) {
+	public ArrayList<ArrayList<MacroBlock>> getLeaveNodes(ArrayList<MacroBlock> roots) {
 		if (roots == null) {
 			throw new NullPointerException("No QuadtreeRoots to process.");
 		}
 		
-		ArrayList<MacroBlock> leaveNodes = new ArrayList<MacroBlock>();
+		ArrayList<ArrayList<MacroBlock>> leaveNodes = new ArrayList<ArrayList<MacroBlock>>();
 
 		try {
 			ArrayList<Future<ArrayList<MacroBlock>>> futureLeavesList = new ArrayList<Future<ArrayList<MacroBlock>>>();
@@ -187,8 +195,19 @@ public class QuadtreeEngine {
 				try {
 					ArrayList<MacroBlock> nodes = flist.get();
 					
-					if (nodes != null) {
-						leaveNodes.addAll(nodes);
+					if (nodes == null) {
+						continue;
+					}
+					
+					for (MacroBlock block : nodes) {
+						int index = getIndexBySize(block.getSize());
+						ArrayList<MacroBlock> blockList = leaveNodes.get(index);
+						
+						if (blockList == null) {
+							blockList = new ArrayList<MacroBlock>();
+						}
+						
+						blockList.add(block);
 					}
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -202,6 +221,25 @@ public class QuadtreeEngine {
 		}
 		
 		return leaveNodes;
+	}
+	
+	public static int getIndexBySize(int size) {
+		switch (size) {
+		case 128:
+			return INDEX_128x128;
+		case 64:
+			return INDEX_64x64;
+		case 32:
+			return INDEX_32x32;
+		case 16:
+			return INDEX_16x16;
+		case 8:
+			return INDEX_8x8;
+		case 4:
+			return INDEX_4x4;
+		default:
+			throw new IllegalArgumentException("The size " + size + " is currently no supported.");
+		}
 	}
 	
 	/**

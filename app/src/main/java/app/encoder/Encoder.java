@@ -1,10 +1,7 @@
 package app.encoder;
 
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
-
-import javax.imageio.ImageIO;
 
 import app.config;
 import app.interprediction.Vector;
@@ -27,15 +24,16 @@ public class Encoder {
 	}
 	
 	public void encode(File input, File output) {
+		int files = input.listFiles().length;
 		OutputStream outStream = new OutputStream(output);
 		Deblocker deblocker = new Deblocker();
+		ImagePreReader imgReader = new ImagePreReader(files, input);
 		
 		ArrayList<PixelRaster> references = new ArrayList<PixelRaster>(config.MAX_REFERENCES);
 		PixelRaster futFrame = null;
 		PixelRaster curFrame = null;
 		PixelRaster prevFrame = null;
 		
-		int files = input.listFiles().length;
 		long sumOfMilliSeconds = 0;
 		long startOfTime = System.currentTimeMillis();
 		
@@ -44,35 +42,33 @@ public class Encoder {
 			
 			for (int i = 0; i < files; i++) {
 				long start = System.currentTimeMillis();
-				File frameFile = getAwaitedFile(input, i, ".bmp");
+				long start_img_read = System.currentTimeMillis();
+				PixelRaster frame = imgReader.getNextImage();
+				long end_img_read = System.currentTimeMillis();
 				
-				if (!frameFile.exists()) {
+				if (frame.invokedWithData == false) {
 					System.out.println("Skip: " + i);
 					continue;
 				}
 				
 				if (prevFrame == null) {
-					BufferedImage inputImg = ImageIO.read(frameFile);
-					prevFrame = new PixelRaster(inputImg);
+					prevFrame = frame;
 //					futureFrame = new PixelRaster(ImageIO.read(getAwaitedFile(input, i + 1, ".bmp")));
 					outStream.writeMetadata(prevFrame.getDimension(), files - 1);
 					outStream.writeStartFrame(prevFrame);
 					references.add(prevFrame);
 					continue;
 				}
-				
-				long start_t = System.currentTimeMillis();
-				BufferedImage inputImg = ImageIO.read(frameFile);
-				long end_t = System.currentTimeMillis();
-				System.out.println("IO: " + (end_t - start_t) + "ms");
-				curFrame = new PixelRaster(inputImg);
+			
+				curFrame = frame;
 //				futureFrame = new PixelRaster(ImageIO.read(getAwaitedFile(input, i + 1, ".bmp")));
 				
 				long start_construct_quadtree = System.currentTimeMillis();
 				ArrayList<MacroBlock> quadtreeRoots = QUADTREE_ENGINE.constructQuadtree(curFrame);
 				long end_construct_quadtree = System.currentTimeMillis();
 				long start_get_leave_nodes = System.currentTimeMillis();
-				ArrayList<MacroBlock> leaveNodes = QUADTREE_ENGINE.getLeaveNodes(quadtreeRoots);
+				ArrayList<ArrayList<MacroBlock>> leaveNodes = QUADTREE_ENGINE.getLeaveNodes(quadtreeRoots);
+				ThreadLoadManager threadLoadManager = new ThreadLoadManager(leaveNodes, frame.getWidth() * frame.getHeight());
 				long end_get_leave_nodes = System.currentTimeMillis();
 				
 //				BufferedImage[] part = RenderEngine.renderQuadtree(leaveNodes, curFrame.getDimension());
@@ -102,6 +98,7 @@ public class Encoder {
 				
 				long end = System.currentTimeMillis();
 				long time = end - start;
+				long imgReadTime = (end_img_read - start_img_read);
 				long quadtreeConstructionTime = (end_construct_quadtree - start_construct_quadtree);
 				long leaveNodesTime = (end_get_leave_nodes - start_get_leave_nodes);
 				long differenceTime = (end_difference - start_difference);
@@ -109,7 +106,7 @@ public class Encoder {
 				long renderTime = (end_render - start_render);
 				long deblockTime = (end_deblock - start_deblock);
 				sumOfMilliSeconds += time;
-				printStatistics(time, sumOfMilliSeconds, i, movementVectors, leaveNodes, quadtreeConstructionTime, leaveNodesTime, differenceTime, vectorTime, renderTime, deblockTime);
+				printStatistics(time, sumOfMilliSeconds, i, movementVectors, leaveNodes, imgReadTime, quadtreeConstructionTime, leaveNodesTime, differenceTime, vectorTime, renderTime, deblockTime);
 				
 				references.add(composite.copy());
 				prevFrame = composite.copy();
@@ -131,11 +128,12 @@ public class Encoder {
 	private static int TOTAL_MSE_ADDITION_COUNT = 0;
 	
 	private void printStatistics(long time, long fullTime, int index, ArrayList<Vector> vecs, ArrayList<MacroBlock> diffs,
-			long quadtreeConstructionTime, long leaveNodeTime, long differenceTime, long vectorTime, long renderTime, long deblockTime) {
+			long imgReadTime, long quadtreeConstructionTime, long leaveNodeTime, long differenceTime, long vectorTime, long renderTime, long deblockTime) {
 		long startOutput = System.currentTimeMillis();
 		System.out.println("");
 		System.out.println("Frame " + index + ":");
 		System.out.println("- Time: " + time + "ms | Avg. time: " + (fullTime / index) + "ms");
+		System.out.println("   > Image read time: " + imgReadTime + "ms");
 		System.out.println("   > Quadtree construction time: " + quadtreeConstructionTime + "ms");
 		System.out.println("   > Leave node time: " + leaveNodeTime + "ms");
 		System.out.println("   > Difference analysis time: " + differenceTime + "ms");

@@ -52,6 +52,8 @@ public class PixelRaster {
 	private static final int PX_WITH_ALPHA_LENGTH = 4;
 	private static final int PX_WITHOUT_ALPHA_LENGTH = 3;
 	
+	public boolean invokedWithData = true;
+	
 	/**
 	 * The Y stores all luma values of the image without subsampling
 	 */
@@ -71,6 +73,10 @@ public class PixelRaster {
 	 * Dimension of the PixelRaster (width and height)
 	 */
 	private Dimension dim = null;
+	
+	public PixelRaster() {
+		this.invokedWithData = false;
+	}
 	
 	/**
 	 * <p>Initialize the PixelRaster using the data of a BufferedImage.
