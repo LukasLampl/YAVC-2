@@ -28,10 +28,10 @@ public class RenderEngine {
 		
 		try {
 			for (int i = 0; i < differenceManager.getNumberOfChunks(); i++) {
-				ArrayList<MacroBlock> blockList = differenceManager.getLoadOf(i);
-				
-				for (MacroBlock block : blockList) {
-					Runnable task = () -> {
+				final ArrayList<MacroBlock> blockList = differenceManager.getLoadOf(i);
+
+				Runnable task = () -> { 
+					for (MacroBlock block : blockList) {
 						Point pos = block.getPosition();
 						int size = block.getSize();
 						
@@ -44,21 +44,22 @@ public class RenderEngine {
 								render.setYUV(x + pos.x, y + pos.y, block.getYUV(x, y));
 							}
 						}
-					};
-					
-					executor.submit(task);
-				}
+					}
+				};
+				
+				executor.submit(task);
 			}
 						
 			if (vecs != null) {
-				for (Vector v : vecs) {
-					Runnable task = () -> {
+				Runnable task = () -> {
+					numThreads++;
+					
+					for (Vector v : vecs) {
 						PixelRaster cache = v.getReference() == -1 ? null : refs.get(config.MAX_REFERENCES - v.getReference());
 						Point pos = v.getPosition();
 						int EndX = pos.x + v.getSpanX();
 						int EndY = pos.y + v.getSpanY();
 						int size = v.getSize();
-						numThreads++;
 						long t_start = System.currentTimeMillis();
 						double[][][] reconstructedColor = reconstructColors(v.getIDCTCoefficientsOfAbsoluteColorDifference(false), cache.getPixelBlock(pos, size, null), size);
 						long t_end = System.currentTimeMillis();
@@ -77,10 +78,10 @@ public class RenderEngine {
 								render.setYUV(x + EndX, y + EndY, YUV);
 							}
 						}
-					};
-					
-					executor.submit(task);
-				}
+					}
+				};
+				
+				executor.submit(task);
 			}
 			
 			executor.shutdown();
