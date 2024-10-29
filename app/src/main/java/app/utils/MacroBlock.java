@@ -82,6 +82,8 @@ public class MacroBlock {
 	 */
 	private boolean isSubdivided = false;
 	
+	private boolean isConvertedToVector = false;
+	
 	/**
 	 * <p>Nodes of the MacroBlock.</p>
 	 * <p>Only filled, if the MacroBlock was
@@ -548,5 +550,13 @@ public class MacroBlock {
 		
 		Point position = new Point(pos.x + this.position.x, pos.y + this.position.y);
 		return new MacroBlock(position, size, resY, resU, resV, resA);
+	}
+	
+	public void setConvertedToVector(boolean convertedToVector) {
+		this.isConvertedToVector = convertedToVector;
+	}
+	
+	public boolean isConvertedToVector() {
+		return this.isConvertedToVector;
 	}
 }

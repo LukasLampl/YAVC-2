@@ -67,24 +67,24 @@ public class Encoder {
 				ArrayList<MacroBlock> quadtreeRoots = QUADTREE_ENGINE.constructQuadtree(curFrame);
 				long end_construct_quadtree = System.currentTimeMillis();
 				long start_get_leave_nodes = System.currentTimeMillis();
-				ArrayList<ArrayList<MacroBlock>> leaveNodes = QUADTREE_ENGINE.getLeaveNodes(quadtreeRoots);
-				ThreadLoadManager threadLoadManager = new ThreadLoadManager(leaveNodes, frame.getWidth() * frame.getHeight());
+				ThreadLoadManager threadLoadManager = QUADTREE_ENGINE.getLeaveNodes(quadtreeRoots);
+				threadLoadManager.compute(frame.getWidth() * frame.getHeight());
 				long end_get_leave_nodes = System.currentTimeMillis();
 				
 //				BufferedImage[] part = RenderEngine.renderQuadtree(leaveNodes, curFrame.getDimension());
 				long start_difference = System.currentTimeMillis();
-				leaveNodes = DIFFERENCE_ENGINE.computeDifferences(prevFrame, leaveNodes);
+				ThreadLoadManager differenceManager = DIFFERENCE_ENGINE.computeDifferences(prevFrame, threadLoadManager);
 				long end_difference = System.currentTimeMillis();
 //				BufferedImage[] part = RenderEngine.renderQuadtree(leaveNodes, curFrame.getDimension());
 				
 				long start_vector_movement = System.currentTimeMillis();
-				ArrayList<Vector> movementVectors = VECTOR_ENGINE.computeMovementVectors(leaveNodes, references);
+				ArrayList<Vector> movementVectors = VECTOR_ENGINE.computeMovementVectors(differenceManager, references);
 				long end_vector_movement = System.currentTimeMillis();
 				
 //				BufferedImage vectors = RenderEngine.renderVectors(movementVectors, curFrame.getDimension());
 				long start_render = System.currentTimeMillis();
-				PixelRaster composite = RenderEngine.renderResult(movementVectors, references, leaveNodes, prevFrame);
-				outStream.addObjectToOutputQueue(new QueueObject(movementVectors, leaveNodes));
+				PixelRaster composite = RenderEngine.renderResult(movementVectors, references, differenceManager, prevFrame);
+				outStream.addObjectToOutputQueue(new QueueObject(movementVectors, differenceManager));
 //				ImageIO.write(composite.toBufferedImage(), "png", new File(output.getParent() + "/VR_" + i + ".png"));
 				long end_render = System.currentTimeMillis();
 				
@@ -106,7 +106,7 @@ public class Encoder {
 				long renderTime = (end_render - start_render);
 				long deblockTime = (end_deblock - start_deblock);
 				sumOfMilliSeconds += time;
-				printStatistics(time, sumOfMilliSeconds, i, movementVectors, leaveNodes, imgReadTime, quadtreeConstructionTime, leaveNodesTime, differenceTime, vectorTime, renderTime, deblockTime);
+				printStatistics(time, sumOfMilliSeconds, i, movementVectors, differenceManager, imgReadTime, quadtreeConstructionTime, leaveNodesTime, differenceTime, vectorTime, renderTime, deblockTime);
 				
 				references.add(composite.copy());
 				prevFrame = composite.copy();
@@ -127,7 +127,7 @@ public class Encoder {
 	private static double TOTAL_MSE = 0;
 	private static int TOTAL_MSE_ADDITION_COUNT = 0;
 	
-	private void printStatistics(long time, long fullTime, int index, ArrayList<Vector> vecs, ArrayList<MacroBlock> diffs,
+	private void printStatistics(long time, long fullTime, int index, ArrayList<Vector> vecs, ThreadLoadManager diffs,
 			long imgReadTime, long quadtreeConstructionTime, long leaveNodeTime, long differenceTime, long vectorTime, long renderTime, long deblockTime) {
 		long startOutput = System.currentTimeMillis();
 		System.out.println("");
@@ -159,11 +159,15 @@ public class Encoder {
 		if (diffs != null) {
 			int diffArea = 0;
 			
-			for (MacroBlock b : diffs) {
-				diffArea += b.getSquaredSize();
+			for (int i = 0; i < diffs.getNumberOfChunks(); i++) {
+				ArrayList<MacroBlock> blockList = diffs.getLoadOf(i);
+				
+				for (MacroBlock b : blockList) {
+					diffArea += b.getSquaredSize();
+				}
 			}
 			
-			System.out.println("- Non-Coded blocks: " + diffs.size() + " | Covered area: " + diffArea + "px");
+			System.out.println("- Non-Coded blocks: " + diffs.getLoadNumber() + " | Covered area: " + diffArea + "px");
 		}
 		
 		System.out.println("- Total Avg. MSE of inter prediction: " + (TOTAL_MSE / TOTAL_MSE_ADDITION_COUNT));

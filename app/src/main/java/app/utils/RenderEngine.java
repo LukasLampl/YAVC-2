@@ -11,6 +11,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import app.config;
+import app.encoder.ThreadLoadManager;
 import app.interprediction.Vector;
 
 public class RenderEngine {
@@ -18,7 +19,7 @@ public class RenderEngine {
 	static long totalTime = 0L;
 	static long numThreads = 0L;
 
-	public static PixelRaster renderResult(ArrayList<Vector> vecs, ArrayList<PixelRaster> refs, ArrayList<MacroBlock> diffs, PixelRaster prevFrame) {
+	public static PixelRaster renderResult(ArrayList<Vector> vecs, ArrayList<PixelRaster> refs, ThreadLoadManager differenceManager, PixelRaster prevFrame) {
 		PixelRaster render = prevFrame.copy();
 		Dimension dim = prevFrame.getDimension();
 		ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
@@ -26,8 +27,10 @@ public class RenderEngine {
 		numThreads = 0L;
 		
 		try {
-			if (diffs != null) {
-				for (MacroBlock block : diffs) {
+			for (int i = 0; i < differenceManager.getNumberOfChunks(); i++) {
+				ArrayList<MacroBlock> blockList = differenceManager.getLoadOf(i);
+				
+				for (MacroBlock block : blockList) {
 					Runnable task = () -> {
 						Point pos = block.getPosition();
 						int size = block.getSize();

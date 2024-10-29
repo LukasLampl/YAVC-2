@@ -30,6 +30,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import app.encoder.ThreadLoadManager;
 import app.utils.MacroBlock;
 import app.utils.PixelRaster;
 
@@ -171,13 +172,13 @@ public class QuadtreeEngine {
 	 * 
 	 * @throws NullPointerException, when no root is provided
 	 */
-	public ArrayList<ArrayList<MacroBlock>> getLeaveNodes(ArrayList<MacroBlock> roots) {
+	public ThreadLoadManager getLeaveNodes(ArrayList<MacroBlock> roots) {
 		if (roots == null) {
 			throw new NullPointerException("No QuadtreeRoots to process.");
 		}
 		
-		ArrayList<ArrayList<MacroBlock>> leaveNodes = new ArrayList<ArrayList<MacroBlock>>();
-
+		ThreadLoadManager loadManager = new ThreadLoadManager();
+		
 		try {
 			ArrayList<Future<ArrayList<MacroBlock>>> futureLeavesList = new ArrayList<Future<ArrayList<MacroBlock>>>();
 			int threads = Runtime.getRuntime().availableProcessors();
@@ -200,14 +201,7 @@ public class QuadtreeEngine {
 					}
 					
 					for (MacroBlock block : nodes) {
-						int index = getIndexBySize(block.getSize());
-						ArrayList<MacroBlock> blockList = leaveNodes.get(index);
-						
-						if (blockList == null) {
-							blockList = new ArrayList<MacroBlock>();
-						}
-						
-						blockList.add(block);
+						loadManager.setBlock(block);
 					}
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -220,7 +214,7 @@ public class QuadtreeEngine {
 			e.printStackTrace();
 		}
 		
-		return leaveNodes;
+		return loadManager;
 	}
 	
 	public static int getIndexBySize(int size) {

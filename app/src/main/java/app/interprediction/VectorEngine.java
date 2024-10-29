@@ -32,6 +32,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import app.config;
+import app.encoder.ThreadLoadManager;
+import app.quadtree.QuadtreeEngine;
 import app.utils.MacroBlock;
 import app.utils.MathUtils;
 import app.utils.PixelRaster;
@@ -96,34 +98,26 @@ public class VectorEngine {
 	 * 
 	 * @see utils.Vector
 	 */
-	public ArrayList<Vector> computeMovementVectors(final ArrayList<MacroBlock> blocksToInterpredict, final ArrayList<PixelRaster> refs) {
-		if (blocksToInterpredict == null) {
-			throw new NullPointerException("No blocks to inter-predict");
-		} else if (refs == null || refs.size() == 0) {
+	public ArrayList<Vector> computeMovementVectors(ThreadLoadManager differenceManager, final ArrayList<PixelRaster> refs) {
+		if (refs == null || refs.size() == 0) {
 			throw new NullPointerException("No reference frame to refer to");
 		}
 		
 		this.TOTAL_MSE = 0;
 		
-		ArrayList<Vector> vecs = new ArrayList<Vector>(blocksToInterpredict.size());
-		ArrayList<Future<Vector[]>> futureVecs = new ArrayList<Future<Vector[]>>(blocksToInterpredict.size());
-		ArrayList<MacroBlock> blocksToRemove = new ArrayList<MacroBlock>();
+		int restLoad = 0;
+		ArrayList<ArrayList<MacroBlock>> restBlocks = new ArrayList<ArrayList<MacroBlock>>();
+		ArrayList<Vector> vecs = new ArrayList<Vector>(differenceManager.getLoadNumber());
+		ArrayList<Future<Vector[]>> futureVecs = new ArrayList<Future<Vector[]>>(differenceManager.getLoadNumber());
 		ExecutorService executor = Executors.newWorkStealingPool();
 		
-		for (int i = 0, c = 0, n = 0; i < blocksToInterpredict.size(); i++) {
-			n += blocksToInterpredict.get(i).getSquaredSize();
+		for (int i = 0; i < differenceManager.getNumberOfChunks(); i++) {
+			ArrayList<MacroBlock> blockList = differenceManager.getLoadOf(i);
 			
-			if (n < PIXELS_TO_PROCESS_PER_THREAD
-				&& (i + 1) < blocksToInterpredict.size()) {
-				continue;
-			}
-			
-			Callable<Vector[]> searchTask = createVectorSearchTask(refs, blocksToInterpredict, c, i);
+			Callable<Vector[]> searchTask = createVectorSearchTask(refs, blockList);
 			futureVecs.add(executor.submit(searchTask));
-			n = 0;
-			c = i;
 		}
-
+		
 		for (Future<Vector[]> fvec : futureVecs) {
 			try {
 				Vector[] vecArr = fvec.get();
@@ -135,7 +129,6 @@ public class VectorEngine {
 						}
 						
 						vecs.add(vec);
-						blocksToRemove.add(vec.getAppendedBlock());
 					}
 				}
 			} catch (Exception e) {
@@ -151,7 +144,25 @@ public class VectorEngine {
 			e.printStackTrace();
 		}
 		
-		blocksToInterpredict.removeAll(blocksToRemove);
+		for (int i = 0; i < differenceManager.getNumberOfChunks(); i++) {
+			ArrayList<MacroBlock> blockList = differenceManager.getLoadOf(i);
+			
+			for (MacroBlock block : blockList) {
+				if (!block.isConvertedToVector()) {
+					int index = QuadtreeEngine.getIndexBySize(block.getSize());
+					ArrayList<MacroBlock> list = restBlocks.get(index);
+					
+					if (list == null) {
+						list = new ArrayList<MacroBlock>();
+					}
+					
+					restLoad += block.getSquaredSize();
+					list.add(block);
+				}
+			}
+		}
+		
+		differenceManager.update(restBlocks, restLoad);
 		return vecs;
 	}
 	
@@ -165,21 +176,15 @@ public class VectorEngine {
 	 * @param refs	Reference frames
 	 * @param blockToBeSearched	MacroBlock that should be searched
 	 */
-	private Callable<Vector[]> createVectorSearchTask(final ArrayList<PixelRaster> refs, ArrayList<MacroBlock> blocksToBeSearched, int start, int stop) {
+	private Callable<Vector[]> createVectorSearchTask(final ArrayList<PixelRaster> refs, ArrayList<MacroBlock> blocksToBeSearched) {
 		Callable<Vector[]> task = () -> {
 			int maxSize = refs.size();
-			int length = stop - start;
 			MacroBlock[] canidates = new MacroBlock[maxSize];
-			Vector[] vecs = new Vector[length];
+			Vector[] vecs = new Vector[blocksToBeSearched.size()];
 			int vectorIndex = 0;
 			int canidate = 0;
 			
-			for (int i = start; i < stop; i++) {
-				if (i >= blocksToBeSearched.size()) {
-					break;
-				}
-				
-				MacroBlock block = blocksToBeSearched.get(i);
+			for (MacroBlock block : blocksToBeSearched) {
 				canidate = 0;
 				
 				for (int n = 0; n < maxSize && n <= config.MAX_REFERENCES; n++) {
@@ -189,6 +194,7 @@ public class VectorEngine {
 				
 				MacroBlock best = evaluateBestGuess(canidates);
 				Vector vec = constructMovementVector(refs, best, block);
+				block.setConvertedToVector(true);
 				vecs[vectorIndex++] = vec;
 			}
 			

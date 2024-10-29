@@ -81,7 +81,7 @@ public class InputProcessor {
 		ArrayList<MacroBlock> blocks = getRawBlocks(rawBlocks);
 		
 		if (vecs != null) {
-			render = RenderEngine.renderResult(vecs, refs, blocks, refs.get(refs.size() - 1));
+//			render = RenderEngine.renderResult(vecs, refs, blocks, refs.get(refs.size() - 1));
 		}
 
 		deblocker.deblock(vecs, render);		
