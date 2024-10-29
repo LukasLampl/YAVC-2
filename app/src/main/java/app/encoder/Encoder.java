@@ -41,6 +41,8 @@ public class Encoder {
 			outStream.activate();
 			
 			for (int i = 0; i < files; i++) {
+				System.out.println("");
+				System.out.println("Frame " + i + ":");
 				long start = System.currentTimeMillis();
 				long start_img_read = System.currentTimeMillis();
 				PixelRaster frame = imgReader.getNextImage();
@@ -132,8 +134,8 @@ public class Encoder {
 	private void printStatistics(long time, long fullTime, int index, ThreadLoadManager<Vector> vecs, ThreadLoadManager<MacroBlock> diffs,
 			long imgReadTime, long quadtreeConstructionTime, long leaveNodeTime, long differenceTime, long vectorTime, long renderTime, long deblockTime) {
 		long startOutput = System.currentTimeMillis();
-		System.out.println("");
-		System.out.println("Frame " + index + ":");
+//		System.out.println("");
+//		System.out.println("Frame " + index + ":");
 		System.out.println("- Time: " + time + "ms | Avg. time: " + (fullTime / index) + "ms");
 		System.out.println("   > Image read time: " + imgReadTime + "ms");
 		System.out.println("   > Quadtree construction time: " + quadtreeConstructionTime + "ms");
@@ -142,8 +144,7 @@ public class Encoder {
 		System.out.println("   > Vector calculation time: " + vectorTime + "ms");
 		System.out.println("   > Rendering time of frame (with coding errors): " + renderTime + "ms");
 		System.out.println("   > Deblocking filter time: " + deblockTime + "ms");
-		System.out.println("   >>>>>>>>>> Sum (process only, no output): " + (quadtreeConstructionTime + leaveNodeTime + differenceTime + vectorTime + renderTime + deblockTime) + "ms");
-		System.out.println();
+		System.out.println("   > Sum (process only, no output): " + (quadtreeConstructionTime + leaveNodeTime + differenceTime + vectorTime + renderTime + deblockTime) + "ms");
 		
 		if (vecs != null) {
 			int vecArea = 0;

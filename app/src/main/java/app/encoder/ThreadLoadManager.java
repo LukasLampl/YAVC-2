@@ -2,6 +2,7 @@ package app.encoder;
 
 import java.util.ArrayList;
 
+import app.interprediction.Vector;
 import app.quadtree.QuadtreeEngine;
 import app.utils.MacroBlock;
 
@@ -66,6 +67,8 @@ public class ThreadLoadManager<T> {
 			for (T obj : blockList) {
 				if (obj instanceof MacroBlock) {
 					currentLoad += ((MacroBlock)obj).getSquaredSize();
+				} else if (obj instanceof Vector) {
+					currentLoad += ((Vector)obj).getSize() * ((Vector)obj).getSize();
 				}
 				
 				this.evenlyDistributedObjects.get(currentIndex).add(obj);

@@ -56,7 +56,8 @@ public class RenderEngine {
 					
 					Runnable task = () -> {
 						ArrayList<Vector> vecList = vecs.getLoadOf(index);
-						numThreads++;
+						long localTotalTime = 0;
+						long area = 0;
 						
 						for (Vector v : vecList) {
 							PixelRaster cache = v.getReference() == -1 ? null : refs.get(config.MAX_REFERENCES - v.getReference());
@@ -68,6 +69,8 @@ public class RenderEngine {
 							double[][][] reconstructedColor = reconstructColors(v.getIDCTCoefficientsOfAbsoluteColorDifference(false), cache.getPixelBlock(pos, size, null), size);
 							long t_end = System.currentTimeMillis();
 							totalTime += (t_end - t_start);
+							localTotalTime += (t_end - t_start);
+							area += v.getSize() * v.getSize();
 							
 							for (int x = 0; x < size; x++) {
 								if (EndX + x < 0 || EndX + x >= dim.width) continue;
@@ -83,6 +86,8 @@ public class RenderEngine {
 								}
 							}
 						}
+						
+						System.out.println(String.format("Thread: %3d | Time: %6dms | List size: %5d | Total area: %8dpx", index, localTotalTime, vecList.size(), area));
 					};
 				
 					executor.submit(task);
@@ -90,7 +95,7 @@ public class RenderEngine {
 			}
 			
 			executor.shutdown();
-			while (!executor.awaitTermination(20, TimeUnit.NANOSECONDS)) {}
+			while (!executor.awaitTermination(250, TimeUnit.MICROSECONDS)) {}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
