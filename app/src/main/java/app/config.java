@@ -30,6 +30,7 @@ package app;
  */
 
 public class config {
+	public static final boolean PRINT_EXACT_STATISTICS = true;
 	public static final int MAX_REFERENCES = 4;
 
 	public static final int[][] QUANTIZATION_MATRIX_8x8_Luma = {
