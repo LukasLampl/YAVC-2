@@ -286,37 +286,28 @@ public class DCTEngine {
 			System.err.println("No DCT-II Coefficients to apply IDCT-II on! > NULL");
 			return null;
 		}
-		
-		double[][][] res = new double[3][][];
 
 		if (size == 4) {
-			double[][][] objToProcess = DCTCoeff.get(0);
-			double[][][] chromaIDCT = new double[][][] {objToProcess[1], objToProcess[2]};
-			double[][] lumaIDCT = objToProcess[0];
-			dequantizeChromaDCTCoefficients(chromaIDCT, 2);
-			dequantizeLumaDCTCoefficients(lumaIDCT, 4);
-			chromaIDCT = computeChromaIDCTCoefficients(chromaIDCT[0], chromaIDCT[1], 2);
-			lumaIDCT = computeLumaIDCTCoefficients(lumaIDCT, 4);
-			res[0] = lumaIDCT;
-			res[1] = chromaIDCT[0];
-			res[2] = chromaIDCT[1];
-			return res;
+			return compute4x4IDCT(DCTCoeff);
 		}
 		
+		int fraction = 8;
+		int halfFraction = fraction / 2;
+		int halfSize = size / 2;
+		double[][][] res = new double[3][][];
 		res[0] = new double[size][size];
-		res[1] = new double[size / 2][size / 2];
-		res[2] = new double[size / 2][size / 2];
+		res[1] = new double[halfSize][halfSize];
+		res[2] = new double[halfSize][halfSize];
 		
-		for (int x = 0, index = 0; x < size; x += 8) {
-			for (int y = 0; y < size; y += 8) {
+		for (int x = 0, index = 0; x < size; x += fraction) {
+			for (int y = 0; y < size; y += fraction) {
 				double[][][] CoeffGroup = DCTCoeff.get(index++);
 				double[][][] chromaIDCT = new double[][][] {CoeffGroup[1], CoeffGroup[2]};
 				double[][] lumaIDCT = CoeffGroup[0];
-				dequantizeChromaDCTCoefficients(chromaIDCT, 4);
-				dequantizeLumaDCTCoefficients(lumaIDCT, 8);
-				chromaIDCT = computeChromaIDCTCoefficients(chromaIDCT[0], chromaIDCT[1], 4);
-				lumaIDCT = computeLumaIDCTCoefficients(lumaIDCT, 8);
-				
+				dequantizeChromaDCTCoefficients(chromaIDCT, halfFraction);
+				dequantizeLumaDCTCoefficients(lumaIDCT, fraction);
+				chromaIDCT = computeChromaIDCTCoefficients(chromaIDCT[0], chromaIDCT[1], halfFraction);
+				lumaIDCT = computeLumaIDCTCoefficients(lumaIDCT, fraction);
 				double[][][] cache = new double[3][][];
 				cache[0] = lumaIDCT;
 				cache[1] = chromaIDCT[0];
@@ -325,6 +316,21 @@ public class DCTEngine {
 			}
 		}
 		
+		return res;
+	}
+	
+	private double[][][] compute4x4IDCT(ArrayList<double[][][]> DCTCoeff) {
+		double[][][] res = new double[3][][];
+		double[][][] objToProcess = DCTCoeff.get(0);
+		double[][][] chromaIDCT = new double[][][] {objToProcess[1], objToProcess[2]};
+		double[][] lumaIDCT = objToProcess[0];
+		dequantizeChromaDCTCoefficients(chromaIDCT, 2);
+		dequantizeLumaDCTCoefficients(lumaIDCT, 4);
+		chromaIDCT = computeChromaIDCTCoefficients(chromaIDCT[0], chromaIDCT[1], 2);
+		lumaIDCT = computeLumaIDCTCoefficients(lumaIDCT, 4);
+		res[0] = lumaIDCT;
+		res[1] = chromaIDCT[0];
+		res[2] = chromaIDCT[1];
 		return res;
 	}
 	

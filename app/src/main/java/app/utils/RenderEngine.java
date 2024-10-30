@@ -11,7 +11,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import app.config;
-import app.encoder.ThreadLoadManager;
+import app.encoder.LoadDistributor;
 import app.interprediction.Vector;
 
 public class RenderEngine {
@@ -19,7 +19,7 @@ public class RenderEngine {
 	static long totalTime = 0L;
 	static long numThreads = 0L;
 
-	public static PixelRaster renderResult(ThreadLoadManager<Vector> vecs, ArrayList<PixelRaster> refs, ThreadLoadManager<MacroBlock> differenceManager, PixelRaster prevFrame) {
+	public static PixelRaster renderResult(LoadDistributor<Vector> vecs, ArrayList<PixelRaster> refs, LoadDistributor<MacroBlock> differenceManager, PixelRaster prevFrame) {
 		PixelRaster render = prevFrame.copy();
 		Dimension dim = prevFrame.getDimension();
 		ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
@@ -27,9 +27,7 @@ public class RenderEngine {
 		numThreads = 0L;
 		
 		try {
-			for (int i = 0; i < differenceManager.getNumberOfChunks(); i++) {
-				final ArrayList<MacroBlock> blockList = differenceManager.getLoadOf(i);
-
+			for (final ArrayList<MacroBlock> blockList : differenceManager.getIterable()) {
 				Runnable task = () -> { 
 					for (MacroBlock block : blockList) {
 						Point pos = block.getPosition();
@@ -51,11 +49,8 @@ public class RenderEngine {
 			}
 						
 			if (vecs != null) {
-				for (int i = 0; i < vecs.getNumberOfChunks(); i++) {
-					final int index = i;
-					
+				for (final ArrayList<Vector> vecList : vecs.getIterable()) {
 					Runnable task = () -> {
-						ArrayList<Vector> vecList = vecs.getLoadOf(index);
 						long localTotalTime = 0;
 						long area = 0;
 						
@@ -87,7 +82,7 @@ public class RenderEngine {
 							}
 						}
 						
-						System.out.println(String.format("Thread: %3d | Time: %6dms | List size: %5d | Total area: %8dpx", index, localTotalTime, vecList.size(), area));
+						System.out.println(String.format("Time: %6dms | List size: %5d | Total area: %8dpx", localTotalTime, vecList.size(), area));
 					};
 				
 					executor.submit(task);

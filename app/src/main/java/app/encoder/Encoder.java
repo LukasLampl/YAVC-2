@@ -3,9 +3,12 @@ package app.encoder;
 import java.io.File;
 import java.util.ArrayList;
 
+import javax.imageio.ImageIO;
+
 import app.config;
 import app.interprediction.Vector;
 import app.interprediction.VectorEngine;
+import app.interprediction.VectorEngineResult;
 import app.quadtree.QuadtreeEngine;
 import app.utils.Deblocker;
 import app.utils.MacroBlock;
@@ -69,27 +72,28 @@ public class Encoder {
 				ArrayList<MacroBlock> quadtreeRoots = QUADTREE_ENGINE.constructQuadtree(curFrame);
 				long end_construct_quadtree = System.currentTimeMillis();
 				long start_get_leave_nodes = System.currentTimeMillis();
-				ThreadLoadManager<MacroBlock> threadLoadManager = QUADTREE_ENGINE.getLeaveNodes(quadtreeRoots);
-				threadLoadManager.compute(frame.getWidth() * frame.getHeight());
+				LoadDistributor<MacroBlock> leaveNodeManager = QUADTREE_ENGINE.getLeaveNodes(quadtreeRoots);
+				leaveNodeManager.compute(frame.getWidth() * frame.getHeight());
 				long end_get_leave_nodes = System.currentTimeMillis();
 				
 //				BufferedImage[] part = RenderEngine.renderQuadtree(leaveNodes, curFrame.getDimension());
 				long start_difference = System.currentTimeMillis();
-				ThreadLoadManager<MacroBlock> differenceManager = DIFFERENCE_ENGINE.computeDifferences(prevFrame, threadLoadManager);
+				LoadDistributor<MacroBlock> differenceManager = DIFFERENCE_ENGINE.computeDifferences(prevFrame, leaveNodeManager);
 				long end_difference = System.currentTimeMillis();
 //				BufferedImage[] part = RenderEngine.renderQuadtree(leaveNodes, curFrame.getDimension());
 				
 				long start_vector_movement = System.currentTimeMillis();
-				ThreadLoadManager<?>[] resultAfterInterpred = VECTOR_ENGINE.computeMovementVectors(differenceManager, references);
-				ThreadLoadManager<Vector> movementVectors = (ThreadLoadManager<Vector>)resultAfterInterpred[0];
-				differenceManager = (ThreadLoadManager<MacroBlock>)resultAfterInterpred[1];
+				VectorEngineResult vectorEngineResult = VECTOR_ENGINE.computeMovementVectors(differenceManager, references);
+				LoadDistributor<Vector> movementVectors = vectorEngineResult.getVectors();
+				differenceManager = vectorEngineResult.getRestBlocks();
 				long end_vector_movement = System.currentTimeMillis();
+				
 				
 //				BufferedImage vectors = RenderEngine.renderVectors(movementVectors, curFrame.getDimension());
 				long start_render = System.currentTimeMillis();
 				PixelRaster composite = RenderEngine.renderResult(movementVectors, references, differenceManager, prevFrame);
 				outStream.addObjectToOutputQueue(new QueueObject(movementVectors, differenceManager));
-//				ImageIO.write(composite.toBufferedImage(), "png", new File(output.getParent() + "/VR_" + i + ".png"));
+				ImageIO.write(composite.toBufferedImage(), "png", new File(output.getParent() + "/VR_" + i + ".png"));
 				long end_render = System.currentTimeMillis();
 				
 				long start_deblock = System.currentTimeMillis();
@@ -131,7 +135,7 @@ public class Encoder {
 	private static double TOTAL_MSE = 0;
 	private static int TOTAL_MSE_ADDITION_COUNT = 0;
 	
-	private void printStatistics(long time, long fullTime, int index, ThreadLoadManager<Vector> vecs, ThreadLoadManager<MacroBlock> diffs,
+	private void printStatistics(long time, long fullTime, int index, LoadDistributor<Vector> vecs, LoadDistributor<MacroBlock> diffs,
 			long imgReadTime, long quadtreeConstructionTime, long leaveNodeTime, long differenceTime, long vectorTime, long renderTime, long deblockTime) {
 		long startOutput = System.currentTimeMillis();
 //		System.out.println("");
@@ -148,7 +152,7 @@ public class Encoder {
 		
 		if (vecs != null) {
 			int vecArea = 0;
-			double averageMSE = (VECTOR_ENGINE.getVectorMSE() / vecs.getLoadNumber());
+			double averageMSE = (VECTOR_ENGINE.getVectorMSE() / vecs.getNumberOfObjects());
 			TOTAL_MSE += averageMSE;
 			TOTAL_MSE_ADDITION_COUNT++;
 			
@@ -160,7 +164,7 @@ public class Encoder {
 				}
 			}
 			
-			System.out.println("- Vectors: " + vecs.getLoadNumber() + " | Covered area: " + vecArea + "px | Avg. MSE: " + averageMSE);
+			System.out.println("- Vectors: " + vecs.getNumberOfObjects() + " | Covered area: " + vecArea + "px | Avg. MSE: " + averageMSE);
 		}
 		
 		if (diffs != null) {
@@ -174,7 +178,7 @@ public class Encoder {
 				}
 			}
 			
-			System.out.println("- Non-Coded blocks: " + diffs.getLoadNumber() + " | Covered area: " + diffArea + "px");
+			System.out.println("- Non-Coded blocks: " + diffs.getNumberOfObjects() + " | Covered area: " + diffArea + "px");
 		}
 		
 		System.out.println("- Total Avg. MSE of inter prediction: " + (TOTAL_MSE / TOTAL_MSE_ADDITION_COUNT));

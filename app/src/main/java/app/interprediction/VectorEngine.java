@@ -24,15 +24,13 @@ package app.interprediction;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import app.config;
-import app.encoder.ThreadLoadManager;
+import app.encoder.LoadDistributor;
 import app.utils.MacroBlock;
 import app.utils.MathUtils;
 import app.utils.PixelRaster;
@@ -52,6 +50,8 @@ import app.utils.PixelRaster;
  */
 
 public class VectorEngine {
+	
+	private int totalPixelsProcessed = 0;
 	
 	/**
 	 * <p>Variable to store the PI radian.</p>
@@ -95,68 +95,49 @@ public class VectorEngine {
 	 * 
 	 * @see utils.Vector
 	 */
-	public ThreadLoadManager<?>[] computeMovementVectors(ThreadLoadManager<MacroBlock> differenceManager, final ArrayList<PixelRaster> refs) {
+	public VectorEngineResult computeMovementVectors(LoadDistributor<MacroBlock> differenceManager, final ArrayList<PixelRaster> refs) {
 		if (refs == null || refs.size() == 0) {
 			throw new NullPointerException("No reference frame to refer to");
 		}
 		
+		this.totalPixelsProcessed = 0;
 		this.TOTAL_MSE = 0;
 		
-		int restLoad = 0;
-		int vectorPixels = 0;
-		ThreadLoadManager<Vector> vecManager = new ThreadLoadManager<Vector>();
-		ThreadLoadManager<MacroBlock> restBlocks = new ThreadLoadManager<MacroBlock>();
-		ArrayList<Future<Vector[]>> futureVecs = new ArrayList<Future<Vector[]>>(differenceManager.getLoadNumber());
+		LoadDistributor<MacroBlock> restBlockManager = new LoadDistributor<MacroBlock>();
+		LoadDistributor<Vector> vecManager = new LoadDistributor<Vector>();
+		ArrayList<Callable<Void>> tasks = new ArrayList<Callable<Void>>(differenceManager.getNumberOfObjects());
 		ExecutorService executor = Executors.newWorkStealingPool();
 		
-		for (int i = 0; i < differenceManager.getNumberOfChunks(); i++) {
-			ArrayList<MacroBlock> blockList = differenceManager.getLoadOf(i);
-			
-			Callable<Vector[]> searchTask = createVectorSearchTask(refs, blockList);
-			futureVecs.add(executor.submit(searchTask));
+		for (final ArrayList<MacroBlock> blockList : differenceManager.getIterable()) {
+			Callable<Void> searchTask = createVectorSearchTask(refs, blockList, vecManager);
+			tasks.add(searchTask);
 		}
-		
-		for (Future<Vector[]> fvec : futureVecs) {
-			try {
-				Vector[] vecArr = fvec.get();
-				
-				if (vecArr != null) {
-					for (Vector vec : vecArr) {
-						if (vec == null) {
-							continue;
-						}
-						
-						vectorPixels += vec.getSize() * vec.getSize();
-						vecManager.setObj(vec);
-					}
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-		
-		executor.shutdown();
 		
 		try {
+			executor.invokeAll(tasks);
+			executor.shutdown();
 			while (!executor.awaitTermination(1, TimeUnit.MILLISECONDS));
+			vecManager.compute(this.totalPixelsProcessed);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		
-		for (int i = 0; i < differenceManager.getNumberOfChunks(); i++) {
-			ArrayList<MacroBlock> blockList = differenceManager.getLoadOf(i);
+		if (vecManager.getNumberOfObjects() != differenceManager.getNumberOfObjects()) {
+			int restLoad = 0;
 			
-			for (MacroBlock block : blockList) {
-				if (!block.isConvertedToVector()) {
-					restLoad += block.getSquaredSize();
-					restBlocks.setObj(block);
+			for (ArrayList<MacroBlock> blockList : differenceManager.getIterable()) {
+				for (MacroBlock block : blockList) {
+					if (!block.isConvertedToVector()) {
+						restLoad += block.getSquaredSize();
+						restBlockManager.setObj(block);
+					}
 				}
 			}
+			
+			restBlockManager.compute(restLoad);
 		}
-		
-		restBlocks.compute(restLoad);
-		vecManager.compute(vectorPixels);
-		return new ThreadLoadManager<?>[] {vecManager, restBlocks};
+	
+		return new VectorEngineResult(restBlockManager, vecManager);
 	}
 	
 	/**
@@ -169,8 +150,8 @@ public class VectorEngine {
 	 * @param refs	Reference frames
 	 * @param blockToBeSearched	MacroBlock that should be searched
 	 */
-	private Callable<Vector[]> createVectorSearchTask(final ArrayList<PixelRaster> refs, ArrayList<MacroBlock> blocksToBeSearched) {
-		Callable<Vector[]> task = () -> {
+	private Callable<Void> createVectorSearchTask(final ArrayList<PixelRaster> refs, ArrayList<MacroBlock> blocksToBeSearched, LoadDistributor<Vector> vecManager) {
+		Callable<Void> task = () -> {
 			int maxSize = refs.size();
 			MacroBlock[] canidates = new MacroBlock[maxSize];
 			Vector[] vecs = new Vector[blocksToBeSearched.size()];
@@ -191,7 +172,16 @@ public class VectorEngine {
 				vecs[vectorIndex++] = vec;
 			}
 			
-			return vecs;
+			for (Vector vec : vecs) {
+				if (vec == null) {
+					continue;
+				}
+				
+				totalPixelsProcessed += vec.getSize() * vec.getSize();
+				vecManager.setObj(vec);
+			}
+			
+			return null;
 		};
 		
 		return task;
@@ -243,7 +233,7 @@ public class VectorEngine {
 			PixelRaster referenceRaster = refs.get(config.MAX_REFERENCES - bestMatch.getReference());
 			double[][][] referenceColor = referenceRaster.getPixelBlock(bestMatch.getPosition(), size, null);
 			double[][][] absoluteColorDifference = getAbsoluteDifferenceOfColors(blockToBeSearched.getColors(), referenceColor, size);
-			double newMatchMSE = getMSEOfColors(absoluteColorDifference, blockToBeSearched.getColors(), size, false);
+			double newMatchMSE = getMSEOfColors(absoluteColorDifference, blockToBeSearched.getColors(), size);
 			this.TOTAL_MSE += newMatchMSE;
 			
 			vec = new Vector(bestMatch.getPosition(), size);
@@ -306,34 +296,31 @@ public class VectorEngine {
 		int radius = 4;
 		int searchWindow = 48;
 		int size = blockToBeSearched.getSize();
-		int sumOfAllPoints = 2304; //All possible points to search
 		Dimension dim = ref.getDimension();
-		HashSet<Point> searchedPoints = new HashSet<Point>(sumOfAllPoints);
-		
+
 		Point blockPos = blockToBeSearched.getPosition();
 		Point centerPoint = blockToBeSearched.getPosition();
-		MacroBlock mostEqualBlock = null;
+		MacroBlock mostEqualBlock = new MacroBlock(new Point(centerPoint.x, centerPoint.y), size, false);
 		
 		Point initPos = new Point(0, 0);
 		Point[] searchPoints = new Point[7];
 		
 		while (radius > 1) {
-			searchPoints = getHexagonPoints(radius, centerPoint);
+			getHexagonPoints(radius, centerPoint, searchPoints);
 			
 			for (Point p : searchPoints) {
-				if (searchedPoints.contains(p)
-					|| !isHexagonPointInSearchWindow(blockPos, searchWindow, p, dim)) {
+				if (!isHexagonPointInSearchWindow(blockPos, searchWindow, p, dim)) {
 					continue;
 				}
 				
-				searchedPoints.add(p);
 				cache = ref.getPixelBlock(p, size, cache);
-				double MSE = getMSEOfColors(cache, blockToBeSearched.getColors(), size, true);
+				double MSE = getMSEOfColors(cache, blockToBeSearched.getColors(), size);
 				
 				if (MSE < lowestMSE) {
 					lowestMSE = MSE;
-					initPos = p;
-					mostEqualBlock = new MacroBlock(p, size, cache);
+					initPos.setLocation(p.x, p.y);
+					mostEqualBlock.setColorComponents(cache);
+					mostEqualBlock.moveBlock(p.x, p.y);
 				}
 			}
 			
@@ -348,17 +335,17 @@ public class VectorEngine {
 		searchPoints = getSmallHexagonSearchPoints(centerPoint, radius);
 		
 		for (Point p : searchPoints) {
-			if (searchedPoints.contains(p)
-				|| !isHexagonPointInSearchWindow(blockPos, searchWindow, p, dim)) {
+			if (!isHexagonPointInSearchWindow(blockPos, searchWindow, p, dim)) {
 				continue;
 			}
 			
 			cache = ref.getPixelBlock(p, size, cache);
-			double MSE = getMSEOfColors(cache, blockToBeSearched.getColors(), size, true);
+			double MSE = getMSEOfColors(cache, blockToBeSearched.getColors(), size);
 			
 			if (MSE < lowestMSE) {
 				lowestMSE = MSE;
-				mostEqualBlock = new MacroBlock(p, size, cache);
+				mostEqualBlock.setColorComponents(cache);
+				mostEqualBlock.moveBlock(p.x, p.y);
 			}
 		}
 		
@@ -446,8 +433,9 @@ public class VectorEngine {
 		int size = blockToSearch.getSize();
 		double lowestMSE = bestMatchTillNow.getMSE();
 		Dimension dim = ref.getDimension();
-		MacroBlock mostEqualBlock = null;
 		Point pos = blockToSearch.getPosition();
+		Point bestMatchPos = bestMatchTillNow.getPosition();
+		MacroBlock mostEqualBlock = new MacroBlock(new Point(bestMatchPos.x, bestMatchPos.y), size, false);
 		
 		for (int y = pos.y - searchWindow; y < pos.y + searchWindow; y++) {
 			if (y < 0 || y >= dim.height) {
@@ -459,12 +447,13 @@ public class VectorEngine {
 					continue;
 				}
 				
-				cache = ref.getPixelBlock(new Point(x, y), size, cache);
-				double MSE = getMSEOfColors(blockToSearch.getColors(), cache, size, true);
+				cache = ref.getPixelBlock(x, y, size, cache);
+				double MSE = getMSEOfColors(blockToSearch.getColors(), cache, size);
 				
 				if (MSE < lowestMSE) {
 					lowestMSE = MSE;
-					mostEqualBlock = new MacroBlock(new Point(x, y), size, cache);
+					mostEqualBlock.moveBlock(x, y);
+					mostEqualBlock.setColorComponents(cache);
 				}
 			}
 		}
@@ -480,22 +469,26 @@ public class VectorEngine {
 	 * <p>Get the six points of a hexagon and the center based
 	 * on radius and position.</p>
 	 * 
-	 * @return Array of all points
+	 * <p><b>Note:</b><br>
+	 * Everything is written into the passed cache!
+	 * </p>
 	 * 
 	 * @param radius	Radius of the hexagon
 	 * @param pos	Position of the hexagon
+	 * @param cache	Cache of previously stored points
 	 */
-	private Point[] getHexagonPoints(int radius, Point pos) {
-		Point[] points = new Point[7];
-		points[6] = pos;
+	private void getHexagonPoints(final int radius, final Point pos, Point[] cache) {
+		if (cache == null) {
+			cache = new Point[7];
+		}
+		
+		cache[6] = pos;
 		
 		for (int i = 0; i < 6; i++) {
 			double cos = this.COS_TABLE_HEXAGON[i];
 			double sin = this.SIN_TABLE_HEXAGON[i];
-			points[i] = new Point((int)(cos * radius + pos.x), (int)(sin * radius + pos.y));
+			cache[i] = new Point((int)(cos * radius + pos.x), (int)(sin * radius + pos.y));
 		}
-		
-		return points;
 	}
 	
 	/**
@@ -559,29 +552,22 @@ public class VectorEngine {
 	 * <li>[3] = A
 	 * </ul></p>
 	 * 
-	 * @return The Mean Square Error between the color arrays
+	 * @return The Mean Square Error between the color arrays.
 	 * 
-	 * @param col1	First color array to compare
-	 * @param col2	Second color array to compare
-	 * @param size	Size of the color arrays
-	 * @param countAlpha	Flag whether the alpha is involved in the calculation or not
+	 * @param col1	First color array to compare.
+	 * @param col2	Second color array to compare.
+	 * @param size	Size of the color arrays.
 	 */
-	private double getMSEOfColors(double[][][] col1, double[][][] col2, int size, boolean countAlpha) {
+	private double getMSEOfColors(double[][][] col1, double[][][] col2, int size) {
 		double resY = 0;
 		double resU = 0;
 		double resV = 0;
-		double resA = 0;
 		int halfSize = size / 2;
 		
 		for (int y = 0; y < size; y++) {
 			for (int x = 0; x < size; x++) {
 				double deltaY = col1[0][x][y] - col2[0][x][y];
 				resY += deltaY * deltaY;
-				
-				if (countAlpha) {
-					double deltaA = col1[3][x][y] - col2[3][x][y];
-					resA += deltaA * deltaA;
-				}
 			}
 		}
 		
@@ -601,12 +587,6 @@ public class VectorEngine {
 		resY /= sizeSQ;
 		resU /= halfSizeSQ;
 		resV /= halfSizeSQ;
-		
-		if (countAlpha) {
-			resA = Math.pow(resA, resA);
-			return ((resY + resU + resV + resA) / 4);
-		}
-		
 		return ((resY + resU + resV) / 3);
 	}
 	

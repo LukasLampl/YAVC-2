@@ -503,6 +503,17 @@ public class PixelRaster {
 	}
 	
 	/**
+	 * <p>For documentation see: {@link #getPixelBlock(int, int, int, double[][][])}.</p>
+	 */
+	public double[][][] getPixelBlock(final Point position, final int size, double[][][] cache) {
+		if (position == null) {
+			throw new NullPointerException();
+		}
+		
+		return getPixelBlock(position.x, position.y, size, cache);
+	}
+	
+	/**
 	 * <p>Get a ixelblock within the PixelRaster.
 	 * The block is ordered like a PixelRaster, full 4:4:4
 	 * luma and 4:2:0 chroma.</p>
@@ -517,19 +528,15 @@ public class PixelRaster {
 	 * without creating a new array
 	 * @return PixelBlock from the PixelRaster
 	 */
-	public double[][][] getPixelBlock(final Point position, final int size, double[][][] cache) {
-		if (position == null) {
-			throw new NullPointerException();
-		}
-		
+	public double[][][] getPixelBlock(final int positionX, final int positionY, final int size, double[][][] cache) {
 		double[][][] res = cache == null ? getArray(size) : size <= cache[0].length ? cache : getArray(size);
 		
 		for (int y = 0; y < size; y++) {
-			int absoluteY = position.y + y;
+			int absoluteY = positionY + y;
 			boolean outOfBoundsY = absoluteY >= this.dim.height;
 			
 			for (int x = 0; x < size; x++) {
-				int absoluteX = position.x + x;
+				int absoluteX = positionX + x;
 				boolean outOfBoundsX = absoluteX >= this.dim.width;
 				
 				if (outOfBoundsY || outOfBoundsX) {
@@ -543,8 +550,8 @@ public class PixelRaster {
 		}
 		
 		int halfSize = size / 2;
-		int halfPosX = position.x / 2;
-		int halfPosY = position.y / 2;
+		int halfPosX = positionX / 2;
+		int halfPosY = positionY / 2;
 		int halfDimWidth = this.dim.width / 2;
 		int halfDimHeight = this.dim.height / 2;
 		

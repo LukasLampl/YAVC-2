@@ -28,7 +28,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import app.config;
-import app.encoder.ThreadLoadManager;
+import app.encoder.LoadDistributor;
 import app.interprediction.Vector;
 
 /**
@@ -70,7 +70,7 @@ public class Deblocker {
 	 * @param movementVecs	Vectors from the inter-prediction step
 	 * @param composite	Frame that has the encoded vectors in it
 	 */
-	public void deblock(ThreadLoadManager<Vector> movementVecs, PixelRaster composite) {
+	public void deblock(LoadDistributor<Vector> movementVecs, PixelRaster composite) {
 		int index = clip(STRENGTH, 0, MAX_QUANT);
 		int alpha = config.DEBLOCKER_ALPHAS[index + ALPHA_OFFSET];
 		int beta = config.DEBLOCKER_BETAS[index + BETA_OFFSET];
@@ -78,9 +78,7 @@ public class Deblocker {
 		int threads = Runtime.getRuntime().availableProcessors();
 		ExecutorService executor = Executors.newFixedThreadPool(threads);
 		
-		for (int i = 0; i < movementVecs.getNumberOfChunks(); i++) {
-			ArrayList<Vector> vecList = movementVecs.getLoadOf(i);
-			
+		for (final ArrayList<Vector> vecList : movementVecs.getIterable()) {
 			for (Vector vec : vecList) {
 				Point vecPos = vec.getPosition();
 				Point blockPos = new Point(vecPos.x + vec.getSpanX(), vecPos.y + vec.getSpanY());

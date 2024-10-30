@@ -15,21 +15,18 @@ public class DifferenceEngine {
 	private static final double DELTA_U = 3.2;
 	private static final double DELTA_V = 3.2;
 	
-	public ThreadLoadManager<MacroBlock> computeDifferences(PixelRaster prevFrame, ThreadLoadManager<MacroBlock> threadLoadManager) {
-		int predictedSize = threadLoadManager.getLoadNumber() / 2;
+	public LoadDistributor<MacroBlock> computeDifferences(PixelRaster prevFrame, LoadDistributor<MacroBlock> threadLoadManager) {
+		int predictedSize = threadLoadManager.getNumberOfObjects() / 2;
 		int totalDiffSize = 0;
-		ThreadLoadManager<MacroBlock> diffManager = new ThreadLoadManager<MacroBlock>();
+		LoadDistributor<MacroBlock> diffManager = new LoadDistributor<MacroBlock>();
 		ArrayList<Future<ArrayList<MacroBlock>>> futureDiffs = new ArrayList<Future<ArrayList<MacroBlock>>>(predictedSize);
 		
 		try {
 			int threads = Runtime.getRuntime().availableProcessors();
 			ExecutorService executor = Executors.newFixedThreadPool(threads);
 			
-			for (int i = 0; i < threadLoadManager.getNumberOfChunks(); i++) {
-				final int index = i;
-				
+			for (final ArrayList<MacroBlock> blockList : threadLoadManager.getIterable()) {
 				Callable<ArrayList<MacroBlock>> task = () -> {
-					ArrayList<MacroBlock> blockList = threadLoadManager.getLoadOf(index);
 					ArrayList<MacroBlock> blocksToReturn = new ArrayList<MacroBlock>();
 					
 					for (MacroBlock block : blockList) {

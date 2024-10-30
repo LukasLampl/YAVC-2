@@ -304,7 +304,8 @@ public class Vector {
 			return DCT_ENGINE.computeIDCTOfVectorColorDifference(this.AbsoluteColorDifferenceDCTCoefficients, this.size);
 		}
 		
-		return DCT_ENGINE.computeIDCTOfVectorColorDifference(cloneAbsoluteColorDifference(), this.size);
+		ArrayList<double[][][]> clone = cloneAbsoluteColorDifference();
+		return DCT_ENGINE.computeIDCTOfVectorColorDifference(clone, this.size);
 	}
 	
 	/**

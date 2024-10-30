@@ -242,6 +242,35 @@ public class MacroBlock {
 	/**
 	 * <p>Initializes the color components of the MacroBlock individually.</p>
 	 * 
+	 * @param color	Color components of the MacroBlock.
+	 * 
+	 * @throws NullPointerException	if the following situations:
+	 * <ul><li>If the Y component is null
+	 * <li>If the U component is null
+	 * <li>If the V component is null
+	 * <li>If the A component is null
+	 * </ul>
+	 */
+	public void setColorComponents(double[][][] colors) {
+		if (colors[0] == null) {
+			throw new NullPointerException("MacroBlock can't have a NULL Luma-Y channel");
+		} else if (colors[1] == null) {
+			throw new NullPointerException("MacroBlock can't have a NULL Chroma-U channel");
+		} else if (colors[2] == null) {
+			throw new NullPointerException("MacroBlock can't have a NULL Chroma-V channel");
+		} else if (colors[3] == null) {
+			throw new NullPointerException("MacroBlock can't have a NULL Alpha channel");
+		}
+		
+		this.Y = colors[0];
+		this.U = colors[1];
+		this.V = colors[2];
+		this.A = colors[3];
+	}
+	
+	/**
+	 * <p>Initializes the color components of the MacroBlock individually.</p>
+	 * 
 	 * @param Y	Y values in the MacroBlock
 	 * @param U	U values in the MacroBlock
 	 * @param V	V values in the MacroBlock
@@ -558,5 +587,9 @@ public class MacroBlock {
 	
 	public boolean isConvertedToVector() {
 		return this.isConvertedToVector;
+	}
+	
+	public void moveBlock(int x, int y) {
+		this.position.setLocation(x, y);
 	}
 }
