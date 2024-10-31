@@ -3,8 +3,6 @@ package app.encoder;
 import java.io.File;
 import java.util.ArrayList;
 
-import javax.imageio.ImageIO;
-
 import app.config;
 import app.interprediction.Vector;
 import app.interprediction.VectorEngine;
@@ -93,7 +91,7 @@ public class Encoder {
 				long start_render = System.currentTimeMillis();
 				PixelRaster composite = RenderEngine.renderResult(movementVectors, references, differenceManager, prevFrame);
 				outStream.addObjectToOutputQueue(new QueueObject(movementVectors, differenceManager));
-				ImageIO.write(composite.toBufferedImage(), "png", new File(output.getParent() + "/VR_" + i + ".png"));
+//				ImageIO.write(composite.toBufferedImage(), "png", new File(output.getParent() + "/VR_" + i + ".png"));
 				long end_render = System.currentTimeMillis();
 				
 				long start_deblock = System.currentTimeMillis();
@@ -156,12 +154,8 @@ public class Encoder {
 			TOTAL_MSE += averageMSE;
 			TOTAL_MSE_ADDITION_COUNT++;
 			
-			for (int i = 0; i < vecs.getNumberOfChunks(); i++) {
-				ArrayList<Vector> vecList = vecs.getLoadOf(i);
-				
-				for (Vector v : vecList) {
-					vecArea += v.getAppendedBlock().getSquaredSize();
-				}
+			for (Vector v : vecs.getRawData()) {
+				vecArea += v.getAppendedBlock().getSquaredSize();
 			}
 			
 			System.out.println("- Vectors: " + vecs.getNumberOfObjects() + " | Covered area: " + vecArea + "px | Avg. MSE: " + averageMSE);
@@ -170,12 +164,8 @@ public class Encoder {
 		if (diffs != null) {
 			int diffArea = 0;
 			
-			for (int i = 0; i < diffs.getNumberOfChunks(); i++) {
-				ArrayList<MacroBlock> blockList = diffs.getLoadOf(i);
-				
-				for (MacroBlock b : blockList) {
-					diffArea += b.getSquaredSize();
-				}
+			for (MacroBlock b : diffs.getRawData()) {
+				diffArea += b.getSquaredSize();
 			}
 			
 			System.out.println("- Non-Coded blocks: " + diffs.getNumberOfObjects() + " | Covered area: " + diffArea + "px");
@@ -198,22 +188,5 @@ public class Encoder {
 		if (references.size() > config.MAX_REFERENCES) {
 			references.remove(0);
 		}
-	}
-	
-	private File getAwaitedFile(File parent, int index, String format) {
-		StringBuilder name = new StringBuilder(32);
-		name.append(parent.getAbsolutePath() + "/");
-		
-		if (index < 10) {
-			name.append("000");
-		} else if (index < 100) {
-			name.append("00");
-		} else if (index < 1000) {
-			name.append("0");
-		}
-		
-		name.append(index);
-		name.append(format);
-		return new File(name.toString());
 	}
 }

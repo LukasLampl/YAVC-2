@@ -181,10 +181,9 @@ public class OutputStream {
 		this.QUEUE.add(obj);
 	}
 	
-	public void activate() {
+	public void activate() throws IllegalStateException {
 		if (this.OUTPUT_FILE == null) {
-			System.err.println("No output defined!");
-			System.exit(0);
+			throw new IllegalStateException("Output is defined as null!");
 		}
 		
 		this.canWrite = true;
@@ -198,9 +197,7 @@ public class OutputStream {
 					
 					try {
 						Thread.sleep(50);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
+					} catch (InterruptedException e) {}
 				} else {
 					QueueObject obj = this.QUEUE.poll();
 					writeVectors(this.TEMP_OUTPUT_FILE, obj.getVectors());

@@ -514,7 +514,7 @@ public class PixelRaster {
 	}
 	
 	/**
-	 * <p>Get a ixelblock within the PixelRaster.
+	 * <p>Get a Pixelblock within the PixelRaster.
 	 * The block is ordered like a PixelRaster, full 4:4:4
 	 * luma and 4:2:0 chroma.</p>
 	 * 
@@ -583,10 +583,11 @@ public class PixelRaster {
 	 * @return initialized array
 	 */
 	private double[][][] getArray(final int size) {
+		int halfSize = size / 2;
 		double[][][] res = new double[4][][]; //0 = Y; 1 = U; 2 = V
 		res[0] = new double[size][size];
-		res[1] = new double[size / 2][size / 2];
-		res[2] = new double[size / 2][size / 2];
+		res[1] = new double[halfSize][halfSize];
+		res[2] = new double[halfSize][halfSize];
 		res[3] = new double[size][size];
 		return res;
 	}

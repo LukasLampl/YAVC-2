@@ -53,6 +53,11 @@ public class LoadDistributor<T> {
 	private List<ArrayList<T>> evenlyDistributedObjects;
 	
 	/**
+	 * <p>Holds all inputed items.</p>
+	 */
+	private ArrayList<T> rawItems;
+	
+	/**
 	 * <p>The total amount of data. (Even in the objects itself e.g. pixels).</p>
 	 */
 	private int numberOfData = 0;
@@ -80,6 +85,7 @@ public class LoadDistributor<T> {
 	private void init() {
 		this.undistributedList = new ArrayList<ArrayList<T>>();
 		this.evenlyDistributedObjects = new ArrayList<ArrayList<T>>();
+		this.rawItems = new ArrayList<T>();
 		
 		for (int i = 0; i < QuadtreeEngine.NUMBER_OF_SIZES; i++) {
 			this.undistributedList.add(new ArrayList<T>());
@@ -109,6 +115,18 @@ public class LoadDistributor<T> {
 		
 		ArrayList<T> target = this.undistributedList.get(estimatedIndex);
 		target.add(obj);
+		this.rawItems.add(obj);
+	}
+	
+	/**
+	 * <p>Adds a whole list of items to the LoadDistributor.</p>
+	 * 
+	 * @param l		The List to add.
+	 */
+	public void setAll(List<T> l) {
+		for (T obj : l) {
+			setObj(obj);
+		}
 	}
 	
 	/**
@@ -186,5 +204,13 @@ public class LoadDistributor<T> {
 	 */
 	public Iterable<ArrayList<T>> getIterable() {
 		return this.evenlyDistributedObjects;
+	}
+	
+	/**
+	 * <p>Returns all invoked data in the LoadDistributor.</p>
+	 * @return The invoked data in the LoadDistributor.
+	 */
+	public ArrayList<T> getRawData() {
+		return this.rawItems;
 	}
 }

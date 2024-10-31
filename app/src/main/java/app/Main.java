@@ -21,10 +21,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package app;
 
-import java.io.File;
 import java.util.Arrays;
 
-import javax.imageio.ImageIO;
 import javax.swing.JOptionPane;
 
 import app.encoder.DCTEngine;

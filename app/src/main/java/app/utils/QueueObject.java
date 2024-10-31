@@ -10,13 +10,8 @@ public class QueueObject {
 	private ArrayList<MacroBlock> differences = new ArrayList<MacroBlock>();
 	
 	public QueueObject(LoadDistributor<Vector> vecManager, LoadDistributor<MacroBlock> diffManager) {
-		for (ArrayList<Vector> vecList : vecManager.getIterable()) {
-			this.vectors.addAll(vecList);
-		}
-		
-		for (ArrayList<MacroBlock> blockList : diffManager.getIterable()) {
-			this.differences.addAll(blockList);
-		}
+		this.vectors.addAll(vecManager.getRawData());
+		this.differences.addAll(diffManager.getRawData());
 	}
 	
 	public ArrayList<Vector> getVectors() {

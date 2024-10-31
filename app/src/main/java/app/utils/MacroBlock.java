@@ -468,6 +468,12 @@ public class MacroBlock {
 	
 	/**
 	 * <p>Get the colors of the MacroBlock.</p>
+	 * 
+	 * <p><b>Important:</b><br>
+	 * The array might be bigger than the actual data itself because of
+	 * caching techniques, please refer to use {@link #getSize()} for the
+	 * approximate size of the array!
+	 * </p>
 	 * @return Colors of the MacroBlock
 	 */
 	public double[][][] getColors() {

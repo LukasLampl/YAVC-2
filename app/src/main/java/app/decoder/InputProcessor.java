@@ -3,12 +3,9 @@ package app.decoder;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 
-import javax.imageio.ImageIO;
-
+import app.encoder.LoadDistributor;
 import app.exceptions.CorruptedFileException;
 import app.exceptions.WrongBlockAssignedException;
 import app.interprediction.Vector;
@@ -79,12 +76,16 @@ public class InputProcessor {
 		Deblocker deblocker = new Deblocker();
 		ArrayList<Vector> vecs = content.length > 1 ? getVectors(content) : new ArrayList<Vector>();
 		ArrayList<MacroBlock> blocks = getRawBlocks(rawBlocks);
+		LoadDistributor<Vector> vecManager = new LoadDistributor<Vector>();
+		LoadDistributor<MacroBlock> blockManager = new LoadDistributor<MacroBlock>();
+		vecManager.setAll(vecs);
+		blockManager.setAll(blocks);
 		
 		if (vecs != null) {
-//			render = RenderEngine.renderResult(vecs, refs, blocks, refs.get(refs.size() - 1));
+			render = RenderEngine.renderResult(vecManager, refs, blockManager, refs.get(refs.size() - 1));
 		}
 
-//		deblocker.deblock(vecs, render);
+		deblocker.deblock(vecManager, render);
 		return render;
 	}
 	
