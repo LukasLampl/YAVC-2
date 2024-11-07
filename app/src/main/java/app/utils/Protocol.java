@@ -26,14 +26,9 @@ public class Protocol {
 		return (byte)(result & 0xFF);
 	}
 	
-	public static double getDCTCoeff(byte coeff) {
+	public static final double getDCTCoeff(byte coeff) {
 		int result = coeff & 0x7F;
-		
-		if (((coeff >> 7) & 0x01) == 1) {
-			result *= -1;
-		}
-		
-		return (double)result;
+		return (coeff & 0x80) != 0 ? -result : result;
 	}
 	
 	public static byte[] getVectorSpanBytes(int spanX, int spanY) throws IllegalArgumentException {
@@ -58,12 +53,7 @@ public class Protocol {
 	
 	public static int getVectorSpanInt(byte span) {
 		int res = span & 0x7F;
-
-		if (((span >> 7) & 0x1) == 1) {
-			res *= -1;
-		}
-		
-		return res;
+		return (span & 0x80) != 0 ? -res : res;
 	}
 	
 	/*

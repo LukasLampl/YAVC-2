@@ -72,6 +72,11 @@ public class Vector {
 	private int size = 0;
 	
 	/**
+	 * The squared size of the vector.
+	 */
+	private int squaredSize = 0;
+	
+	/**
 	 * The reference frame, from which the block is referred to
 	 */
 	private int reference = 0;
@@ -110,6 +115,7 @@ public class Vector {
 		
 		this.startingPoint = pos;
 		this.size = size;
+		this.squaredSize = size * size;
 	}
 	
 	/**
@@ -185,6 +191,7 @@ public class Vector {
 	 */
 	public void setSize(final int size) {
 		this.size = size;
+		this.squaredSize = size * size;
 	}
 	
 	/**
@@ -221,6 +228,15 @@ public class Vector {
 	 */
 	public int getSize() {
 		return this.size;
+	}
+	
+	/**
+	 * <p>Get the squared size of the vector reference.</p>
+	 * 
+	 * @return The squared size of the vector reference.
+	 */
+	public int getSquaredSize() {
+		return this.squaredSize;
 	}
 	
 	/**

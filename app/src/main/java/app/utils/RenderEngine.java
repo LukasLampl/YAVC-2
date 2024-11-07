@@ -19,72 +19,22 @@ public class RenderEngine {
 	static long totalTime = 0L;
 	static long numThreads = 0L;
 
-	public static PixelRaster renderResult(LoadDistributor<Vector> vecs, ArrayList<PixelRaster> refs, LoadDistributor<MacroBlock> differenceManager, PixelRaster prevFrame) {
-		PixelRaster render = prevFrame.copy();
-		Dimension dim = prevFrame.getDimension();
+	public static PixelRaster renderResult(LoadDistributor<Vector> vecs, ReferenceFrameManager refs, LoadDistributor<MacroBlock> differenceManager) {
+		PixelRaster render = refs.getLastFrame().copy();
+		Dimension dim = refs.getLastFrame().getDimension();
 		ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-		totalTime = 0L;
-		numThreads = 0L;
 		
 		try {
-			for (final ArrayList<MacroBlock> blockList : differenceManager.getIterable()) {
-				Runnable task = () -> { 
-					for (MacroBlock block : blockList) {
-						Point pos = block.getPosition();
-						int size = block.getSize();
-						
-						for (int x = 0; x < size; x++) {
-							if (pos.x + x < 0 || pos.x + x >= dim.width) continue;
-							
-							for (int y = 0; y < size; y++) {
-								if (pos.y + y < 0 || pos.y + y >= dim.height) continue;
-								
-								render.setYUV(x + pos.x, y + pos.y, block.getYUV(x, y));
-							}
-						}
-					}
-				};
-				
-				executor.submit(task);
+			if (differenceManager != null) {
+				for (final ArrayList<MacroBlock> blockList : differenceManager.getIterable()) {
+					Runnable task = createMacroBlockRenderTask(blockList, dim, render);
+					executor.submit(task);
+				}
 			}
-						
+
 			if (vecs != null) {
 				for (final ArrayList<Vector> vecList : vecs.getIterable()) {
-					Runnable task = () -> {
-						long localTotalTime = 0;
-						long area = 0;
-						
-						for (Vector v : vecList) {
-							PixelRaster cache = v.getReference() == -1 ? null : refs.get(config.MAX_REFERENCES - v.getReference());
-							Point pos = v.getPosition();
-							int EndX = pos.x + v.getSpanX();
-							int EndY = pos.y + v.getSpanY();
-							int size = v.getSize();
-							long t_start = System.currentTimeMillis();
-							double[][][] reconstructedColor = reconstructColors(v.getIDCTCoefficientsOfAbsoluteColorDifference(false), cache.getPixelBlock(pos, size, null), size);
-							long t_end = System.currentTimeMillis();
-							totalTime += (t_end - t_start);
-							localTotalTime += (t_end - t_start);
-							area += v.getSize() * v.getSize();
-							
-							for (int x = 0; x < size; x++) {
-								if (EndX + x < 0 || EndX + x >= dim.width) continue;
-								if (pos.x + x < 0 || pos.x + x >= dim.width) continue;
-								int subSX = x / 2;
-								
-								for (int y = 0; y < size; y++) {
-									if (EndY + y < 0 || EndY + y >= dim.height) continue;
-									if (pos.y + y < 0 || pos.y + y >= dim.height) continue;
-									int subSY = y / 2;
-									double[] YUV = new double[] {reconstructedColor[0][x][y], reconstructedColor[1][subSX][subSY], reconstructedColor[2][subSX][subSY]};
-									render.setYUV(x + EndX, y + EndY, YUV);
-								}
-							}
-						}
-						
-						System.out.println(String.format("Time: %6dms | List size: %5d | Total area: %8dpx", localTotalTime, vecList.size(), area));
-					};
-				
+					Runnable task = createVectorRenderTask(vecList, refs, render, dim);
 					executor.submit(task);
 				}
 			}
@@ -94,18 +44,79 @@ public class RenderEngine {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		System.out.println("- Total rendering time: " + totalTime + "ms");
-		if (numThreads > 0L)
-			System.out.println("- Avg. rendering time: " + ((double)totalTime/(double)numThreads) + "ms (" + numThreads + " threads)");
+		
 		return render;
 	}
 	
-	private static double[][][] reconstructColors(double[][][] differenceOfColor, double[][][] referenceColor, int size) {
+	private static Runnable createMacroBlockRenderTask(ArrayList<MacroBlock> blockList, Dimension dim, PixelRaster render) {
+		Runnable task = () -> { 
+			for (MacroBlock block : blockList) {
+				Point pos = block.getPosition();
+				int size = block.getSize();
+				
+				for (int x = 0; x < size; x++) {
+					if (pos.x + x < 0 || pos.x + x >= dim.width) continue;
+					
+					for (int y = 0; y < size; y++) {
+						if (pos.y + y < 0 || pos.y + y >= dim.height) continue;
+						
+						render.setYUV(x + pos.x, y + pos.y, block.getYUV(x, y));
+					}
+				}
+			}
+		};
+		
+		return task;
+	}
+	
+	private static Runnable createVectorRenderTask(ArrayList<Vector> vecList, ReferenceFrameManager refs, PixelRaster render, Dimension dim) {
+		Runnable task = () -> {
+			double[][][] pixelBlockCache = null;
+			
+			for (Vector v : vecList) {
+				PixelRaster referencedFrame = v.getReference() == -1 ? null : refs.get(config.MAX_REFERENCES - v.getReference());
+				Point pos = v.getPosition();
+				int EndX = pos.x + v.getSpanX();
+				int EndY = pos.y + v.getSpanY();
+				int size = v.getSize();
+				double[][][] block = referencedFrame.getPixelBlock(pos, size, pixelBlockCache);
+				double[][][] coeffs = v.getIDCTCoefficientsOfAbsoluteColorDifference(false);
+				
+				//Use block as cache, because the pixel block is a allocated double[][][] from the image
+				//and thus editing it won't change the original frame.
+				double[][][] reconstructedColor = reconstructColors(coeffs, block, size, block);
+				
+				for (int x = 0; x < size; x++) {
+					if (EndX + x < 0 || EndX + x >= dim.width) continue;
+					if (pos.x + x < 0 || pos.x + x >= dim.width) continue;
+					int subSX = x / 2;
+					
+					for (int y = 0; y < size; y++) {
+						if (EndY + y < 0 || EndY + y >= dim.height) continue;
+						if (pos.y + y < 0 || pos.y + y >= dim.height) continue;
+						int subSY = y / 2;
+						double Y = reconstructedColor[0][x][y];
+						double U = reconstructedColor[1][subSX][subSY];
+						double V = reconstructedColor[2][subSX][subSY];
+						render.setYUV(x + EndX, y + EndY, Y, U, V);
+					}
+				}
+			}	
+		};
+		
+		return task;
+	}
+	
+	private static double[][][] reconstructColors(double[][][] differenceOfColor, double[][][] referenceColor, int size, double[][][] cache) {
 		int halfSize = size / 2;
-		double[][][] reconstructedColor = new double[3][][];
-		reconstructedColor[0] = new double[size][size];
-		reconstructedColor[1] = new double[halfSize][halfSize];
-		reconstructedColor[2] = new double[halfSize][halfSize];
+		double[][][] reconstructedColor = cache;
+		
+		if (reconstructedColor == null) {
+			reconstructedColor = new double[3][][];
+			reconstructedColor[0] = new double[size][size];
+			reconstructedColor[1] = new double[halfSize][halfSize];
+			reconstructedColor[2] = new double[halfSize][halfSize];
+		}
 		
 		//Reconstruct Y-Comp
 		for (int x = 0; x < size; x++) {
