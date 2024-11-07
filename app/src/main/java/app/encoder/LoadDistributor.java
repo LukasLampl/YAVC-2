@@ -43,6 +43,11 @@ import app.utils.MacroBlock;
  */
 public class LoadDistributor<T> {
 	/**
+	 * <p>Holds the flag for whether the input data was distributed or not.</p>
+	 */
+	private boolean hasDistributed = false;
+	
+	/**
 	 * <p>Holds the raw list of all undistributed items.</p>
 	 */
 	private List<ArrayList<T>> undistributedList;
@@ -79,6 +84,11 @@ public class LoadDistributor<T> {
 		init();
 	};
 	
+	public LoadDistributor(int chunks) {
+		this.numberOfChunks = chunks;
+		init();
+	}
+	
 	/**
 	 * <p>Initializes all holder arrays so they can be used by {@link #setObj(Object)}.</p>
 	 */
@@ -111,6 +121,8 @@ public class LoadDistributor<T> {
 		
 		if (obj instanceof MacroBlock) {
 			QuadtreeEngine.getIndexBySize(((MacroBlock)obj).getSize());
+		} else if (obj instanceof Vector) {
+			QuadtreeEngine.getIndexBySize(((Vector)obj).getSize());
 		}
 		
 		ArrayList<T> target = this.undistributedList.get(estimatedIndex);
@@ -127,6 +139,28 @@ public class LoadDistributor<T> {
 		for (T obj : l) {
 			setObj(obj);
 		}
+	}
+	
+	/**
+	 * <p>Adds a whole list of items to the LoadDistributor
+	 * and computes the distribution list.</p>
+	 * 
+	 * @param l		The List to add.
+	 */
+	public void setAllAndCompute(List<T> l) {
+		int totalSize = 0;
+		
+		for (T obj : l) {
+			setObj(obj);
+			
+			if (obj instanceof Vector) {
+				totalSize += ((Vector)obj).getSquaredSize();
+			} else if (obj instanceof MacroBlock) {
+				totalSize += ((MacroBlock)obj).getSquaredSize();
+			}
+		}
+		
+		compute(totalSize);
 	}
 	
 	/**
@@ -159,6 +193,8 @@ public class LoadDistributor<T> {
 					currentLoad += ((MacroBlock)obj).getSquaredSize();
 				} else if (obj instanceof Vector) {
 					currentLoad += ((Vector)obj).getSize() * ((Vector)obj).getSize();
+				} else {
+					currentLoad++;
 				}
 				
 				this.evenlyDistributedObjects.get(currentIndex).add(obj);
@@ -167,9 +203,15 @@ public class LoadDistributor<T> {
 				if (currentLoad >= loadPerThread) {
 					currentLoad = 0;
 					currentIndex++;
+					
+					if (currentIndex >= this.numberOfChunks) {
+						currentIndex = this.numberOfChunks - 1;
+					}
 				}
 			}
 		}
+		
+		this.hasDistributed = true;
 	}
 
 	/**
@@ -179,6 +221,10 @@ public class LoadDistributor<T> {
 	 * @return The sub-work at the specified index.
 	 */
 	public ArrayList<T> getLoadOf(int index) {
+		if (!this.hasDistributed) {
+			throw new IllegalStateException("Tried to receive data before it was ready! (call compute(int) first)");
+		}	
+		
 		return this.evenlyDistributedObjects.get(index);
 	}
 	
@@ -203,6 +249,10 @@ public class LoadDistributor<T> {
 	 * @return The iterable to the evenly distributed sub-works (chunks).
 	 */
 	public Iterable<ArrayList<T>> getIterable() {
+		if (!this.hasDistributed) {
+			throw new IllegalStateException("Tried to receive data before it was ready! (call compute(int) first)");
+		}
+		
 		return this.evenlyDistributedObjects;
 	}
 	
