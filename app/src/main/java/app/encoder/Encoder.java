@@ -3,7 +3,6 @@ package app.encoder;
 import java.io.File;
 import java.util.ArrayList;
 
-import app.config;
 import app.interprediction.Vector;
 import app.interprediction.VectorEngine;
 import app.interprediction.VectorEngineResult;
@@ -12,6 +11,7 @@ import app.utils.Deblocker;
 import app.utils.MacroBlock;
 import app.utils.PixelRaster;
 import app.utils.QueueObject;
+import app.utils.ReferenceFrameManager;
 import app.utils.RenderEngine;
 
 public class Encoder {
@@ -19,6 +19,7 @@ public class Encoder {
 	private static QuadtreeEngine QUADTREE_ENGINE = new QuadtreeEngine();
 	private static DifferenceEngine DIFFERENCE_ENGINE = new DifferenceEngine();
 	private static VectorEngine VECTOR_ENGINE = new VectorEngine();
+	private ReferenceFrameManager referenceManager = new ReferenceFrameManager();
 	
 	public Encoder(DCTEngine dctEngine) {
 		this.DCT_ENGINE = dctEngine;
@@ -30,7 +31,6 @@ public class Encoder {
 		Deblocker deblocker = new Deblocker();
 		ImagePreReader imgReader = new ImagePreReader(files, input);
 		
-		ArrayList<PixelRaster> references = new ArrayList<PixelRaster>(config.MAX_REFERENCES);
 		PixelRaster futFrame = null;
 		PixelRaster curFrame = null;
 		PixelRaster prevFrame = null;
@@ -59,7 +59,7 @@ public class Encoder {
 //					futureFrame = new PixelRaster(ImageIO.read(getAwaitedFile(input, i + 1, ".bmp")));
 					outStream.writeMetadata(prevFrame.getDimension(), files - 1);
 					outStream.writeStartFrame(prevFrame);
-					references.add(prevFrame);
+					this.referenceManager.add(prevFrame);
 					continue;
 				}
 			
@@ -81,15 +81,14 @@ public class Encoder {
 //				BufferedImage[] part = RenderEngine.renderQuadtree(leaveNodes, curFrame.getDimension());
 				
 				long start_vector_movement = System.currentTimeMillis();
-				VectorEngineResult vectorEngineResult = VECTOR_ENGINE.computeMovementVectors(differenceManager, references);
+				VectorEngineResult vectorEngineResult = VECTOR_ENGINE.computeMovementVectors(differenceManager, this.referenceManager);
 				LoadDistributor<Vector> movementVectors = vectorEngineResult.getVectors();
 				differenceManager = vectorEngineResult.getRestBlocks();
 				long end_vector_movement = System.currentTimeMillis();
 				
-				
 //				BufferedImage vectors = RenderEngine.renderVectors(movementVectors, curFrame.getDimension());
 				long start_render = System.currentTimeMillis();
-				PixelRaster composite = RenderEngine.renderResult(movementVectors, references, differenceManager, prevFrame);
+				PixelRaster composite = RenderEngine.renderResult(movementVectors, this.referenceManager, differenceManager);
 				outStream.addObjectToOutputQueue(new QueueObject(movementVectors, differenceManager));
 //				ImageIO.write(composite.toBufferedImage(), "png", new File(output.getParent() + "/VR_" + i + ".png"));
 				long end_render = System.currentTimeMillis();
@@ -114,16 +113,14 @@ public class Encoder {
 				sumOfMilliSeconds += time;
 				printStatistics(time, sumOfMilliSeconds, i, movementVectors, differenceManager, imgReadTime, quadtreeConstructionTime, leaveNodesTime, differenceTime, vectorTime, renderTime, deblockTime);
 				
-				references.add(composite.copy());
+				this.referenceManager.add(composite.copy());
 				prevFrame = composite.copy();
-				manageReferences(references);
 			}
 			
 			long endOfTime = System.currentTimeMillis();
 			System.out.println("Time used: " + (endOfTime - startOfTime) + "ms");
 			
 			outStream.finishQueue();
-			references.clear();
 		} catch (Exception e) {
 			outStream.shutdown();
 			e.printStackTrace();
@@ -178,15 +175,5 @@ public class Encoder {
 		System.out.println("- Memory usage: " + memory + "MB");
 		long endOutput = System.currentTimeMillis();
 		System.out.println("- Total time used for writing statistics: " + (endOutput - startOutput) + "ms");
-	}
-	
-	private void manageReferences(ArrayList<?> references) {
-		if (references == null) {
-			return;
-		}
-		
-		if (references.size() > config.MAX_REFERENCES) {
-			references.remove(0);
-		}
 	}
 }

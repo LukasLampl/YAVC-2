@@ -1,19 +1,17 @@
 package app.decoder;
 
-import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
 
-import javax.imageio.ImageIO;
-
-import app.config;
 import app.exceptions.CorruptedFileException;
 import app.exceptions.WrongBlockAssignedException;
 import app.utils.PixelRaster;
+import app.utils.ReferenceFrameManager;
 
 public class Decoder {
+	private ReferenceFrameManager referenceManager = new ReferenceFrameManager();
+	
 	public void decode(File input, File output) {
+		ImageWriter imageWriter = new ImageWriter(output);
 		InputStream inputStream = new InputStream(input);
 		InputProcessor processor = new InputProcessor();
 		processor.proessMetadata(inputStream.getMetadata());
@@ -22,44 +20,45 @@ public class Decoder {
 		
 		int lengthOfStartFrame = processor.getNextLength();
 		byte[] startFrame = inputStream.getChunk(lengthOfStartFrame);
-		BufferedImage startFrameImg = processor.constructStartFrame(startFrame);
+		PixelRaster startFrameImg = processor.constructStartFrame(startFrame);
 		
 		try {
-			ImageIO.write(startFrameImg, "png", new File(output.getAbsolutePath() + "/SF.png"));
+			imageWriter.add(startFrameImg);
 			int totalLen = InputProcessor.FrameCount - 1; //-1 Because of SF (Start frame)
-			ArrayList<PixelRaster> refs = new ArrayList<PixelRaster>();
-			refs.add(new PixelRaster(startFrameImg));
+			this.referenceManager.add(startFrameImg);
 			
 			for (int i = 0; i < totalLen; i++) {
-				System.out.println("FRAME: " + i + " (" + refs.size() + ")");
+				long start = System.currentTimeMillis();
+				System.out.println("FRAME: " + i + " (" + this.referenceManager.size() + ")");
+				long start_len_grab = System.currentTimeMillis();
 				int lengthOfVectors = processor.getNextLength();
 				int lengthOfRawBlocks = processor.getNextLength();
+				long end_len_grab = System.currentTimeMillis();
+				long start_data_grab = System.currentTimeMillis();
 				byte[] vectors = inputStream.getChunk(lengthOfVectors);
 				byte[] rawBlocks = inputStream.getChunk(lengthOfRawBlocks);
-				PixelRaster result = processor.processFrame(vectors, rawBlocks, refs);
+				long end_data_grab = System.currentTimeMillis();
+				long start_render = System.currentTimeMillis();
+				PixelRaster result = processor.processFrame(vectors, rawBlocks, this.referenceManager);
+				long end_render = System.currentTimeMillis();
 				
-				ImageIO.write(result.toBufferedImage(), "png", new File(output.getAbsolutePath() + "/R_" + i + ".png"));
-				refs.add(result);
-				manageReferences(refs);
+				long start_write = System.currentTimeMillis();
+				imageWriter.add(result);
+				this.referenceManager.add(result);
+				long end_write = System.currentTimeMillis();
+				long end = System.currentTimeMillis();
+				
+				System.out.println("- Total time: " + (end - start) + "ms");
+				System.out.println("   > Grab data length: " + (end_len_grab - start_len_grab) + "ms");
+				System.out.println("   > Grab data: " + (end_data_grab - start_data_grab) + "ms");
+				System.out.println("   > Render time: " + (end_render - start_render) + "ms");
+				System.out.println("   > Writing time: " + (end_write - start_write) + "ms");
+				System.out.println();
 			}
-		} catch (IOException e) {
-			e.printStackTrace();
 		} catch (CorruptedFileException e) {
 			e.printStackTrace();
 		} catch (WrongBlockAssignedException e) {
 			e.printStackTrace();
 		}
-	}
-	
-	private void manageReferences(ArrayList<?> references) {
-		if (references == null) {
-			return;
-		}
-		
-		if (references.size() <= config.MAX_REFERENCES) {
-			return;
-		}
-		
-		references.remove(0);
 	}
 }
