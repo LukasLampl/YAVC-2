@@ -34,6 +34,7 @@ import app.encoder.LoadDistributor;
 import app.utils.MacroBlock;
 import app.utils.MathUtils;
 import app.utils.PixelRaster;
+import app.utils.ReferenceFrameManager;
 
 /**
  * <p>The class {@code VectorEngine} contains all functions
@@ -95,7 +96,7 @@ public class VectorEngine {
 	 * 
 	 * @see utils.Vector
 	 */
-	public VectorEngineResult computeMovementVectors(LoadDistributor<MacroBlock> differenceManager, final ArrayList<PixelRaster> refs) {
+	public VectorEngineResult computeMovementVectors(LoadDistributor<MacroBlock> differenceManager, final ReferenceFrameManager refs) {
 		if (refs == null || refs.size() == 0) {
 			throw new NullPointerException("No reference frame to refer to");
 		}
@@ -150,7 +151,7 @@ public class VectorEngine {
 	 * @param refs	Reference frames
 	 * @param blockToBeSearched	MacroBlock that should be searched
 	 */
-	private Callable<Void> createVectorSearchTask(final ArrayList<PixelRaster> refs, ArrayList<MacroBlock> blocksToBeSearched, LoadDistributor<Vector> vecManager) {
+	private Callable<Void> createVectorSearchTask(final ReferenceFrameManager refs, ArrayList<MacroBlock> blocksToBeSearched, LoadDistributor<Vector> vecManager) {
 		Callable<Void> task = () -> {
 			int maxSize = refs.size();
 			MacroBlock[] canidates = new MacroBlock[maxSize];
@@ -224,7 +225,7 @@ public class VectorEngine {
 	 * 
 	 * @see utils.Vector
 	 */
-	private Vector constructMovementVector(final ArrayList<PixelRaster> refs, MacroBlock bestMatch, MacroBlock blockToBeSearched) {
+	private Vector constructMovementVector(final ReferenceFrameManager refs, MacroBlock bestMatch, MacroBlock blockToBeSearched) {
 		Vector vec = null;
 		
 		if (bestMatch != null) {
