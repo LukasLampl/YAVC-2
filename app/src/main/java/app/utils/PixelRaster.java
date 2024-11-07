@@ -79,6 +79,18 @@ public class PixelRaster {
 	}
 	
 	/**
+	 * <p>Initializes the PixelRaster to an empty image, but with a dimension.</p>
+	 * 
+	 * @param dim			The dimension of the PixelRaster.
+	 */
+	public PixelRaster(Dimension dim) {
+		this.dim = dim;
+		this.Y = new double[dim.width][dim.height];
+		this.U = new double[dim.width / 2][dim.height / 2];
+		this.V = new double[dim.width / 2][dim.height / 2];
+	}
+	
+	/**
 	 * <p>Initialize the PixelRaster using the data of a BufferedImage.
 	 * If the image is not a divisor by 4, the image gets resized.</p>
 	 * 
@@ -353,6 +365,33 @@ public class PixelRaster {
 		this.Y[x][y] = YUV[0];
 		this.U[subSX][subSY] = YUV[1];
 		this.V[subSX][subSY] = YUV[2];
+	}
+	
+	/**
+	 * <p>Sets the desired YUV color at the
+	 * desired position.</p>
+	 * 
+	 * @param x	position X to set the YUV color.
+	 * @param y	position Y to set the YUV color.
+	 * @param Y	The Y value to set.
+	 * @param U	The U value to set.
+	 * @param V	The V value to set.
+	 * 
+	 * @throws ArrayIndexOutOfBoundsException	when either the x
+	 * or y coordinate is out of the raster
+	 */
+	public void setYUV(final int x, final int y, final double Y, final double U, final double V) {
+		if (y < 0 || y >= this.dim.height) {
+			throw new ArrayIndexOutOfBoundsException("(Y) " + y + "is out of bounds!");
+		} else if (x < 0 || x >= this.dim.width) {
+			throw new ArrayIndexOutOfBoundsException("(X) " + x + "is out of bounds!");
+		}
+		
+		int subSX = x / 2;
+		int subSY = y / 2;
+		this.Y[x][y] = Y;
+		this.U[subSX][subSY] = U;
+		this.V[subSX][subSY] = V;
 	}
 	
 	/**
