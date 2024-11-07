@@ -2,7 +2,6 @@ package app.decoder;
 
 import java.awt.Dimension;
 import java.awt.Point;
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
 import app.encoder.LoadDistributor;
@@ -14,6 +13,7 @@ import app.utils.Deblocker;
 import app.utils.MacroBlock;
 import app.utils.PixelRaster;
 import app.utils.Protocol;
+import app.utils.ReferenceFrameManager;
 import app.utils.RenderEngine;
 
 public class InputProcessor {
@@ -54,8 +54,8 @@ public class InputProcessor {
 		return this.lengthOfFrames.remove(0);
 	}
 	
-	public BufferedImage constructStartFrame(byte[] data) {
-		BufferedImage render = new BufferedImage(this.FRAME_DIM.width, this.FRAME_DIM.height, BufferedImage.TYPE_INT_ARGB);
+	public PixelRaster constructStartFrame(byte[] data) {
+		PixelRaster render = new PixelRaster(this.FRAME_DIM);
 
 		for (int x = 0, index = 0; x < this.FRAME_DIM.width; x++) {
 			for (int y = 0; y < this.FRAME_DIM.height; y++) {
@@ -63,7 +63,8 @@ public class InputProcessor {
 				byte g = data[index + 1];
 				byte b = data[index + 2];
 				int rgb = (0xFF000000 | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF));
-				render.setRGB(x, y, rgb);
+				double[] YUV = ColorManager.convertRGBToYUV(rgb);
+				render.setYUV(x, y, YUV);
 				index += 3;
 			}
 		}
@@ -71,21 +72,35 @@ public class InputProcessor {
 		return render;
 	}
 	
-	public PixelRaster processFrame(byte[] content, byte[] rawBlocks, ArrayList<PixelRaster> refs) throws CorruptedFileException, WrongBlockAssignedException {
-		PixelRaster render = refs.get(refs.size() - 1).copy();
+	public PixelRaster processFrame(byte[] content, byte[] rawBlocks, ReferenceFrameManager refs) throws CorruptedFileException, WrongBlockAssignedException {
+		long start_copy = System.currentTimeMillis();
+		PixelRaster render = refs.getLastFrame().copy();
+		long end_copy = System.currentTimeMillis();
 		Deblocker deblocker = new Deblocker();
+		long start_get_vecs = System.currentTimeMillis();
 		ArrayList<Vector> vecs = content.length > 1 ? getVectors(content) : new ArrayList<Vector>();
+		long end_get_vecs = System.currentTimeMillis();
+		long start_raw_block = System.currentTimeMillis();
 		ArrayList<MacroBlock> blocks = getRawBlocks(rawBlocks);
+		long end_raw_block = System.currentTimeMillis();
+		long start_load_dist = System.currentTimeMillis();
 		LoadDistributor<Vector> vecManager = new LoadDistributor<Vector>();
 		LoadDistributor<MacroBlock> blockManager = new LoadDistributor<MacroBlock>();
-		vecManager.setAll(vecs);
-		blockManager.setAll(blocks);
-		
+		vecManager.setAllAndCompute(vecs);
+		blockManager.setAllAndCompute(blocks);
+		long end_load_dist = System.currentTimeMillis();
+		long start_render = System.currentTimeMillis();
 		if (vecs != null) {
-			render = RenderEngine.renderResult(vecManager, refs, blockManager, refs.get(refs.size() - 1));
+			render = RenderEngine.renderResult(vecManager, refs, blockManager);
+			deblocker.deblock(vecManager, render);
 		}
+		long end_render = System.currentTimeMillis();
 
-		deblocker.deblock(vecManager, render);
+		System.out.println("   > Copy time: " + (end_copy - start_copy) + "ms");
+		System.out.println("   > Convert to vector time: " + (end_get_vecs - start_get_vecs) + "ms");
+		System.out.println("   > Convert raw-block time: " + (end_raw_block - start_raw_block) + "ms");
+		System.out.println("   > Load distribution time: " + (end_load_dist - start_load_dist) + "ms");
+		System.out.println("   > Full rendering time: " + (end_render - start_render) + "ms");
 		return render;
 	}
 	
@@ -146,110 +161,24 @@ public class InputProcessor {
 		byte[] lenOfVecs = {vectorPart[0], vectorPart[1], vectorPart[2], vectorPart[3]};
 		int estimatedLength = Protocol.getIntFromBytes(lenOfVecs);
 		i += Protocol.VECTOR_SIZE_CHECK_LENGTH;
-
+		ArrayList<Integer> indexesOfVectors = new ArrayList<Integer>();
+		
 		while (i < vectorPart.length) {
-			int posX = Protocol.getPosition(vectorPart[i], vectorPart[i + 1]);
-			int posY = Protocol.getPosition(vectorPart[i + 2], vectorPart[i + 3]);
-			int spanX = Protocol.getVectorSpanInt(vectorPart[i + 4]);
-			int spanY = Protocol.getVectorSpanInt(vectorPart[i + 5]);
+			indexesOfVectors.add(i);
 			int[] refAndSize = Protocol.getReferenceAndSizeInt(vectorPart[i + 6]);
-			int ref = refAndSize[0];
 			int size = refAndSize[1];
-
-			ArrayList<double[][][]> diffs = getVectorDifferences(vectorPart, Protocol.VECTOR_HEADER_LENGTH + i, size);
 			//Length of the vector diffs
 			i += ((size * size) + 2 * ((size / 2) * (size / 2))) + Protocol.VECTOR_HEADER_LENGTH;
-
-			Vector vec = new Vector(new Point(posX, posY), size);
-			vec.setAbsolutedifferenceDCTCoefficients(diffs);
-			vec.setSpanX(spanX);
-			vec.setSpanY(spanY);
-			vec.setReference(ref);
-			vecs.add(vec);
 		}
+		
+		VectorConverter converter = new VectorConverter(vectorPart, indexesOfVectors);
+		converter.start();
+		vecs = converter.awaitTermination();
 		
 		if (vecs.size() != estimatedLength) {
 			throw new CorruptedFileException("The amount of the read-in vectors appears to be unequal to the written vectors.");
 		}
 		
 		return vecs;
-	}
-	
-	private ArrayList<double[][][]> getVectorDifferences(byte[] vectorPart, int startPos, int size) {
-		ArrayList<double[][][]> DCTCoeffGroups = new ArrayList<double[][][]>();
-		double[][] data = getDCTCoeffsOutOfFile(vectorPart, startPos, size);
-		int YLength = size * size;
-		
-		if (size == 4) {
-			double[][][] res = new double[3][][];
-			res[0] = new double[4][4];
-			res[1] = new double[2][2];
-			res[2] = new double[2][2];
-			
-			for (int x = 0, i = 0; x < 4; x++) {
-				for (int y = 0; y < 4; y++) {
-					res[0][x][y] = data[0][i++];
-				}
-			}
-
-			for (int x = 0, i = 0; x < 2; x++) {
-				for (int y = 0; y < 2; y++) {
-					res[1][x][y] = data[1][i];
-					res[2][x][y] = data[2][i++];
-				}
-			}
-			
-			DCTCoeffGroups.add(res);
-		} else {
-			int halfSize = size / 2;
-			
-			for (int u = 0; u < YLength; u += 64) {
-				double[][][] res = new double[3][][];
-				res[0] = new double[size][size];
-				res[1] = new double[halfSize][halfSize];
-				res[2] = new double[halfSize][halfSize];
-				
-				for (int x = 0, i = 0; x < 8; x++) {
-					for (int y = 0; y < 8; y++) {
-						res[0][x][y] = data[0][u + i++];
-					}
-				}
-				
-				for (int x = 0, i = 0; x < 4; x++) {
-					for (int y = 0; y < 4; y++) {
-						res[1][x][y] = data[1][(u / 4) + i];
-						res[2][x][y] = data[2][(u / 4) + i++];
-					}
-				}
-				
-				DCTCoeffGroups.add(res);
-			}
-		}
-		
-		return DCTCoeffGroups;
-	}
-	
-	private double[][] getDCTCoeffsOutOfFile(byte[] vectorPart, int startPos, int size) {
-		int halfSize = size / 2;
-		int YLength = size * size;
-		int UVLength = halfSize * halfSize;
-		int YStart = startPos;
-		int UStart = YStart + YLength;
-		int VStart = UStart + UVLength;
-		
-		double[] YBytes = new double[YLength];
-		double[] UBytes = new double[UVLength];
-		double[] VBytes = new double[UVLength];
-		
-		for (int n = 0; n < YLength; n++) {
-			YBytes[n] = Protocol.getDCTCoeff(vectorPart[YStart + n]);
-		}
-
-		for (int n = 0; n < UVLength; n++) {
-			UBytes[n] = Protocol.getDCTCoeff(vectorPart[UStart + n]);
-			VBytes[n] = Protocol.getDCTCoeff(vectorPart[VStart + n]);
-		}
-
-		return new double[][] {YBytes, UBytes, VBytes};
 	}
 }
