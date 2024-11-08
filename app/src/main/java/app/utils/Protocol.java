@@ -1,7 +1,13 @@
 package app.utils;
 
+import java.awt.Dimension;
+import java.awt.Point;
 import java.util.ArrayList;
+import java.util.List;
 
+import app.decoder.VectorConverter;
+import app.exceptions.CorruptedFileException;
+import app.exceptions.WrongBlockAssignedException;
 import app.interprediction.Vector;
 
 public class Protocol {
@@ -247,5 +253,280 @@ public class Protocol {
 		}
 		
 		return arr;
+	}
+	
+	public static byte[] getMetadata(Dimension dimensionOfFrames, int numberOfFrames) {
+		byte[] data = new byte[Protocol.META_DATA_LEN];//4 Bytes per integer.
+		byte[] width = Protocol.getIntBytes(dimensionOfFrames.width);
+		byte[] height = Protocol.getIntBytes(dimensionOfFrames.height);
+		byte[] numOfFrames = Protocol.getIntBytes(numberOfFrames);
+		writeBytesToByteArray(width, data, 0);
+		writeBytesToByteArray(height, data, 4);
+		writeBytesToByteArray(numOfFrames, data, 8);
+		return data;
+	}
+	
+	public static Metadata setMetadata(byte[] data) {
+		if (data.length < Protocol.META_DATA_LEN) {
+			throw new IllegalArgumentException("Metadata has to be " + Protocol.META_DATA_LEN + " bytes long.");
+		}
+		
+		byte[][] parts = Protocol.splitArrayEvenly(data, Protocol.SIZE_OF_INT);
+		int width = Protocol.getIntFromBytes(parts[0]);
+		int height = Protocol.getIntFromBytes(parts[1]);
+		int frames = Protocol.getIntFromBytes(parts[2]);
+		return new Metadata(frames, new Dimension(width, height));
+	}
+	
+	public static byte[] getVectorBytes(ArrayList<Vector> vecs) {
+		if (vecs == null) {
+			throw new NullPointerException("No vectors were passed for writing.");
+		}
+		
+		int size = Protocol.calculateSize(vecs);
+		int currentIndex = 0;
+		byte[] data = new byte[size];
+		writeBytesToByteArray(Protocol.getIntBytes(vecs.size()), data, currentIndex);
+		currentIndex += Protocol.VECTOR_SIZE_CHECK_LENGTH;
+		
+		for (Vector v : vecs) {
+			currentIndex += writeSingleVectorToByteArray(v, currentIndex, data);
+		}
+		
+		return data;
+	}
+	
+	private static int writeSingleVectorToByteArray(Vector v, int startIndex, byte[] data) {
+		int index = startIndex;
+		byte[] posX = Protocol.getPositionBytes(v.getPosition().x);
+		byte[] posY = Protocol.getPositionBytes(v.getPosition().y);
+		byte[] span = Protocol.getVectorSpanBytes(v.getSpanX(), v.getSpanY());
+		byte refAndSize = Protocol.getReferenceAndSizeByte(v.getReference(), v.getSize());
+		byte[][] differences = Protocol.getVectorAbsoluteColorDifferenceBytes(v.getDCTCoefficientsOfAbsoluteColorDifference(), v.getSize());
+		
+		writeBytesToByteArray(posX, data, index);
+		index += posX.length;
+		writeBytesToByteArray(posY, data, index);
+		index += posY.length;
+		writeBytesToByteArray(span, data, index);
+		index += span.length;
+		data[index] = refAndSize;
+		index += 1;
+		
+		for (int n = 0; n < differences.length; n++) {
+			writeBytesToByteArray(differences[n], data, index);
+			index += differences[n].length;
+		}
+		
+		return index - startIndex;
+	}
+	
+	public static ArrayList<Vector> getVectors(byte[] data) throws CorruptedFileException, WrongBlockAssignedException {
+		ArrayList<Vector> vecs = new ArrayList<Vector>();
+		
+		if (data.length <= 1) {
+			return vecs;
+		}
+		
+		//  LAYOUT:
+		//  POSX ⊥ POSY ⊥ SPANX ⊥ SPANY ⊥ REFERENCE << 4 | SIZE ⊥ DIFFERENCE
+		// ^_____________________________________________________^
+		//                      = 7 Bytes offset
+		byte[] lenOfVecs = {data[0], data[1], data[2], data[3]};
+		int estimatedLength = Protocol.getIntFromBytes(lenOfVecs);
+		ArrayList<Integer> indexesOfVectors = new ArrayList<Integer>();
+		precalculateVectorIndexes(data, indexesOfVectors);
+		
+		VectorConverter converter = new VectorConverter(data, indexesOfVectors);
+		converter.start();
+		vecs = converter.awaitTermination();
+		
+		if (vecs.size() != estimatedLength) {
+			throw new CorruptedFileException("The amount of the read-in vectors appears to be unequal to the written vectors.");
+		}
+		
+		return vecs;
+	}
+	
+	private static void precalculateVectorIndexes(byte[] data, List<Integer> indexesOfVectors) {
+		int i = Protocol.VECTOR_SIZE_CHECK_LENGTH;
+		
+		while (i < data.length) {
+			indexesOfVectors.add(i);
+			int[] refAndSize = Protocol.getReferenceAndSizeInt(data[i + 6]);
+			int size = refAndSize[1];
+			//Length of the vector diffs
+			i += ((size * size) + 2 * ((size / 2) * (size / 2))) + Protocol.VECTOR_HEADER_LENGTH;
+		}
+	}
+	
+	public static byte[] getLengthBytesOfFrame(List<Integer> lengths) {
+		int estimatedSize = lengths.size() * Protocol.SIZE_OF_INT + Protocol.SIZE_OF_INT;
+		byte[] data = new byte[estimatedSize];
+		int currentIndex = 0;
+		
+		byte[] lenOfIndexes = Protocol.getIntBytes(lengths.size());
+		writeBytesToByteArray(lenOfIndexes, data, currentIndex);
+		currentIndex += Protocol.SIZE_OF_INT;
+		
+		for (int i : lengths) {
+			byte[] index = Protocol.getIntBytes(i);
+			writeBytesToByteArray(index, data, currentIndex);
+			currentIndex += Protocol.SIZE_OF_INT;
+		}
+		
+		return data;
+	}
+	
+	public static void setLengthsOfEachFramePart(byte[] lengthStream, List<Integer> lengthList) {
+		byte[][] data = Protocol.splitArrayEvenly(lengthStream, Protocol.SIZE_OF_INT);
+		
+		for (byte[] byteNum : data) {
+			int length = Protocol.getIntFromBytes(byteNum);
+			lengthList.add(length);
+		}
+	}
+	
+	public static byte[] getStartFrameBytes(PixelRaster raster) {
+		byte[] data = new byte[raster.getWidth() * raster.getHeight() * 3 + 1];
+		double[] YUVCache = new double[3]; //Size of 3, because of 3 channels
+		int index = 0;
+		
+		for (int x = 0; x < raster.getWidth(); x++) {
+			for (int y = 0; y < raster.getHeight(); y++) {
+				int rgb = ColorManager.convertYUVToRGB(raster.getYUV(x, y, YUVCache));
+				byte r = (byte)((rgb >> 16) & 0xFF);
+				byte g = (byte)((rgb >> 8) & 0xFF);
+				byte b = (byte)(rgb & 0xFF);
+				data[index] = r;
+				data[index + 1] = g;
+				data[index + 2] = b;
+				index += 3;
+			}
+		}
+		
+		return data;
+	}
+	
+	public static PixelRaster reconstructStartFrame(byte[] data, Dimension dim) {
+		PixelRaster render = new PixelRaster(dim);
+
+		for (int x = 0, index = 0; x < dim.width; x++) {
+			for (int y = 0; y < dim.height; y++) {
+				byte r = data[index];
+				byte g = data[index + 1];
+				byte b = data[index + 2];
+				int rgb = (0xFF000000 | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF));
+				double[] YUV = ColorManager.convertRGBToYUV(rgb);
+				render.setYUV(x, y, YUV);
+				index += 3;
+			}
+		}
+		
+		return render;
+	}
+	
+	public static byte[] getRawBlockBytes(List<MacroBlock> blocks) {
+		int size = Protocol.RAW_BLOCK_SIZE_CHECK_LENGTH;
+		
+		for (MacroBlock b : blocks) {
+			size += (b.getSquaredSize() * 3) + Protocol.RAW_BLOCK_HEADER_LENGTH;
+		}
+		
+		byte[] data = new byte[size];
+		double[] YUVCache = new double[3]; //Size of 3 because of 3 channels
+		int currentIndex = 0;
+		writeBytesToByteArray(Protocol.getIntBytes(blocks.size()), data, currentIndex);
+		currentIndex += Protocol.RAW_BLOCK_SIZE_CHECK_LENGTH;
+		
+		for (MacroBlock block : blocks) {
+			currentIndex += writeSingleRawBlockToByteArray(block, YUVCache, data, currentIndex);
+		}
+		
+		return data;
+	}
+	
+	private static int writeSingleRawBlockToByteArray(MacroBlock block, double[] YUVCache, byte[] data, int startIndex) {
+		int index = startIndex;
+		Point pos = block.getPosition();
+		byte[] posX = Protocol.getPositionBytes(pos.x);
+		byte[] posY = Protocol.getPositionBytes(pos.y);
+		byte sizeBytes = Protocol.getReferenceAndSizeByte(0, block.getSize());
+		byte[] differences = new byte[block.getSquaredSize() * 3];
+		
+		for (int y = 0, diffIndex = 0; y < block.getSize(); y++) {
+			for (int x = 0; x < block.getSize(); x++) {
+				int argb = ColorManager.convertYUVToRGB(block.getYUV(x, y, YUVCache));
+				byte r = (byte)((argb >> 16) & 0xFF);
+				byte g = (byte)((argb >> 8) & 0xFF);
+				byte b = (byte)(argb & 0xFF);
+				differences[diffIndex] = r;
+				differences[diffIndex + 1] = g;
+				differences[diffIndex + 2] = b;
+				diffIndex += 3;
+			}
+		}
+		
+		writeBytesToByteArray(posX, data, index);
+		index += posX.length;
+		writeBytesToByteArray(posY, data, index);
+		index += posY.length;
+		data[index] = sizeBytes;
+		index += 1;
+		writeBytesToByteArray(differences, data, index);
+		index += differences.length;
+		return index - startIndex;
+	}
+	
+	public static ArrayList<MacroBlock> getRawBlocks(byte[] data) throws CorruptedFileException {
+		ArrayList<MacroBlock> blocks = new ArrayList<MacroBlock>();
+		int i = 0;
+		byte[] lenOfBlocks = {data[0], data[1], data[2], data[3]};
+		int estimatedLength = Protocol.getIntFromBytes(lenOfBlocks);
+		i += Protocol.RAW_BLOCK_SIZE_CHECK_LENGTH;
+		
+		while (i < data.length) {
+			i += addSingleRawBlockToList(data, i, blocks);
+		}
+		
+		if (blocks.size() != estimatedLength) {
+			throw new CorruptedFileException("The amount of the read-in raw-blocks appears to be unequal to the written raw-blocks.");
+		}
+		
+		return blocks;
+	}
+	
+	private static int addSingleRawBlockToList(byte[] data, int currentIndex, List<MacroBlock> list) {
+		int posX = Protocol.getPosition(data[currentIndex], data[currentIndex + 1]);
+		int posY = Protocol.getPosition(data[currentIndex + 2], data[currentIndex + 3]);
+		int[] sizeBytes = Protocol.getReferenceAndSizeInt(data[currentIndex + 4]);
+		int size = sizeBytes[1];
+		MacroBlock block = new MacroBlock(new Point(posX, posY), size, true);
+		int length = block.getSquaredSize() * 3;
+		int offset = currentIndex + Protocol.RAW_BLOCK_HEADER_LENGTH;
+		int x = 0;
+		int y = 0;
+		
+		for (int n = offset; n < length + offset; n += 3) {
+			int r = data[n] & 0xFF;
+			int g = data[n + 1] & 0xFF;
+			int b = data[n + 2] & 0xFF;
+			int argb = (0xFF000000 | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF));
+			block.setYUV(x++, y, ColorManager.convertRGBToYUV(argb));
+			
+			if (x >= size) {
+				x = 0;
+				y++;
+			}
+		}
+		
+		list.add(block);
+		return Protocol.RAW_BLOCK_HEADER_LENGTH + length;
+	}
+	
+	private static void writeBytesToByteArray(byte[] bytes, byte[] arr, int index) {
+		for (int i = 0; i < bytes.length; i++) {
+			arr[index++] = bytes[i];
+		}
 	}
 }

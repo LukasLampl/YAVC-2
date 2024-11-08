@@ -319,11 +319,11 @@ public class PixelRaster {
 	 * @return A double containing all color components, for the
 	 * order see above.
 	 * 
-	 * @param x	position X from which to get the Pixel
-	 * @param y	position Y from which to get the Pixel
+	 * @param x	Position X from which to get the pixel.
+	 * @param y	Position Y from which to get the pixel.
 	 * 
-	 * @throws ArrayIndexOutOfBoundsException	when either the x
-	 * or y coordinate is out of the raster
+	 * @throws ArrayIndexOutOfBoundsException	When either the x
+	 * or y coordinate is out of the raster.
 	 */
 	public double[] getYUV(final int x, final int y) {
 		if (y < 0 || y >= this.dim.height) {
@@ -335,6 +335,42 @@ public class PixelRaster {
 		int subSX = x / 2;
 		int subSY = y / 2;
 		return new double[] {this.Y[x][y], this.U[subSX][subSY], this.V[subSX][subSY]};
+	}
+	
+	/**
+	 * <p>Get the YUV color at the specific position
+	 * with the following layout:
+	 * <ul><li>double[0] = Y
+	 * <li>double[1] = U
+	 * <li>double[2] = V
+	 * </ul></p>
+	 * 
+	 * @return A double containing all color components, for the
+	 * order see above.
+	 * 
+	 * @param x		Position X from which to get the pixel.
+	 * @param y		Position Y from which to get the pixel.
+	 * @param cache	Cache to store the values in.
+	 * 
+	 * @throws ArrayIndexOutOfBoundsException	When either the x
+	 * or y coordinate is out of the raster.
+	 * @throws IllegalArgumentException	When the cache is {@code null}.
+	 */
+	public double[] getYUV(final int x, final int y, double[] cache) {
+		if (y < 0 || y >= this.dim.height) {
+			throw new ArrayIndexOutOfBoundsException("(Y) " + y + " is out of bounds!");
+		} else if (x < 0 || x >= this.dim.width) {
+			throw new ArrayIndexOutOfBoundsException("(X) " + x + " is out of bounds!");
+		} else if (cache == null) {
+			throw new IllegalArgumentException("Cannot fill null cache.");
+		}
+		
+		int subSX = x / 2;
+		int subSY = y / 2;
+		cache[0] = this.Y[x][y];
+		cache[1] = this.U[subSX][subSY];
+		cache[2] = this.V[subSX][subSY];
+		return cache;
 	}
 	
 	/**
@@ -645,8 +681,11 @@ public class PixelRaster {
 		BufferedImage render = new BufferedImage(this.dim.width, this.dim.height, BufferedImage.TYPE_INT_ARGB);
 		
 		IntStream.range(0, this.dim.height).parallel().forEach(y -> {
+			double[] YUVCache = new double[3]; //Size of 4 because of 3 channels
+			
 			for (int x = 0; x < this.dim.width; x++) {
-				render.setRGB(x, y, ColorManager.convertYUVToRGB(getYUV(x, y)));
+				int argb = ColorManager.convertYUVToRGB(getYUV(x, y, YUVCache));
+				render.setRGB(x, y, argb);
 			}
 		});
 		

@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 package app.utils;
 
 import java.awt.Color;
+import java.util.Random;
 
 /**
  * <p>The class {@code ColorManager} contains basic functions 
@@ -126,9 +127,9 @@ public class ColorManager {
 		double Y = YUV[0];
 		double U = YUV[1] - 128;
 		double V = YUV[2] - 128;
-		int red = range((int)Math.round(Y + 1.402 * V), 0, 255);
-		int green = range((int)Math.round(Y - 0.344136 * U - 0.714136 * V), 0, 255);
-		int blue = range((int)Math.round(Y + 1.772 * U), 0, 255);
+		int red = range(MathUtils.round(Y + 1.402 * V), 0, 255);
+		int green = range(MathUtils.round(Y - 0.344136 * U - 0.714136 * V), 0, 255);
+		int blue = range(MathUtils.round(Y + 1.772 * U), 0, 255);
 		return (0xFF000000 | ((red & 0xFF) << 16) | ((green & 0xFF) << 8) | (blue & 0xFF));
 	}
 	

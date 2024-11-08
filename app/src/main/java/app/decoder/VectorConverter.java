@@ -18,7 +18,7 @@ public class VectorConverter {
 	
 	public VectorConverter(byte[] data, ArrayList<Integer> indexes) {
 		this.data = data;
-		this.dist = new LoadDistributor<Integer>(this.numOfThreads * 4);
+		this.dist = new LoadDistributor<Integer>(this.numOfThreads * 16);
 		this.dist.setAll(indexes);
 		this.dist.compute(indexes.size());
 		

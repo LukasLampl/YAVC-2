@@ -1,16 +1,16 @@
 package app.decoder;
 
 import java.awt.Dimension;
-import java.awt.Point;
 import java.util.ArrayList;
+import java.util.LinkedList;
 
 import app.encoder.LoadDistributor;
 import app.exceptions.CorruptedFileException;
 import app.exceptions.WrongBlockAssignedException;
 import app.interprediction.Vector;
-import app.utils.ColorManager;
 import app.utils.Deblocker;
 import app.utils.MacroBlock;
+import app.utils.Metadata;
 import app.utils.PixelRaster;
 import app.utils.Protocol;
 import app.utils.ReferenceFrameManager;
@@ -19,22 +19,14 @@ import app.utils.RenderEngine;
 public class InputProcessor {
 	public static int FrameCount = 0;
 	private Dimension FRAME_DIM = null;
-	private ArrayList<Integer> lengthOfFrames = new ArrayList<Integer>();
+	private LinkedList<Integer> lengthOfFrames = new LinkedList<Integer>();
 	
 	public void proessMetadata(byte[] stream) {
-		if (stream.length < Protocol.META_DATA_LEN) {
-			throw new IllegalArgumentException("Metadata has to be " + 4 + " bytes long.");
-		}
-		
-		byte[][] parts = Protocol.splitArrayEvenly(stream, Protocol.SIZE_OF_INT);
-		int width = Protocol.getIntFromBytes(parts[0]);
-		int height = Protocol.getIntFromBytes(parts[1]);
-		int frames = Protocol.getIntFromBytes(parts[2]);
-
-		this.FRAME_DIM = new Dimension(width, height);
-		FrameCount = frames;
+		Metadata meta = Protocol.setMetadata(stream);
+		this.FRAME_DIM = meta.getDimensionOfFrames();
+		FrameCount = meta.getFrameNumber();
 		System.out.println("DIM: " + this.FRAME_DIM);
-		System.out.println("FRAMES: " + frames);
+		System.out.println("FRAMES: " + FrameCount);
 	}
 	
 	public int initFrameReader(byte[] stream) {
@@ -42,34 +34,19 @@ public class InputProcessor {
 	}
 	
 	public void getIndexes(byte[] stream) {
-		byte[][] data = Protocol.splitArrayEvenly(stream, Protocol.SIZE_OF_INT);
-		
-		for (byte[] byteNum : data) {
-			int length = Protocol.getIntFromBytes(byteNum);
-			this.lengthOfFrames.add(length);
-		}
+		Protocol.setLengthsOfEachFramePart(stream, this.lengthOfFrames);
 	}
 	
 	public int getNextLength() {
-		return this.lengthOfFrames.remove(0);
+		if (this.lengthOfFrames.isEmpty()) {
+			throw new IllegalStateException("Cannot provide data reader, since all markers are missing! (Indexes)");
+		}
+		
+		return this.lengthOfFrames.poll();
 	}
 	
 	public PixelRaster constructStartFrame(byte[] data) {
-		PixelRaster render = new PixelRaster(this.FRAME_DIM);
-
-		for (int x = 0, index = 0; x < this.FRAME_DIM.width; x++) {
-			for (int y = 0; y < this.FRAME_DIM.height; y++) {
-				byte r = data[index];
-				byte g = data[index + 1];
-				byte b = data[index + 2];
-				int rgb = (0xFF000000 | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF));
-				double[] YUV = ColorManager.convertRGBToYUV(rgb);
-				render.setYUV(x, y, YUV);
-				index += 3;
-			}
-		}
-		
-		return render;
+		return Protocol.reconstructStartFrame(data, this.FRAME_DIM);
 	}
 	
 	public PixelRaster processFrame(byte[] content, byte[] rawBlocks, ReferenceFrameManager refs) throws CorruptedFileException, WrongBlockAssignedException {
@@ -105,80 +82,10 @@ public class InputProcessor {
 	}
 	
 	private ArrayList<MacroBlock> getRawBlocks(byte[] rawBlocks) throws CorruptedFileException, WrongBlockAssignedException {
-		ArrayList<MacroBlock> blocks = new ArrayList<MacroBlock>();
-		int i = 0;
-		byte[] lenOfBlocks = {rawBlocks[0], rawBlocks[1], rawBlocks[2], rawBlocks[3]};
-		int estimatedLength = Protocol.getIntFromBytes(lenOfBlocks);
-		i += Protocol.RAW_BLOCK_SIZE_CHECK_LENGTH;
-		
-		while (i < rawBlocks.length) {
-			int posX = Protocol.getPosition(rawBlocks[i], rawBlocks[i + 1]);
-			int posY = Protocol.getPosition(rawBlocks[i + 2], rawBlocks[i + 3]);
-			int[] sizeBytes = Protocol.getReferenceAndSizeInt(rawBlocks[i + 4]);
-			int size = sizeBytes[1];
-			MacroBlock block = new MacroBlock(new Point(posX, posY), size, true);
-			int length = block.getSquaredSize() * 3;
-			int offset = i + Protocol.RAW_BLOCK_HEADER_LENGTH;
-			int x = 0;
-			int y = 0;
-			
-			for (int n = offset; n < length + offset; n += 3) {
-				int r = rawBlocks[n] & 0xFF;
-				int g = rawBlocks[n + 1] & 0xFF;
-				int b = rawBlocks[n + 2] & 0xFF;
-				int argb = (0xFF000000 | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF));
-				block.setYUV(x++, y, ColorManager.convertRGBToYUV(argb));
-				
-				if (x >= size) {
-					x = 0;
-					y++;
-				}
-			}
-			
-			i += Protocol.RAW_BLOCK_HEADER_LENGTH + length;
-			blocks.add(block);
-		}
-		
-		if (blocks.size() != estimatedLength) {
-			throw new CorruptedFileException("The amount of the read-in raw-blocks appears to be unequal to the written raw-blocks.");
-		}
-		
-		return blocks;
+		return Protocol.getRawBlocks(rawBlocks);
 	}
 	
 	private ArrayList<Vector> getVectors(byte[] vectorPart) throws CorruptedFileException, WrongBlockAssignedException {
-		ArrayList<Vector> vecs = new ArrayList<Vector>();
-		
-		if (vectorPart.length <= 1) {
-			return vecs;
-		}
-		
-		//  LAYOUT:
-		//  POSX ⊥ POSY ⊥ SPANX ⊥ SPANY ⊥ REFERENCE << 4 | SIZE ⊥ DIFFERENCE
-		// ^_____________________________________________________^
-		//                      = 7 Bytes offset
-		int i = 0;
-		byte[] lenOfVecs = {vectorPart[0], vectorPart[1], vectorPart[2], vectorPart[3]};
-		int estimatedLength = Protocol.getIntFromBytes(lenOfVecs);
-		i += Protocol.VECTOR_SIZE_CHECK_LENGTH;
-		ArrayList<Integer> indexesOfVectors = new ArrayList<Integer>();
-		
-		while (i < vectorPart.length) {
-			indexesOfVectors.add(i);
-			int[] refAndSize = Protocol.getReferenceAndSizeInt(vectorPart[i + 6]);
-			int size = refAndSize[1];
-			//Length of the vector diffs
-			i += ((size * size) + 2 * ((size / 2) * (size / 2))) + Protocol.VECTOR_HEADER_LENGTH;
-		}
-		
-		VectorConverter converter = new VectorConverter(vectorPart, indexesOfVectors);
-		converter.start();
-		vecs = converter.awaitTermination();
-		
-		if (vecs.size() != estimatedLength) {
-			throw new CorruptedFileException("The amount of the read-in vectors appears to be unequal to the written vectors.");
-		}
-		
-		return vecs;
+		return Protocol.getVectors(vectorPart);
 	}
 }

@@ -308,8 +308,8 @@ public class MacroBlock {
 	 * 
 	 * @return Double array with Y at [0], U at [1] and V at [2].
 	 * 
-	 * @param x	position X in the MacroBlock itself
-	 * @param y position Y in the MacroBlock itself
+	 * @param x	Position X in the MacroBlock itself.
+	 * @param y Position Y in the MacroBlock itself.
 	 * 
 	 * @throws ArrayIndexOutOfBoundsException	if the x or y coordinate
 	 * is out of bounds within the MacroBlock
@@ -319,7 +319,7 @@ public class MacroBlock {
 	 * <li>If the V component is null
 	 * </ul>
 	 */
-	public double[] getYUV(int x, int y) {
+	public double[] getYUV(final int x, final int y) {
 		if (x < 0 || x >= this.size) {
 			throw new ArrayIndexOutOfBoundsException("(X) " + x + " is out of bounds (" + this.size + ")");
 		} else if (y < 0 || y >= this.size) {
@@ -335,6 +335,44 @@ public class MacroBlock {
 		int subSX = x / 2;
 		int subSY = y / 2;
 		return new double[] {this.Y[x][y], this.U[subSX][subSY], this.V[subSX][subSY]};
+	}
+	
+	/**
+	 * <p>Returns the YUV color at the specified position x, y.<br>
+	 * <b>Important:</b> The position is relative to the MacroBlock!</p>
+	 * 
+	 * @return Double array with Y at [0], U at [1] and V at [2].
+	 * 
+	 * @param x	Position X in the MacroBlock itself.
+	 * @param y Position Y in the MacroBlock itself.
+	 * 
+	 * @throws ArrayIndexOutOfBoundsException	if the x or y coordinate
+	 * is out of bounds within the MacroBlock
+	 * @throws NullPointerException	if the following situations:
+	 * <ul><li>If the Y component is null
+	 * <li>If the U component is null
+	 * <li>If the V component is null
+	 * </ul>
+	 */
+	public double[] getYUV(final int x, final int y, double[] cache) {
+		if (x < 0 || x >= this.size) {
+			throw new ArrayIndexOutOfBoundsException("(X) " + x + " is out of bounds (" + this.size + ")");
+		} else if (y < 0 || y >= this.size) {
+			throw new ArrayIndexOutOfBoundsException("(Y) " + y + " is out of bounds (" + this.size + ")");
+		} else if (this.Y == null) {
+			throw new NullPointerException("No Luma-Y Component");
+		} else if (this.U == null) {
+			throw new NullPointerException("No Chroma-U Component");
+		} else if (this.V == null) {
+			throw new NullPointerException("No Chroma-V Component");
+		}
+		
+		int subSX = x / 2;
+		int subSY = y / 2;
+		cache[0] = this.Y[x][y];
+		cache[1] = this.U[subSX][subSY];
+		cache[2] = this.V[subSX][subSY];
+		return cache;
 	}
 	
 	/**

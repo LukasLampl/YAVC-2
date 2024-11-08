@@ -224,6 +224,7 @@ public class RenderEngine {
 
 	public BufferedImage renderDifferences(ArrayList<MacroBlock> leaves, Dimension dim) {
 		BufferedImage render = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
+		double[] YUVCache = new double[3]; //Size of 3 because of 3 channels
 		
 		for (MacroBlock b : leaves) {
 			for (int x = 0; x < b.getSize(); x++) {
@@ -235,7 +236,8 @@ public class RenderEngine {
 						continue;
 					}
 					
-					render.setRGB(x + b.getPosition().x, y + b.getPosition().y, ColorManager.convertYUVToRGB(b.getYUV(x, y)));
+					int argb = ColorManager.convertYUVToRGB(b.getYUV(x, y, YUVCache));
+					render.setRGB(x + b.getPosition().x, y + b.getPosition().y, argb);
 				}
 			}
 		}
