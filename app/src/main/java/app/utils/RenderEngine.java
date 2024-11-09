@@ -19,7 +19,7 @@ public class RenderEngine {
 	static long totalTime = 0L;
 	static long numThreads = 0L;
 
-	public static PixelRaster renderResult(LoadDistributor<Vector> vecs, ReferenceFrameManager refs, LoadDistributor<MacroBlock> differenceManager) {
+	public static PixelRaster renderResult(LoadDistributor<Vector> vecs, ReferenceFrameManager refs, LoadDistributor<MacroBlock> differenceManager, boolean allowModToAbsDiff) {
 		PixelRaster render = refs.getLastFrame().copy();
 		Dimension dim = refs.getLastFrame().getDimension();
 		ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
@@ -34,7 +34,7 @@ public class RenderEngine {
 
 			if (vecs != null) {
 				for (final ArrayList<Vector> vecList : vecs.getIterable()) {
-					Runnable task = createVectorRenderTask(vecList, refs, render, dim);
+					Runnable task = createVectorRenderTask(vecList, refs, render, dim, allowModToAbsDiff);
 					executor.submit(task);
 				}
 			}
@@ -69,7 +69,7 @@ public class RenderEngine {
 		return task;
 	}
 	
-	private static Runnable createVectorRenderTask(ArrayList<Vector> vecList, ReferenceFrameManager refs, PixelRaster render, Dimension dim) {
+	private static Runnable createVectorRenderTask(ArrayList<Vector> vecList, ReferenceFrameManager refs, PixelRaster render, Dimension dim, boolean allowModToAbsDiff) {
 		Runnable task = () -> {
 			double[][][] pixelBlockCache = null;
 			
@@ -80,25 +80,28 @@ public class RenderEngine {
 				int EndY = pos.y + v.getSpanY();
 				int size = v.getSize();
 				double[][][] block = referencedFrame.getPixelBlock(pos, size, pixelBlockCache);
-				double[][][] coeffs = v.getIDCTCoefficientsOfAbsoluteColorDifference(false);
+				double[][][] coeffs = v.getIDCTCoefficientsOfAbsoluteColorDifference(allowModToAbsDiff);
 				
 				//Use block as cache, because the pixel block is a allocated double[][][] from the image
 				//and thus editing it won't change the original frame.
 				double[][][] reconstructedColor = reconstructColors(coeffs, block, size, block);
 				
 				for (int x = 0; x < size; x++) {
-					if (EndX + x < 0 || EndX + x >= dim.width) continue;
-					if (pos.x + x < 0 || pos.x + x >= dim.width) continue;
+					int posX = EndX + x;
 					int subSX = x / 2;
+					if (posX < 0 || posX >= dim.width) continue;
+					if (pos.x + x < 0 || pos.x + x >= dim.width) continue;
 					
 					for (int y = 0; y < size; y++) {
-						if (EndY + y < 0 || EndY + y >= dim.height) continue;
-						if (pos.y + y < 0 || pos.y + y >= dim.height) continue;
+						int posY = EndY + y;
 						int subSY = y / 2;
+						if (posY < 0 || posY >= dim.height) continue;
+						if (pos.y + y < 0 || pos.y + y >= dim.height) continue;
+						
 						double Y = reconstructedColor[0][x][y];
 						double U = reconstructedColor[1][subSX][subSY];
 						double V = reconstructedColor[2][subSX][subSY];
-						render.setYUV(x + EndX, y + EndY, Y, U, V);
+						render.setYUV(posX, posY, Y, U, V);
 					}
 				}
 			}	

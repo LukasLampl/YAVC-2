@@ -7,6 +7,7 @@ import java.util.LinkedList;
 import app.encoder.LoadDistributor;
 import app.exceptions.CorruptedFileException;
 import app.exceptions.WrongBlockAssignedException;
+import app.interprediction.ListManager;
 import app.interprediction.Vector;
 import app.utils.Deblocker;
 import app.utils.MacroBlock;
@@ -49,13 +50,13 @@ public class InputProcessor {
 		return Protocol.reconstructStartFrame(data, this.FRAME_DIM);
 	}
 	
-	public PixelRaster processFrame(byte[] content, byte[] rawBlocks, ReferenceFrameManager refs) throws CorruptedFileException, WrongBlockAssignedException {
+	public PixelRaster processFrame(byte[] content, byte[] rawBlocks, ReferenceFrameManager refs, ListManager<Vector> vectorListManager) throws CorruptedFileException, WrongBlockAssignedException {
 		long start_copy = System.currentTimeMillis();
 		PixelRaster render = refs.getLastFrame().copy();
 		long end_copy = System.currentTimeMillis();
 		Deblocker deblocker = new Deblocker();
 		long start_get_vecs = System.currentTimeMillis();
-		ArrayList<Vector> vecs = content.length > 1 ? getVectors(content) : new ArrayList<Vector>();
+		getVectors(content, vectorListManager);
 		long end_get_vecs = System.currentTimeMillis();
 		long start_raw_block = System.currentTimeMillis();
 		ArrayList<MacroBlock> blocks = getRawBlocks(rawBlocks);
@@ -63,12 +64,12 @@ public class InputProcessor {
 		long start_load_dist = System.currentTimeMillis();
 		LoadDistributor<Vector> vecManager = new LoadDistributor<Vector>();
 		LoadDistributor<MacroBlock> blockManager = new LoadDistributor<MacroBlock>();
-		vecManager.setAllAndCompute(vecs);
+		vecManager.setAllAndCompute(vectorListManager.getList());
 		blockManager.setAllAndCompute(blocks);
 		long end_load_dist = System.currentTimeMillis();
 		long start_render = System.currentTimeMillis();
-		if (vecs != null) {
-			render = RenderEngine.renderResult(vecManager, refs, blockManager);
+		if (vectorListManager.getList() != null) {
+			render = RenderEngine.renderResult(vecManager, refs, blockManager, true);
 			deblocker.deblock(vecManager, render);
 		}
 		long end_render = System.currentTimeMillis();
@@ -85,7 +86,7 @@ public class InputProcessor {
 		return Protocol.getRawBlocks(rawBlocks);
 	}
 	
-	private ArrayList<Vector> getVectors(byte[] vectorPart) throws CorruptedFileException, WrongBlockAssignedException {
-		return Protocol.getVectors(vectorPart);
+	private void getVectors(byte[] vectorPart, ListManager<Vector> vectorListManager) throws CorruptedFileException, WrongBlockAssignedException {
+		Protocol.getVectors(vectorPart, vectorListManager);
 	}
 }

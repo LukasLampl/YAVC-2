@@ -118,7 +118,6 @@ public class VectorEngine {
 			executor.invokeAll(tasks);
 			executor.shutdown();
 			while (!executor.awaitTermination(1, TimeUnit.MILLISECONDS));
-			vecManager.compute(this.totalPixelsProcessed);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -138,6 +137,7 @@ public class VectorEngine {
 			restBlockManager.compute(restLoad);
 		}
 	
+		vecManager.compute(this.totalPixelsProcessed);
 		return new VectorEngineResult(restBlockManager, vecManager);
 	}
 	

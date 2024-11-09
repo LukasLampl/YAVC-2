@@ -4,20 +4,22 @@ import java.awt.Point;
 import java.util.ArrayList;
 
 import app.encoder.LoadDistributor;
+import app.interprediction.ListManager;
 import app.interprediction.Vector;
 import app.utils.Protocol;
 
 public class VectorConverter {
 	private final int numOfThreads = Runtime.getRuntime().availableProcessors();
 	private ConversionThread[] threads = new ConversionThread[this.numOfThreads];
-	private ArrayList<Vector> vectors = new ArrayList<Vector>();
 	private LoadDistributor<Integer> dist = null;
+	private ListManager<Vector> vectorManager = null;
 	
 	private int currentLoadIndex = 0;
 	private byte[] data = null;
 	
-	public VectorConverter(byte[] data, ArrayList<Integer> indexes) {
+	public VectorConverter(byte[] data, ArrayList<Integer> indexes, ListManager<Vector> vectorListManager) {
 		this.data = data;
+		this.vectorManager = vectorListManager;
 		this.dist = new LoadDistributor<Integer>(this.numOfThreads * 16);
 		this.dist.setAll(indexes);
 		this.dist.compute(indexes.size());
@@ -44,7 +46,7 @@ public class VectorConverter {
 		}
 	}
 	
-	public ArrayList<Vector> awaitTermination() {
+	public void awaitTermination() {
 		for (ConversionThread t : this.threads) {
 			try {
 				t.join();
@@ -54,10 +56,8 @@ public class VectorConverter {
 		}
 		
 		for (ConversionThread t : this.threads) {
-			this.vectors.addAll(t.getResult());
+			this.vectorManager.addAll(t.getResult());
 		}
-		
-		return this.vectors;
 	}
 	
 	private class ConversionThread extends Thread {
@@ -103,10 +103,14 @@ public class VectorConverter {
 		@Override
 		public void run() {
 			long start = System.currentTimeMillis();
+			long meta_time = 0;
+			long idct_time = 0;
+			long vector_ca_time = 0;
 			ArrayList<Integer> load = null;
 			
 			while ((load = getLoad()) != null) {
 				for (Integer rawIndex : load) {
+					long meta_start = System.currentTimeMillis();
 					int index = rawIndex.intValue();
 					int posX = Protocol.getPosition(data[index], data[index + 1]);
 					int posY = Protocol.getPosition(data[index + 2], data[index + 3]);
@@ -115,20 +119,36 @@ public class VectorConverter {
 					int[] refAndSize = Protocol.getReferenceAndSizeInt(data[index + 6]);
 					int ref = refAndSize[0];
 					int size = refAndSize[1];
-
-					ArrayList<double[][][]> diffs = getVectorDifferences(data, Protocol.VECTOR_HEADER_LENGTH + index, size);
+					meta_time += (System.currentTimeMillis() - meta_start);
 					
-					Vector vec = new Vector(new Point(posX, posY), size);
+					long start_ca = System.currentTimeMillis();
+					Vector vec = vectorManager.getCachedObj();
+					
+					if (vec == null) {
+						vec = new Vector(new Point(posX, posY), size);
+					}
+					
+					vec.setSize(size);
+					vec.setPosition(new Point(posX, posY));
+					
+					long start_idct = System.currentTimeMillis();
+					ArrayList<double[][][]> diffs = getVectorDifferences(data, Protocol.VECTOR_HEADER_LENGTH + index, size);
 					vec.setAbsolutedifferenceDCTCoefficients(diffs);
+					idct_time += (System.currentTimeMillis() - start_idct);
+					
 					vec.setSpanX(spanX);
 					vec.setSpanY(spanY);
 					vec.setReference(ref);
 					this.tempList.add(vec);
+					vector_ca_time += (System.currentTimeMillis() - start_ca);
 				}
 			}
 			
 			long end = System.currentTimeMillis();
 			System.out.println("   >>> Time of Thread: " + (end - start) + "ms");
+			System.out.println("      > Meta time: " + meta_time + "ms");
+			System.out.println("      > IDCT time: " + idct_time + "ms");
+			System.out.println("      > Vector creation time: " + vector_ca_time + "ms");
 		}
 		
 		public ArrayList<Vector> getResult() {
@@ -142,10 +162,7 @@ public class VectorConverter {
 			int YLength = size * size;
 			
 			if (size == 4) {
-				double[][][] res = new double[3][][];
-				res[0] = new double[4][4];
-				res[1] = new double[2][2];
-				res[2] = new double[2][2];
+				double[][][] res = getArray(4);
 				
 				for (int x = 0, i = 0; x < 4; x++) {
 					for (int y = 0; y < 4; y++) {
@@ -162,13 +179,9 @@ public class VectorConverter {
 				
 				DCTCoeffGroups.add(res);
 			} else {
-				int halfSize = size / 2;
-				
 				for (int u = 0; u < YLength; u += 64) {
-					double[][][] res = new double[3][][];
-					res[0] = new double[size][size];
-					res[1] = new double[halfSize][halfSize];
-					res[2] = new double[halfSize][halfSize];
+					int uFrac = (u / 4);
+					double[][][] res = getArray(8);
 					
 					for (int x = 0, i = 0; x < 8; x++) {
 						for (int y = 0; y < 8; y++) {
@@ -178,8 +191,8 @@ public class VectorConverter {
 					
 					for (int x = 0, i = 0; x < 4; x++) {
 						for (int y = 0; y < 4; y++) {
-							res[1][x][y] = data[1][(u / 4) + i];
-							res[2][x][y] = data[2][(u / 4) + i++];
+							res[1][x][y] = data[1][uFrac + i];
+							res[2][x][y] = data[2][uFrac + i++];
 						}
 					}
 					
@@ -188,6 +201,15 @@ public class VectorConverter {
 			}
 			
 			return DCTCoeffGroups;
+		}
+		
+		private double[][][] getArray(int size) {
+			int halfSize = size / 2;
+			double[][][] arr = new double[3][][];
+			arr[0] = new double[size][size];
+			arr[1] = new double[halfSize][halfSize];
+			arr[2] = new double[halfSize][halfSize];
+			return arr;
 		}
 		
 		private double[][] getDCTCoeffsOutOfFile(byte[] vectorPart, int startPos, int size) {

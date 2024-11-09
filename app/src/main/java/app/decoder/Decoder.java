@@ -4,6 +4,8 @@ import java.io.File;
 
 import app.exceptions.CorruptedFileException;
 import app.exceptions.WrongBlockAssignedException;
+import app.interprediction.ListManager;
+import app.interprediction.Vector;
 import app.utils.PixelRaster;
 import app.utils.ReferenceFrameManager;
 
@@ -11,6 +13,7 @@ public class Decoder {
 	private ReferenceFrameManager referenceManager = new ReferenceFrameManager();
 	
 	public void decode(File input, File output) {
+		ListManager<Vector> vectorListManager = new ListManager<Vector>();
 		ImageWriter imageWriter = new ImageWriter(output);
 		InputStream inputStream = new InputStream(input);
 		InputProcessor processor = new InputProcessor();
@@ -39,7 +42,7 @@ public class Decoder {
 				byte[] rawBlocks = inputStream.getChunk(lengthOfRawBlocks);
 				long end_data_grab = System.currentTimeMillis();
 				long start_render = System.currentTimeMillis();
-				PixelRaster result = processor.processFrame(vectors, rawBlocks, this.referenceManager);
+				PixelRaster result = processor.processFrame(vectors, rawBlocks, this.referenceManager, vectorListManager);
 				long end_render = System.currentTimeMillis();
 				
 				long start_write = System.currentTimeMillis();
@@ -54,6 +57,7 @@ public class Decoder {
 				System.out.println("   > Render time: " + (end_render - start_render) + "ms");
 				System.out.println("   > Writing time: " + (end_write - start_write) + "ms");
 				System.out.println();
+				vectorListManager.switchList();
 			}
 		} catch (CorruptedFileException e) {
 			e.printStackTrace();

@@ -203,6 +203,10 @@ public class Vector {
 		return this.startingPoint;
 	}
 	
+	public void setPosition(Point position) {
+		this.startingPoint = position;
+	}
+	
 	/**
 	 * <p>Get the x span of the vector.</p>
 	 * 

@@ -8,6 +8,7 @@ import java.util.List;
 import app.decoder.VectorConverter;
 import app.exceptions.CorruptedFileException;
 import app.exceptions.WrongBlockAssignedException;
+import app.interprediction.ListManager;
 import app.interprediction.Vector;
 
 public class Protocol {
@@ -321,11 +322,9 @@ public class Protocol {
 		return index - startIndex;
 	}
 	
-	public static ArrayList<Vector> getVectors(byte[] data) throws CorruptedFileException, WrongBlockAssignedException {
-		ArrayList<Vector> vecs = new ArrayList<Vector>();
-		
+	public static void getVectors(byte[] data, ListManager<Vector> vectorListManager) throws CorruptedFileException, WrongBlockAssignedException {
 		if (data.length <= 1) {
-			return vecs;
+			return;
 		}
 		
 		//  LAYOUT:
@@ -337,15 +336,13 @@ public class Protocol {
 		ArrayList<Integer> indexesOfVectors = new ArrayList<Integer>();
 		precalculateVectorIndexes(data, indexesOfVectors);
 		
-		VectorConverter converter = new VectorConverter(data, indexesOfVectors);
+		VectorConverter converter = new VectorConverter(data, indexesOfVectors, vectorListManager);
 		converter.start();
-		vecs = converter.awaitTermination();
+		converter.awaitTermination();
 		
-		if (vecs.size() != estimatedLength) {
+		if (vectorListManager.getList().size() != estimatedLength) {
 			throw new CorruptedFileException("The amount of the read-in vectors appears to be unequal to the written vectors.");
 		}
-		
-		return vecs;
 	}
 	
 	private static void precalculateVectorIndexes(byte[] data, List<Integer> indexesOfVectors) {

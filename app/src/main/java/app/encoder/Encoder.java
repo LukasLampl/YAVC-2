@@ -88,7 +88,7 @@ public class Encoder {
 				
 //				BufferedImage vectors = RenderEngine.renderVectors(movementVectors, curFrame.getDimension());
 				long start_render = System.currentTimeMillis();
-				PixelRaster composite = RenderEngine.renderResult(movementVectors, this.referenceManager, differenceManager);
+				PixelRaster composite = RenderEngine.renderResult(movementVectors, this.referenceManager, differenceManager, false);
 				outStream.addObjectToOutputQueue(new QueueObject(movementVectors, differenceManager));
 //				ImageIO.write(composite.toBufferedImage(), "png", new File(output.getParent() + "/VR_" + i + ".png"));
 				long end_render = System.currentTimeMillis();
