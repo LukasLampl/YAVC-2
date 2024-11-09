@@ -1,6 +1,7 @@
 package app.encoder;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -25,7 +26,7 @@ public class DifferenceEngine {
 			int threads = Runtime.getRuntime().availableProcessors();
 			ExecutorService executor = Executors.newFixedThreadPool(threads);
 			
-			for (final ArrayList<MacroBlock> blockList : threadLoadManager.getIterable()) {
+			for (final List<MacroBlock> blockList : threadLoadManager.getIterable()) {
 				Callable<ArrayList<MacroBlock>> task = () -> {
 					ArrayList<MacroBlock> blocksToReturn = new ArrayList<MacroBlock>();
 					

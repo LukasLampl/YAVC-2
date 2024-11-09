@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 package app.encoder;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import app.interprediction.Vector;
@@ -50,17 +51,17 @@ public class LoadDistributor<T> {
 	/**
 	 * <p>Holds the raw list of all undistributed items.</p>
 	 */
-	private List<ArrayList<T>> undistributedList;
+	private List<List<T>> undistributedList;
 	
 	/**
 	 * <p>Holds the evenly split work.</p>
 	 */
-	private List<ArrayList<T>> evenlyDistributedObjects;
+	private List<List<T>> evenlyDistributedObjects;
 	
 	/**
 	 * <p>Holds all inputed items.</p>
 	 */
-	private ArrayList<T> rawItems;
+	private List<T> rawItems;
 	
 	/**
 	 * <p>The total amount of data. (Even in the objects itself e.g. pixels).</p>
@@ -93,16 +94,16 @@ public class LoadDistributor<T> {
 	 * <p>Initializes all holder arrays so they can be used by {@link #setObj(Object)}.</p>
 	 */
 	private void init() {
-		this.undistributedList = new ArrayList<ArrayList<T>>();
-		this.evenlyDistributedObjects = new ArrayList<ArrayList<T>>();
-		this.rawItems = new ArrayList<T>();
+		this.undistributedList = Collections.synchronizedList(new ArrayList<List<T>>());
+		this.evenlyDistributedObjects = Collections.synchronizedList(new ArrayList<List<T>>());
+		this.rawItems = Collections.synchronizedList(new ArrayList<T>());
 		
 		for (int i = 0; i < QuadtreeEngine.NUMBER_OF_SIZES; i++) {
-			this.undistributedList.add(new ArrayList<T>());
+			this.undistributedList.add(Collections.synchronizedList(new ArrayList<T>()));
 		}
 		
 		for (int i = 0; i < this.numberOfChunks; i++) {
-			this.evenlyDistributedObjects.add(new ArrayList<T>());
+			this.evenlyDistributedObjects.add(Collections.synchronizedList(new ArrayList<T>()));
 		}
 	}
 	
@@ -125,16 +126,10 @@ public class LoadDistributor<T> {
 			QuadtreeEngine.getIndexBySize(((Vector)obj).getSize());
 		}
 		
-		ArrayList<T> target = this.undistributedList.get(estimatedIndex);
-		
-		synchronized (target) {
-			target.add(obj);
+		List<T> target = this.undistributedList.get(estimatedIndex);
+		target.add(obj);
+		this.rawItems.add(obj);
 		}
-		
-		synchronized (this.rawItems) {
-			this.rawItems.add(obj);
-		}
-	}
 	
 	/**
 	 * <p>Adds a whole list of items to the LoadDistributor.</p>
@@ -193,12 +188,12 @@ public class LoadDistributor<T> {
 		int currentLoad = 0;
 		int currentIndex = 0;
 		
-		for (ArrayList<T> blockList : this.undistributedList) {
+		for (List<T> blockList : this.undistributedList) {
 			for (T obj : blockList) {
 				if (obj instanceof MacroBlock) {
 					currentLoad += ((MacroBlock)obj).getSquaredSize();
 				} else if (obj instanceof Vector) {
-					currentLoad += ((Vector)obj).getSize() * ((Vector)obj).getSize();
+					currentLoad += ((Vector)obj).getSquaredSize();
 				} else {
 					currentLoad++;
 				}
@@ -226,7 +221,7 @@ public class LoadDistributor<T> {
 	 * @param index	Index from which to get the sub-work from.
 	 * @return The sub-work at the specified index.
 	 */
-	public ArrayList<T> getLoadOf(int index) {
+	public List<T> getLoadOf(int index) {
 		if (!this.hasDistributed) {
 			throw new IllegalStateException("Tried to receive data before it was ready! (call compute(int) first)");
 		}	
@@ -252,9 +247,14 @@ public class LoadDistributor<T> {
 	
 	/**
 	 * <p>Returns the iterable to the evenly distributed sub-works (chunks).</p>
+	 * 
+	 * <p><b>Caution:</b><br>
+	 * This iterator is not thread-safe!
+	 * </p>
+	 * 
 	 * @return The iterable to the evenly distributed sub-works (chunks).
 	 */
-	public Iterable<ArrayList<T>> getIterable() {
+	public Iterable<List<T>> getIterable() {
 		if (!this.hasDistributed) {
 			throw new IllegalStateException("Tried to receive data before it was ready! (call compute(int) first)");
 		}
@@ -266,7 +266,7 @@ public class LoadDistributor<T> {
 	 * <p>Returns all invoked data in the LoadDistributor.</p>
 	 * @return The invoked data in the LoadDistributor.
 	 */
-	public ArrayList<T> getRawData() {
+	public List<T> getRawData() {
 		return this.rawItems;
 	}
 }

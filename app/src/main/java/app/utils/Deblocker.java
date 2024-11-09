@@ -22,7 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 package app.utils;
 
 import java.awt.Point;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -78,7 +78,7 @@ public class Deblocker {
 		int threads = Runtime.getRuntime().availableProcessors();
 		ExecutorService executor = Executors.newFixedThreadPool(threads);
 		
-		for (final ArrayList<Vector> vecList : movementVecs.getIterable()) {
+		for (final List<Vector> vecList : movementVecs.getIterable()) {
 			for (Vector vec : vecList) {
 				Point vecPos = vec.getPosition();
 				Point blockPos = new Point(vecPos.x + vec.getSpanX(), vecPos.y + vec.getSpanY());

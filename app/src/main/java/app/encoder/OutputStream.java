@@ -91,7 +91,7 @@ public class OutputStream {
 		
 		Thread writer = new Thread(() -> {
 			while (canWrite) {
-				if (QUEUE.size() == 0) {
+				if (QUEUE.isEmpty()) {
 					if (finishQueue) {
 						break;
 					}

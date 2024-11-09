@@ -2,6 +2,7 @@ package app.decoder;
 
 import java.awt.Point;
 import java.util.ArrayList;
+import java.util.List;
 
 import app.encoder.LoadDistributor;
 import app.interprediction.ListManager;
@@ -30,7 +31,7 @@ public class VectorConverter {
 		}
 	}
 	
-	private ArrayList<Integer> getLoad() {
+	private List<Integer> getLoad() {
 		synchronized (this.dist) {
 			if (this.currentLoadIndex >= this.dist.getNumberOfChunks()) {
 				return null;
@@ -106,7 +107,7 @@ public class VectorConverter {
 			long meta_time = 0;
 			long idct_time = 0;
 			long vector_ca_time = 0;
-			ArrayList<Integer> load = null;
+			List<Integer> load = null;
 			
 			while ((load = getLoad()) != null) {
 				for (Integer rawIndex : load) {

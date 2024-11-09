@@ -6,6 +6,7 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -26,14 +27,14 @@ public class RenderEngine {
 		
 		try {
 			if (differenceManager != null) {
-				for (final ArrayList<MacroBlock> blockList : differenceManager.getIterable()) {
+				for (final List<MacroBlock> blockList : differenceManager.getIterable()) {
 					Runnable task = createMacroBlockRenderTask(blockList, dim, render);
 					executor.submit(task);
 				}
 			}
 
 			if (vecs != null) {
-				for (final ArrayList<Vector> vecList : vecs.getIterable()) {
+				for (final List<Vector> vecList : vecs.getIterable()) {
 					Runnable task = createVectorRenderTask(vecList, refs, render, dim, allowModToAbsDiff);
 					executor.submit(task);
 				}
@@ -48,7 +49,7 @@ public class RenderEngine {
 		return render;
 	}
 	
-	private static Runnable createMacroBlockRenderTask(ArrayList<MacroBlock> blockList, Dimension dim, PixelRaster render) {
+	private static Runnable createMacroBlockRenderTask(List<MacroBlock> blockList, Dimension dim, PixelRaster render) {
 		Runnable task = () -> { 
 			for (MacroBlock block : blockList) {
 				Point pos = block.getPosition();
@@ -69,7 +70,7 @@ public class RenderEngine {
 		return task;
 	}
 	
-	private static Runnable createVectorRenderTask(ArrayList<Vector> vecList, ReferenceFrameManager refs, PixelRaster render, Dimension dim, boolean allowModToAbsDiff) {
+	private static Runnable createVectorRenderTask(List<Vector> vecList, ReferenceFrameManager refs, PixelRaster render, Dimension dim, boolean allowModToAbsDiff) {
 		Runnable task = () -> {
 			double[][][] pixelBlockCache = null;
 			

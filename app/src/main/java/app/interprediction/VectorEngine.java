@@ -24,6 +24,7 @@ package app.interprediction;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -109,7 +110,7 @@ public class VectorEngine {
 		ArrayList<Callable<Void>> tasks = new ArrayList<Callable<Void>>(differenceManager.getNumberOfObjects());
 		ExecutorService executor = Executors.newWorkStealingPool();
 		
-		for (final ArrayList<MacroBlock> blockList : differenceManager.getIterable()) {
+		for (final List<MacroBlock> blockList : differenceManager.getIterable()) {
 			Callable<Void> searchTask = createVectorSearchTask(refs, blockList, vecManager);
 			tasks.add(searchTask);
 		}
@@ -117,7 +118,7 @@ public class VectorEngine {
 		try {
 			executor.invokeAll(tasks);
 			executor.shutdown();
-			while (!executor.awaitTermination(1, TimeUnit.MILLISECONDS));
+			while (!executor.awaitTermination(500, TimeUnit.MICROSECONDS));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -125,7 +126,7 @@ public class VectorEngine {
 		if (vecManager.getNumberOfObjects() != differenceManager.getNumberOfObjects()) {
 			int restLoad = 0;
 			
-			for (ArrayList<MacroBlock> blockList : differenceManager.getIterable()) {
+			for (List<MacroBlock> blockList : differenceManager.getIterable()) {
 				for (MacroBlock block : blockList) {
 					if (!block.isConvertedToVector()) {
 						restLoad += block.getSquaredSize();
@@ -151,7 +152,7 @@ public class VectorEngine {
 	 * @param refs	Reference frames
 	 * @param blockToBeSearched	MacroBlock that should be searched
 	 */
-	private Callable<Void> createVectorSearchTask(final ReferenceFrameManager refs, ArrayList<MacroBlock> blocksToBeSearched, LoadDistributor<Vector> vecManager) {
+	private Callable<Void> createVectorSearchTask(final ReferenceFrameManager refs, List<MacroBlock> blocksToBeSearched, LoadDistributor<Vector> vecManager) {
 		Callable<Void> task = () -> {
 			int maxSize = refs.size();
 			MacroBlock[] canidates = new MacroBlock[maxSize];
