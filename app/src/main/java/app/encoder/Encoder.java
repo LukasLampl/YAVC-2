@@ -3,6 +3,8 @@ package app.encoder;
 import java.io.File;
 import java.util.ArrayList;
 
+import javax.imageio.ImageIO;
+
 import app.interprediction.Vector;
 import app.interprediction.VectorEngine;
 import app.interprediction.VectorEngineResult;
@@ -90,7 +92,6 @@ public class Encoder {
 				long start_render = System.currentTimeMillis();
 				PixelRaster composite = RenderEngine.renderResult(movementVectors, this.referenceManager, differenceManager, false);
 				outStream.addObjectToOutputQueue(new QueueObject(movementVectors, differenceManager));
-//				ImageIO.write(composite.toBufferedImage(), "png", new File(output.getParent() + "/VR_" + i + ".png"));
 				long end_render = System.currentTimeMillis();
 				
 				long start_deblock = System.currentTimeMillis();
@@ -100,6 +101,7 @@ public class Encoder {
 //				ImageIO.write(part[0], "png", new File(output.getParent() + "/MB_" + i + ".png"));
 //				ImageIO.write(part[1], "png", new File(output.getParent() + "/MBA_" + i + ".png"));
 //				ImageIO.write(vectors, "png", new File(output.getParent() + "/V_" + i + ".png"));
+//				ImageIO.write(composite.toBufferedImage(), "png", new File(output.getParent() + "/VR_" + i + ".png"));
 				
 				long end = System.currentTimeMillis();
 				long time = end - start;

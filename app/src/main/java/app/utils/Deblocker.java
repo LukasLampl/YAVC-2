@@ -150,11 +150,17 @@ public class Deblocker {
 		double[] p2 = composite.getYUV(points[5].x, points[5].y);
 		
 		double[] YDeblocked = executeDeblocking(q0[0], q1[0], q2[0], p0[0], p1[0], p2[0], beta, alpha, c);
+		double[] UDeblocked = executeDeblocking(q0[1], q1[1], q2[1], p0[1], p1[1], p2[1], beta, alpha, c);
+		double[] VDeblocked = executeDeblocking(q0[2], q1[2], q2[2], p0[2], p1[2], p2[2], beta, alpha, c);
 		
 		composite.setLuma(points[0].x, points[0].y, YDeblocked[0]);
 		composite.setLuma(points[1].x, points[1].y, YDeblocked[1]);
 		composite.setLuma(points[3].x, points[3].y, YDeblocked[2]);
 		composite.setLuma(points[4].x, points[4].y, YDeblocked[3]);
+		composite.setChroma(points[0].x, points[0].y, UDeblocked[0], VDeblocked[0]);
+		composite.setChroma(points[1].x, points[1].y, UDeblocked[1], VDeblocked[1]);
+		composite.setChroma(points[3].x, points[3].y, UDeblocked[2], VDeblocked[2]);
+		composite.setChroma(points[4].x, points[4].y, UDeblocked[3], VDeblocked[3]);
 	}
 
 	/**
