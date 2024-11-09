@@ -126,8 +126,14 @@ public class LoadDistributor<T> {
 		}
 		
 		ArrayList<T> target = this.undistributedList.get(estimatedIndex);
-		target.add(obj);
-		this.rawItems.add(obj);
+		
+		synchronized (target) {
+			target.add(obj);
+		}
+		
+		synchronized (this.rawItems) {
+			this.rawItems.add(obj);
+		}
 	}
 	
 	/**

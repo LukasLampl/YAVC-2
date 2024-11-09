@@ -33,7 +33,6 @@ public class Encoder {
 		Deblocker deblocker = new Deblocker();
 		ImagePreReader imgReader = new ImagePreReader(files, input);
 		
-		PixelRaster futFrame = null;
 		PixelRaster curFrame = null;
 		PixelRaster prevFrame = null;
 		
@@ -58,7 +57,6 @@ public class Encoder {
 				
 				if (prevFrame == null) {
 					prevFrame = frame;
-//					futureFrame = new PixelRaster(ImageIO.read(getAwaitedFile(input, i + 1, ".bmp")));
 					outStream.writeMetadata(prevFrame.getDimension(), files - 1);
 					outStream.writeStartFrame(prevFrame);
 					this.referenceManager.add(prevFrame);
@@ -66,7 +64,6 @@ public class Encoder {
 				}
 			
 				curFrame = frame;
-//				futureFrame = new PixelRaster(ImageIO.read(getAwaitedFile(input, i + 1, ".bmp")));
 				
 				long start_construct_quadtree = System.currentTimeMillis();
 				ArrayList<MacroBlock> quadtreeRoots = QUADTREE_ENGINE.constructQuadtree(curFrame);
