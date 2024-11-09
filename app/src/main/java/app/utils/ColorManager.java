@@ -39,8 +39,8 @@ import java.util.Random;
  * performance, if used frequently.</p>
  * 
  * @author Lukas Lampl
- * @since 17.0
- * @version 1.0 29 May 2024
+ * @since 1.0
+ * @version 1.0 09 November 2024
  */
 
 public class ColorManager {
