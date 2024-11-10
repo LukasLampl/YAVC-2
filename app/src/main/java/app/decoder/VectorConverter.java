@@ -103,15 +103,10 @@ public class VectorConverter {
 		
 		@Override
 		public void run() {
-			long start = System.currentTimeMillis();
-			long meta_time = 0;
-			long idct_time = 0;
-			long vector_ca_time = 0;
 			List<Integer> load = null;
 			
 			while ((load = getLoad()) != null) {
 				for (Integer rawIndex : load) {
-					long meta_start = System.currentTimeMillis();
 					int index = rawIndex.intValue();
 					int posX = Protocol.getPosition(data[index], data[index + 1]);
 					int posY = Protocol.getPosition(data[index + 2], data[index + 3]);
@@ -120,9 +115,7 @@ public class VectorConverter {
 					int[] refAndSize = Protocol.getReferenceAndSizeInt(data[index + 6]);
 					int ref = refAndSize[0];
 					int size = refAndSize[1];
-					meta_time += (System.currentTimeMillis() - meta_start);
 					
-					long start_ca = System.currentTimeMillis();
 					Vector vec = vectorManager.getCachedObj();
 					
 					if (vec == null) {
@@ -132,24 +125,14 @@ public class VectorConverter {
 					vec.setSize(size);
 					vec.setPosition(new Point(posX, posY));
 					
-					long start_idct = System.currentTimeMillis();
 					ArrayList<double[][][]> diffs = getVectorDifferences(data, Protocol.VECTOR_HEADER_LENGTH + index, size);
 					vec.setAbsolutedifferenceDCTCoefficients(diffs);
-					idct_time += (System.currentTimeMillis() - start_idct);
-					
 					vec.setSpanX(spanX);
 					vec.setSpanY(spanY);
 					vec.setReference(ref);
 					this.tempList.add(vec);
-					vector_ca_time += (System.currentTimeMillis() - start_ca);
 				}
 			}
-			
-			long end = System.currentTimeMillis();
-			System.out.println("   >>> Time of Thread: " + (end - start) + "ms");
-			System.out.println("      > Meta time: " + meta_time + "ms");
-			System.out.println("      > IDCT time: " + idct_time + "ms");
-			System.out.println("      > Vector creation time: " + vector_ca_time + "ms");
 		}
 		
 		public ArrayList<Vector> getResult() {

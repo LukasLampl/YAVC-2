@@ -680,12 +680,16 @@ public class PixelRaster {
 	public BufferedImage toBufferedImage() {
 		BufferedImage render = new BufferedImage(this.dim.width, this.dim.height, BufferedImage.TYPE_INT_ARGB);
 		
-		IntStream.range(0, this.dim.height).parallel().forEach(y -> {
-			double[] YUVCache = new double[3]; //Size of 4 because of 3 channels
+		IntStream.range(0, this.dim.height / 4).parallel().forEach(y -> {
+			double[] YUVCache = new double[3]; //Size of 3 because of 3 channels
 			
-			for (int x = 0; x < this.dim.width; x++) {
-				int argb = ColorManager.convertYUVToRGB(getYUV(x, y, YUVCache));
-				render.setRGB(x, y, argb);
+			for (int innerY = 0; innerY < 4; innerY++) {
+				int actualY = innerY + y;
+				
+				for (int x = 0; x < this.dim.width; x++) {
+					int argb = ColorManager.convertYUVToRGB(getYUV(x, actualY, YUVCache));
+					render.setRGB(x, actualY, argb);
+				}
 			}
 		});
 		

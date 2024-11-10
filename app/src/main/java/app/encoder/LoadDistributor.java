@@ -182,6 +182,8 @@ public class LoadDistributor<T> {
 	 * <p><b>Information:</b><br>
 	 * The last sub-work will have to least amount of work, since it is nearly impossible
 	 * to have a data-set that matches the estimated amount of work per sub-work.</p>
+	 * 
+	 * @throws IllegalStateException	When an Object is {@code null}.
 	 */
 	private void compute() {
 		int loadPerThread = this.numberOfData / this.numberOfChunks;
@@ -190,6 +192,10 @@ public class LoadDistributor<T> {
 		
 		for (List<T> blockList : this.undistributedList) {
 			for (T obj : blockList) {
+				if (obj == null) {
+					throw new IllegalStateException("Can't have null in the distributor.");
+				}
+				
 				if (obj instanceof MacroBlock) {
 					currentLoad += ((MacroBlock)obj).getSquaredSize();
 				} else if (obj instanceof Vector) {
