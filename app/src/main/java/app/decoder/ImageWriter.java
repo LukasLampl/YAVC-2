@@ -93,7 +93,7 @@ public class ImageWriter {
 	 */
 	private void run(File output) {
 		Thread writerThread = new Thread(() -> {
-			while (!this.waitingForTermination) {
+			while (!this.waitingForTermination || !this.queue.isEmpty()) {
 				if (this.queue.isEmpty()) {
 					try {
 						Thread.sleep(SLEEP_TIME);

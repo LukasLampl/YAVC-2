@@ -186,6 +186,17 @@ public class Protocol {
 		return size;
 	}
 	
+	/**
+	 * Converts the absolute color difference of the vector to a byte matrix which can be then encoded.
+	 * 
+	 * <p><b>Important:</b><br>
+	 * The function does <u>not</u> check for out of bounds values and thus values > 127 and < -127
+	 * are incorrect!</p>
+	 * 
+	 * @param absoluteDifference	The absolute color difference.
+	 * @param size					The size of the vector.
+	 * @return A matrix representation of the absolute color difference.
+	 */
 	public static byte[][] getVectorAbsoluteColorDifferenceBytes(ArrayList<double[][][]> absoluteDifference, int size) {
 		int halfSize = size / 2;
 		int frac = size == 4 ? 4 : 8;
@@ -322,7 +333,7 @@ public class Protocol {
 		return index - startIndex;
 	}
 	
-	public static void getVectors(byte[] data, ListManager<Vector> vectorListManager) throws CorruptedFileException, WrongBlockAssignedException {
+	public static void getVectors(byte[] data, ListManager<Vector> vectorListManager, boolean singleThread) throws CorruptedFileException, WrongBlockAssignedException {
 		if (data.length <= 1) {
 			return;
 		}
@@ -336,7 +347,7 @@ public class Protocol {
 		ArrayList<Integer> indexesOfVectors = new ArrayList<Integer>();
 		precalculateVectorIndexes(data, indexesOfVectors);
 		
-		VectorConverter converter = new VectorConverter(data, indexesOfVectors, vectorListManager);
+		VectorConverter converter = new VectorConverter(data, indexesOfVectors, vectorListManager, singleThread);
 		converter.start();
 		converter.awaitTermination();
 		

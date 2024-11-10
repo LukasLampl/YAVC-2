@@ -56,7 +56,7 @@ public class InputProcessor {
 		long end_copy = System.currentTimeMillis();
 		Deblocker deblocker = new Deblocker();
 		long start_get_vecs = System.currentTimeMillis();
-		getVectors(content, vectorListManager);
+		getVectors(content, vectorListManager, false);
 		long end_get_vecs = System.currentTimeMillis();
 		long start_raw_block = System.currentTimeMillis();
 		ArrayList<MacroBlock> blocks = getRawBlocks(rawBlocks);
@@ -86,7 +86,11 @@ public class InputProcessor {
 		return Protocol.getRawBlocks(rawBlocks);
 	}
 	
-	private void getVectors(byte[] vectorPart, ListManager<Vector> vectorListManager) throws CorruptedFileException, WrongBlockAssignedException {
-		Protocol.getVectors(vectorPart, vectorListManager);
+	protected void getVectors(byte[] vectorPart, ListManager<Vector> vectorListManager, boolean singleThread) throws CorruptedFileException, WrongBlockAssignedException {
+		Protocol.getVectors(vectorPart, vectorListManager, singleThread);
+	}
+	
+	public Dimension getSizeOfFrames() {
+		return this.FRAME_DIM;
 	}
 }

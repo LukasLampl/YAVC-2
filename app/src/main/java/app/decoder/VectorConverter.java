@@ -10,24 +10,35 @@ import app.interprediction.Vector;
 import app.utils.Protocol;
 
 public class VectorConverter {
-	private final int numOfThreads = Runtime.getRuntime().availableProcessors();
-	private ConversionThread[] threads = new ConversionThread[this.numOfThreads];
+	private final int numOfThreads;
+	private ConversionThread[] threads = null;
 	private LoadDistributor<Integer> dist = null;
 	private ListManager<Vector> vectorManager = null;
 	
 	private int currentLoadIndex = 0;
 	private byte[] data = null;
 	
-	public VectorConverter(byte[] data, ArrayList<Integer> indexes, ListManager<Vector> vectorListManager) {
+	public VectorConverter(byte[] data, ArrayList<Integer> indexes, ListManager<Vector> vectorListManager, boolean singleThread) {
 		this.data = data;
 		this.vectorManager = vectorListManager;
-		this.dist = new LoadDistributor<Integer>(this.numOfThreads * 16);
-		this.dist.setAll(indexes);
-		this.dist.compute(indexes.size());
+		this.numOfThreads = !singleThread ? Runtime.getRuntime().availableProcessors() : 1;
+		this.threads = new ConversionThread[this.numOfThreads];
 		
-		for (int i = 0; i < this.numOfThreads; i++) {
-			this.threads[i] = new ConversionThread();
-			this.threads[i].setName("Vector-converter-thread_#" + i);
+		if (!singleThread) {
+			this.dist = new LoadDistributor<Integer>(this.numOfThreads * 16);
+			this.dist.setAll(indexes);
+			this.dist.compute(indexes.size());
+			
+			for (int i = 0; i < this.numOfThreads; i++) {
+				this.threads[i] = new ConversionThread();
+				this.threads[i].setName("Vector-converter-thread_#" + i);
+			}
+		} else {
+			this.dist = new LoadDistributor<Integer>(1);
+			this.dist.setAll(indexes);
+			this.dist.compute(indexes.size());
+			this.threads[0] = new ConversionThread();
+			this.threads[0].setName("Single-Vector-Conversion-Thread");
 		}
 	}
 	

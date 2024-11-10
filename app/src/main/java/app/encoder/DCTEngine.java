@@ -45,24 +45,38 @@ import app.utils.MathUtils;
  */
 
 public class DCTEngine {
+	/**
+	 * Holds precalculated step factors for the "content" of the DCT.
+	 * 
+	 * <p><b>Reference</b><br>
+	 * <a>https://www.mathworks.com/help/images/discrete-cosine-transform.html</a> (Called at 10.11.2024).
+	 * </p>
+	 */
 	private static double[] STEP_X_EQUALS_ZERO = new double[] { 
-			 1.0 / Math.sqrt(2),
-			 1.0 / Math.sqrt(4),
-			 1.0 / Math.sqrt(8),
-			 1.0 / Math.sqrt(16),
-			 1.0 / Math.sqrt(32),
-			 1.0 / Math.sqrt(64),
-			 1.0 / Math.sqrt(128)
+			1.0 / Math.sqrt(2.0),
+			1.0 / Math.sqrt(4.0),
+			1.0 / Math.sqrt(8.0),
+			1.0 / Math.sqrt(16.0),
+			1.0 / Math.sqrt(32.0),
+			1.0 / Math.sqrt(64.0),
+			1.0 / Math.sqrt(128.0)
 	};
 	
+	/**
+	 * Holds precalculated step factors for the "boundaries" of the DCT.
+	 * 
+	 * <p><b>Reference</b><br>
+	 * <a>https://www.mathworks.com/help/images/discrete-cosine-transform.html</a> (Called at 10.11.2024).
+	 * </p>
+	 */
 	private static double[] STEP_X_NOT_EQUALS_ZERO = new double[] {
-				1.0,
-				Math.sqrt(2.0 / 4.0),
-				Math.sqrt(2.0 / 8.0),
-				Math.sqrt(2.0 / 16.0),
-				Math.sqrt(2.0 / 32.0),
-				Math.sqrt(2.0 / 64.0),
-				Math.sqrt(2.0 / 128.0),
+			Math.sqrt(2.0 / 2.0),
+			Math.sqrt(2.0 / 4.0),
+			Math.sqrt(2.0 / 8.0),
+			Math.sqrt(2.0 / 16.0),
+			Math.sqrt(2.0 / 32.0),
+			Math.sqrt(2.0 / 64.0),
+			Math.sqrt(2.0 / 128.0)
 	};
 
 	/**
@@ -96,16 +110,15 @@ public class DCTEngine {
 			IDCT_COEFFICIENTS = new double[sizes.length][][][][];
 			
 			for (int i = 0; i < sizes.length; i++) {
-				int index = i;
-				int m = sizes[index];
+				int m = sizes[i];
 				DCT_COEFFICIENTS[i] = new double[m][m][m][m];
 				IDCT_COEFFICIENTS[i] = new double[m][m][m][m];
 				
-				executor.submit(getDCTCoeffs(m, index));
+				executor.submit(getDCTCoeffs(m, i));
 			}
 			
 			executor.shutdown();
-			while (!executor.awaitTermination(20, TimeUnit.MILLISECONDS));
+			while (!executor.awaitTermination(250, TimeUnit.MICROSECONDS));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -431,7 +444,7 @@ public class DCTEngine {
 	 * @param V	V values to convert
 	 * @param m	size of the matrix
 	 */
-	private double[][][] computeChromaDCTCoefficients(double[][] U, double[][] V, int m) {
+	protected double[][][] computeChromaDCTCoefficients(double[][] U, double[][] V, int m) {
 		double resU[][] = new double[m][m];
 		double resV[][] = new double[m][m];
 		int index = setIndexOfDCT(m);
@@ -454,8 +467,8 @@ public class DCTEngine {
 				
 				resU[v][u] = step * sumU;
 				resV[v][u] = step * sumV;
-            }
-        }
+			}
+		}
 		
 		return new double[][][] {resU, resV};
 	}
@@ -513,7 +526,7 @@ public class DCTEngine {
 	 * @param double[][] Y => Y values to convert
 	 * @param int m => size of the matrix
 	 */
-	private double[][] computeLumaDCTCoefficients(double[][] Y, int m) {
+	protected double[][] computeLumaDCTCoefficients(double[][] Y, int m) {
 		double resY[][] = new double[m][m];
 		int index = setIndexOfDCT(m);
 		double[] steps = {step(0, m), step(1, m)};

@@ -63,6 +63,8 @@ public class Decoder {
 			e.printStackTrace();
 		} catch (WrongBlockAssignedException e) {
 			e.printStackTrace();
+		} finally {
+			imageWriter.terminate();
 		}
 	}
 }
