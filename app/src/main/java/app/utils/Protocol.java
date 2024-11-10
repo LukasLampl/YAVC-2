@@ -1,3 +1,24 @@
+/////////////////////////////////////////////////////////////
+///////////////////////    LICENSE    ///////////////////////
+/////////////////////////////////////////////////////////////
+/*
+The YAVC video / frame compressor compresses frames.
+Copyright (C) 2024  Lukas Nian En Lampl
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 package app.utils;
 
 import java.awt.Dimension;
@@ -7,22 +28,58 @@ import java.util.List;
 
 import app.decoder.VectorConverter;
 import app.exceptions.CorruptedFileException;
-import app.exceptions.WrongBlockAssignedException;
 import app.interprediction.ListManager;
 import app.interprediction.Vector;
 
+/**
+ * The {@code Protocol} class is responsible for converting data into bytes and back
+ * using a specified protocol.
+ * 
+ * @author Lukas Lampl
+ * @since 1.1
+ */
 public class Protocol {
+	/**
+	 * The size of an integer in bytes.
+	 */
 	public static final int SIZE_OF_INT = 4;
+	
+	/**
+	 * The size of the metadata in bytes.
+	 */
 	public static final int META_DATA_LEN = 3 * SIZE_OF_INT;
 	
+	/**
+	 * The length of a vector header in bytes.
+	 */
 	public static final int VECTOR_HEADER_LENGTH = 7;
-	public static final int VECTOR_SIZE_CHECK_LENGTH = SIZE_OF_INT;
+
+	/**
+	 * The length of a size in bytes.
+	 */
+	public static final int SIZE_LENGTH = 3;
+	
+	/**
+	 * The length of the vector size checksum.
+	 */
+	public static final int VECTOR_SIZE_CHECK_LENGTH = SIZE_LENGTH;
+	
+	/**
+	 * Length of the raw block header in bytes.
+	 */
 	public static final int RAW_BLOCK_HEADER_LENGTH = 5;
+	
+	/**
+	 * The length of the raw block checksum.
+	 */
 	public static final int RAW_BLOCK_SIZE_CHECK_LENGTH = SIZE_OF_INT;
 	
-	public static final byte VECTOR_INDICATOR = (byte)0xF0;
-	public static final byte RAW_BLOCK_INDICATOR = (byte)0xA0;
-	
+	/**
+	 * Get the DCT coefficient in form of a byte.
+	 * 
+	 * @param coeff	The coefficient to convert.
+	 * @return The byte representative of the coefficient.
+	 */
 	public static byte getDCTCoeffByte(double coeff) {
 		byte result = (byte)((int)Math.abs(coeff) & 0x7F);
 		
@@ -33,15 +90,34 @@ public class Protocol {
 		return (byte)(result & 0xFF);
 	}
 	
+	/**
+	 * Get the DCT coefficient from a DCT coefficient byte.
+	 * 
+	 * @param coeff	The byte to convert back to the DCT coefficient.
+	 * @return The converted coefficient.
+	 */
 	public static final double getDCTCoeff(byte coeff) {
 		int result = coeff & 0x7F;
 		return (coeff & 0x80) != 0 ? -result : result;
 	}
 	
+	/**
+	 * Get a the span of a vector in form of two bytes.
+	 * 
+	 * @param spanX	The span to the X direction to convert.
+	 * @param spanY	The span to the Y direction to convert.
+	 * @return A byte array containing the spanX and spanY in byte form:
+	 * <ul>
+	 * <li>[0] - The spanX representative.
+	 * <li>[1] - The spanY representative.
+	 * </ul>
+	 * 
+	 * @throws IllegalArgumentException	When either the spanX or spanY is out of bounds: -127 <= span <= 127
+	 */
 	public static byte[] getVectorSpanBytes(int spanX, int spanY) throws IllegalArgumentException {
 		if (spanX > 127 || spanY > 127
 			|| spanX < -127 || spanY < -127) {
-			throw new IllegalArgumentException("Span has to be in this boundary: -127 >= span <= 127.");
+			throw new IllegalArgumentException("Span has to be in this boundary: -127 <= span <= 127.");
 		}
 		
 		byte bytespany = (byte)((int)Math.abs(spanY) & 0x7F);
@@ -58,26 +134,27 @@ public class Protocol {
 		return new byte[] {(byte)(bytespanx & 0xFF), (byte)(bytespany & 0xFF)};
 	}
 	
+	/**
+	 * Converts a single vector span back to integer representation.
+	 * 
+	 * @param span	The span byte to convert.
+	 * @return The converted span.
+	 */
 	public static int getVectorSpanInt(byte span) {
 		int res = span & 0x7F;
 		return (span & 0x80) != 0 ? -res : res;
 	}
 	
-	/*
-	 * Purpose: Get the byte for reference and size of the vector
-	 * Return Type: byte => Byte containing reference and size
-	 * Params: int reference => Reference of the vector;
-	 * 			int size => Size of the vector (size in px)
-	 * Function: One byte is splitted into 2 parts, each with 4 bits. The upper part is the storage
-	 * 			place for the reference, while the lower part is for the size. The reference cannot
-	 * 			exceed 7, since it would get bigger than 4 bits. If the number is negative, a sign is
-	 * 			written to the first bit. The size would be too big for 4 bits, thats why the size
-	 * 			is only represented by numbers from 1 to 6. If we'd do an example for reference 4
-	 * 			and size 64. First reference is written into the upper part of the byte.
-	 * 		-> First: 0000 0100 => 0100 0000 (Bitshifting 4 to the left)
-	 * 		-> Next: 64 = 5 (BIN: 101)
-	 * 		-> Now combine both: 0100 0000 | 0000 0101 => 0100 0101 
-	 * 		-> Finally add the Coding offset to the result
+	/**
+	 * Get the byte that holds the size and reference of the vector.
+	 * 
+	 * @param reference	The number of frames to go back until the actual reference frame.
+	 * @param size		The size of the vector (block size).
+	 * @return A byte spit in two, that contains:
+	 * <ul>
+	 * <li>Bytes 0 to 4 - Frames to go back until the reference frame.
+	 * <li>Bytes 4 to 8 - Size of the vector.
+	 * </ul>
 	 */
 	public static byte getReferenceAndSizeByte(int reference, int size) {
 		if (reference > 7 || reference < -7) {
@@ -118,6 +195,18 @@ public class Protocol {
 		return (byte)(res & 0xFF);
 	}
 	
+	/**
+	 * Converts a byte that holds reference and size back to the integer form.
+	 * 
+	 * @param refAndSize	The byte that holds the reference and size.
+	 * @return An integer array containing two numbers:
+	 * <ul>
+	 * <li>[0] - Frames to go back until reference frame.
+	 * <li>[1] - Size of the vector.
+	 * </ul>
+	 * 
+	 * @see #getReferenceAndSizeByte(int, int)
+	 */
 	public static int[] getReferenceAndSizeInt(byte refAndSize) {
 		int ref = (refAndSize >> 4) & 0x0F;
 		int size = refAndSize & 0x0F;
@@ -146,18 +235,13 @@ public class Protocol {
 		return new int[] {ref, size};
 	}
 	
-	/*
-	 * Purpose: Get the bytes for the position of the vector (max. 65536)
-	 * Return Type: byte[] => Array of the position in bytes
-	 * Params: int pos => position to write
-	 * Function: First the offset is added to the original pos, since adding the offset afterwards
-	 * 			might exceed the limit of an byte (255). The position gets splitted into two bytes
-	 * 			containing the position.
-	 * 			Example for position 21201 (BIN: 0101 0010 1101 0001). The number in BIN has more than
-	 * 			8 digits, so the last digits are written into a byte. The second part, that is in the
-	 * 			front is also put into a byte. To extract the first 8 bits, the number is shifted 8 to
-	 * 			the right. To sum it all up, the first byte contains 0101 0010 and the second contains
-	 * 			1101 0001 (for this example).
+	/**
+	 * Get the given position (single coordinate) in byte representation.
+	 * 
+	 * @param pos	The Position coordinate to convert.
+	 * @return A byte array containing the position information.
+	 * 
+	 * @throws IllegalArgumentException	When the coordinate is below 0 or above 65536.
 	 */
 	public static byte[] getPositionBytes(int pos) {
 		if (pos > 65536) {
@@ -169,11 +253,26 @@ public class Protocol {
 		return new byte[] {(byte)((pos >> 8) & 0xFF), (byte)(pos & 0xFF)};
 	}
 	
+	/**
+	 * Converts the given bytes to the integer form of the position.
+	 * 
+	 * @param c1	Upper byte.
+	 * @param c2	Lower byte.
+	 * @return The reconstructed integer.
+	 * 
+	 * @see #getPositionBytes(int)
+	 */
 	public static int getPosition(byte c1, byte c2) {
 		int res = (c1 & 0xFF) << 8 | (c2 & 0xFF);
 		return res;
 	}
 	
+	/**
+	 * Calculates an estimated size of the vector length in total.
+	 * 
+	 * @param vecs	The vectors to write.
+	 * @return An estimated size of the total length of all vectors, when they're converted to bytes.
+	 */
 	public static int calculateSize(ArrayList<Vector> vecs) {
 		int size = Protocol.VECTOR_SIZE_CHECK_LENGTH;
 		
@@ -189,13 +288,11 @@ public class Protocol {
 	/**
 	 * Converts the absolute color difference of the vector to a byte matrix which can be then encoded.
 	 * 
-	 * <p><b>Important:</b><br>
-	 * The function does <u>not</u> check for out of bounds values and thus values > 127 and < -127
-	 * are incorrect!</p>
-	 * 
 	 * @param absoluteDifference	The absolute color difference.
 	 * @param size					The size of the vector.
 	 * @return A matrix representation of the absolute color difference.
+	 * 
+	 * @throws IllegalArgumentException	When a coefficient is > 127 or < -127.
 	 */
 	public static byte[][] getVectorAbsoluteColorDifferenceBytes(ArrayList<double[][][]> absoluteDifference, int size) {
 		int halfSize = size / 2;
@@ -212,12 +309,24 @@ public class Protocol {
 		for (double[][][] coeffGroup : absoluteDifference) {
 			for (int x = 0; x < frac; x++) {
 				for (int y = 0; y < frac; y++) {
-					YBytes[YIndex++] = getDCTCoeffByte(coeffGroup[0][x][y]);
+					double value = coeffGroup[0][x][y];
+					if (value > 127 || value < -127) {
+						throw new IllegalArgumentException("The DCT-Coefficient mus lie between -127 and 127. You might need to adjust the quantization values.");
+					}
+					
+					YBytes[YIndex++] = getDCTCoeffByte(value);
 				}
 			}
 			
 			for (int x = 0; x < halfFrac; x++) {
 				for (int y = 0; y < halfFrac; y++) {
+					double valueU = coeffGroup[1][x][y];
+					double valueV = coeffGroup[1][x][y];
+					if (valueU > 127 || valueU < -127
+						|| valueV > 127 || valueV < -127) {
+						throw new IllegalArgumentException("The DCT-Coefficient mus lie between -127 and 127. You might need to adjust the quantization values.");
+					}
+					
 					UBytes[UIndex++] = getDCTCoeffByte(coeffGroup[1][x][y]);
 					VBytes[VIndex++] = getDCTCoeffByte(coeffGroup[2][x][y]);
 				}
@@ -227,6 +336,12 @@ public class Protocol {
 		return new byte[][] {YBytes, UBytes, VBytes};
 	}
 	
+	/**
+	 * Converts an integer to a 4 byte long byte array.
+	 * 
+	 * @param integer	The integer to convert.
+	 * @return A byte array containing all information for reconstructing the integer.
+	 */
 	public static byte[] getIntBytes(int integer) {
 		byte[] arr = new byte[4];
 		arr[0] = (byte)((integer >> 24) & 0xFF);
@@ -236,6 +351,14 @@ public class Protocol {
 		return arr;
 	}
 	
+	/**
+	 * Reconstructs a byte array back to an integer.
+	 * 
+	 * @param data	The bytes to reconstruct the integer.
+	 * @return The reconstructed integer.
+	 * 
+	 * @see #getIntBytes(int)
+	 */
 	public static int getIntFromBytes(byte[] data) {
 		int num = 0;
 		num |= (data[0] & 0xFF) << 24;
@@ -245,6 +368,46 @@ public class Protocol {
 		return num;
 	}
 	
+	/**
+	 * Converts a size into bytes.
+	 * 
+	 * <p><b>Note:</b><br>
+	 * The size is considered to be <u>3 bytes</u> long.
+	 * </p>
+	 * 
+	 * @param size	The size to convert.
+	 * @return Byte array with the size.
+	 */
+	public static byte[] getSizeBytes(int size) {
+		byte[] arr = new byte[3];
+		arr[0] = (byte)((size >> 16) & 0xFF);
+		arr[1] = (byte)((size >> 8) & 0xFF);
+		arr[2] = (byte)(size & 0xFF);
+		return arr;
+	}
+	
+	/**
+	 * Converts a byte array that represents a size back to a size.
+	 * 
+	 * @param data	The byte array to convert.
+	 * @return The converted size.
+	 * @see #getSizeBytes(int)
+	 */
+	public static int getSizeFromBytes(byte[] data) {
+		int num = 0;
+		num |= (data[0] & 0xFF) << 16;
+		num |= (data[1] & 0xFF) << 8;
+		num |= data[2] & 0xFF;
+		return num;
+	}
+	
+	/**
+	 * Splits an array into even chunks with the given size per chunk.
+	 * 
+	 * @param data			The array to split.
+	 * @param sizeOfChunk	The size of each chunk.
+	 * @return A 2D byte array with all split chunks.
+	 */
 	public static byte[][] splitArrayEvenly(byte[] data, int sizeOfChunk) {
 		int estimatedLen = data.length / sizeOfChunk;
 		byte[][] arr = new byte[estimatedLen][];
@@ -298,7 +461,7 @@ public class Protocol {
 		int size = Protocol.calculateSize(vecs);
 		int currentIndex = 0;
 		byte[] data = new byte[size];
-		writeBytesToByteArray(Protocol.getIntBytes(vecs.size()), data, currentIndex);
+		writeBytesToByteArray(Protocol.getSizeBytes(vecs.size()), data, currentIndex);
 		currentIndex += Protocol.VECTOR_SIZE_CHECK_LENGTH;
 		
 		for (Vector v : vecs) {
@@ -333,7 +496,18 @@ public class Protocol {
 		return index - startIndex;
 	}
 	
-	public static void getVectors(byte[] data, ListManager<Vector> vectorListManager, boolean singleThread) throws CorruptedFileException, WrongBlockAssignedException {
+	/**
+	 * Get all vectors out of a data stream by first analyzing their indexes and finally decoding them
+	 * asynchronously.
+	 * 
+	 * @param data					The data chunk that holds the vectors.
+	 * @param vectorListManager		A {@code ListManager<T>} that has cached object to be reused.
+	 * @param singleThread			Flag for whether the decoding should be single threaded or not.
+	 * @throws CorruptedFileException	When the vector size is not equal to the coded length.
+	 * 
+	 * @see app.interprediction.ListManager
+	 */
+	public static void getVectors(byte[] data, ListManager<Vector> vectorListManager, boolean singleThread) throws CorruptedFileException {
 		if (data.length <= 1) {
 			return;
 		}
@@ -342,8 +516,8 @@ public class Protocol {
 		//  POSX ⊥ POSY ⊥ SPANX ⊥ SPANY ⊥ REFERENCE << 4 | SIZE ⊥ DIFFERENCE
 		// ^_____________________________________________________^
 		//                      = 7 Bytes offset
-		byte[] lenOfVecs = {data[0], data[1], data[2], data[3]};
-		int estimatedLength = Protocol.getIntFromBytes(lenOfVecs);
+		byte[] lenOfVecs = {data[0], data[1], data[2]};
+		int estimatedLength = Protocol.getSizeFromBytes(lenOfVecs);
 		ArrayList<Integer> indexesOfVectors = new ArrayList<Integer>();
 		precalculateVectorIndexes(data, indexesOfVectors);
 		
@@ -356,6 +530,12 @@ public class Protocol {
 		}
 	}
 	
+	/**
+	 * Calculates the indexes of each vector read from the byte representation.
+	 * 
+	 * @param data	The data part with all vectors.
+	 * @param indexesOfVectors	A List to which to add the indexes to.
+	 */
 	private static void precalculateVectorIndexes(byte[] data, List<Integer> indexesOfVectors) {
 		int i = Protocol.VECTOR_SIZE_CHECK_LENGTH;
 		
@@ -368,33 +548,51 @@ public class Protocol {
 		}
 	}
 	
+	/**
+	 * Convert a list full of lengths to byte representation.
+	 * 
+	 * @param lengths	The list to convert.
+	 * @return A byte array that can represent all lengths.
+	 */
 	public static byte[] getLengthBytesOfFrame(List<Integer> lengths) {
-		int estimatedSize = lengths.size() * Protocol.SIZE_OF_INT + Protocol.SIZE_OF_INT;
+		int estimatedSize = lengths.size() * Protocol.SIZE_LENGTH + Protocol.SIZE_LENGTH;
 		byte[] data = new byte[estimatedSize];
 		int currentIndex = 0;
 		
-		byte[] lenOfIndexes = Protocol.getIntBytes(lengths.size());
+		byte[] lenOfIndexes = Protocol.getSizeBytes(lengths.size());
 		writeBytesToByteArray(lenOfIndexes, data, currentIndex);
-		currentIndex += Protocol.SIZE_OF_INT;
+		currentIndex += Protocol.SIZE_LENGTH;
 		
 		for (int i : lengths) {
-			byte[] index = Protocol.getIntBytes(i);
+			byte[] index = Protocol.getSizeBytes(i);
 			writeBytesToByteArray(index, data, currentIndex);
-			currentIndex += Protocol.SIZE_OF_INT;
+			currentIndex += Protocol.SIZE_LENGTH;
 		}
 		
 		return data;
 	}
 	
+	/**
+	 * Get the length of each frame part.
+	 * 
+	 * @param lengthStream	The data stream that holds all lengths.
+	 * @param lengthList	The list to which to add the lengths of the parts.
+	 */
 	public static void setLengthsOfEachFramePart(byte[] lengthStream, List<Integer> lengthList) {
-		byte[][] data = Protocol.splitArrayEvenly(lengthStream, Protocol.SIZE_OF_INT);
+		byte[][] data = Protocol.splitArrayEvenly(lengthStream, Protocol.SIZE_LENGTH);
 		
 		for (byte[] byteNum : data) {
-			int length = Protocol.getIntFromBytes(byteNum);
+			int length = Protocol.getSizeFromBytes(byteNum);
 			lengthList.add(length);
 		}
 	}
 	
+	/**
+	 * Converts a {@link app.utils.PixelRaster} to byte representation.
+	 * 
+	 * @param raster	The {@code PixelRaster} to convert.
+	 * @return The converted PixelRaster.
+	 */
 	public static byte[] getStartFrameBytes(PixelRaster raster) {
 		byte[] data = new byte[raster.getWidth() * raster.getHeight() * 3 + 1];
 		double[] YUVCache = new double[3]; //Size of 3, because of 3 channels
@@ -532,6 +730,15 @@ public class Protocol {
 		return Protocol.RAW_BLOCK_HEADER_LENGTH + length;
 	}
 	
+	/**
+	 * Writes a subarray into another array at the specified index.
+	 * 
+	 * @param bytes	The byte array to write into the other array.
+	 * @param arr	The array to write into.
+	 * @param index	Index at which to start writing into {@code arr}.
+	 * 
+	 * @throws ArrayIndexOutOfBoundsException	When the written array + index exceed the array in which to write.
+	 */
 	private static void writeBytesToByteArray(byte[] bytes, byte[] arr, int index) {
 		for (int i = 0; i < bytes.length; i++) {
 			arr[index++] = bytes[i];
