@@ -684,7 +684,7 @@ public class PixelRaster {
 			double[] YUVCache = new double[3]; //Size of 3 because of 3 channels
 			
 			for (int innerY = 0; innerY < 4; innerY++) {
-				int actualY = innerY + y;
+				int actualY = innerY + (y * 4);
 				
 				for (int x = 0; x < this.dim.width; x++) {
 					int argb = ColorManager.convertYUVToRGB(getYUV(x, actualY, YUVCache));
