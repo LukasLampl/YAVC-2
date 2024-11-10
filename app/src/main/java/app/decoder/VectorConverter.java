@@ -125,7 +125,7 @@ public class VectorConverter {
 					vec.setSize(size);
 					vec.setPosition(new Point(posX, posY));
 					
-					ArrayList<double[][][]> diffs = getVectorDifferences(data, Protocol.VECTOR_HEADER_LENGTH + index, size);
+					ArrayList<double[][][]> diffs = getVectorDifferences(data, Protocol.VECTOR_HEADER_LENGTH + index, size, vec);
 					vec.setAbsolutedifferenceDCTCoefficients(diffs);
 					vec.setSpanX(spanX);
 					vec.setSpanY(spanY);
@@ -140,13 +140,14 @@ public class VectorConverter {
 		}
 		
 		
-		private ArrayList<double[][][]> getVectorDifferences(byte[] vectorPart, int startPos, int size) {
+		private ArrayList<double[][][]> getVectorDifferences(byte[] vectorPart, int startPos, int size, Vector cachedVector) {
+			ArrayList<double[][][]> cachedGroups = cachedVector.getDCTCoefficientsOfAbsoluteColorDifference();
 			ArrayList<double[][][]> DCTCoeffGroups = new ArrayList<double[][][]>();
 			double[][] data = getDCTCoeffsOutOfFile(vectorPart, startPos, size);
 			int YLength = size * size;
 			
 			if (size == 4) {
-				double[][][] res = getArray(4);
+				double[][][] res = cachedGroups == null ? getArray(4) : cachedGroups.size() > 0 ? cachedGroups.remove(0) : getArray(4);
 				
 				for (int x = 0, i = 0; x < 4; x++) {
 					for (int y = 0; y < 4; y++) {
@@ -163,9 +164,23 @@ public class VectorConverter {
 				
 				DCTCoeffGroups.add(res);
 			} else {
+				boolean wasCachedGroup4x4Block = cachedGroups == null ? true : cachedGroups.size() == 1;
+				
 				for (int u = 0; u < YLength; u += 64) {
 					int uFrac = (u / 4);
-					double[][][] res = getArray(8);
+					double[][][] res;
+					
+					if (cachedGroups == null) {
+						res = getArray(8);
+					} else {
+						if (cachedGroups.isEmpty()) {
+							res = getArray(8);
+						} else if (wasCachedGroup4x4Block) {
+							res = getArray(8);
+						} else {
+							res = cachedGroups.remove(0);
+						}
+					}
 					
 					for (int x = 0, i = 0; x < 8; x++) {
 						for (int y = 0; y < 8; y++) {
