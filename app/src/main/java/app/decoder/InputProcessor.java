@@ -31,7 +31,7 @@ public class InputProcessor {
 	}
 	
 	public int initFrameReader(byte[] stream) {
-		return Protocol.getIntFromBytes(stream);
+		return Protocol.getSizeFromBytes(stream);
 	}
 	
 	public void getIndexes(byte[] stream) {

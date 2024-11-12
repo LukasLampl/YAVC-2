@@ -30,13 +30,13 @@ public class InputStream {
 	}
 	
 	public byte[] getNumberOfIndexes() {
-		byte[] data = new byte[Protocol.SIZE_OF_INT];
+		byte[] data = new byte[Protocol.SIZE_LENGTH];
 		readIn(data);
 		return data;
 	}
 	
 	public byte[] getIndexes(int length) {
-		byte[] data = new byte[length * Protocol.SIZE_OF_INT];
+		byte[] data = new byte[length * Protocol.SIZE_LENGTH];
 		readIn(data);
 		return data;
 	}

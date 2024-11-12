@@ -58,8 +58,8 @@ public class config {
 	};
 	
 	public static final int[][] QUANTIZATION_MATRIX_2x2_Chroma = {
-		{10, 48},
-		{48, 48}
+		{10, 23},
+		{23, 48}
 	};
 
 	public static final int DEBLOCKER_ALPHAS[] = {
