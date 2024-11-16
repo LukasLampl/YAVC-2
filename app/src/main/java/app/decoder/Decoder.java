@@ -8,11 +8,13 @@ import app.interprediction.ListManager;
 import app.interprediction.Vector;
 import app.utils.PixelRaster;
 import app.utils.ReferenceFrameManager;
+import app.videoplayer.VideoPlayer;
 
 public class Decoder {
 	private ReferenceFrameManager referenceManager = new ReferenceFrameManager();
 	
-	public void decode(File input, File output) {
+	public void decode(File input, File output, boolean withVideoPlayer) {
+		VideoPlayer player = withVideoPlayer ? new VideoPlayer() : null;
 		ListManager<Vector> vectorListManager = new ListManager<Vector>();
 		ImageWriter imageWriter = new ImageWriter(output);
 		InputStream inputStream = new InputStream(input);
@@ -57,6 +59,10 @@ public class Decoder {
 				System.out.println("   > Render time: " + (end_render - start_render) + "ms");
 				System.out.println("   > Writing time: " + (end_write - start_write) + "ms");
 				System.out.println();
+				if (withVideoPlayer) {
+					player.addFrame(result);
+				}
+				
 				vectorListManager.switchList();
 			}
 		} catch (CorruptedFileException e) {
