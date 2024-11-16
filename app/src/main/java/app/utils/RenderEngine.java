@@ -14,12 +14,9 @@ import java.util.concurrent.TimeUnit;
 import app.config;
 import app.encoder.LoadDistributor;
 import app.interprediction.Vector;
+import app.quadtree.QuadtreeEngine;
 
 public class RenderEngine {
-
-	static long totalTime = 0L;
-	static long numThreads = 0L;
-
 	public static PixelRaster renderResult(LoadDistributor<Vector> vecs, ReferenceFrameManager refs, LoadDistributor<MacroBlock> differenceManager, boolean allowModToAbsDiff) {
 		PixelRaster render = refs.getLastFrame().copy();
 		Dimension dim = refs.getLastFrame().getDimension();
@@ -72,21 +69,34 @@ public class RenderEngine {
 	
 	private static Runnable createVectorRenderTask(List<Vector> vecList, ReferenceFrameManager refs, PixelRaster render, Dimension dim, boolean allowModToAbsDiff) {
 		Runnable task = () -> {
-			double[][][] pixelBlockCache = null;
+			double[][][][] pixelBlockCache = new double[QuadtreeEngine.NUMBER_OF_SIZES][][][];
+			long iT = 0;
+			long pBT = 0;
+			long iDT = 0;
+			long rT = 0;
+			long pT = 0;
 			
 			for (Vector v : vecList) {
+				long sIT = System.currentTimeMillis();
 				PixelRaster referencedFrame = v.getReference() == -1 ? null : refs.get(config.MAX_REFERENCES - v.getReference());
 				Point pos = v.getPosition();
 				int EndX = pos.x + v.getSpanX();
 				int EndY = pos.y + v.getSpanY();
 				int size = v.getSize();
-				double[][][] block = referencedFrame.getPixelBlock(pos, size, pixelBlockCache);
+				iT += (System.currentTimeMillis() - sIT);
+				long sPBT = System.currentTimeMillis();
+				double[][][] selectedCache = pixelBlockCache[QuadtreeEngine.getIndexBySize(size)];
+				double[][][] block = referencedFrame.getPixelBlock(pos, size, selectedCache);
+				pBT += (System.currentTimeMillis() - sPBT);
+				long sIDT = System.currentTimeMillis();
 				double[][][] coeffs = v.getIDCTCoefficientsOfAbsoluteColorDifference(allowModToAbsDiff);
-				
+				iDT = (System.currentTimeMillis() - sIDT);
 				//Use block as cache, because the pixel block is a allocated double[][][] from the image
 				//and thus editing it won't change the original frame.
+				long srT = System.currentTimeMillis();
 				double[][][] reconstructedColor = reconstructColors(coeffs, block, size, block);
-				
+				rT += (System.currentTimeMillis() - srT);
+				long sPT = System.currentTimeMillis();
 				for (int x = 0; x < size; x++) {
 					int posX = EndX + x;
 					int subSX = x / 2;
@@ -105,7 +115,9 @@ public class RenderEngine {
 						render.setYUV(posX, posY, Y, U, V);
 					}
 				}
-			}	
+				pT += (System.currentTimeMillis() - sPT);
+			}
+			System.out.println(String.format("      > Init time: %4dms | PixelBlock grab time: %4dms | IDCT time: %4dms | Reconstruction time: %4dms | Put time: %4dms", iT, pBT, iDT, rT, pT));
 		};
 		
 		return task;

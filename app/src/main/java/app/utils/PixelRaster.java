@@ -53,6 +53,7 @@ public class PixelRaster {
 	private static final int PX_WITHOUT_ALPHA_LENGTH = 3;
 	
 	public boolean invokedWithData = true;
+	private boolean locked = false;
 	
 	/**
 	 * The Y stores all luma values of the image without subsampling
@@ -172,7 +173,6 @@ public class PixelRaster {
 		g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 		g2d.drawImage(img, 0, 0, newWidth, newHeight, null);
 		g2d.dispose();
-		
 		return scaledImage;
 	}
 	
@@ -192,12 +192,11 @@ public class PixelRaster {
 	 * hasAlpha = false
 	 */
 	private void processByteBuffer(final byte[] buffer, final boolean hasAlpha) {
-		final int chunkSize = 4096;
 		int length = hasAlpha ? PX_WITH_ALPHA_LENGTH : PX_WITHOUT_ALPHA_LENGTH;
 		final int width = this.dim.width;
 		final int height = this.dim.height;
-		int inc = length * chunkSize;
-		int threads = Runtime.getRuntime().availableProcessors();
+		final int threads = Runtime.getRuntime().availableProcessors();
+		int inc = (buffer.length / length) / threads;
 		
 		ExecutorService executor = Executors.newFixedThreadPool(threads);
 
@@ -272,8 +271,9 @@ public class PixelRaster {
 	 */
 	private void processIntBuffer(final int[] buffer) {
 		int width = this.dim.width;
-		final int chunkSize = 4096;
-		ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+		final int threads = Runtime.getRuntime().availableProcessors();
+		final int chunkSize = buffer.length / threads;
+		ExecutorService executor = Executors.newFixedThreadPool(threads);
 		
 		for (int i = 0; i < buffer.length; i += chunkSize) {
 			final int index = i;
@@ -388,12 +388,15 @@ public class PixelRaster {
 	 * 
 	 * @throws ArrayIndexOutOfBoundsException	when either the x
 	 * or y coordinate is out of the raster
+	 * @throws IllegalStateException	When the raster was locked but modified.
 	 */
 	public void setYUV(final int x, final int y, final double[] YUV) {
 		if (y < 0 || y >= this.dim.height) {
 			throw new ArrayIndexOutOfBoundsException("(Y) " + y + "is out of bounds!");
 		} else if (x < 0 || x >= this.dim.width) {
 			throw new ArrayIndexOutOfBoundsException("(X) " + x + "is out of bounds!");
+		} else if (this.locked) {
+			throw new IllegalStateException("Can't modify a locked PixelRaster!");
 		}
 		
 		int subSX = x / 2;
@@ -415,12 +418,15 @@ public class PixelRaster {
 	 * 
 	 * @throws ArrayIndexOutOfBoundsException	when either the x
 	 * or y coordinate is out of the raster
+	 * @throws IllegalStateException	When the raster was locked but modified.
 	 */
 	public void setYUV(final int x, final int y, final double Y, final double U, final double V) {
 		if (y < 0 || y >= this.dim.height) {
 			throw new ArrayIndexOutOfBoundsException("(Y) " + y + "is out of bounds!");
 		} else if (x < 0 || x >= this.dim.width) {
 			throw new ArrayIndexOutOfBoundsException("(X) " + x + "is out of bounds!");
+		} else if (this.locked) {
+			throw new IllegalStateException("Can't modify a locked PixelRaster!");
 		}
 		
 		int subSX = x / 2;
@@ -483,12 +489,15 @@ public class PixelRaster {
 	 * 
 	 * @throws ArrayIndexOutOfBoundsException	when either the x
 	 * or y coordinate is out of the raster
+	 * @throws IllegalStateException	When the raster was locked but modified.
 	 */
 	public void setYUV(final int x, final int y, final double[] YUV, final boolean invokedUV) {
 		if (y < 0 || y >= this.dim.height) {
 			throw new ArrayIndexOutOfBoundsException("(Y) " + y + " is out of bounds!");
 		} else if (x < 0 || x >= this.dim.width) {
 			throw new ArrayIndexOutOfBoundsException("(X) " + x + " is out of bounds!");
+		} else if (this.locked) {
+			throw new IllegalStateException("Can't modify a locked PixelRaster!");
 		}
 		
 		int subSX = x / 2;
@@ -515,12 +524,15 @@ public class PixelRaster {
 	 * 
 	 * @throws ArrayIndexOutOfBoundsException	when either the x
 	 * or y coordinate is out of the raster
+	 * @throws IllegalStateException	When the raster was locked but modified.
 	 */
 	public void setChroma(final int x, final int y, final double U, final double V) {
 		if (y < 0 || y >= this.dim.height) {
 			throw new ArrayIndexOutOfBoundsException("(Y) " + y + " is out of bounds!");
 		} else if (x < 0 || x >= this.dim.width) {
 			throw new ArrayIndexOutOfBoundsException("(X) " + x + " is out of bounds!");
+		} else if (this.locked) {
+			throw new IllegalStateException("Can't modify a locked PixelRaster!");
 		}
 		
 		int subSX = x / 2;
@@ -539,12 +551,15 @@ public class PixelRaster {
 	 * 
 	 * @throws ArrayIndexOutOfBoundsException	when either the x
 	 * or y coordinate is out of the raster
+	 * @throws IllegalStateException	When the raster was locked but modified.
 	 */
 	public void setLuma(final int x, final int y, final double Y) {
 		if (y < 0 || y >= this.dim.height) {
 			throw new ArrayIndexOutOfBoundsException("(Y) " + y + " is out of bounds!");
 		} else if (x < 0 || x >= this.dim.width) {
 			throw new ArrayIndexOutOfBoundsException("(X) " + x + " is out of bounds!");
+		} else if (this.locked) {
+			throw new IllegalStateException("Can't modify a locked PixelRaster!");
 		}
 		
 		this.Y[x][y] = Y;
@@ -587,9 +602,9 @@ public class PixelRaster {
 		
 		return getPixelBlock(position.x, position.y, size, cache);
 	}
-	
+
 	/**
-	 * <p>Get a Pixelblock within the PixelRaster.
+	 * <p>Get a PixelBlock within the PixelRaster.
 	 * The block is ordered like a PixelRaster, full 4:4:4
 	 * luma and 4:2:0 chroma.</p>
 	 * 
@@ -604,45 +619,37 @@ public class PixelRaster {
 	 * @return PixelBlock from the PixelRaster
 	 */
 	public double[][][] getPixelBlock(final int positionX, final int positionY, final int size, double[][][] cache) {
-		double[][][] res = cache == null ? getArray(size) : size <= cache[0].length ? cache : getArray(size);
-		
-		for (int y = 0; y < size; y++) {
-			int absoluteY = positionY + y;
-			boolean outOfBoundsY = absoluteY >= this.dim.height;
-			
-			for (int x = 0; x < size; x++) {
-				int absoluteX = positionX + x;
-				boolean outOfBoundsX = absoluteX >= this.dim.width;
-				
-				if (outOfBoundsY || outOfBoundsX) {
-					res[3][x][y] = 1;
-					continue;
-				} 
-
-				res[0][x][y] = this.Y[absoluteX][absoluteY];
-				res[3][x][y] = 0;
-			}
-		}
-		
+		double[][][] res = cache == null ? getArray(size) : size > cache[0].length ? getArray(size) : cache;
 		int halfSize = size / 2;
 		int halfPosX = positionX / 2;
 		int halfPosY = positionY / 2;
 		int halfDimWidth = this.dim.width / 2;
 		int halfDimHeight = this.dim.height / 2;
 		
+		for (int y = 0; y < size; y++) {
+			int absoluteY = positionY + y;
+			int xToCopy = positionX + size > this.dim.width ? this.dim.width - positionX : size;
+			
+			if (absoluteY >= this.dim.height) {
+				continue;
+			}
+			
+			for (int x = 0; x < xToCopy; x++) {
+				int absoluteX = positionX + x;
+				res[0][x][y] = this.Y[absoluteX][absoluteY];
+			}
+		}
+		
 		for (int y = 0; y < halfSize; y++) {
 			int absoluteY = halfPosY + y;
-			boolean outOfBoundsY = absoluteY >= halfDimHeight;
+			int xToCopy = halfPosX + halfSize > halfDimWidth ? halfDimWidth - halfPosX : halfSize;
 			
-			for (int x = 0; x < halfSize; x++) {
+			if (absoluteY >= halfDimHeight) {
+				continue;
+			}
+			
+			for (int x = 0; x < xToCopy; x++) {
 				int absoluteX = halfPosX + x;
-				boolean outOfBoundsX = absoluteX >= halfDimWidth;
-				
-				if (outOfBoundsY || outOfBoundsX) {
-					res[3][x][y] = 1;
-					continue;
-				} 
-				
 				res[1][x][y] = this.U[absoluteX][absoluteY];
 				res[2][x][y] = this.V[absoluteX][absoluteY];
 			}
@@ -663,7 +670,6 @@ public class PixelRaster {
 		res[0] = new double[size][size];
 		res[1] = new double[halfSize][halfSize];
 		res[2] = new double[halfSize][halfSize];
-		res[3] = new double[size][size];
 		return res;
 	}
 	
@@ -673,18 +679,18 @@ public class PixelRaster {
 	 * <p><strong>Performance Warning:</strong><br> Even though there is multi-
 	 * threading involved, the overall performance is totally dependent
 	 * on the Image dimensions.<br>
-	 * Time: O(n)</p>
 	 * 
 	 * @return Reconstructed BufferedImage
 	 */
 	public BufferedImage toBufferedImage() {
 		BufferedImage render = new BufferedImage(this.dim.width, this.dim.height, BufferedImage.TYPE_INT_ARGB);
+		final int threads = Runtime.getRuntime().availableProcessors();
 		
-		IntStream.range(0, this.dim.height / 4).parallel().forEach(y -> {
+		IntStream.range(0, this.dim.height / threads).parallel().forEach(y -> {
 			double[] YUVCache = new double[3]; //Size of 3 because of 3 channels
 			
-			for (int innerY = 0; innerY < 4; innerY++) {
-				int actualY = innerY + (y * 4);
+			for (int innerY = 0; innerY < threads; innerY++) {
+				int actualY = innerY + (y * threads);
 				
 				for (int x = 0; x < this.dim.width; x++) {
 					int argb = ColorManager.convertYUVToRGB(getYUV(x, actualY, YUVCache));
@@ -720,5 +726,12 @@ public class PixelRaster {
 		}
 		
 		return new PixelRaster(this.dim, clonedY, clonedU, clonedV);
+	}
+	
+	/**
+	 * Locks the PixelRaster, so no colors can be changed anymore.
+	 */
+	public void lock() {
+		this.locked = true;
 	}
 }

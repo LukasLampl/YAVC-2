@@ -61,6 +61,10 @@ public class ReferenceFrameManager {
 	 * @param frame	The frame to add as a reference.
 	 */
 	public void add(PixelRaster frame) {
+		if (this.lastFrame != null) {
+			this.lastFrame.lock();
+		}
+		
 		this.references.add(frame);
 		this.lastFrame = frame;
 		manageSize();
