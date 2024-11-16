@@ -19,17 +19,20 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package app.utils;
+package app.io;
 
 import java.awt.Dimension;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
 
-import app.decoder.VectorConverter;
 import app.exceptions.CorruptedFileException;
-import app.interprediction.ListManager;
 import app.interprediction.Vector;
+import app.interprediction.VectorConverter;
+import app.rendering.ColorManager;
+import app.utils.ListManager;
+import app.utils.MacroBlock;
+import app.utils.PixelRaster;
 
 /**
  * The {@code Protocol} class is responsible for converting data into bytes and back
@@ -505,7 +508,7 @@ public class Protocol {
 	 * @param singleThread			Flag for whether the decoding should be single threaded or not.
 	 * @throws CorruptedFileException	When the vector size is not equal to the coded length.
 	 * 
-	 * @see app.interprediction.ListManager
+	 * @see app.utils.ListManager
 	 */
 	public static void getVectors(byte[] data, ListManager<Vector> vectorListManager, boolean singleThread) throws CorruptedFileException {
 		if (data.length <= 1) {

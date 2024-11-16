@@ -37,15 +37,16 @@ application {
     mainClass = "app.Main"
 }
 
-tasks.jar {
-        manifest.attributes["Main-Class"] = application.mainClass
-        from("configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }")
-        manifest.attributes["Class-Path"] = configurations
-        .runtimeClasspath
-        .get()
-        .joinToString(separator = " ") { file ->
-            "libs/${file.name}"
-        }
+tasks.register<Jar>("fatJar") {
+	group = "Self-contained JAR"
+	description = "Creates a self-contained fat/uber JAR of the application that can be run."
+	archiveBaseName.set("yavc_2.0")
+	archiveClassifier.set("")
+	manifest { attributes(mapOf("Main-Class" to application.mainClass)) }     
+	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+	from(sourceSets.main.get().output)
+	dependsOn(configurations.runtimeClasspath)
+	from({configurations.runtimeClasspath.get().filter { it.name.endsWith("jar") }.map { zipTree(it) }})
 }
 
 tasks.named<Test>("test") {

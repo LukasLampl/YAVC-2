@@ -6,7 +6,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import app.utils.ColorManager;
+import app.rendering.ColorManager;
 import app.utils.MacroBlock;
 import app.utils.MeanStructure;
 

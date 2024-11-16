@@ -4,11 +4,14 @@ import java.io.File;
 
 import app.exceptions.CorruptedFileException;
 import app.exceptions.WrongBlockAssignedException;
-import app.interprediction.ListManager;
 import app.interprediction.Vector;
+import app.io.ImageWriter;
+import app.io.InputProcessor;
+import app.io.InputStream;
+import app.rendering.VideoPlayer;
+import app.utils.ListManager;
 import app.utils.PixelRaster;
 import app.utils.ReferenceFrameManager;
-import app.videoplayer.VideoPlayer;
 
 public class Decoder {
 	private ReferenceFrameManager referenceManager = new ReferenceFrameManager();

@@ -24,6 +24,8 @@ package app.utils;
 import java.awt.Dimension;
 import java.awt.Point;
 
+import app.rendering.ColorManager;
+
 /**
  * <p>The class {@code MacroBlock} is the main transform unit
  * in the YAVC video compressor.</p>

@@ -1,4 +1,4 @@
-package app.encoder;
+package app.io;
 
 import java.awt.image.BufferedImage;
 import java.io.File;

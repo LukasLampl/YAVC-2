@@ -1,4 +1,4 @@
-package app.encoder;
+package app.io;
 
 import java.awt.Dimension;
 import java.io.File;
@@ -12,8 +12,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import app.interprediction.Vector;
 import app.utils.MacroBlock;
 import app.utils.PixelRaster;
-import app.utils.Protocol;
-import app.utils.QueueObject;
 
 public class OutputStream {
 	private static final int SLEEP_TIME = 30; //ms

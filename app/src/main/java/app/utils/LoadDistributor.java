@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package app.encoder;
+package app.utils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,7 +27,6 @@ import java.util.List;
 
 import app.interprediction.Vector;
 import app.quadtree.QuadtreeEngine;
-import app.utils.MacroBlock;
 
 /**
  * The class {@code LoadDistributor<T>} provides basic functionalities for

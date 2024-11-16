@@ -1,13 +1,12 @@
-package app.decoder;
+package app.interprediction;
 
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
 
-import app.encoder.LoadDistributor;
-import app.interprediction.ListManager;
-import app.interprediction.Vector;
-import app.utils.Protocol;
+import app.io.Protocol;
+import app.utils.ListManager;
+import app.utils.LoadDistributor;
 
 public class VectorConverter {
 	private final int numOfThreads;

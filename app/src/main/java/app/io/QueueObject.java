@@ -1,9 +1,10 @@
-package app.utils;
+package app.io;
 
 import java.util.ArrayList;
 
-import app.encoder.LoadDistributor;
 import app.interprediction.Vector;
+import app.utils.LoadDistributor;
+import app.utils.MacroBlock;
 
 public class QueueObject {
 	private ArrayList<Vector> vectors = new ArrayList<Vector>();

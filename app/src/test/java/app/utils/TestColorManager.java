@@ -6,6 +6,8 @@ import java.awt.Color;
 
 import org.junit.jupiter.api.Test;
 
+import app.rendering.ColorManager;
+
 public class TestColorManager {
 	private final Color colorsToTest[] = {
 		new Color(255, 0, 0),      // Red

@@ -1,4 +1,4 @@
-package app.utils;
+package app.rendering;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -11,9 +11,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import app.encoder.LoadDistributor;
 import app.interprediction.Vector;
 import app.quadtree.QuadtreeEngine;
+import app.utils.LoadDistributor;
+import app.utils.MacroBlock;
+import app.utils.PixelRaster;
+import app.utils.ReferenceFrameManager;
 
 public class RenderEngine {
 	public static PixelRaster renderResult(LoadDistributor<Vector> vecs, ReferenceFrameManager refs, LoadDistributor<MacroBlock> differenceManager, boolean allowModToAbsDiff) {

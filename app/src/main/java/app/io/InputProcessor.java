@@ -1,21 +1,19 @@
-package app.decoder;
+package app.io;
 
 import java.awt.Dimension;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
-import app.encoder.LoadDistributor;
 import app.exceptions.CorruptedFileException;
 import app.exceptions.WrongBlockAssignedException;
-import app.interprediction.ListManager;
+import app.filter.Deblocker;
 import app.interprediction.Vector;
-import app.utils.Deblocker;
+import app.rendering.RenderEngine;
+import app.utils.ListManager;
+import app.utils.LoadDistributor;
 import app.utils.MacroBlock;
-import app.utils.Metadata;
 import app.utils.PixelRaster;
-import app.utils.Protocol;
 import app.utils.ReferenceFrameManager;
-import app.utils.RenderEngine;
 
 public class InputProcessor {
 	public static int FrameCount = 0;

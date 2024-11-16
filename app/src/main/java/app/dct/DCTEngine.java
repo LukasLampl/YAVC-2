@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package app.encoder;
+package app.dct;
 
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
@@ -589,7 +589,7 @@ public class DCTEngine {
 	 * <p>Quantifies all chroma DCT-II coefficients with the according
 	 * quantization table.</p>
 	 * 
-	 * @see app.Protocol
+	 * @see app.io.Protocol
 	 * 
 	 * @param coefficients	Coefficients to quantify
 	 * @param size	size of the matrix
@@ -609,7 +609,7 @@ public class DCTEngine {
 	 * <p>Quantifies all luma DCT-II coefficients with the according
 	 * quantization table.</p>
 	 * 
-	 * @see app.Protocol
+	 * @see app.io.Protocol
 	 * 
 	 * @param coefficients	Coefficients to quantify
 	 * @param size	size of the matrix
@@ -628,7 +628,7 @@ public class DCTEngine {
 	 * <p>Dequantizizes all chroma DCT-II coefficients with the according
 	 * quantization table.</p>
 	 * 
-	 * @see app.Protocol
+	 * @see app.io.Protocol
 	 * 
 	 * @param coefficients	Coefficients to dequantizize
 	 * @param size	size of the matrix
@@ -648,7 +648,7 @@ public class DCTEngine {
 	 * <p>Dequantizizes all luma DCT-II coefficients with the according
 	 * quantization table.</p>
 	 * 
-	 * @see app.Protocol
+	 * @see app.io.Protocol
 	 * 
 	 * @param coefficients	Coefficients to dequantizize
 	 * @param size	size of the matrix

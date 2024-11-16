@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
+import app.dct.DCTEngine;
+
 public class TestDCTEngine {
 	@Test
 	public void testStep() {

@@ -31,8 +31,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import app.config;
-import app.encoder.LoadDistributor;
-import app.utils.ColorManager;
+import app.rendering.ColorManager;
+import app.utils.LoadDistributor;
 import app.utils.MacroBlock;
 import app.utils.MathUtils;
 import app.utils.PixelRaster;

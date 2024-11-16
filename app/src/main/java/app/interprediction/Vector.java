@@ -24,7 +24,7 @@ package app.interprediction;
 import java.awt.Point;
 import java.util.ArrayList;
 
-import app.encoder.DCTEngine;
+import app.dct.DCTEngine;
 import app.utils.MacroBlock;
 
 /**
@@ -146,7 +146,7 @@ public class Vector {
 	 * 
 	 * <p><strong>Warning:</strong><br> The set span might exceed the encoding
 	 * maximum of 8 bits = 255. The offset is excluded
-	 * ({@link app.Protocol#CODING_OFFSET}).</p>
+	 * ({@link app.io.Protocol#CODING_OFFSET}).</p>
 	 * 
 	 * @param span	Span to the x direction
 	 */
@@ -160,7 +160,7 @@ public class Vector {
 	 * 
 	 * <p><strong>Warning:</strong><br> The set span might exceed the encoding
 	 * maximum of 8 bits = 255. The offset is excluded
-	 * ({@link app.Protocol#CODING_OFFSET}).</p>
+	 * ({@link app.io.Protocol#CODING_OFFSET}).</p>
 	 * 
 	 * @param span	Span to the y direction
 	 */
@@ -174,7 +174,7 @@ public class Vector {
 	 * was extracted from.</p>
 	 * 
 	 * <p><strong>Warning:</strong><br> The max reference is set by
-	 * {@link app.Protocol#MAX_REFERENCES}.<br>
+	 * {@link app.io.Protocol#MAX_REFERENCES}.<br>
 	 * <u>The encoding only supports till 4 references into the past!</u></p>
 	 * 
 	 * @param reference	reference frame number

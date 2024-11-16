@@ -1,6 +1,6 @@
 package app.interprediction;
 
-import app.encoder.LoadDistributor;
+import app.utils.LoadDistributor;
 import app.utils.MacroBlock;
 
 public class VectorEngineResult {

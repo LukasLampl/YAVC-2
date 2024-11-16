@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
+import app.io.Protocol;
+
 public class TestProtocol {
 	@Test
 	public void testPositionBytes_001() {

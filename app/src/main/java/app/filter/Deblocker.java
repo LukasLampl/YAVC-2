@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package app.utils;
+package app.filter;
 
 import java.awt.Point;
 import java.util.List;
@@ -28,8 +28,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import app.config;
-import app.encoder.LoadDistributor;
 import app.interprediction.Vector;
+import app.utils.LoadDistributor;
+import app.utils.MacroBlock;
+import app.utils.PixelRaster;
 
 /**
  * <p>The class {@code Deblocker} goes into the
@@ -53,7 +55,7 @@ public class Deblocker {
 	/**
 	 * <p>Defines the maximum quantity of coefficients the filter can use.</p>
 	 * 
-	 * @see app.Protocol
+	 * @see app.io.Protocol
 	 */
 	final static int MAX_QUANT = 100;
 	

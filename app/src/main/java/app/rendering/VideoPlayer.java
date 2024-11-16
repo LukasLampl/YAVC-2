@@ -1,4 +1,4 @@
-package app.videoplayer;
+package app.rendering;
 
 import java.awt.Graphics;
 import java.awt.Graphics2D;

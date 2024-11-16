@@ -10,17 +10,18 @@ import javax.imageio.ImageIO;
 
 import org.junit.jupiter.api.Test;
 
-import app.encoder.LoadDistributor;
 import app.exceptions.CorruptedFileException;
 import app.exceptions.WrongBlockAssignedException;
-import app.interprediction.ListManager;
 import app.interprediction.Vector;
 import app.interprediction.VectorEngine;
 import app.interprediction.VectorEngineResult;
+import app.io.InputProcessor;
+import app.io.Protocol;
 import app.quadtree.QuadtreeEngine;
+import app.utils.ListManager;
+import app.utils.LoadDistributor;
 import app.utils.MacroBlock;
 import app.utils.PixelRaster;
-import app.utils.Protocol;
 import app.utils.ReferenceFrameManager;
 
 public class TestDecoder {
