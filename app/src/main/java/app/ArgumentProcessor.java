@@ -14,6 +14,10 @@ public class ArgumentProcessor {
 	public static final String INPUT_DEL = "-i";
 	public static final String OUTPUT_DEL = "-o";
 	
+	public static final String PLAYBACK_DEL = "-playback";
+	public static final String ENCODE_DEL = "-encode";
+	public static final String DECODE_DEL = "-decode";
+	
 	private static HashMap<String, Consumer<String>> ARGUMENTS = new HashMap<String, Consumer<String>>();
 	public static HashMap<String, Supplier<String>> SET_ARG_MAP = new HashMap<String, Supplier<String>>();
 	private static HashMap<String, Integer> ARGUMENT_COUNT = new HashMap<String, Integer>();
@@ -22,6 +26,7 @@ public class ArgumentProcessor {
 	private static File inputFile = null;
 	private static boolean encode = false;
 	private static boolean decode = false;
+	private static boolean playback = false;
 	
 	public ArgumentProcessor() {
 		initArgs();
@@ -34,10 +39,12 @@ public class ArgumentProcessor {
 		ARGUMENTS.put(OUTPUT_DEL, c -> this.setOutputFile(c));
 		SET_ARG_MAP.put(OUTPUT_DEL, () -> this.getOutputFile());
 		ARGUMENT_COUNT.put(OUTPUT_DEL, 1);
-		ARGUMENTS.put("-encode", c -> this.setEncode());
-		ARGUMENT_COUNT.put("-encode", 0);
-		ARGUMENTS.put("-decode", c -> this.setDecode());
-		ARGUMENT_COUNT.put("-decode", 0);
+		ARGUMENTS.put(ENCODE_DEL, c -> this.setEncode());
+		ARGUMENT_COUNT.put(ENCODE_DEL, 0);
+		ARGUMENTS.put(DECODE_DEL, c -> this.setDecode());
+		ARGUMENT_COUNT.put(DECODE_DEL, 0);
+		ARGUMENTS.put(PLAYBACK_DEL, c -> this.setPlayback());
+		ARGUMENT_COUNT.put(PLAYBACK_DEL, 0);
 	}
 	
 	public void processArgs(String args[]) throws FileNotFoundException {
@@ -69,7 +76,7 @@ public class ArgumentProcessor {
 		
 		if (decode) {
 			Decoder decoder = new Decoder();
-			decoder.decode(inputFile, outputFile);
+			decoder.decode(inputFile, outputFile, playback);
 		}
 	}
 	
@@ -81,8 +88,10 @@ public class ArgumentProcessor {
 		if (decode) {
 			if (!inputFile.getName().endsWith(".yavcv")) {
 				exit("Unsupported file type as input.");
-			} else if (!outputFile.isDirectory()) {
-				exit("The output must be a directory.");
+			} else if (outputFile != null) {
+				if (!outputFile.isDirectory()) {
+					exit("The output must be a directory.");
+				}
 			}
 		}
 		
@@ -92,6 +101,10 @@ public class ArgumentProcessor {
 			} else if (!outputFile.getName().endsWith("yavcv")) {
 				exit("Currently only the \".yavcv\" file type is supported.");
 			}
+		}
+		
+		if (playback && encode) {
+			exit("YAVC can only playback decoding videos.");
 		}
 	}
 	
@@ -136,6 +149,10 @@ public class ArgumentProcessor {
 	
 	private void setDecode() {
 		decode = true;
+	}
+	
+	private void setPlayback() {
+		playback = true;
 	}
 	
 	private String getOutputFile() {

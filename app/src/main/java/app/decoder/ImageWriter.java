@@ -65,6 +65,10 @@ public class ImageWriter {
 	 * @throws IllegalArgumentException When the specified output is not a folder.
 	 */
 	public ImageWriter(File output) {
+		if (output == null) {
+			return;
+		}
+		
 		if (!output.isDirectory()) {
 			throw new IllegalArgumentException("Can't write images into file!");
 		}
