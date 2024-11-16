@@ -18,6 +18,8 @@ public class ArgumentProcessor {
 	public static final String ENCODE_DEL = "-encode";
 	public static final String DECODE_DEL = "-decode";
 	
+	public static final String NO_DEBLOCK = "-no-deblock";
+	
 	private static HashMap<String, Consumer<String>> ARGUMENTS = new HashMap<String, Consumer<String>>();
 	public static HashMap<String, Supplier<String>> SET_ARG_MAP = new HashMap<String, Supplier<String>>();
 	private static HashMap<String, Integer> ARGUMENT_COUNT = new HashMap<String, Integer>();
@@ -27,6 +29,8 @@ public class ArgumentProcessor {
 	private static boolean encode = false;
 	private static boolean decode = false;
 	private static boolean playback = false;
+	
+	public static boolean noDeblock = false;
 	
 	public ArgumentProcessor() {
 		initArgs();
@@ -45,6 +49,9 @@ public class ArgumentProcessor {
 		ARGUMENT_COUNT.put(DECODE_DEL, 0);
 		ARGUMENTS.put(PLAYBACK_DEL, c -> this.setPlayback());
 		ARGUMENT_COUNT.put(PLAYBACK_DEL, 0);
+		
+		ARGUMENTS.put(NO_DEBLOCK, c -> this.setNoDeblock());
+		ARGUMENT_COUNT.put(NO_DEBLOCK, 0);
 	}
 	
 	public void processArgs(String args[]) throws FileNotFoundException {
@@ -153,6 +160,10 @@ public class ArgumentProcessor {
 	
 	private void setPlayback() {
 		playback = true;
+	}
+	
+	private void setNoDeblock() {
+		noDeblock = true;
 	}
 	
 	private String getOutputFile() {

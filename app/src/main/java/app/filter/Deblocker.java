@@ -27,10 +27,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import app.ArgumentProcessor;
 import app.config;
 import app.interprediction.Vector;
 import app.utils.LoadDistributor;
-import app.utils.MacroBlock;
+import app.utils.MathUtils;
 import app.utils.PixelRaster;
 
 /**
@@ -73,6 +74,10 @@ public class Deblocker {
 	 * @param composite	Frame that has the encoded vectors in it
 	 */
 	public void deblock(LoadDistributor<Vector> movementVecs, PixelRaster composite) {
+		if (ArgumentProcessor.noDeblock) {
+			return;
+		}
+		
 		int index = clip(STRENGTH, 0, MAX_QUANT);
 		int alpha = config.DEBLOCKER_ALPHAS[index + ALPHA_OFFSET];
 		int beta = config.DEBLOCKER_BETAS[index + BETA_OFFSET];
@@ -96,7 +101,7 @@ public class Deblocker {
 		executor.shutdown();
 		
 		try {
-			while (!executor.awaitTermination(20, TimeUnit.MILLISECONDS));
+			while (!executor.awaitTermination(250, TimeUnit.MICROSECONDS));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -229,36 +234,22 @@ public class Deblocker {
 	private double[] executeDeblocking(double q0, double q1, double q2, double p0, double p1, double p2, int beta, int alpha, int c) {
 		double[] newColors = new double[] {q0, q1, p0, p1};
 		
-		if ((Math.abs(p0 - q0) < alpha) && (Math.abs(p1 - p0) < beta) && (Math.abs(q0 - q1) < beta)) {
-			double deltaQ = Math.abs(q0 - q2);
-			double deltaP = Math.abs(p0 - p2);
-			int cd = c;
-			
-			if (deltaQ < beta) {
-				cd++;
-			}
-			
-			if (deltaP < beta) {
-				cd++;
-			}
-			
-			int average = (int)(q0 + p0 + 1) >> 1;
-			int delta = clip((((int)(q0 - p0) << 2) + (int)(p1 - q1) + 4) >> 3, -cd, cd);
-			int deltaP1 = clip((int)(p2 + average - ((int)p1 << 1)) >> 1, -c, c);
-			int deltaQ1 = clip((int)(q2 + average - ((int)q1 << 1)) >> 1, -c, c);
-			
-			newColors[2] = clip((int)p0 + delta, 0, 255);
-			newColors[0] = clip((int)q0 - delta, 0, 255);
-			
-			if (deltaQ < beta) {
-				newColors[1] = clip((int)q1 + deltaQ1, 0, 255);
-			}
-			
-			if (deltaP < beta) {
-				newColors[3] = clip((int)p1 + deltaP1, 0, 255);
-			}
+		if ((MathUtils.abs(p0 - q0) > alpha)
+			|| MathUtils.abs(p1 - p0) > beta
+			|| MathUtils.abs(q1 - q0) > beta) {
+			return newColors;
 		}
 		
+		boolean filterP1 = MathUtils.abs(p2 - p0) < beta;
+		boolean filterQ1 = MathUtils.abs(p2 - p0) < beta;
+		int c0 = c + (filterP1 == true ? 1 : 0) + (filterQ1 == true ? 1 : 0);
+		int deltaOrigin = clip((int)(4 * (q0 - p0) + (p1 - q1) + 4) >> 3, -c0, c0);
+		int deltaPosition1 = clip((int)(p2 + ((int)(p0 + q0) >> 1) - 2 * p1) >> 1, -c, c);
+		
+		newColors[0] = q0 - deltaOrigin;
+		newColors[2] = p0 + deltaOrigin;
+		newColors[3] = filterP1 ? p1 + deltaPosition1 : p1;
+		newColors[1] = filterQ1 ? q1 - deltaPosition1 : q1;
 		return newColors;
 	}
 
