@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 
 import app.config;
 import app.encoder.LoadDistributor;
+import app.utils.ColorManager;
 import app.utils.MacroBlock;
 import app.utils.MathUtils;
 import app.utils.PixelRaster;
@@ -48,11 +49,13 @@ import app.utils.ReferenceFrameManager;
  * 
  * @author Lukas Lampl
  * @since 17.0
- * @version 1.0 29 May 2024
+ * @version 1.0 11 November 2024
  */
 
 public class VectorEngine {
-	
+	/**
+	 * Counter on how many pixels were processed.
+	 */
 	private int totalPixelsProcessed = 0;
 	
 	/**
@@ -60,7 +63,14 @@ public class VectorEngine {
 	 */
 	private double PI_RAD = Math.PI / 3;
 	
+	/**
+	 * <p>Holds a temporary table with all cosines for constructing a hexagon.</p>
+	 */
 	private double[] COS_TABLE_HEXAGON = new double[6];
+	
+	/**
+	 * <p>Holds a temporary table with all sines for constructing a hexagon.</p>
+	 */
 	private double[] SIN_TABLE_HEXAGON = new double[6];
 	
 	/**
@@ -516,7 +526,7 @@ public class VectorEngine {
 		
 		for (int y = 0; y < size; y++) {
 			for (int x = 0; x < size; x++) {
-				double diff = col1[0][x][y] - col2[0][x][y];
+				double diff = col1[ColorManager.Y_INDEX][x][y] - col2[ColorManager.Y_INDEX][x][y];
 				
 				if (MathUtils.abs(diff) > YThreshold) {
 					Y[x][y] = diff;
@@ -526,8 +536,8 @@ public class VectorEngine {
 		
 		for (int y = 0; y < halfSize; y++) {
 			for (int x = 0; x < halfSize; x++) {
-				double diffU = col1[1][x][y] - col2[1][x][y];
-				double diffV = col1[2][x][y] - col2[2][x][y];
+				double diffU = col1[ColorManager.U_INDEX][x][y] - col2[ColorManager.U_INDEX][x][y];
+				double diffV = col1[ColorManager.V_INDEX][x][y] - col2[ColorManager.V_INDEX][x][y];
 				
 				if (MathUtils.abs(diffU) > UVThreshold) {
 					U[x][y] = diffU;
@@ -568,15 +578,15 @@ public class VectorEngine {
 		
 		for (int y = 0; y < size; y++) {
 			for (int x = 0; x < size; x++) {
-				double deltaY = col1[0][x][y] - col2[0][x][y];
+				double deltaY = col1[ColorManager.Y_INDEX][x][y] - col2[ColorManager.Y_INDEX][x][y];
 				resY += deltaY * deltaY;
 			}
 		}
 		
 		for (int y = 0; y < halfSize; y++) {
 			for (int x = 0; x < halfSize; x++) {
-				double deltaU = col1[1][x][y] - col2[1][x][y];
-				double deltaV = col1[2][x][y] - col2[2][x][y];
+				double deltaU = col1[ColorManager.U_INDEX][x][y] - col2[ColorManager.U_INDEX][x][y];
+				double deltaV = col1[ColorManager.V_INDEX][x][y] - col2[ColorManager.V_INDEX][x][y];
 				
 				resU += deltaU * deltaU;
 				resV += deltaV * deltaV;

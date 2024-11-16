@@ -104,6 +104,16 @@ public class ReferenceFrameManager {
 	}
 	
 	/**
+	 * Returns the reference frame at the position of {@code MAX_FRAMES - reference}.
+	 * 
+	 * @param reference	The frames to go back until the reference.
+	 * @return The reference frame.
+	 */
+	public PixelRaster getByReference(int reference) {
+		return this.references.get(config.MAX_REFERENCES - reference);
+	}
+	
+	/**
 	 * Return the current number of references which can be accessed.
 	 * 
 	 * @return The number of available reference frames.

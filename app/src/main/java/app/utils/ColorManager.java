@@ -22,7 +22,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 package app.utils;
 
 import java.awt.Color;
-import java.util.Random;
 
 /**
  * <p>The class {@code ColorManager} contains basic functions 
@@ -44,6 +43,16 @@ import java.util.Random;
  */
 
 public class ColorManager {
+	public static final int Y_INDEX = 0;
+	public static final int U_INDEX = 1;
+	public static final int V_INDEX = 2;
+	
+	public static final int R_INDEX = 0;
+	public static final int G_INDEX = 1;
+	public static final int B_INDEX = 2;
+	
+	public static final int[] NULL_COLOR = {255, 0, 255};
+	
 	/**
 	 * Convert a RGB color, based on a Color object
 	 * to YUV using the Rec. 601 (ITU-T T.871) conversion.
@@ -124,9 +133,9 @@ public class ColorManager {
 			throw new IllegalArgumentException("YUV color contains " + YUV.length + " components instead of 3!");
 		}
 		
-		double Y = YUV[0];
-		double U = YUV[1] - 128;
-		double V = YUV[2] - 128;
+		double Y = YUV[Y_INDEX];
+		double U = YUV[U_INDEX] - 128;
+		double V = YUV[V_INDEX] - 128;
 		int red = range(MathUtils.round(Y + 1.402 * V), 0, 255);
 		int green = range(MathUtils.round(Y - 0.344136 * U - 0.714136 * V), 0, 255);
 		int blue = range(MathUtils.round(Y + 1.772 * U), 0, 255);
@@ -164,17 +173,17 @@ public class ColorManager {
 			throw new IllegalArgumentException("RGB cache has length of " + rgbCache.length + "instead of 3");
 		}
 		
-		double Y = YUV[0];
-		double U = YUV[1] - 128;
-		double V = YUV[2] - 128;
+		double Y = YUV[Y_INDEX];
+		double U = YUV[U_INDEX] - 128;
+		double V = YUV[V_INDEX] - 128;
 		int red = (int)Math.round(Y + 1.402 * V);
 		int green = (int)Math.round(Y - 0.344136 * U - 0.714136 * V);
 		int blue = (int)Math.round(Y + 1.772 * U);
 		
 		if (rgbCache != null) {
-			rgbCache[0] = red;
-			rgbCache[1] = green;
-			rgbCache[2] = blue;
+			rgbCache[R_INDEX] = red;
+			rgbCache[G_INDEX] = green;
+			rgbCache[B_INDEX] = blue;
 			return null;
 		}
 		

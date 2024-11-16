@@ -367,9 +367,9 @@ public class PixelRaster {
 		
 		int subSX = x / 2;
 		int subSY = y / 2;
-		cache[0] = this.Y[x][y];
-		cache[1] = this.U[subSX][subSY];
-		cache[2] = this.V[subSX][subSY];
+		cache[ColorManager.Y_INDEX] = this.Y[x][y];
+		cache[ColorManager.U_INDEX] = this.U[subSX][subSY];
+		cache[ColorManager.V_INDEX] = this.V[subSX][subSY];
 		return cache;
 	}
 	
@@ -401,9 +401,9 @@ public class PixelRaster {
 		
 		int subSX = x / 2;
 		int subSY = y / 2;
-		this.Y[x][y] = YUV[0];
-		this.U[subSX][subSY] = YUV[1];
-		this.V[subSX][subSY] = YUV[2];
+		this.Y[x][y] = YUV[ColorManager.Y_INDEX];
+		this.U[subSX][subSY] = YUV[ColorManager.U_INDEX];
+		this.V[subSX][subSY] = YUV[ColorManager.V_INDEX];
 	}
 	
 	/**
@@ -502,14 +502,14 @@ public class PixelRaster {
 		
 		int subSX = x / 2;
 		int subSY = y / 2;
-		this.Y[x][y] = YUV[0];
+		this.Y[x][y] = YUV[ColorManager.Y_INDEX];
 
 		if (invokedUV == true) {
-			this.U[subSX][subSY] = YUV[1];
-			this.V[subSX][subSY] = YUV[2];
+			this.U[subSX][subSY] = YUV[ColorManager.U_INDEX];
+			this.V[subSX][subSY] = YUV[ColorManager.V_INDEX];
 		} else {
-			this.U[subSX][subSY] = (this.U[subSX][subSY] + YUV[1]) / 2;
-			this.V[subSX][subSY] = (this.V[subSX][subSY] + YUV[2]) / 2;
+			this.U[subSX][subSY] = (this.U[subSX][subSY] + YUV[ColorManager.U_INDEX]) / 2;
+			this.V[subSX][subSY] = (this.V[subSX][subSY] + YUV[ColorManager.V_INDEX]) / 2;
 		}
 	}
 	
@@ -619,7 +619,7 @@ public class PixelRaster {
 	 * @return PixelBlock from the PixelRaster
 	 */
 	public double[][][] getPixelBlock(final int positionX, final int positionY, final int size, double[][][] cache) {
-		double[][][] res = cache == null ? getArray(size) : size > cache[0].length ? getArray(size) : cache;
+		double[][][] res = cache == null ? getArray(size) : size > cache[ColorManager.Y_INDEX].length ? getArray(size) : cache;
 		int halfSize = size / 2;
 		int halfPosX = positionX / 2;
 		int halfPosY = positionY / 2;
@@ -636,7 +636,7 @@ public class PixelRaster {
 			
 			for (int x = 0; x < xToCopy; x++) {
 				int absoluteX = positionX + x;
-				res[0][x][y] = this.Y[absoluteX][absoluteY];
+				res[ColorManager.Y_INDEX][x][y] = this.Y[absoluteX][absoluteY];
 			}
 		}
 		
@@ -650,8 +650,8 @@ public class PixelRaster {
 			
 			for (int x = 0; x < xToCopy; x++) {
 				int absoluteX = halfPosX + x;
-				res[1][x][y] = this.U[absoluteX][absoluteY];
-				res[2][x][y] = this.V[absoluteX][absoluteY];
+				res[ColorManager.U_INDEX][x][y] = this.U[absoluteX][absoluteY];
+				res[ColorManager.V_INDEX][x][y] = this.V[absoluteX][absoluteY];
 			}
 		}
 		
@@ -667,9 +667,9 @@ public class PixelRaster {
 	private double[][][] getArray(final int size) {
 		int halfSize = size / 2;
 		double[][][] res = new double[4][][]; //0 = Y; 1 = U; 2 = V
-		res[0] = new double[size][size];
-		res[1] = new double[halfSize][halfSize];
-		res[2] = new double[halfSize][halfSize];
+		res[ColorManager.Y_INDEX] = new double[size][size];
+		res[ColorManager.U_INDEX] = new double[halfSize][halfSize];
+		res[ColorManager.V_INDEX] = new double[halfSize][halfSize];
 		return res;
 	}
 	

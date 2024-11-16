@@ -11,13 +11,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import app.config;
 import app.encoder.LoadDistributor;
 import app.interprediction.Vector;
 import app.quadtree.QuadtreeEngine;
 
 public class RenderEngine {
 	public static PixelRaster renderResult(LoadDistributor<Vector> vecs, ReferenceFrameManager refs, LoadDistributor<MacroBlock> differenceManager, boolean allowModToAbsDiff) {
+		long sRT = System.currentTimeMillis();
 		PixelRaster render = refs.getLastFrame().copy();
 		Dimension dim = refs.getLastFrame().getDimension();
 		ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
@@ -43,6 +43,8 @@ public class RenderEngine {
 			e.printStackTrace();
 		}
 		
+		long rT = (System.currentTimeMillis() - sRT);
+		System.out.println(String.format("      >>> Visual render time: %4dms", rT));
 		return render;
 	}
 	
@@ -78,7 +80,7 @@ public class RenderEngine {
 			
 			for (Vector v : vecList) {
 				long sIT = System.currentTimeMillis();
-				PixelRaster referencedFrame = v.getReference() == -1 ? null : refs.get(config.MAX_REFERENCES - v.getReference());
+				PixelRaster referencedFrame = v.getReference() == -1 ? null : refs.getByReference(v.getReference());
 				Point pos = v.getPosition();
 				int EndX = pos.x + v.getSpanX();
 				int EndY = pos.y + v.getSpanY();
@@ -109,9 +111,9 @@ public class RenderEngine {
 						if (posY < 0 || posY >= dim.height) continue;
 						if (pos.y + y < 0 || pos.y + y >= dim.height) continue;
 						
-						double Y = reconstructedColor[0][x][y];
-						double U = reconstructedColor[1][subSX][subSY];
-						double V = reconstructedColor[2][subSX][subSY];
+						double Y = reconstructedColor[ColorManager.Y_INDEX][x][y];
+						double U = reconstructedColor[ColorManager.U_INDEX][subSX][subSY];
+						double V = reconstructedColor[ColorManager.V_INDEX][subSX][subSY];
 						render.setYUV(posX, posY, Y, U, V);
 					}
 				}
@@ -129,23 +131,26 @@ public class RenderEngine {
 		
 		if (reconstructedColor == null) {
 			reconstructedColor = new double[3][][];
-			reconstructedColor[0] = new double[size][size];
-			reconstructedColor[1] = new double[halfSize][halfSize];
-			reconstructedColor[2] = new double[halfSize][halfSize];
+			reconstructedColor[ColorManager.Y_INDEX] = new double[size][size];
+			reconstructedColor[ColorManager.U_INDEX] = new double[halfSize][halfSize];
+			reconstructedColor[ColorManager.V_INDEX] = new double[halfSize][halfSize];
 		}
 		
 		//Reconstruct Y-Comp
 		for (int x = 0; x < size; x++) {
 			for (int y = 0; y < size; y++) {
-				reconstructedColor[0][x][y] = referenceColor[0][x][y] + differenceOfColor[0][x][y];
+				reconstructedColor[ColorManager.Y_INDEX][x][y] = referenceColor[ColorManager.Y_INDEX][x][y]
+																+ differenceOfColor[ColorManager.Y_INDEX][x][y];
 			}
 		}
 		
 		//Reconstruct U,V-Comp
 		for (int x = 0; x < halfSize; x++) {
 			for (int y = 0; y < halfSize; y++) {
-				reconstructedColor[1][x][y] = referenceColor[1][x][y] + differenceOfColor[1][x][y];
-				reconstructedColor[2][x][y] = referenceColor[2][x][y] + differenceOfColor[2][x][y];
+				reconstructedColor[ColorManager.U_INDEX][x][y] = referenceColor[ColorManager.U_INDEX][x][y]
+																+ differenceOfColor[ColorManager.U_INDEX][x][y];
+				reconstructedColor[ColorManager.U_INDEX][x][y] = referenceColor[ColorManager.U_INDEX][x][y]
+																+ differenceOfColor[ColorManager.V_INDEX][x][y];
 			}
 		}
 		

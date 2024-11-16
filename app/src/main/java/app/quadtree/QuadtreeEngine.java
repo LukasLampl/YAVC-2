@@ -31,6 +31,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import app.encoder.LoadDistributor;
+import app.utils.ColorManager;
 import app.utils.MacroBlock;
 import app.utils.PixelRaster;
 
@@ -151,7 +152,7 @@ public class QuadtreeEngine {
 		Callable<MacroBlock> task = () -> {
 			MacroBlock origin = new MacroBlock(new Point(pos.x, pos.y), this.MAX_SIZE, false);
 			double[][][] comps = frame.getPixelBlock(new Point(pos.x, pos.y), origin.getSize(), null);
-			origin.setColorComponents(comps[0], comps[1], comps[2], comps[3]);
+			origin.setColorComponents(comps[ColorManager.Y_INDEX], comps[ColorManager.U_INDEX], comps[ColorManager.V_INDEX]);
 			
 			QuadtreeTask treeTask = new QuadtreeTask();
 			treeTask.splitOriginBlock(origin, frame.getDimension(), errorThreshold);

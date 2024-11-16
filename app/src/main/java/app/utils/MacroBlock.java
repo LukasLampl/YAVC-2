@@ -50,14 +50,6 @@ public class MacroBlock {
 	private double[][] V = null;
 	
 	/**
-	 * <p>The Alpha values of the MacroBlock.
-	 * Alpha only plays a role in inter-prediction,
-	 * thats why it is only applied in the MacroBlock
-	 * and not the PixelRaster.</p>
-	 */
-	private double[][] A = null;
-	
-	/**
 	 * <p>Position of the MacroBlock, originated from the PixelRaster.</p>
 	 */
 	private Point position = null;
@@ -95,13 +87,7 @@ public class MacroBlock {
 	 * <p>Mean color based on the subdivision of
 	 * the MacroBlock.</p>
 	 */
-	private int[] meanColor = {255, 0, 255};
-	
-	/**
-	 * <p>A schematic encoding order for the
-	 * MacroBlock</p>
-	 */
-	private double ORDER = 0;
+	private int[] meanColor = ColorManager.NULL_COLOR;
 	
 	/**
 	 * <p>Defines the total MSE (= Mean Square Error) from the
@@ -153,19 +139,17 @@ public class MacroBlock {
 	 * @param Y	Y values in the MacroBlock
 	 * @param U	U values in the MacroBlock
 	 * @param V	V values in the MacroBlock
-	 * @param A	A values in the MacroBlock
 	 * 
 	 * @throws NullPointerException	in the following situations:
 	 * <ul><li>If the provided position is null
 	 * <li>If the Y component is null
 	 * <li>If the U component is null
 	 * <li>If the V component is null
-	 * <li>If the A component is null
 	 * </ul>
 	 * 
 	 * @throws IllegalArgumentException	If the size is below 0
 	 */
-	public MacroBlock(Point position, int size, double[][] Y, double[][] U, double[][] V, double[][] A) {
+	public MacroBlock(Point position, int size, double[][] Y, double[][] U, double[][] V) {
 		if (position == null) {
 			throw new NullPointerException("MacroBlock can't have position NULL");
 		} else if (size < 0 || size > 65535) {
@@ -176,8 +160,6 @@ public class MacroBlock {
 			throw new NullPointerException("MacroBlock can't have a NULL Chroma-U channel");
 		} else if (V == null) {
 			throw new NullPointerException("MacroBlock can't have a NULL Chroma-V channel");
-		} else if (A == null) {
-			throw new NullPointerException("MacroBlock can't have a NULL Alpha channel");
 		}
 		
 		this.position = position;
@@ -186,7 +168,6 @@ public class MacroBlock {
 		this.Y = Y;
 		this.U = U;
 		this.V = V;
-		this.A = A;
 	}
 	
 	/**
@@ -195,7 +176,6 @@ public class MacroBlock {
 	 * <ul><li>[0] = Y
 	 * <li> [1] = U
 	 * <li> [2] = V
-	 * <li> [3] = A
 	 * </ul>
 	 * 
 	 * @param position	Position of the MacroBlock based on the PixelRaster
@@ -203,14 +183,12 @@ public class MacroBlock {
 	 * @param Y	Y values in the MacroBlock
 	 * @param U	U values in the MacroBlock
 	 * @param V	V values in the MacroBlock
-	 * @param A	A values in the MacroBlock
 	 * 
 	 * @throws NullPointerException	if the following situations:
 	 * <ul><li>If the provided position is null
 	 * <li>If the Y component is null
 	 * <li>If the U component is null
 	 * <li>If the V component is null
-	 * <li>If the A component is null
 	 * </ul>
 	 * 
 	 * @throws IllegalArgumentException	If the size is below 0
@@ -220,23 +198,20 @@ public class MacroBlock {
 			throw new NullPointerException("MacroBlock can't have position NULL");
 		} else if (size < 0 || size > 65535) {
 			throw new IllegalArgumentException("The size of " + size + " is not supported!");
-		} else if (colors[0] == null) {
+		} else if (colors[ColorManager.Y_INDEX] == null) {
 			throw new NullPointerException("MacroBlock can't have a NULL Luma-Y channel");
-		} else if (colors[1] == null) {
+		} else if (colors[ColorManager.U_INDEX] == null) {
 			throw new NullPointerException("MacroBlock can't have a NULL Chroma-U channel");
-		} else if (colors[2] == null) {
+		} else if (colors[ColorManager.V_INDEX] == null) {
 			throw new NullPointerException("MacroBlock can't have a NULL Chroma-V channel");
-		} else if (colors[3] == null) {
-			throw new NullPointerException("MacroBlock can't have a NULL Alpha channel");
 		}
 		
 		this.position = position;
 		this.size = size;
 		this.squared_size = size * size;
-		this.Y = colors[0];
-		this.U = colors[1];
-		this.V = colors[2];
-		this.A = colors[3];
+		this.Y = colors[ColorManager.Y_INDEX];
+		this.U = colors[ColorManager.U_INDEX];
+		this.V = colors[ColorManager.V_INDEX];
 	}
 	
 	/**
@@ -248,24 +223,20 @@ public class MacroBlock {
 	 * <ul><li>If the Y component is null
 	 * <li>If the U component is null
 	 * <li>If the V component is null
-	 * <li>If the A component is null
 	 * </ul>
 	 */
 	public void setColorComponents(double[][][] colors) {
-		if (colors[0] == null) {
+		if (colors[ColorManager.Y_INDEX] == null) {
 			throw new NullPointerException("MacroBlock can't have a NULL Luma-Y channel");
-		} else if (colors[1] == null) {
+		} else if (colors[ColorManager.U_INDEX] == null) {
 			throw new NullPointerException("MacroBlock can't have a NULL Chroma-U channel");
-		} else if (colors[2] == null) {
+		} else if (colors[ColorManager.V_INDEX] == null) {
 			throw new NullPointerException("MacroBlock can't have a NULL Chroma-V channel");
-		} else if (colors[3] == null) {
-			throw new NullPointerException("MacroBlock can't have a NULL Alpha channel");
 		}
 		
-		this.Y = colors[0];
-		this.U = colors[1];
-		this.V = colors[2];
-		this.A = colors[3];
+		this.Y = colors[ColorManager.Y_INDEX];
+		this.U = colors[ColorManager.U_INDEX];
+		this.V = colors[ColorManager.V_INDEX];
 	}
 	
 	/**
@@ -283,15 +254,13 @@ public class MacroBlock {
 	 * <li>If the A component is null
 	 * </ul>
 	 */
-	public void setColorComponents(double[][] Y, double[][] U, double[][] V, double[][] A) {
+	public void setColorComponents(double[][] Y, double[][] U, double[][] V) {
 		if (Y == null) {
 			throw new NullPointerException("MacroBlock can't have a NULL Luma-Y channel");
 		} else if (U == null) {
 			throw new NullPointerException("MacroBlock can't have a NULL Chroma-U channel");
 		} else if (V == null) {
 			throw new NullPointerException("MacroBlock can't have a NULL Chroma-V channel");
-		} else if (A == null) {
-			throw new NullPointerException("MacroBlock can't have a NULL Alpha channel");
 		}
 		
 		this.size = Y.length;
@@ -299,7 +268,6 @@ public class MacroBlock {
 		this.Y = Y;
 		this.U = U;
 		this.V = V;
-		this.A = A;
 	}
 	
 	/**
@@ -369,9 +337,9 @@ public class MacroBlock {
 		
 		int subSX = x / 2;
 		int subSY = y / 2;
-		cache[0] = this.Y[x][y];
-		cache[1] = this.U[subSX][subSY];
-		cache[2] = this.V[subSX][subSY];
+		cache[ColorManager.Y_INDEX] = this.Y[x][y];
+		cache[ColorManager.U_INDEX] = this.U[subSX][subSY];
+		cache[ColorManager.V_INDEX] = this.V[subSX][subSY];
 		return cache;
 	}
 	
@@ -392,9 +360,9 @@ public class MacroBlock {
 		
 		int subSX = x / 2;
 		int subSY = y / 2;
-		this.Y[x][y] = YUV[0];
-		this.U[subSX][subSY] = YUV[1];
-		this.V[subSX][subSY] = YUV[2];
+		this.Y[x][y] = YUV[ColorManager.Y_INDEX];
+		this.U[subSX][subSY] = YUV[ColorManager.U_INDEX];
+		this.V[subSX][subSY] = YUV[ColorManager.V_INDEX];
 	}
 	
 	public Point getPositionRelativeToParent() {
@@ -515,7 +483,7 @@ public class MacroBlock {
 	 * @return Colors of the MacroBlock
 	 */
 	public double[][][] getColors() {
-		return new double[][][] {this.Y, this.U, this.V, this.A};
+		return new double[][][] {this.Y, this.U, this.V};
 	}
 	
 	/**
@@ -553,33 +521,15 @@ public class MacroBlock {
 	public int getReference() {
 		return this.reference;
 	}
-	
+
 	/**
-	 * <p>Get the order of the MacroBlock.</p>
-	 * @return Order of the MacroBlock
-	 */
-	public double getOrder() {
-		return this.ORDER;
-	}
-	
-	/**
-	 * <p>Set the order of the MacroBlock.</p>
-	 * 
-	 * @param order	Order of the block in the
-	 * encoding process
-	 */
-	public void setOrder(double order) {
-		this.ORDER = order;
-	}
-	
-	/**
-	 * <p>Get a smaller subblock off of the current MacroBlock with
+	 * <p>Get a smaller sub-block off of the current MacroBlock with
 	 * the specified size.</p>
 	 * 
-	 * @return Subblock from the MacroBlock
+	 * @return Sub-block from the MacroBlock
 	 * 
-	 * @param pos	Position of the subblock within the MacroBlock
-	 * @param size	Size of the subblock
+	 * @param pos	Position of the sub-block within the MacroBlock
+	 * @param size	Size of the sub-block
 	 * 
 	 * @throws ArrayIndexOutOfBoundsException	If x or y is below 0 or bigger
 	 * than the MacroBlock size
@@ -599,7 +549,6 @@ public class MacroBlock {
 		double[][] resY = new double[size][size];
 		double[][] resU = new double[halfSize][halfSize];
 		double[][] resV = new double[halfSize][halfSize];
-		double[][] resA = new double[size][size];
 		
 		for (int x = 0; x < size; x++) {
 			int posX = pos.x + x;
@@ -607,7 +556,6 @@ public class MacroBlock {
 			for (int y = 0; y < size; y++) {
 				int posY = pos.y + y;
 				resY[x][y] = this.Y[posX][posY];
-				resA[x][y] = this.A[posX][posY];
 			}
 		}
 		
@@ -622,17 +570,37 @@ public class MacroBlock {
 		}
 		
 		Point position = new Point(pos.x + this.position.x, pos.y + this.position.y);
-		return new MacroBlock(position, size, resY, resU, resV, resA);
+		return new MacroBlock(position, size, resY, resU, resV);
 	}
 	
+	/**
+	 * Sets the flag for whether this MacroBlock has been converted to a
+	 * vector or not to the given boolean.
+	 * 
+	 * @param convertedToVector	Flag for whether the block has been converted or not.
+	 */
 	public void setConvertedToVector(boolean convertedToVector) {
 		this.isConvertedToVector = convertedToVector;
 	}
 	
+	/**
+	 * Returns whether the MacroBlock has been converted to a vector or not.
+	 * 
+	 * @return
+	 * <ul>
+	 * <li>{@code true} - If the MacroBlock has been converted
+	 * <li>{@code false} - If the MacroBlock hasn't been converted
+	 */
 	public boolean isConvertedToVector() {
 		return this.isConvertedToVector;
 	}
 	
+	/**
+	 * Repositions the MacroBlocks position.
+	 * 
+	 * @param x	X position of the MacroBlock.
+	 * @param y	Y position of the MacroBlock.
+	 */
 	public void moveBlock(int x, int y) {
 		this.position.setLocation(x, y);
 	}
