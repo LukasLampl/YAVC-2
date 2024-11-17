@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.imageio.ImageIO;
 
@@ -70,7 +71,7 @@ public class TestDecoder {
 				byte[] vectorData = Protocol.getVectorBytes(originalVectors);
 				ListManager<Vector> vectorListManager = new ListManager<Vector>();
 				super.getVectors(vectorData, vectorListManager, true); //Single thread to keep the order of the original vectors
-				ArrayList<Vector> decodedVectors = vectorListManager.getList();
+				List<Vector> decodedVectors = vectorListManager.getList();
 				assertEquals(originalVectors.size(), decodedVectors.size());
 				
 				for (int i = 0; i < originalVectors.size(); i++) {

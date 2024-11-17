@@ -80,7 +80,8 @@ public class ReferenceFrameManager {
 			return;
 		}
 		
-		this.references.remove(0);
+		PixelRaster r = this.references.remove(0);
+		r.discard();
 	}
 	
 	/**

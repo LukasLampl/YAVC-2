@@ -26,6 +26,7 @@ import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
 
+import app.ArgumentProcessor;
 import app.exceptions.CorruptedFileException;
 import app.interprediction.Vector;
 import app.interprediction.VectorConverter;
@@ -314,7 +315,16 @@ public class Protocol {
 				for (int y = 0; y < frac; y++) {
 					double value = coeffGroup[0][x][y];
 					if (value > 127 || value < -127) {
-						throw new IllegalArgumentException("The DCT-Coefficient mus lie between -127 and 127. You might need to adjust the quantization values.");
+						double adjustedValue = ArgumentProcessor.autoAdjust ? value < -127 ? -127 : 127 : Double.NaN;
+						String autoAdjust = ArgumentProcessor.autoAdjust ? "on" : "off";
+						String msg = "The DCT-Coefficient must lie between -127 and 127. You might need to adjust the quantization values. (Automatic adjust: " + autoAdjust + "; from: " + value + "; to: " + adjustedValue + "; size: " + size + "; x: " + x + "; y: " + y + ")";
+
+						if (ArgumentProcessor.autoAdjust) {
+							System.err.println(msg);
+							value = adjustedValue;
+						} else {
+							throw new IllegalArgumentException(msg);
+						}
 					}
 					
 					YBytes[YIndex++] = getDCTCoeffByte(value);
@@ -325,9 +335,28 @@ public class Protocol {
 				for (int y = 0; y < halfFrac; y++) {
 					double valueU = coeffGroup[1][x][y];
 					double valueV = coeffGroup[1][x][y];
-					if (valueU > 127 || valueU < -127
-						|| valueV > 127 || valueV < -127) {
-						throw new IllegalArgumentException("The DCT-Coefficient mus lie between -127 and 127. You might need to adjust the quantization values.");
+					if (valueU > 127 || valueU < -127) {
+						double adjustedValue = ArgumentProcessor.autoAdjust ? valueU < -127 ? -127 : 127 : Double.NaN;
+						String autoAdjust = ArgumentProcessor.autoAdjust ? "on" : "off";
+						String msg = "The DCT-Coefficient must lie between -127 and 127. You might need to adjust the quantization values. (Automatic adjust: " + autoAdjust + "; from: " + valueU + "; to: " + adjustedValue + "; size: " + size + "; x: " + x + "; y: " + y + ")";
+
+						if (ArgumentProcessor.autoAdjust) {
+							System.err.println(msg);
+							valueU = adjustedValue;
+						} else {
+							throw new IllegalArgumentException(msg);
+						}
+					} else if (valueV > 127 || valueV < -127) {
+						double adjustedValue = ArgumentProcessor.autoAdjust ? valueV < -127 ? -127 : 127 : Double.NaN;
+						String autoAdjust = ArgumentProcessor.autoAdjust ? "on" : "off";
+						String msg = "The DCT-Coefficient must lie between -127 and 127. You might need to adjust the quantization values. (Automatic adjust: " + autoAdjust + "; from: " + valueV + "; to: " + adjustedValue + "; size: " + size + "; x: " + x + "; y: " + y + ")";
+
+						if (ArgumentProcessor.autoAdjust) {
+							System.err.println(msg);
+							valueV = adjustedValue;
+						} else {
+							throw new IllegalArgumentException(msg);
+						}
 					}
 					
 					UBytes[UIndex++] = getDCTCoeffByte(coeffGroup[1][x][y]);
@@ -469,6 +498,7 @@ public class Protocol {
 		
 		for (Vector v : vecs) {
 			currentIndex += writeSingleVectorToByteArray(v, currentIndex, data);
+			v.discard();
 		}
 		
 		return data;
@@ -650,6 +680,7 @@ public class Protocol {
 		
 		for (MacroBlock block : blocks) {
 			currentIndex += writeSingleRawBlockToByteArray(block, YUVCache, data, currentIndex);
+			block.discard();
 		}
 		
 		return data;

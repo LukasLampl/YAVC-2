@@ -2,6 +2,8 @@ package app.io;
 
 import java.awt.Dimension;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -98,9 +100,15 @@ public class OutputStream {
 						Thread.sleep(SLEEP_TIME);
 					} catch (InterruptedException e) {}
 				} else {
-					QueueObject obj = this.QUEUE.poll();
-					writeVectors(this.TEMP_OUTPUT_FILE, obj.getVectors());
-					writeRawBlocks(this.TEMP_OUTPUT_FILE, obj.getDifferences());
+					try {
+						QueueObject obj = this.QUEUE.poll();
+						writeVectors(this.TEMP_OUTPUT_FILE, obj.getVectors());
+						writeRawBlocks(this.TEMP_OUTPUT_FILE, obj.getDifferences());
+						obj.discard();
+					} catch (Exception e) {
+						e.printStackTrace();
+						System.exit(0);
+					}
 				}
 			}
 			
@@ -122,11 +130,20 @@ public class OutputStream {
 	}
 	
 	private void transferVectors() {
-		try {
-			Files.write(Path.of(this.OUTPUT_FILE.getAbsolutePath()), Files.readAllBytes(Path.of(this.TEMP_OUTPUT_FILE.getAbsolutePath())), StandardOpenOption.APPEND);
-			this.TEMP_OUTPUT_FILE.delete();
+		byte[] buffer = new byte[65536];
+		int bytesRead = 0;
+		
+		try (FileInputStream fis = new FileInputStream(this.TEMP_OUTPUT_FILE);
+				FileOutputStream fos = new FileOutputStream(this.OUTPUT_FILE, true)) {
+			while ((bytesRead = fis.read(buffer)) != -1) {
+				fos.write(buffer, 0, bytesRead);
+			}
+			
+			fos.flush();
 		} catch (IOException e) {
 			e.printStackTrace();
+		} finally {
+			this.TEMP_OUTPUT_FILE.delete();
 		}
 	}
 	

@@ -41,11 +41,16 @@ import app.quadtree.QuadtreeEngine;
  * 
  * @since 1.1.0
  */
-public class LoadDistributor<T> {
+public class LoadDistributor<T> implements Discardable {
 	/**
 	 * <p>Holds the flag for whether the input data was distributed or not.</p>
 	 */
 	private boolean hasDistributed = false;
+	
+	/**
+	 * <p>Holds the flag for whether this LoadDistributor has shutdown or not.</p>
+	 */
+	private boolean isShutdown = false;
 	
 	/**
 	 * <p>Holds the raw list of all undistributed items.</p>
@@ -117,6 +122,10 @@ public class LoadDistributor<T> {
 	 * @param obj	The object to add.
 	 */
 	public void setObj(T obj) {
+		if (this.isShutdown) {
+			throw new IllegalStateException("Can't invoke object since the LoadDistributor has been shutdown!");
+		}
+		
 		int estimatedIndex = 0;
 		
 		if (obj instanceof MacroBlock) {
@@ -166,7 +175,7 @@ public class LoadDistributor<T> {
 	/**
 	 * <p>Sets the data amount and finally calls {@link #compute()}.</p>
 	 * 
-	 * @param nunmberOfData		The total amount of data (e.g. Pixels).
+	 * @param numberOfData		The total amount of data (e.g. Pixels).
 	 */
 	public void compute(int numberOfData) {
 		this.numberOfData = numberOfData;
@@ -182,9 +191,13 @@ public class LoadDistributor<T> {
 	 * The last sub-work will have to least amount of work, since it is nearly impossible
 	 * to have a data-set that matches the estimated amount of work per sub-work.</p>
 	 * 
-	 * @throws IllegalStateException	When an Object is {@code null}.
+	 * @throws IllegalStateException	When an Object is {@code null} or the LoadDistributor has been shutdown.
 	 */
 	private void compute() {
+		if (this.isShutdown) {
+			throw new IllegalStateException("Can't invoke object since the LoadDistributor has been shutdown!");
+		}
+		
 		int loadPerThread = this.numberOfData / this.numberOfChunks;
 		int currentLoad = 0;
 		int currentIndex = 0;
@@ -229,7 +242,9 @@ public class LoadDistributor<T> {
 	public List<T> getLoadOf(int index) {
 		if (!this.hasDistributed) {
 			throw new IllegalStateException("Tried to receive data before it was ready! (call compute(int) first)");
-		}	
+		} else if (this.isShutdown) {
+			throw new IllegalStateException("Can't get object since the LoadDistributor has been shutdown!");
+		}
 		
 		return this.evenlyDistributedObjects.get(index);
 	}
@@ -251,6 +266,21 @@ public class LoadDistributor<T> {
 	}
 	
 	/**
+	 * <p>Returns the total number of data points.</p>
+	 * 
+	 * <p><b>Example:</b><br>
+	 * If you'd set an image with 8x8 pixels your amount of
+	 * total data would be 8x8=64. For 32x32 the same procedure
+	 * 32x32=1024.
+	 * </p>
+	 * 
+	 * @return The total number of data points.
+	 */
+	public int getNumberOfData() {
+		return this.numberOfData;
+	}
+	
+	/**
 	 * <p>Returns the iterable to the evenly distributed sub-works (chunks).</p>
 	 * 
 	 * <p><b>Caution:</b><br>
@@ -262,6 +292,8 @@ public class LoadDistributor<T> {
 	public Iterable<List<T>> getIterable() {
 		if (!this.hasDistributed) {
 			throw new IllegalStateException("Tried to receive data before it was ready! (call compute(int) first)");
+		} else if (this.isShutdown) {
+			throw new IllegalStateException("Can't get object since the LoadDistributor has been shutdown!");
 		}
 		
 		return this.evenlyDistributedObjects;
@@ -272,6 +304,27 @@ public class LoadDistributor<T> {
 	 * @return The invoked data in the LoadDistributor.
 	 */
 	public List<T> getRawData() {
+		if (this.isShutdown) {
+			throw new IllegalStateException("Can't get object since the LoadDistributor has been shutdown!");
+		}
+		
 		return this.rawItems;
+	}
+	
+	@Override
+	public void discard() {
+		this.rawItems.clear();
+		
+		for (List<T> l : this.undistributedList) {
+			l.clear();
+		}
+		
+		for (List<T> l : this.evenlyDistributedObjects) {
+			l.clear();
+		}
+		
+		this.undistributedList.clear();
+		this.evenlyDistributedObjects.clear();
+		this.hasDistributed = false;
 	}
 }

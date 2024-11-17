@@ -232,7 +232,7 @@ public class DCTEngine {
 	
 	/**
 	 * <p>Computes the DCT Coefficients of the absolute color difference
-	 * received by a vector {@link app.interprediction.Vector} First the coefficients are
+	 * received by a vector {@link app.interprediction.T} First the coefficients are
 	 * calculated and then they're quantified.</p>
 	 * 
 	 * <p><strong>IMPORTANT:</strong><br> This function only calculates the DCT coefficients
@@ -285,7 +285,7 @@ public class DCTEngine {
 	
 	/**
 	 * <p>Computes the IDCT Coefficients of the DCT-II coefficients
-	 * received by the converted AbsoluteColorDifference {@link app.interprediction.Vector}.
+	 * received by the converted AbsoluteColorDifference {@link app.interprediction.T}.
 	 * First the coefficients are dequantizized and then further processed.</p>
 	 * 
 	 * @return Reconstructed AbsoluteColorDifference array
@@ -630,16 +630,16 @@ public class DCTEngine {
 	 * 
 	 * @see app.io.Protocol
 	 * 
-	 * @param coefficients	Coefficients to dequantizize
-	 * @param size	size of the matrix
+	 * @param coefficients	Coefficients to dequantizize.
+	 * @param size			Size of the matrix.
 	 */
 	public void dequantizeChromaDCTCoefficients(double[][][] coefficients, int size) {
 		int[][] chromaQuant = getChromaQuantizationTable(size);
 		
 		for (int x = 0; x < size; x++) {
 			for (int y = 0; y < size; y++) {
-				coefficients[0][x][y] *= chromaQuant[x][y];
-				coefficients[1][x][y] *= chromaQuant[x][y];
+				coefficients[0][x][y] *= (double)chromaQuant[x][y];
+				coefficients[1][x][y] *= (double)chromaQuant[x][y];
 			}
 		}
 	}
@@ -650,8 +650,8 @@ public class DCTEngine {
 	 * 
 	 * @see app.io.Protocol
 	 * 
-	 * @param coefficients	Coefficients to dequantizize
-	 * @param size	size of the matrix
+	 * @param coefficients	Coefficients to dequantizize.
+	 * @param size			Size of the matrix.
 	 */
 	public void dequantizeLumaDCTCoefficients(double[][] coefficients, int size) {
 		int[][] lumaQuant = getLumaQuantizationTable(size);

@@ -23,6 +23,8 @@ package app.utils;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
@@ -53,7 +55,7 @@ public class ListManager<T> {
 	/**
 	 * Holds all current objects.
 	 */
-	private ArrayList<T> list = new ArrayList<T>();
+	private List<T> list = Collections.synchronizedList(new ArrayList<T>());
 	
 	public ListManager() {}
 	
@@ -63,7 +65,7 @@ public class ListManager<T> {
 	 */
 	public void switchList() {
 		this.oldList.addAll(this.list);
-		this.list = new ArrayList<T>();
+		this.list = Collections.synchronizedList(new ArrayList<T>());
 	}
 	
 	/**
@@ -83,9 +85,11 @@ public class ListManager<T> {
 	 * @param obj	The object to add.
 	 */
 	public void add(T obj) {
-		synchronized (this.list) {
-			this.list.add(obj);
+		if (obj == null) {
+			return;
 		}
+		
+		this.list.add(obj);
 	}
 	
 	/**
@@ -94,9 +98,7 @@ public class ListManager<T> {
 	 * @param collection	The collection to add.
 	 */
 	public void addAll(Collection<? extends T> collection) {
-		synchronized (this.list) {
-			this.list.addAll(collection);
-		}
+		this.list.addAll(collection);
 	}
 	
 	/**
@@ -120,7 +122,7 @@ public class ListManager<T> {
 	 * 
 	 * @return The current list.
 	 */
-	public ArrayList<T> getList() {
+	public List<T> getList() {
 		return this.list;
 	}
 }

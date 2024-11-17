@@ -211,7 +211,7 @@ public class RenderEngine {
 	 * @param vecs	Vectors to draw
 	 * @param dim	Dimension of the frame
 	 * 
-	 * @see app.interprediction.Vector
+	 * @see app.interprediction.T
 	 * @see java.awt.Color
 	 */
 	public static BufferedImage renderVectors(ArrayList<Vector> vecs, Dimension dim) {

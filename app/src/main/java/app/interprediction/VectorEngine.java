@@ -105,7 +105,7 @@ public class VectorEngine {
 	 * @throws NullPointerException	When no MacroBlocks are passed for prediction or
 	 * if no references to refer to are available
 	 * 
-	 * @see utils.Vector
+	 * @see T.Vector
 	 */
 	public VectorEngineResult computeMovementVectors(LoadDistributor<MacroBlock> differenceManager, final ReferenceFrameManager refs) {
 		if (refs == null || refs.size() == 0) {
@@ -147,7 +147,7 @@ public class VectorEngine {
 			
 			restBlockManager.compute(restLoad);
 		}
-	
+		
 		vecManager.compute(this.totalPixelsProcessed);
 		return new VectorEngineResult(restBlockManager, vecManager);
 	}
@@ -189,7 +189,7 @@ public class VectorEngine {
 					continue;
 				}
 				
-				totalPixelsProcessed += vec.getSize() * vec.getSize();
+				totalPixelsProcessed += vec.getSquaredSize();
 				vecManager.setObj(vec);
 			}
 			
@@ -234,7 +234,7 @@ public class VectorEngine {
 	 * @param bestMatch	Best matching MacroBlock
 	 * @param blockToBeSearched	MacroBlock that was searched at the beginning
 	 * 
-	 * @see utils.Vector
+	 * @see T.Vector
 	 */
 	private Vector constructMovementVector(final ReferenceFrameManager refs, MacroBlock bestMatch, MacroBlock blockToBeSearched) {
 		Vector vec = null;

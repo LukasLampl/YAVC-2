@@ -35,7 +35,7 @@ import app.rendering.ColorManager;
  * @version 1.0 29 May 2024
  */
 
-public class MacroBlock {
+public class MacroBlock implements Discardable {
 	/**
 	 * <p>The Y values of the MacroBlock.</p>
 	 */
@@ -77,6 +77,8 @@ public class MacroBlock {
 	private boolean isSubdivided = false;
 	
 	private boolean isConvertedToVector = false;
+	
+	private boolean isColorSet = false;
 	
 	/**
 	 * <p>Nodes of the MacroBlock.</p>
@@ -129,6 +131,7 @@ public class MacroBlock {
 			this.Y = new double[size][size];
 			this.U = new double[halfSize][halfSize];
 			this.V = new double[halfSize][halfSize];
+			this.isColorSet = true;
 		}
 	}
 	
@@ -170,6 +173,7 @@ public class MacroBlock {
 		this.Y = Y;
 		this.U = U;
 		this.V = V;
+		this.isColorSet = true;
 	}
 	
 	/**
@@ -214,6 +218,7 @@ public class MacroBlock {
 		this.Y = colors[ColorManager.Y_INDEX];
 		this.U = colors[ColorManager.U_INDEX];
 		this.V = colors[ColorManager.V_INDEX];
+		this.isColorSet = true;
 	}
 	
 	/**
@@ -234,11 +239,21 @@ public class MacroBlock {
 			throw new NullPointerException("MacroBlock can't have a NULL Chroma-U channel");
 		} else if (colors[ColorManager.V_INDEX] == null) {
 			throw new NullPointerException("MacroBlock can't have a NULL Chroma-V channel");
+		} else if (colors[ColorManager.Y_INDEX].length != this.size) {
+			throw new IllegalArgumentException("The given luminance size is not equal to the MacroBlock size!");
+		} else if (colors[ColorManager.U_INDEX].length != this.size / 2 || colors[ColorManager.V_INDEX].length != this.size / 2) {
+			throw new IllegalArgumentException("The given chrominance size is not equal to the MacroBlock size!");
+		}
+		
+		if (this.size == 0) {
+			this.size = colors[ColorManager.Y_INDEX].length;
+			this.squared_size = this.size * this.size;
 		}
 		
 		this.Y = colors[ColorManager.Y_INDEX];
 		this.U = colors[ColorManager.U_INDEX];
 		this.V = colors[ColorManager.V_INDEX];
+		this.isColorSet = true;
 	}
 	
 	/**
@@ -263,13 +278,21 @@ public class MacroBlock {
 			throw new NullPointerException("MacroBlock can't have a NULL Chroma-U channel");
 		} else if (V == null) {
 			throw new NullPointerException("MacroBlock can't have a NULL Chroma-V channel");
+		} else if (Y.length != this.size) {
+			throw new IllegalArgumentException("The given luminance size is not equal to the MacroBlock size!");
+		} else if (U.length != this.size / 2 || V.length != this.size / 2) {
+			throw new IllegalArgumentException("The given chrominance size is not equal to the MacroBlock size!");
 		}
 		
-		this.size = Y.length;
-		this.squared_size = this.size * this.size;
+		if (this.size == 0) {
+			this.size = Y.length;
+			this.squared_size = this.size * this.size;
+		}
+		
 		this.Y = Y;
 		this.U = U;
 		this.V = V;
+		this.isColorSet = true;
 	}
 	
 	/**
@@ -300,6 +323,8 @@ public class MacroBlock {
 			throw new NullPointerException("No Chroma-U Component");
 		} else if (this.V == null) {
 			throw new NullPointerException("No Chroma-V Component");
+		} if (!this.isColorSet) {
+			throw new IllegalStateException("The MacroBlock is ready, but no data was set!");
 		}
 		
 		int subSX = x / 2;
@@ -335,6 +360,8 @@ public class MacroBlock {
 			throw new NullPointerException("No Chroma-U Component");
 		} else if (this.V == null) {
 			throw new NullPointerException("No Chroma-V Component");
+		} if (!this.isColorSet) {
+			throw new IllegalStateException("The MacroBlock is ready, but no data was set!");
 		}
 		
 		int subSX = x / 2;
@@ -397,8 +424,8 @@ public class MacroBlock {
 		int fraction = this.size / 2;
 		int outlyers = 0;
 		
-		for (int x = 0; x < size; x += fraction) {
-			for (int y = 0; y < size; y += fraction) {
+		for (int x = 0; x < this.size; x += fraction) {
+			for (int y = 0; y < this.size; y += fraction) {
 				if ((this.position.x + x >= dim.width
 					|| this.position.x + x < 0)
 					|| (this.position.y + y >= dim.height
@@ -462,6 +489,10 @@ public class MacroBlock {
 	 * @return Mean color of the MacroBlock
 	 */
 	public int[] getMeanColor() {
+		if (!this.isColorSet) {
+			throw new IllegalStateException("The MacroBlock is ready, but no data was set!");
+		}
+		
 		return this.meanColor;
 	}
 	
@@ -485,6 +516,10 @@ public class MacroBlock {
 	 * @return Colors of the MacroBlock
 	 */
 	public double[][][] getColors() {
+		if (!this.isColorSet) {
+			throw new IllegalStateException("The MacroBlock is ready, but no data was set!");
+		}
+		
 		return new double[][][] {this.Y, this.U, this.V};
 	}
 	
@@ -539,40 +574,78 @@ public class MacroBlock {
 	 * than the MacroBlock itself
 	 */
 	private MacroBlock getSubBlock(Point pos, int size) {
-		if (pos.x < 0 || pos.x >= this.size) {
+		double[][][] res = getColorSubBlock(pos.x, pos.y, size, null);
+		Point position = new Point(pos.x + this.position.x, pos.y + this.position.y);
+		return new MacroBlock(position, size, res[ColorManager.Y_INDEX], res[ColorManager.U_INDEX], res[ColorManager.V_INDEX]);
+	}
+	
+	/**
+	 * <p>Get a smaller sub-block off of the current MacroBlock with
+	 * the specified size.</p>
+	 * 
+	 * @return Sub-block from the MacroBlock.
+	 * 
+	 * @param posX	X position of the sub-block.
+	 * @param posY	Y position of the sub-block.
+	 * @param size	Size of the sub-block.
+	 * @param cache	Cache for storing colors temporarily.
+	 * 
+	 * @throws ArrayIndexOutOfBoundsException	If x or y is below 0 or bigger
+	 * than the MacroBlock size
+	 * @throws IllegalArgumentException	When the size is smaller than 1 or bigger
+	 * than the MacroBlock itself
+	 */
+	private double[][][] getColorSubBlock(int posX, int posY, int size, double[][][] cache) {
+		if (posX < 0 || posX >= this.size) {
 			throw new ArrayIndexOutOfBoundsException();
-		} else if (pos.y < 0 || pos.y >= this.size) {
+		} else if (posY < 0 || posY >= this.size) {
 			throw new ArrayIndexOutOfBoundsException();
 		} else if (size < 1 || size > this.size) {
 			throw new IllegalArgumentException("Size cannot exceed the maximum size itself and cannot be 0 or lower");
+		} else if (!this.isColorSet) {
+			throw new IllegalStateException("The MacroBlock is ready, but no data was set!");
 		}
 		
 		int halfSize = size / 2;
-		double[][] resY = new double[size][size];
-		double[][] resU = new double[halfSize][halfSize];
-		double[][] resV = new double[halfSize][halfSize];
+		int halfPosX = posX / 2;
+		int halfPosY = posY / 2;
+		double[][][] res = cache == null ? getArray(size) : cache[ColorManager.Y_INDEX].length < size ? getArray(size) : cache;
 		
 		for (int x = 0; x < size; x++) {
-			int posX = pos.x + x;
+			int actualX = posX + x;
 			
 			for (int y = 0; y < size; y++) {
-				int posY = pos.y + y;
-				resY[x][y] = this.Y[posX][posY];
+				int actualY = posY + y;
+				res[ColorManager.Y_INDEX][x][y] = this.Y[actualX][actualY];
 			}
 		}
 		
 		for (int x = 0; x < halfSize; x++) {
-			int thisPosX = (pos.x / 2) + x;
+			int actualX = halfPosX + x;
 			
 			for (int y = 0; y < halfSize; y++) {
-				int thisPosY = (pos.y / 2) + y;
-				resU[x][y] = this.U[thisPosX][thisPosY];
-				resV[x][y] = this.V[thisPosX][thisPosY];
+				int actualY = halfPosY + y;
+				res[ColorManager.U_INDEX][x][y] = this.U[actualX][actualY];
+				res[ColorManager.V_INDEX][x][y] = this.V[actualX][actualY];
 			}
 		}
 		
-		Point position = new Point(pos.x + this.position.x, pos.y + this.position.y);
-		return new MacroBlock(position, size, resY, resU, resV);
+		return res;
+	}
+	
+	/**
+	 * <p>Get an array of 2D arrays.</p>
+	 * 
+	 * @param size	size if the arrays
+	 * @return initialized array
+	 */
+	private double[][][] getArray(final int size) {
+		int halfSize = size / 2;
+		double[][][] res = new double[4][][]; //0 = Y; 1 = U; 2 = V
+		res[ColorManager.Y_INDEX] = new double[size][size];
+		res[ColorManager.U_INDEX] = new double[halfSize][halfSize];
+		res[ColorManager.V_INDEX] = new double[halfSize][halfSize];
+		return res;
 	}
 	
 	/**
@@ -605,5 +678,36 @@ public class MacroBlock {
 	 */
 	public void moveBlock(int x, int y) {
 		this.position.setLocation(x, y);
+	}
+	
+	public void reset(Point pos, final int size, boolean initColors) {
+		this.position = pos;
+		this.positionRelativeToParent = new Point(0, 0);
+		this.size = size;
+		
+		if (initColors) {
+			int halfSize = size / 2;
+			this.Y = new double[size][size];
+			this.U = new double[halfSize][halfSize];
+			this.V = new double[halfSize][halfSize];
+		} else {
+			this.Y = null;
+			this.U = null;
+			this.V = null;
+		}
+		
+		this.nodes = null;
+		this.isConvertedToVector = false;
+		this.isSubdivided = false;
+		this.meanColor = ColorManager.NULL_COLOR;
+		this.MSE = 0;
+		this.squared_size = size * size;
+		this.reference = 0;
+		this.isColorSet = false;
+	}
+	
+	@Override
+	public void discard() {
+		reset(new Point(0, 0), 0, false);
 	}
 }

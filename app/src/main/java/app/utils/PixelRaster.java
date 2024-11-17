@@ -50,7 +50,7 @@ import app.rendering.ColorManager;
  * @version 1.0 29 May 2024
  */
 
-public class PixelRaster {
+public class PixelRaster implements Discardable {
 	private static final int PX_WITH_ALPHA_LENGTH = 4;
 	private static final int PX_WITHOUT_ALPHA_LENGTH = 3;
 	
@@ -735,5 +735,13 @@ public class PixelRaster {
 	 */
 	public void lock() {
 		this.locked = true;
+	}
+	
+	@Override
+	public void discard() {
+		this.Y = null;
+		this.U = null;
+		this.V = null;
+		lock();
 	}
 }

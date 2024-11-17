@@ -33,7 +33,7 @@ public class config {
 	public static final int MAX_REFERENCES = 4;
 
 	public static final int[][] QUANTIZATION_MATRIX_8x8_Luma = {
-		{16, 11, 10, 16, 24, 40, 51, 61},
+		{20, 11, 10, 16, 24, 40, 51, 61},
 		{12, 12, 14, 19, 26, 58, 60, 55},
 		{14, 13, 16, 24, 40, 57, 69, 56},
 		{14, 17, 22, 29, 51, 87, 80, 62},
@@ -51,8 +51,8 @@ public class config {
 	};
 	
 	public static final int[][] QUANTIZATION_MATRIX_4x4_Chroma = {
-		{10, 12, 20, 44},
-		{12, 14, 23, 46},
+		{14, 16, 20, 44},
+		{16, 18, 23, 46},
 		{27, 25, 39, 48},
 		{44, 44, 48, 48}
 	};

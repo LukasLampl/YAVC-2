@@ -25,6 +25,7 @@ import java.awt.Point;
 import java.util.ArrayList;
 
 import app.dct.DCTEngine;
+import app.utils.Discardable;
 import app.utils.MacroBlock;
 
 /**
@@ -49,7 +50,7 @@ import app.utils.MacroBlock;
  */
 
 
-public class Vector {
+public class Vector implements Discardable {
 	/**
 	 * Provides a DCTEngine with pre-calculated cosine table
 	 */
@@ -382,5 +383,26 @@ public class Vector {
 	 */
 	public MacroBlock getMostEqualBlock() {
 		return this.mostEqualBlock;
+	}
+	
+	public void reset(final Point pos, final int size, boolean forceClear) {
+		this.startingPoint = pos;
+		this.size = size;
+		this.squaredSize = this.size * this.size;
+		this.spanX = 0;
+		this.spanY = 0;
+		this.reference = 0;
+		this.appendedBlock = null;
+		this.mostEqualBlock = null;
+		this.invokedDCTOfDifferences = false;
+		
+		if (!this.AbsoluteColorDifferenceDCTCoefficients.isEmpty() || forceClear) {
+			this.AbsoluteColorDifferenceDCTCoefficients.clear();
+		}
+	}
+	
+	@Override
+	public void discard() {
+		reset(new Point(0, 0), 0, true);
 	}
 }

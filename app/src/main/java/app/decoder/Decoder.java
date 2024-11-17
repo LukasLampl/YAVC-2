@@ -1,7 +1,6 @@
 package app.decoder;
 
-import java.io.File;
-
+import app.ArgumentProcessor;
 import app.exceptions.CorruptedFileException;
 import app.exceptions.WrongBlockAssignedException;
 import app.interprediction.Vector;
@@ -16,11 +15,11 @@ import app.utils.ReferenceFrameManager;
 public class Decoder {
 	private ReferenceFrameManager referenceManager = new ReferenceFrameManager();
 	
-	public void decode(File input, File output, boolean withVideoPlayer) {
-		VideoPlayer player = withVideoPlayer ? new VideoPlayer() : null;
+	public void decode() {
+		VideoPlayer player = ArgumentProcessor.playback ? new VideoPlayer() : null;
 		ListManager<Vector> vectorListManager = new ListManager<Vector>();
-		ImageWriter imageWriter = new ImageWriter(output);
-		InputStream inputStream = new InputStream(input);
+		ImageWriter imageWriter = new ImageWriter(ArgumentProcessor.outputFile);
+		InputStream inputStream = new InputStream(ArgumentProcessor.inputFile);
 		InputProcessor processor = new InputProcessor();
 		processor.proessMetadata(inputStream.getMetadata());
 		int lenOfIndexes = processor.initFrameReader(inputStream.getNumberOfIndexes());
@@ -62,7 +61,7 @@ public class Decoder {
 				System.out.println("   > Render time: " + (end_render - start_render) + "ms");
 				System.out.println("   > Writing time: " + (end_write - start_write) + "ms");
 				System.out.println();
-				if (withVideoPlayer) {
+				if (ArgumentProcessor.playback) {
 					player.addFrame(result);
 				}
 				

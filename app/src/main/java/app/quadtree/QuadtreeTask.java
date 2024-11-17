@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit;
 
 import app.rendering.ColorManager;
 import app.utils.MacroBlock;
+import app.utils.MathUtils;
 import app.utils.MeanStructure;
 
 public class QuadtreeTask {
@@ -132,9 +133,9 @@ public class QuadtreeTask {
 						for (int y = 0; y < 4; y++) {
 							int iPosY = startY + v + y;
 							int[] col = ColorManager.convertYUVToRGB_intARR(block.getYUV(iPosX, iPosY), null);
-							sumR += col[0];
-							sumG += col[1];
-							sumB += col[2];
+							sumR += col[ColorManager.R_INDEX];
+							sumG += col[ColorManager.G_INDEX];
+							sumB += col[ColorManager.B_INDEX];
 							argbs[iPosX][iPosY] = col;
 						}
 					}
@@ -189,7 +190,7 @@ public class QuadtreeTask {
 		sumR /= length;
 		sumG /= length;
 		sumB /= length;
-		return new int[] {(int)Math.round(sumR), (int)Math.round(sumG), (int)Math.round(sumB)};
+		return new int[] {(int)MathUtils.round(sumR), (int)MathUtils.round(sumG), (int)MathUtils.round(sumB)};
 	}
 
 	/**

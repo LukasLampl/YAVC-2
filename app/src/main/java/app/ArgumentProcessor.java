@@ -19,18 +19,20 @@ public class ArgumentProcessor {
 	public static final String DECODE_DEL = "-decode";
 	
 	public static final String NO_DEBLOCK = "-no-deblock";
+	public static final String AUTO_ADJUST = "-auto-adjust";
 	
 	private static HashMap<String, Consumer<String>> ARGUMENTS = new HashMap<String, Consumer<String>>();
 	public static HashMap<String, Supplier<String>> SET_ARG_MAP = new HashMap<String, Supplier<String>>();
 	private static HashMap<String, Integer> ARGUMENT_COUNT = new HashMap<String, Integer>();
 	
-	private static File outputFile = null;
-	private static File inputFile = null;
+	public static File outputFile = null;
+	public static File inputFile = null;
 	private static boolean encode = false;
 	private static boolean decode = false;
-	private static boolean playback = false;
+	public static boolean playback = false;
 	
 	public static boolean noDeblock = false;
+	public static boolean autoAdjust = false;
 	
 	public ArgumentProcessor() {
 		initArgs();
@@ -52,6 +54,8 @@ public class ArgumentProcessor {
 		
 		ARGUMENTS.put(NO_DEBLOCK, c -> this.setNoDeblock());
 		ARGUMENT_COUNT.put(NO_DEBLOCK, 0);
+		ARGUMENTS.put(AUTO_ADJUST, c -> this.setAutoAdjust());
+		ARGUMENT_COUNT.put(AUTO_ADJUST, 0);
 	}
 	
 	public void processArgs(String args[]) throws FileNotFoundException {
@@ -78,12 +82,12 @@ public class ArgumentProcessor {
 		
 		if (encode) {
 			Encoder encoder = new Encoder(app.Main.DCT_ENGINE);
-			encoder.encode(inputFile, outputFile);
+			encoder.encode();
 		}
 		
 		if (decode) {
 			Decoder decoder = new Decoder();
-			decoder.decode(inputFile, outputFile, playback);
+			decoder.decode();
 		}
 	}
 	
@@ -164,6 +168,10 @@ public class ArgumentProcessor {
 	
 	private void setNoDeblock() {
 		noDeblock = true;
+	}
+	
+	private void setAutoAdjust() {
+		autoAdjust = true;
 	}
 	
 	private String getOutputFile() {

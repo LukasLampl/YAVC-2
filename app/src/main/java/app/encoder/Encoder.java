@@ -1,10 +1,8 @@
 package app.encoder;
 
-import java.io.File;
 import java.util.ArrayList;
 
-import javax.imageio.ImageIO;
-
+import app.ArgumentProcessor;
 import app.dct.DCTEngine;
 import app.filter.Deblocker;
 import app.interprediction.Vector;
@@ -32,11 +30,11 @@ public class Encoder {
 		this.DCT_ENGINE = dctEngine;
 	}
 	
-	public void encode(File input, File output) {
-		int files = input.listFiles().length;
-		OutputStream outStream = new OutputStream(output);
+	public void encode() {
+		int files = ArgumentProcessor.inputFile.listFiles().length;
+		OutputStream outStream = new OutputStream(ArgumentProcessor.outputFile);
 		Deblocker deblocker = new Deblocker();
-		ImagePreReader imgReader = new ImagePreReader(files, input);
+		ImagePreReader imgReader = new ImagePreReader(files, ArgumentProcessor.inputFile);
 		
 		PixelRaster curFrame = null;
 		PixelRaster prevFrame = null;
@@ -117,8 +115,17 @@ public class Encoder {
 				sumOfMilliSeconds += time;
 				printStatistics(time, sumOfMilliSeconds, i, movementVectors, differenceManager, imgReadTime, quadtreeConstructionTime, leaveNodesTime, differenceTime, vectorTime, renderTime, deblockTime);
 				
+				leaveNodeManager.discard();
+				movementVectors.discard();
+				differenceManager.discard();
+				
 				this.referenceManager.add(composite.copy());
-				prevFrame = composite.copy();
+				
+				if (prevFrame != null) {
+					prevFrame.discard();
+				}
+				
+				prevFrame = composite;
 			}
 			
 			long endOfTime = System.currentTimeMillis();
@@ -150,26 +157,14 @@ public class Encoder {
 		System.out.println("   > Sum (process only, no output): " + (quadtreeConstructionTime + leaveNodeTime + differenceTime + vectorTime + renderTime + deblockTime) + "ms");
 		
 		if (vecs != null) {
-			int vecArea = 0;
 			double averageMSE = (VECTOR_ENGINE.getVectorMSE() / vecs.getNumberOfObjects());
 			TOTAL_MSE += averageMSE;
 			TOTAL_MSE_ADDITION_COUNT++;
-			
-			for (Vector v : vecs.getRawData()) {
-				vecArea += v.getAppendedBlock().getSquaredSize();
-			}
-			
-			System.out.println("- Vectors: " + vecs.getNumberOfObjects() + " | Covered area: " + vecArea + "px | Avg. MSE: " + averageMSE);
+			System.out.println("- Vectors: " + vecs.getNumberOfObjects() + " | Covered area: " + vecs.getNumberOfData() + "px | Avg. MSE: " + averageMSE);
 		}
 		
 		if (diffs != null) {
-			int diffArea = 0;
-			
-			for (MacroBlock b : diffs.getRawData()) {
-				diffArea += b.getSquaredSize();
-			}
-			
-			System.out.println("- Non-Coded blocks: " + diffs.getNumberOfObjects() + " | Covered area: " + diffArea + "px");
+			System.out.println("- Non-Coded blocks: " + diffs.getNumberOfObjects() + " | Covered area: " + diffs.getNumberOfData() + "px");
 		}
 		
 		System.out.println("- Total Avg. MSE of inter prediction: " + (TOTAL_MSE / TOTAL_MSE_ADDITION_COUNT));

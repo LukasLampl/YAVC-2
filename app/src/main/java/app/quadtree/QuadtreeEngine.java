@@ -85,12 +85,11 @@ public class QuadtreeEngine {
 	 * preserving quality. If not or the size is to big, the block gets
 	 * split. For further details on the splitting section
 	 * 
-	 * @see app.utils.MacroBlock#subdivide(double, int, int[][], int[][][], Dimension, Point)
+	 * @see app.utils.MacroBlock#subdivide(Dimension)
 	 * 
-	 * @return ArrayList<MacroBlock> => All QuadtreeRoots
+	 * @return All QuadtreeRoots
 	 * 
-	 * @param PixelRaster currentFrame => PixelRaster to "convert" to
-	 * Quadtree
+	 * @param currentFrame PixelRaster to "convert" to Quadtree.
 	 * 
 	 * @throws NullPointerException, when the passed frame is null
 	 */
@@ -253,6 +252,10 @@ public class QuadtreeEngine {
 		ArrayList<MacroBlock> blocks = new ArrayList<MacroBlock>(4);
 		
 		if (block.isSubdivided()) {
+			if (block.getNodes() == null) {
+				return blocks;
+			}
+			
 			for (MacroBlock node : block.getNodes()) {
 				if (node == null) {
 					continue;
