@@ -558,7 +558,7 @@ public class Protocol {
 		converter.awaitTermination();
 		
 		if (vectorListManager.getList().size() != estimatedLength) {
-			throw new CorruptedFileException("The amount of the read-in vectors appears to be unequal to the written vectors.");
+			throw new CorruptedFileException("The amount of the read-in vectors appear to be unequal to the written vectors.");
 		}
 	}
 	

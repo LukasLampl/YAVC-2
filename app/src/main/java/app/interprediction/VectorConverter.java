@@ -2,6 +2,7 @@ package app.interprediction;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import app.io.Protocol;
 import app.utils.ListManager;
@@ -13,7 +14,7 @@ public class VectorConverter {
 	private LoadDistributor<Integer> dist = null;
 	private ListManager<Vector> vectorManager = null;
 	
-	private int currentLoadIndex = 0;
+	private AtomicInteger currentLoadIndex = new AtomicInteger(0);
 	private byte[] data = null;
 	
 	public VectorConverter(byte[] data, ArrayList<Integer> indexes, ListManager<Vector> vectorListManager, boolean singleThread) {
@@ -23,7 +24,7 @@ public class VectorConverter {
 		this.threads = new ConversionThread[this.numOfThreads];
 		
 		if (!singleThread) {
-			this.dist = new LoadDistributor<Integer>(this.numOfThreads * 16);
+			this.dist = new LoadDistributor<Integer>(indexes.size() / 2);
 			this.dist.setAll(indexes);
 			this.dist.compute(indexes.size());
 			
@@ -41,13 +42,13 @@ public class VectorConverter {
 	}
 	
 	private List<Integer> getLoad() {
-		synchronized (this.dist) {
-			if (this.currentLoadIndex >= this.dist.getNumberOfChunks()) {
-				return null;
-			}
-			
-			return this.dist.getLoadOf(this.currentLoadIndex++);
+		int index = this.currentLoadIndex.getAndIncrement();
+		
+		if (index >= this.dist.getNumberOfChunks()) {
+			return null;
 		}
+		
+		return this.dist.getLoadOf(index);
 	}
 	
 	public void start() {

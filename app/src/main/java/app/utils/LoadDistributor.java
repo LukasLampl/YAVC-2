@@ -199,6 +199,11 @@ public class LoadDistributor<T> implements Discardable {
 		}
 		
 		int loadPerThread = this.numberOfData / this.numberOfChunks;
+		
+		if (loadPerThread <= 0) {
+			loadPerThread = 1;
+		}
+		
 		int currentLoad = 0;
 		int currentIndex = 0;
 		
