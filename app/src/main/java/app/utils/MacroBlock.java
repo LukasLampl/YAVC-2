@@ -54,9 +54,11 @@ public class MacroBlock implements Discardable {
 	/**
 	 * <p>Position of the MacroBlock, originated from the PixelRaster.</p>
 	 */
-	private Point position = null;
+	private int positionX = 0;
+	private int positionY = 0;
 	
-	private Point positionRelativeToParent = new Point(0, 0);
+	private int positionRelativeToParentX = 0;
+	private int positionRelativeToParentY = 0;
 	
 	/**
 	 * <p>Size of the MacroBlock.</p>
@@ -108,21 +110,21 @@ public class MacroBlock implements Discardable {
 	/**
 	 * <p>Creates an empty MacroBlock, with a position and size.</p>
 	 * 
-	 * @param position	Position of the MacroBlock based on the PixelRaster
-	 * @param size	Size of the MacroBlock
+	 * @param x				Position x of the MacroBlock based on the PixelRaster.
+	 * @param y				Position y of the MacroBlock based on the PixelRaster.
+	 * @param size			Size of the MacroBlock.
 	 * @param initColor		Flag for whether the Y, U and V components are initialized or not.
 	 * 
 	 * @throws NullPointerException	When the position is null
 	 * @throws IllegalArgumentException	If the size is below 0
 	 */
-	public MacroBlock(Point position, int size, boolean initColor) {
-		if (position == null) {
-			throw new NullPointerException("MacroBlock can't have position NULL");
-		} else if (size < 0 || size > 65535) {
+	public MacroBlock(final int x, final int y, int size, boolean initColor) {
+		if (size < 0 || size > 65535) {
 			throw new IllegalArgumentException("The size of " + size + " is not supported!");
 		}
 		
-		this.position = position;
+		this.positionX = x;
+		this.positionY = y;
 		this.size = size;
 		this.squared_size = size * size;
 		
@@ -139,11 +141,12 @@ public class MacroBlock implements Discardable {
 	 * <p>Initializes a MacroBlock with Position, Size,
 	 * Y, U, V and A.</p>
 	 * 
-	 * @param position	Position of the MacroBlock based on the PixelRaster
-	 * @param size	Size of the MacroBlock
-	 * @param Y	Y values in the MacroBlock
-	 * @param U	U values in the MacroBlock
-	 * @param V	V values in the MacroBlock
+	 * @param x		Position x of the MacroBlock based on the PixelRaster.
+	 * @param y		Position y of the MacroBlock based on the PixelRaster.
+	 * @param size	Size of the MacroBlock.
+	 * @param Y		Y values in the MacroBlock.
+	 * @param U		U values in the MacroBlock.
+	 * @param V		V values in the MacroBlock.
 	 * 
 	 * @throws NullPointerException	in the following situations:
 	 * <ul><li>If the provided position is null
@@ -154,10 +157,8 @@ public class MacroBlock implements Discardable {
 	 * 
 	 * @throws IllegalArgumentException	If the size is below 0
 	 */
-	public MacroBlock(Point position, int size, double[][] Y, double[][] U, double[][] V) {
-		if (position == null) {
-			throw new NullPointerException("MacroBlock can't have position NULL");
-		} else if (size < 0 || size > 65535) {
+	public MacroBlock(final int x, final int y, int size, double[][] Y, double[][] U, double[][] V) {
+		if (size < 0 || size > 65535) {
 			throw new IllegalArgumentException("The size of " + size + " is not supported!");
 		} else if (Y == null) {
 			throw new NullPointerException("MacroBlock can't have a NULL Luma-Y channel");
@@ -167,7 +168,8 @@ public class MacroBlock implements Discardable {
 			throw new NullPointerException("MacroBlock can't have a NULL Chroma-V channel");
 		}
 		
-		this.position = position;
+		this.positionX = x;
+		this.positionY = y;
 		this.size = size;
 		this.squared_size = size * size;
 		this.Y = Y;
@@ -184,11 +186,12 @@ public class MacroBlock implements Discardable {
 	 * <li> [2] = V
 	 * </ul>
 	 * 
-	 * @param position	Position of the MacroBlock based on the PixelRaster
-	 * @param size	Size of the MacroBlock
-	 * @param Y	Y values in the MacroBlock
-	 * @param U	U values in the MacroBlock
-	 * @param V	V values in the MacroBlock
+	 * @param x		Position x of the MacroBlock based on the PixelRaster.
+	 * @param y		Position y of the MacroBlock based on the PixelRaster.
+	 * @param size	Size of the MacroBlock.
+	 * @param Y		Y values in the MacroBlock.
+	 * @param U		U values in the MacroBlock.
+	 * @param V		V values in the MacroBlock.
 	 * 
 	 * @throws NullPointerException	if the following situations:
 	 * <ul><li>If the provided position is null
@@ -199,10 +202,8 @@ public class MacroBlock implements Discardable {
 	 * 
 	 * @throws IllegalArgumentException	If the size is below 0
 	 */
-	public MacroBlock(Point position, int size, double[][][] colors) {
-		if (position == null) {
-			throw new NullPointerException("MacroBlock can't have position NULL");
-		} else if (size < 0 || size > 65535) {
+	public MacroBlock(final int x, final int y, int size, double[][][] colors) {
+		if (size < 0 || size > 65535) {
 			throw new IllegalArgumentException("The size of " + size + " is not supported!");
 		} else if (colors[ColorManager.Y_INDEX] == null) {
 			throw new NullPointerException("MacroBlock can't have a NULL Luma-Y channel");
@@ -212,7 +213,8 @@ public class MacroBlock implements Discardable {
 			throw new NullPointerException("MacroBlock can't have a NULL Chroma-V channel");
 		}
 		
-		this.position = position;
+		this.positionX = x;
+		this.positionY = y;
 		this.size = size;
 		this.squared_size = size * size;
 		this.Y = colors[ColorManager.Y_INDEX];
@@ -395,11 +397,20 @@ public class MacroBlock implements Discardable {
 	}
 	
 	public Point getPositionRelativeToParent() {
-		return this.positionRelativeToParent;
+		return new Point(this.positionRelativeToParentX, this.positionRelativeToParentY);
 	}
 	
-	private void setPositionRelativeToParent(Point pos) {
-		this.positionRelativeToParent = pos;
+	public int getPositionRelativeToParentX() {
+		return this.positionRelativeToParentX;
+	}
+	
+	public int getPositionRelativeToParentY() {
+		return this.positionRelativeToParentY;
+	}
+	
+	private void setPositionRelativeToParent(final int x, final int y) {
+		this.positionRelativeToParentX = x;
+		this.positionRelativeToParentY = y;
 	}
 	
 	/**
@@ -426,10 +437,10 @@ public class MacroBlock implements Discardable {
 		
 		for (int x = 0; x < this.size; x += fraction) {
 			for (int y = 0; y < this.size; y += fraction) {
-				if ((this.position.x + x >= dim.width
-					|| this.position.x + x < 0)
-					|| (this.position.y + y >= dim.height
-					|| this.position.y + y < 0)) {
+				if ((this.positionX + x >= dim.width
+					|| this.positionX + x < 0)
+					|| (this.positionY + y >= dim.height
+					|| this.positionY + y < 0)) {
 					if (outlyers++ >= 4) {
 						this.isSubdivided = false;
 					}
@@ -438,7 +449,7 @@ public class MacroBlock implements Discardable {
 				}
 				
 				MacroBlock b = getSubBlock(new Point(x, y), fraction);
-				b.setPositionRelativeToParent(new Point(x + this.positionRelativeToParent.x, y + this.positionRelativeToParent.y));
+				b.setPositionRelativeToParent(x + this.positionRelativeToParentX, y + this.positionRelativeToParentY);
 				this.nodes[index++] = b;
 			}
 		}
@@ -465,7 +476,25 @@ public class MacroBlock implements Discardable {
 	 * @return Position of the MacroBlock
 	 */
 	public Point getPosition() {
-		return this.position;
+		return new Point(this.positionX, this.positionY);
+	}
+	
+	/**
+	 * Get the x position of the MacroBlock.
+	 * 
+	 * @return The x position of the MacroBlock.
+	 */
+	public int getPositonX() {
+		return this.positionX;
+	}
+	
+	/**
+	 * Get the y position of the MacroBlock.
+	 * 
+	 * @return The y position of the MacroBlock.
+	 */
+	public int getPositionY() {
+		return this.positionY;
 	}
 	
 	/**
@@ -575,8 +604,9 @@ public class MacroBlock implements Discardable {
 	 */
 	private MacroBlock getSubBlock(Point pos, int size) {
 		double[][][] res = getColorSubBlock(pos.x, pos.y, size, null);
-		Point position = new Point(pos.x + this.position.x, pos.y + this.position.y);
-		return new MacroBlock(position, size, res[ColorManager.Y_INDEX], res[ColorManager.U_INDEX], res[ColorManager.V_INDEX]);
+		int posX = pos.x + this.positionX;
+		int posY = pos.y + this.positionY;
+		return new MacroBlock(posX, posY, size, res[ColorManager.Y_INDEX], res[ColorManager.U_INDEX], res[ColorManager.V_INDEX]);
 	}
 	
 	/**
@@ -660,12 +690,15 @@ public class MacroBlock implements Discardable {
 	 * @param y	Y position of the MacroBlock.
 	 */
 	public void moveBlock(int x, int y) {
-		this.position.setLocation(x, y);
+		this.positionX = x;
+		this.positionY = y;
 	}
 	
-	public void reset(Point pos, final int size, boolean initColors) {
-		this.position = pos;
-		this.positionRelativeToParent = new Point(0, 0);
+	public void reset(final int x, final int y, final int size, boolean initColors) {
+		this.positionX = x;
+		this.positionY = y;
+		this.positionRelativeToParentX = 0;
+		this.positionRelativeToParentY = 0;
 		this.size = size;
 		
 		if (initColors) {
@@ -691,6 +724,6 @@ public class MacroBlock implements Discardable {
 	
 	@Override
 	public void discard() {
-		reset(new Point(0, 0), 0, false);
+		reset(0, 0, 0, false);
 	}
 }

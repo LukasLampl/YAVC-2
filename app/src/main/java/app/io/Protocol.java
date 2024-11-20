@@ -277,13 +277,13 @@ public class Protocol {
 	 * @param vecs	The vectors to write.
 	 * @return An estimated size of the total length of all vectors, when they're converted to bytes.
 	 */
-	public static int calculateSize(ArrayList<Vector> vecs) {
+	public static int calculateSize(List<Vector> vecs) {
 		int size = Protocol.VECTOR_SIZE_CHECK_LENGTH;
 		
 		for (Vector v : vecs) {
 			int refSize = v.getSize();
 			size += Protocol.VECTOR_HEADER_LENGTH;
-			size += (refSize * refSize) + (2 * ((refSize / 2) * (refSize / 2)));
+			size += (refSize * refSize) + 2 * ((refSize * refSize) / 4);
 		}
 		
 		return size;
@@ -485,7 +485,7 @@ public class Protocol {
 		return new Metadata(frames, new Dimension(width, height));
 	}
 	
-	public static byte[] getVectorBytes(ArrayList<Vector> vecs) {
+	public static byte[] getVectorBytes(List<Vector> vecs, boolean discard) {
 		if (vecs == null) {
 			throw new NullPointerException("No vectors were passed for writing.");
 		}
@@ -498,7 +498,10 @@ public class Protocol {
 		
 		for (Vector v : vecs) {
 			currentIndex += writeSingleVectorToByteArray(v, currentIndex, data);
-			v.discard();
+			
+			if (discard) {
+				v.discard();
+			}
 		}
 		
 		return data;
@@ -544,11 +547,7 @@ public class Protocol {
 		if (data.length <= 1) {
 			return;
 		}
-		
-		//  LAYOUT:
-		//  POSX ⊥ POSY ⊥ SPANX ⊥ SPANY ⊥ REFERENCE << 4 | SIZE ⊥ DIFFERENCE
-		// ^_____________________________________________________^
-		//                      = 7 Bytes offset
+
 		byte[] lenOfVecs = {data[0], data[1], data[2]};
 		int estimatedLength = Protocol.getSizeFromBytes(lenOfVecs);
 		ArrayList<Integer> indexesOfVectors = new ArrayList<Integer>();
@@ -577,7 +576,8 @@ public class Protocol {
 			int[] refAndSize = Protocol.getReferenceAndSizeInt(data[i + 6]);
 			int size = refAndSize[1];
 			//Length of the vector diffs
-			i += ((size * size) + 2 * ((size / 2) * (size / 2))) + Protocol.VECTOR_HEADER_LENGTH;
+			//Original formula: (size * size) + 2 * ((size / 2) * (size / 2)) + Protocol.VECTOR_HEADER_LENGTH
+			i += ((size * size) + 2 * ((size * size) / 4)) + Protocol.VECTOR_HEADER_LENGTH;
 		}
 	}
 	
@@ -741,7 +741,7 @@ public class Protocol {
 		int posY = Protocol.getPosition(data[currentIndex + 2], data[currentIndex + 3]);
 		int[] sizeBytes = Protocol.getReferenceAndSizeInt(data[currentIndex + 4]);
 		int size = sizeBytes[1];
-		MacroBlock block = new MacroBlock(new Point(posX, posY), size, true);
+		MacroBlock block = new MacroBlock(posX, posY, size, true);
 		int length = block.getSquaredSize() * 3;
 		int offset = currentIndex + Protocol.RAW_BLOCK_HEADER_LENGTH;
 		int x = 0;

@@ -149,7 +149,7 @@ public class QuadtreeEngine {
 	 */
 	private Callable<MacroBlock> createQuadtreeConstructionTask(final Point pos, final PixelRaster frame, final int errorThreshold) {
 		Callable<MacroBlock> task = () -> {
-			MacroBlock origin = new MacroBlock(new Point(pos.x, pos.y), this.MAX_SIZE, false);
+			MacroBlock origin = new MacroBlock(pos.x, pos.y, this.MAX_SIZE, false);
 			double[][][] comps = frame.getPixelBlock(new Point(pos.x, pos.y), origin.getSize(), null);
 			origin.setColorComponents(comps[ColorManager.Y_INDEX], comps[ColorManager.U_INDEX], comps[ColorManager.V_INDEX]);
 			

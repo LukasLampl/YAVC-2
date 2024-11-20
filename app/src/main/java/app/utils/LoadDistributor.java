@@ -129,9 +129,9 @@ public class LoadDistributor<T> implements Discardable {
 		int estimatedIndex = 0;
 		
 		if (obj instanceof MacroBlock) {
-			QuadtreeEngine.getIndexBySize(((MacroBlock)obj).getSize());
+			estimatedIndex = QuadtreeEngine.getIndexBySize(((MacroBlock)obj).getSize());
 		} else if (obj instanceof Vector) {
-			QuadtreeEngine.getIndexBySize(((Vector)obj).getSize());
+			estimatedIndex = QuadtreeEngine.getIndexBySize(((Vector)obj).getSize());
 		}
 		
 		List<T> target = this.undistributedList.get(estimatedIndex);

@@ -60,7 +60,8 @@ public class Vector implements Discardable {
 	/**
 	 * The starting point of the vector
 	 */
-	private Point startingPoint = null;
+	private int startingPointX = 0;
+	private int startingPointY = 0;
 	
 	/**
 	 * The individual spans of the vector, measured in pixels
@@ -102,20 +103,20 @@ public class Vector implements Discardable {
 	/**
 	 * <p>Initializes the vector for further processing</p>
 	 * 
-	 * @param pos	starting position of the vector
-	 * @param size	size of the reference MacroBlock
+	 * @param x		X coordinate of the vectors starting point.
+	 * @param y		Y coordinate of the vectors starting point.
+	 * @param size	Size of the reference MacroBlock.
 	 * 
 	 * @throws NullPointerException	when the position is null
 	 * @throws IllegalArgumentException	if the area of the reference is 0 or negative
 	 */
-	public Vector(final Point pos, final int size) {
-		if (pos == null) {
-			throw new NullPointerException("Vector can't have NULL point as startingPoint");
-		} else if (size <= 0) {
+	public Vector(final int x, final int y, final int size) {
+		if (size <= 0) {
 			throw new IllegalArgumentException("Vector can't have a 0 or negative area of reference");
 		}
 		
-		this.startingPoint = pos;
+		this.startingPointX = x;
+		this.startingPointY = y;
 		this.size = size;
 		this.squaredSize = size * size;
 	}
@@ -202,11 +203,18 @@ public class Vector implements Discardable {
 	 * @return Position of the vector.
 	 */
 	public Point getPosition() {
-		return this.startingPoint;
+		return new Point(this.startingPointX, this.startingPointY);
 	}
 	
-	public void setPosition(Point position) {
-		this.startingPoint = position;
+	/**
+	 * Sets the starting point of the vector.
+	 * 
+	 * @param x		X coordinate of the vectors starting point.
+	 * @param y		Y coordinate of the vectors starting point.
+	 */
+	public void setPosition(final int x, final int y) {
+		this.startingPointX = x;
+		this.startingPointY = y;
 	}
 	
 	/**
@@ -384,8 +392,9 @@ public class Vector implements Discardable {
 		return this.mostEqualBlock;
 	}
 	
-	public void reset(final Point pos, final int size, boolean forceClear) {
-		this.startingPoint = pos;
+	public void reset(final int x, final int y, final int size, boolean forceClear) {
+		this.startingPointX = x;
+		this.startingPointY = y;
 		this.size = size;
 		this.squaredSize = this.size * this.size;
 		this.spanX = 0;
@@ -402,6 +411,15 @@ public class Vector implements Discardable {
 	
 	@Override
 	public void discard() {
-		reset(new Point(0, 0), 0, true);
+		reset(0, 0, 0, true);
+	}
+	
+	@Override
+	public int hashCode() {
+		int res = 0;
+		res |= ((this.startingPointX & 0xFFFF) ^ (this.startingPointY & 0xFFFF)) << 16;
+		res |= (this.reference & 0xFF) ^ (this.spanX & 0xFF) ^ (this.spanY & 0xFF) << 8;
+		res |= (this.size & 0xFF);
+		return res;
 	}
 }

@@ -70,7 +70,7 @@ public class OutputStream {
 	
 	private void writeVectors(File file, ArrayList<Vector> vecs) {
 		try {
-			byte[] data = Protocol.getVectorBytes(vecs);
+			byte[] data = Protocol.getVectorBytes(vecs, true);
 			Files.write(Path.of(file.getAbsolutePath()), data, StandardOpenOption.APPEND);
 			this.lengthOfEachPart.add(data.length);
 		} catch (IOException e) {

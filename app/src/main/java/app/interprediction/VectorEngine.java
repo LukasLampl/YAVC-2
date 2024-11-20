@@ -250,7 +250,7 @@ public class VectorEngine {
 			double newMatchMSE = getMSEOfColors(absoluteColorDifference, blockToBeSearched.getColors(), size);
 			this.TOTAL_MSE += newMatchMSE;
 			
-			vec = new Vector(bestMatch.getPosition(), size);
+			vec = new Vector(bestMatch.getPositonX(), bestMatch.getPositionY(), size);
 			vec.setAppendedBlock(blockToBeSearched);
 			vec.setMostEqualBlock(bestMatch);
 			vec.setReference(bestMatch.getReference());
@@ -314,7 +314,7 @@ public class VectorEngine {
 
 		Point blockPos = blockToBeSearched.getPosition();
 		Point centerPoint = blockToBeSearched.getPosition();
-		MacroBlock mostEqualBlock = new MacroBlock(new Point(centerPoint.x, centerPoint.y), size, false);
+		MacroBlock mostEqualBlock = new MacroBlock(centerPoint.x, centerPoint.y, size, false);
 		
 		Point initPos = new Point(0, 0);
 		Point[] searchPoints = new Point[7];
@@ -471,7 +471,7 @@ public class VectorEngine {
 		Dimension dim = ref.getDimension();
 		Point pos = blockToSearch.getPosition();
 		Point bestMatchPos = bestMatchTillNow.getPosition();
-		MacroBlock mostEqualBlock = new MacroBlock(new Point(bestMatchPos.x, bestMatchPos.y), size, false);
+		MacroBlock mostEqualBlock = new MacroBlock(bestMatchPos.x, bestMatchPos.y, size, false);
 		
 		for (int y = pos.y - searchWindow; y < pos.y + searchWindow; y++) {
 			if (y < 0 || y >= dim.height) {
@@ -574,7 +574,6 @@ public class VectorEngine {
 	 * <ul><li>[0] = Y
 	 * <li>[1] = U
 	 * <li>[2] = V
-	 * <li>[3] = A
 	 * </ul></p>
 	 * 
 	 * @return The Mean Square Error between the color arrays.

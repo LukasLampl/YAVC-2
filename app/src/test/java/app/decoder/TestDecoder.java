@@ -66,9 +66,8 @@ public class TestDecoder {
 				leaveNodeManager.compute(frame.getWidth() * frame.getHeight());
 				VectorEngineResult vectorEngineResult = vE.computeMovementVectors(leaveNodeManager, refMan);
 				LoadDistributor<Vector> movementVectors = vectorEngineResult.getVectors();
-				ArrayList<Vector> originalVectors = new ArrayList<Vector>();
-				originalVectors.addAll(movementVectors.getRawData());
-				byte[] vectorData = Protocol.getVectorBytes(originalVectors);
+				List<Vector> originalVectors = movementVectors.getRawData();
+				byte[] vectorData = Protocol.getVectorBytes(originalVectors, false);
 				ListManager<Vector> vectorListManager = new ListManager<Vector>();
 				super.getVectors(vectorData, vectorListManager, true); //Single thread to keep the order of the original vectors
 				List<Vector> decodedVectors = vectorListManager.getList();

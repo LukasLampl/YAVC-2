@@ -1,6 +1,5 @@
 package app.interprediction;
 
-import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -129,11 +128,11 @@ public class VectorConverter {
 					Vector vec = vectorManager.getCachedObj();
 					
 					if (vec == null) {
-						vec = new Vector(new Point(posX, posY), size);
+						vec = new Vector(posX, posY, size);
 					}
 					
 					vec.setSize(size);
-					vec.setPosition(new Point(posX, posY));
+					vec.setPosition(posX, posY);
 					
 					ArrayList<double[][][]> diffs = getVectorDifferences(data, Protocol.VECTOR_HEADER_LENGTH + index, size, vec);
 					vec.setAbsolutedifferenceDCTCoefficients(diffs);
