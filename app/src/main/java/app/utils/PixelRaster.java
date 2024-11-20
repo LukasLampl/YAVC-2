@@ -157,6 +157,37 @@ public class PixelRaster implements Discardable {
 		this.V = V;
 	}
 	
+	public void setData(BufferedImage img) {
+		if (img == null) {
+			throw new NullPointerException("Can't invoke NULL image");
+		}
+		
+		if (this.Y == null) {
+			this.Y = new double[this.dim.width][this.dim.height];
+		}
+		
+		if (this.U == null) {
+			this.U = new double[this.dim.width / 2][this.dim.height / 2];
+		}
+		
+		if (this.V == null) {
+			this.V = new double[this.dim.width / 2][this.dim.height / 2];
+		}
+		
+		img = scaleToNearest4Divisor(img);
+		
+		if (img.getRaster().getDataBuffer() instanceof DataBufferInt) {
+			int temp[] = ((DataBufferInt)img.getRaster().getDataBuffer()).getData();
+			processIntBuffer(temp);
+		} else if (img.getRaster().getDataBuffer() instanceof DataBufferByte) {
+			byte[] buffer = ((DataBufferByte)img.getRaster().getDataBuffer()).getData();
+			boolean hasAlpha = img.getAlphaRaster() != null ? true : false;
+			processByteBuffer(buffer, hasAlpha);
+		} else {
+			throw new IllegalArgumentException("Unsupported DataBuffer! DataBufferInt and DataBufferByte are supported");
+		}
+	}
+	
 	/**
 	 * <p>Resizes the provided image to the smaller divisor of 4</p>
 	 * 
@@ -716,6 +747,14 @@ public class PixelRaster implements Discardable {
 	 */
 	public void lock() {
 		this.locked = true;
+	}
+	
+	public void unlock(Object unlockingClass) {
+		if (!(unlockingClass instanceof ReferenceFrameManager)) {
+			throw new IllegalStateException("Tried to unlock a PixelRaster without a ReferenceFrameManager!");
+		}
+		
+		this.locked = false;
 	}
 	
 	@Override

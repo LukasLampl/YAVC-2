@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 package app.utils;
 
 import java.util.ArrayList;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import app.config;
 
@@ -38,6 +39,11 @@ import app.config;
  * @see app.config
  */
 public class ReferenceFrameManager {
+	/**
+	 * Holds all PixelRasters that are available to be used again.
+	 */
+	private ConcurrentLinkedQueue<PixelRaster> availableRasters = new ConcurrentLinkedQueue<PixelRaster>();
+
 	/**
 	 * Holds the reference frames, so other frames can reference to
 	 * previously encoded/decoded frames.
@@ -81,7 +87,7 @@ public class ReferenceFrameManager {
 		}
 		
 		PixelRaster r = this.references.remove(0);
-		r.discard();
+		this.availableRasters.add(r);
 	}
 	
 	/**
@@ -121,5 +127,25 @@ public class ReferenceFrameManager {
 	 */
 	public int size() {
 		return this.references.size();
+	}
+	
+	/**
+	 * Returns if available a PixelRaster that can be overwritten
+	 * data wise.
+	 * 
+	 * @return An PixelRaster that can be overwritten and reused.
+	 */
+	public PixelRaster getChachedPixelRasterIfAvailable() {
+		PixelRaster r = this.availableRasters.poll();
+		
+		if (r != null) {
+			try {
+				r.unlock(this);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		
+		return r;
 	}
 }

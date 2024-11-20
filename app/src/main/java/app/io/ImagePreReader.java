@@ -8,18 +8,22 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import javax.imageio.ImageIO;
 
 import app.utils.PixelRaster;
+import app.utils.ReferenceFrameManager;
 
 public class ImagePreReader {
 	private final int framesToReadIn;
 	private final File framesDir;
 	
-	private final int maxHoldImages = 3;
+	private final int maxHoldImages = 2;
 	private ConcurrentLinkedQueue<PixelRaster> queue = new ConcurrentLinkedQueue<PixelRaster>();
 	private boolean allReadIn = false;
 	
-	public ImagePreReader(final int framesToReadIn, File framesDir) {
+	private ReferenceFrameManager frameManager = null;
+	
+	public ImagePreReader(final int framesToReadIn, File framesDir, ReferenceFrameManager frameManager) {
 		this.framesToReadIn = framesToReadIn;
 		this.framesDir = framesDir;
+		this.frameManager = frameManager;
 		run();
 	}
 	
@@ -51,7 +55,15 @@ public class ImagePreReader {
 
 				try {
 					BufferedImage img = ImageIO.read(file);
-					queue.add(new PixelRaster(img));
+					PixelRaster raster = frameManager.getChachedPixelRasterIfAvailable();
+					
+					if (raster == null) {
+						raster = new PixelRaster(img);
+					} else {
+						raster.setData(img);
+					}
+					
+					queue.add(raster);
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
