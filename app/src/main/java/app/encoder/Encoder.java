@@ -53,7 +53,10 @@ public class Encoder {
 				PixelRaster frame = imgReader.getNextImage();
 				long end_img_read = System.currentTimeMillis();
 				
-				if (frame.invokedWithData == false) {
+				if (frame == null) {
+					System.out.println("Skip: " + i);
+					continue;
+				} else if (frame.invokedWithData == false) {
 					System.out.println("Skip: " + i);
 					continue;
 				}
@@ -80,7 +83,7 @@ public class Encoder {
 				long start_difference = System.currentTimeMillis();
 				LoadDistributor<MacroBlock> differenceManager = DIFFERENCE_ENGINE.computeDifferences(prevFrame, leaveNodeManager);
 				long end_difference = System.currentTimeMillis();
-//				BufferedImage[] part = RenderEngine.renderQuadtree(leaveNodes, curFrame.getDimension());
+//				BufferedImage[] part = RenderEngine.renderQuadtree(leaveNodeManager.getRawData(), curFrame.getDimension());
 				
 				long start_vector_movement = System.currentTimeMillis();
 				VectorEngineResult vectorEngineResult = VECTOR_ENGINE.computeMovementVectors(differenceManager, this.referenceManager);
@@ -98,10 +101,10 @@ public class Encoder {
 				deblocker.deblock(movementVectors, composite);
 				long end_deblock = System.currentTimeMillis();
 				
-//				ImageIO.write(part[0], "png", new File(output.getParent() + "/MB_" + i + ".png"));
-//				ImageIO.write(part[1], "png", new File(output.getParent() + "/MBA_" + i + ".png"));
+//				ImageIO.write(part[0], "png", new File(ArgumentProcessor.outputFile.getParent() + "/MB_" + i + ".png"));
+//				ImageIO.write(part[1], "png", new File(ArgumentProcessor.outputFile.getParent() + "/MBA_" + i + ".png"));
 //				ImageIO.write(vectors, "png", new File(output.getParent() + "/V_" + i + ".png"));
-//				ImageIO.write(composite.toBufferedImage(), "png", new File(output.getParent() + "/VR_" + i + ".png"));
+//				ImageIO.write(composite.toBufferedImage(), "png", new File(ArgumentProcessor.outputFile.getParent() + "/VR_" + i + ".png"));
 				
 				long end = System.currentTimeMillis();
 				long time = end - start;
@@ -120,17 +123,11 @@ public class Encoder {
 				differenceManager.discard();
 				
 				this.referenceManager.add(composite.copy());
-				
-				if (prevFrame != null) {
-					prevFrame.discard();
-				}
-				
 				prevFrame = composite;
 			}
 			
 			long endOfTime = System.currentTimeMillis();
 			System.out.println("Time used: " + (endOfTime - startOfTime) + "ms");
-			
 			outStream.finishQueue();
 		} catch (Exception e) {
 			outStream.shutdown();

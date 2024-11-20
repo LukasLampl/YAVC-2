@@ -25,6 +25,7 @@ import java.awt.Point;
 import java.util.ArrayList;
 
 import app.dct.DCTEngine;
+import app.utils.ArrayUtils;
 import app.utils.Discardable;
 import app.utils.MacroBlock;
 
@@ -351,9 +352,7 @@ public class Vector implements Discardable {
 			clone[2] = new double[halfSize][halfSize];
 			
 			for (int n = 0; n < ref.length; n++) {
-				for (int j = 0; j < ref[n].length; j++) {
-					System.arraycopy(ref[n][j], 0, clone[n][j], 0, ref[n][j].length);
-				}
+				ArrayUtils.copy2DArray(ref[n], 0, 0, clone[n], 0, 0, ref[n].length, ref[n].length);
 			}
 			
 			copy.add(clone);

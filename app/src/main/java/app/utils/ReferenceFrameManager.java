@@ -115,7 +115,7 @@ public class ReferenceFrameManager {
 	}
 	
 	/**
-	 * Return the current number of references which can be accessed.
+	 * Return the current number of references that can be accessed.
 	 * 
 	 * @return The number of available reference frames.
 	 */

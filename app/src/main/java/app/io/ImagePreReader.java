@@ -15,6 +15,7 @@ public class ImagePreReader {
 	
 	private final int maxHoldImages = 3;
 	private ConcurrentLinkedQueue<PixelRaster> queue = new ConcurrentLinkedQueue<PixelRaster>();
+	private boolean allReadIn = false;
 	
 	public ImagePreReader(final int framesToReadIn, File framesDir) {
 		this.framesToReadIn = framesToReadIn;
@@ -23,7 +24,7 @@ public class ImagePreReader {
 	}
 	
 	public PixelRaster getNextImage() {
-		while (this.queue.isEmpty());
+		while (this.queue.isEmpty() && !this.allReadIn);
 		return this.queue.poll();
 	}
 	
@@ -44,7 +45,7 @@ public class ImagePreReader {
 				File file = getAwaitedFile(framesDir, currentImage++, ".bmp");
 				
 				if (!file.exists()) {
-					queue.add(new PixelRaster());
+					System.err.println("File \"" + file.getAbsolutePath() + "\" does not exist! > Skip");
 					continue;
 				}
 
@@ -55,6 +56,8 @@ public class ImagePreReader {
 					e.printStackTrace();
 				}
 			}
+			
+			allReadIn = true;
 		});
 		
 		task.setName("ImagePreReader");

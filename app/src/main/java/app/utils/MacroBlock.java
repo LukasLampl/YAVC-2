@@ -610,26 +610,9 @@ public class MacroBlock implements Discardable {
 		int halfPosX = posX / 2;
 		int halfPosY = posY / 2;
 		double[][][] res = cache == null ? getArray(size) : cache[ColorManager.Y_INDEX].length < size ? getArray(size) : cache;
-		
-		for (int x = 0; x < size; x++) {
-			int actualX = posX + x;
-			
-			for (int y = 0; y < size; y++) {
-				int actualY = posY + y;
-				res[ColorManager.Y_INDEX][x][y] = this.Y[actualX][actualY];
-			}
-		}
-		
-		for (int x = 0; x < halfSize; x++) {
-			int actualX = halfPosX + x;
-			
-			for (int y = 0; y < halfSize; y++) {
-				int actualY = halfPosY + y;
-				res[ColorManager.U_INDEX][x][y] = this.U[actualX][actualY];
-				res[ColorManager.V_INDEX][x][y] = this.V[actualX][actualY];
-			}
-		}
-		
+		ArrayUtils.copy2DArray(this.Y, posX, posY, res[ColorManager.Y_INDEX], 0, 0, size, size);
+		ArrayUtils.copy2DArray(this.U, halfPosX, halfPosY, res[ColorManager.U_INDEX], 0, 0, halfSize, halfSize);
+		ArrayUtils.copy2DArray(this.V, halfPosX, halfPosY, res[ColorManager.V_INDEX], 0, 0, halfSize, halfSize);
 		return res;
 	}
 	

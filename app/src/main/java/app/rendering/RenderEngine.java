@@ -85,8 +85,8 @@ public class RenderEngine {
 				long sIT = System.currentTimeMillis();
 				PixelRaster referencedFrame = v.getReference() == -1 ? null : refs.getByReference(v.getReference());
 				Point pos = v.getPosition();
-				int EndX = pos.x + v.getSpanX();
-				int EndY = pos.y + v.getSpanY();
+				int endX = pos.x + v.getSpanX();
+				int endY = pos.y + v.getSpanY();
 				int size = v.getSize();
 				iT += (System.currentTimeMillis() - sIT);
 				long sPBT = System.currentTimeMillis();
@@ -102,14 +102,15 @@ public class RenderEngine {
 				double[][][] reconstructedColor = reconstructColors(coeffs, block, size, block);
 				rT += (System.currentTimeMillis() - srT);
 				long sPT = System.currentTimeMillis();
+				
 				for (int x = 0; x < size; x++) {
-					int posX = EndX + x;
+					int posX = endX + x;
 					int subSX = x / 2;
 					if (posX < 0 || posX >= dim.width) continue;
 					if (pos.x + x < 0 || pos.x + x >= dim.width) continue;
 					
 					for (int y = 0; y < size; y++) {
-						int posY = EndY + y;
+						int posY = endY + y;
 						int subSY = y / 2;
 						if (posY < 0 || posY >= dim.height) continue;
 						if (pos.y + y < 0 || pos.y + y >= dim.height) continue;
@@ -160,7 +161,7 @@ public class RenderEngine {
 		return reconstructedColor;
 	}
 	
-	public static BufferedImage[] renderQuadtree(ArrayList<MacroBlock> leaveNodes, Dimension dim) {
+	public static BufferedImage[] renderQuadtree(List<MacroBlock> leaveNodes, Dimension dim) {
 		BufferedImage[] render = new BufferedImage[3];
 		render[0] = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
 		render[1] = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);

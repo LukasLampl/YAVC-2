@@ -514,7 +514,7 @@ public class PixelRaster implements Discardable {
 			this.V[subSX][subSY] = (this.V[subSX][subSY] + YUV[ColorManager.V_INDEX]) / 2;
 		}
 	}
-	
+
 	/**
 	 * <p>Sets the desired chroma value at the
 	 * desired position.</p>
@@ -627,35 +627,16 @@ public class PixelRaster implements Discardable {
 		int halfPosY = positionY / 2;
 		int halfDimWidth = this.dim.width / 2;
 		int halfDimHeight = this.dim.height / 2;
+		int xToCopy = positionX + size >= this.dim.width ? this.dim.width - positionX : size;
+		int yToCopy = positionY + size >= this.dim.height ? this.dim.height - positionY : size;
 		
-		for (int y = 0; y < size; y++) {
-			int absoluteY = positionY + y;
-			int xToCopy = positionX + size > this.dim.width ? this.dim.width - positionX : size;
-			
-			if (absoluteY >= this.dim.height) {
-				continue;
-			}
-			
-			for (int x = 0; x < xToCopy; x++) {
-				int absoluteX = positionX + x;
-				res[ColorManager.Y_INDEX][x][y] = this.Y[absoluteX][absoluteY];
-			}
-		}
+		ArrayUtils.copy2DArray(this.Y, positionX, positionY, res[ColorManager.Y_INDEX], 0, 0, xToCopy, yToCopy);
 		
-		for (int y = 0; y < halfSize; y++) {
-			int absoluteY = halfPosY + y;
-			int xToCopy = halfPosX + halfSize > halfDimWidth ? halfDimWidth - halfPosX : halfSize;
-			
-			if (absoluteY >= halfDimHeight) {
-				continue;
-			}
-			
-			for (int x = 0; x < xToCopy; x++) {
-				int absoluteX = halfPosX + x;
-				res[ColorManager.U_INDEX][x][y] = this.U[absoluteX][absoluteY];
-				res[ColorManager.V_INDEX][x][y] = this.V[absoluteX][absoluteY];
-			}
-		}
+		xToCopy = halfPosX + halfSize >= halfDimWidth ? halfDimWidth - halfPosX : halfSize;
+		yToCopy = halfPosY + halfSize >= halfDimHeight ? halfDimHeight - halfPosY : halfSize;
+
+		ArrayUtils.copy2DArray(this.U, halfPosX, halfPosY, res[ColorManager.U_INDEX], 0, 0, xToCopy, yToCopy);
+		ArrayUtils.copy2DArray(this.V, halfPosX, halfPosY, res[ColorManager.V_INDEX], 0, 0, xToCopy, yToCopy);
 		
 		return res;
 	}

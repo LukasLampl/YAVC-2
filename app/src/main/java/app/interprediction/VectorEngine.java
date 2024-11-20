@@ -34,7 +34,6 @@ import app.config;
 import app.rendering.ColorManager;
 import app.utils.LoadDistributor;
 import app.utils.MacroBlock;
-import app.utils.MathUtils;
 import app.utils.PixelRaster;
 import app.utils.ReferenceFrameManager;
 
@@ -168,20 +167,22 @@ public class VectorEngine {
 			MacroBlock[] canidates = new MacroBlock[maxSize];
 			Vector[] vecs = new Vector[blocksToBeSearched.size()];
 			int vectorIndex = 0;
-			int canidate = 0;
 			
 			for (MacroBlock block : blocksToBeSearched) {
-				canidate = 0;
-				
-				for (int n = 0; n < maxSize && n <= config.MAX_REFERENCES; n++) {
-					MacroBlock bestMatch = getBestMatchingMacroBlock(refs.get(n), block, n);
-					canidates[canidate++] = bestMatch;
+				try {
+					int canidate = 0;
+					
+					for (int n = 0; n < maxSize && n <= config.MAX_REFERENCES; n++) {
+						MacroBlock bestMatch = getBestMatchingMacroBlock(refs.get(n), block, n);
+						canidates[canidate++] = bestMatch;
+					}
+					
+					MacroBlock best = evaluateBestGuess(canidates);
+					Vector vec = constructMovementVector(refs, best, block);
+					vecs[vectorIndex++] = vec;
+				} catch (Exception e) {
+					e.printStackTrace();
 				}
-				
-				MacroBlock best = evaluateBestGuess(canidates);
-				Vector vec = constructMovementVector(refs, best, block);
-				block.setConvertedToVector(true);
-				vecs[vectorIndex++] = vec;
 			}
 			
 			for (Vector vec : vecs) {
@@ -241,6 +242,7 @@ public class VectorEngine {
 		
 		if (bestMatch != null) {
 			int size = blockToBeSearched.getSize();
+			blockToBeSearched.setConvertedToVector(true);
 			
 			PixelRaster referenceRaster = refs.get(config.MAX_REFERENCES - bestMatch.getReference());
 			double[][][] referenceColor = referenceRaster.getPixelBlock(bestMatch.getPosition(), size, null);
@@ -321,7 +323,8 @@ public class VectorEngine {
 			getHexagonPoints(radius, centerPoint, searchPoints);
 			
 			for (Point p : searchPoints) {
-				if (!isHexagonPointInSearchWindow(blockPos, searchWindow, p, dim)) {
+				if (!isHexagonPointInSearchWindow(blockPos, searchWindow, p, dim)
+					|| !isPointInFrame(p, dim)) {
 					continue;
 				}
 				
@@ -347,7 +350,8 @@ public class VectorEngine {
 		searchPoints = getSmallHexagonSearchPoints(centerPoint, radius);
 		
 		for (Point p : searchPoints) {
-			if (!isHexagonPointInSearchWindow(blockPos, searchWindow, p, dim)) {
+			if (!isHexagonPointInSearchWindow(blockPos, searchWindow, p, dim)
+				|| !isPointInFrame(p, dim)) {
 				continue;
 			}
 			
@@ -415,6 +419,26 @@ public class VectorEngine {
 			|| (edgeOfHexagon.x < 0)
 			|| (edgeOfHexagon.y > dim.height)
 			|| (edgeOfHexagon.y < 0)) {
+			return false;
+		}
+		
+		return true;
+	}
+	
+	/**
+	 * Checks if a given Point is in a given Dimension.
+	 * 
+	 * @param pos	Position of the Point.
+	 * @param dim	The Dimension in which the point is estimated to be in.
+	 * @return
+	 * <ul>
+	 * <li>{@code true} - When the Point is in the Dimension.
+	 * <li>{@code false} - When the Point is not in the Dimension.
+	 * </ul>
+	 */
+	private boolean isPointInFrame(final Point pos, final Dimension dim) {
+		if (pos.x >= dim.width || pos.y >= dim.height
+			|| pos.x < 0 || pos.y < 0) {
 			return false;
 		}
 		
@@ -522,15 +546,10 @@ public class VectorEngine {
 		double[][] U = new double[halfSize][halfSize];
 		double[][] V = new double[halfSize][halfSize];
 		
-		double YThreshold = 1.0, UVThreshold = 2.0;
-		
 		for (int y = 0; y < size; y++) {
 			for (int x = 0; x < size; x++) {
 				double diff = col1[ColorManager.Y_INDEX][x][y] - col2[ColorManager.Y_INDEX][x][y];
-				
-				if (MathUtils.abs(diff) > YThreshold) {
-					Y[x][y] = diff;
-				} 
+				Y[x][y] = diff;
 			}
 		}
 		
@@ -538,14 +557,8 @@ public class VectorEngine {
 			for (int x = 0; x < halfSize; x++) {
 				double diffU = col1[ColorManager.U_INDEX][x][y] - col2[ColorManager.U_INDEX][x][y];
 				double diffV = col1[ColorManager.V_INDEX][x][y] - col2[ColorManager.V_INDEX][x][y];
-				
-				if (MathUtils.abs(diffU) > UVThreshold) {
-					U[x][y] = diffU;
-				}
-				
-				if (MathUtils.abs(diffV) > UVThreshold) {
-					V[x][y] = diffV;
-				}
+				U[x][y] = diffU;
+				V[x][y] = diffV;
 			}
 		}
 		
