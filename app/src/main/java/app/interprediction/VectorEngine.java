@@ -584,23 +584,38 @@ public class VectorEngine {
 	 * @param size	Size of the color arrays.
 	 */
 	private double getMSEOfColors(double[][][] col1, double[][][] col2, int size) {
+		double[][] Y1 = col1[ColorManager.Y_INDEX];
+		double[][] Y2 = col2[ColorManager.Y_INDEX];
+		double[][] U1 = col1[ColorManager.U_INDEX];
+		double[][] U2 = col2[ColorManager.U_INDEX];
+		double[][] V1 = col1[ColorManager.V_INDEX];
+		double[][] V2 = col2[ColorManager.V_INDEX];
+		
+		
 		double resY = 0;
 		double resU = 0;
 		double resV = 0;
 		int halfSize = size / 2;
 		
-		for (int y = 0; y < size; y++) {
-			for (int x = 0; x < size; x++) {
-				double deltaY = col1[ColorManager.Y_INDEX][x][y] - col2[ColorManager.Y_INDEX][x][y];
+		for (int x = 0; x < size; x++) {
+			double[] lY1 = Y1[x];
+			double[] lY2 = Y2[x];
+			
+			for (int y = 0; y < size; y++) {
+				double deltaY = lY1[y] - lY2[y];
 				resY += deltaY * deltaY;
 			}
 		}
 		
-		for (int y = 0; y < halfSize; y++) {
-			for (int x = 0; x < halfSize; x++) {
-				double deltaU = col1[ColorManager.U_INDEX][x][y] - col2[ColorManager.U_INDEX][x][y];
-				double deltaV = col1[ColorManager.V_INDEX][x][y] - col2[ColorManager.V_INDEX][x][y];
-				
+		for (int x = 0; x < halfSize; x++) {
+			double[] lU1 = U1[x];
+			double[] lU2 = U2[x];
+			double[] lV1 = V1[x];
+			double[] lV2 = V2[x];
+			
+			for (int y = 0; y < halfSize; y++) {
+				double deltaU = lU1[y] - lU2[y];
+				double deltaV = lV1[y] - lV2[y];
 				resU += deltaU * deltaU;
 				resV += deltaV * deltaV;
 			}
