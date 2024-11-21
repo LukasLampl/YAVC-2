@@ -29,7 +29,7 @@ import java.util.List;
 import app.ArgumentProcessor;
 import app.exceptions.CorruptedFileException;
 import app.interprediction.Vector;
-import app.interprediction.VectorConverter;
+import app.interprediction.VectorConverterPool;
 import app.rendering.ColorManager;
 import app.utils.ListManager;
 import app.utils.MacroBlock;
@@ -553,9 +553,8 @@ public class Protocol {
 		ArrayList<Integer> indexesOfVectors = new ArrayList<Integer>();
 		precalculateVectorIndexes(data, indexesOfVectors);
 		
-		VectorConverter converter = new VectorConverter(data, indexesOfVectors, vectorListManager, singleThread);
-		converter.start();
-		converter.awaitTermination();
+		VectorConverterPool pool = new VectorConverterPool(indexesOfVectors, data, vectorListManager);
+		pool.run();
 		
 		if (vectorListManager.getList().size() != estimatedLength) {
 			throw new CorruptedFileException("The amount of the read-in vectors appear to be unequal to the written vectors.");

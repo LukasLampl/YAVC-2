@@ -2,81 +2,63 @@ package app.interprediction;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.RecursiveTask;
 
 import app.io.Protocol;
 import app.utils.ListManager;
-import app.utils.LoadDistributor;
 
-public class VectorConverter {
-	private final int numOfThreads;
-	private ConversionThread[] threads = null;
-	private LoadDistributor<Integer> dist = null;
+public class VectorConverterPool {
+	private static final int MAX_WORK = 512*512;
+	private ForkJoinPool pool = null;
+	private List<Integer> indexes = null;
+	private byte[] data = null;
 	private ListManager<Vector> vectorManager = null;
 	
-	private AtomicInteger currentLoadIndex = new AtomicInteger(0);
-	private byte[] data = null;
-	
-	public VectorConverter(byte[] data, ArrayList<Integer> indexes, ListManager<Vector> vectorListManager, boolean singleThread) {
+	public VectorConverterPool(List<Integer> indexes, byte[] data, ListManager<Vector> vectorManager) {
+		this.pool = new ForkJoinPool();
+		this.indexes = indexes;
 		this.data = data;
-		this.vectorManager = vectorListManager;
-		this.numOfThreads = !singleThread ? Runtime.getRuntime().availableProcessors() : 1;
-		this.threads = new ConversionThread[this.numOfThreads];
-		
-		if (!singleThread) {
-			this.dist = new LoadDistributor<Integer>(indexes.size() / 2);
-			this.dist.setAll(indexes);
-			this.dist.compute(indexes.size());
-			
-			for (int i = 0; i < this.numOfThreads; i++) {
-				this.threads[i] = new ConversionThread();
-				this.threads[i].setName("Vector-converter-thread_#" + i);
-			}
-		} else {
-			this.dist = new LoadDistributor<Integer>(1);
-			this.dist.setAll(indexes);
-			this.dist.compute(indexes.size());
-			this.threads[0] = new ConversionThread();
-			this.threads[0].setName("Single-Vector-Conversion-Thread");
-		}
+		this.vectorManager = vectorManager;
 	}
 	
-	private List<Integer> getLoad() {
-		int index = this.currentLoadIndex.getAndIncrement();
-		
-		if (index >= this.dist.getNumberOfChunks()) {
-			return null;
-		}
-		
-		return this.dist.getLoadOf(index);
+	public void run() {
+		this.pool.invoke(new VectorConversionTask(0, this.indexes.size()));
+		this.pool.shutdown();
 	}
 	
-	public void start() {
-		for (ConversionThread t : this.threads) {
-			t.start();
-		}
-	}
-	
-	public void awaitTermination() {
-		for (ConversionThread t : this.threads) {
-			try {
-				t.join();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-		
-		for (ConversionThread t : this.threads) {
-			this.vectorManager.addAll(t.getResult());
-		}
-	}
-	
-	private class ConversionThread extends Thread {
-		private ArrayList<Vector> tempList = new ArrayList<Vector>();
+	class VectorConversionTask extends RecursiveTask<Void> {
+		private static final long serialVersionUID = -1416920943935831433L;
+		private int start = 0;
+		private int end = 0;
 		private double[][][] fileDataCache = new double[7][][]; //First dim for index, second for optional two channels, thrid the actual cache
 		
-		public ConversionThread() {
-			initFileDataCache();
+		public VectorConversionTask(int start, int end) {
+			this.start = start;
+			this.end = end;
+		}
+		
+		@Override
+		protected Void compute() {
+			int totalWorkLoad = 0;
+			
+			for (int i = this.start; i < this.end; i++) {
+				totalWorkLoad += indexes.get(i);
+			}
+			
+			if (totalWorkLoad <= MAX_WORK) {
+				initFileDataCache();
+				execute();
+			} else {
+				int middle = (this.start + this.end) / 2;
+				VectorConversionTask tl = new VectorConversionTask(this.start, middle);
+				VectorConversionTask tr = new VectorConversionTask(middle, this.end);
+				tl.fork();
+				tl.join();
+				tr.compute();
+			}
+			
+			return null;
 		}
 		
 		private void initFileDataCache() {
@@ -111,45 +93,34 @@ public class VectorConverter {
 			}
 		}
 		
-		@Override
-		public void run() {
-			List<Integer> load = null;
-			
-			while ((load = getLoad()) != null) {
-				for (Integer rawIndex : load) {
-					int index = rawIndex.intValue();
-					int posX = Protocol.getPosition(data[index], data[index + 1]);
-					int posY = Protocol.getPosition(data[index + 2], data[index + 3]);
-					int spanX = Protocol.getVectorSpanInt(data[index + 4]);
-					int spanY = Protocol.getVectorSpanInt(data[index + 5]);
-					int[] refAndSize = Protocol.getReferenceAndSizeInt(data[index + 6]);
-					int ref = refAndSize[0];
-					int size = refAndSize[1];
-					
-					Vector vec = vectorManager.getCachedObj();
-					
-					if (vec == null) {
-						vec = new Vector(posX, posY, size);
-					}
-					
-					vec.setSize(size);
-					vec.setPosition(posX, posY);
-					
-					ArrayList<double[][][]> diffs = getVectorDifferences(data, Protocol.VECTOR_HEADER_LENGTH + index, size, vec);
-					vec.setAbsolutedifferenceDCTCoefficients(diffs);
-					vec.setSpanX(spanX);
-					vec.setSpanY(spanY);
-					vec.setReference(ref);
-					this.tempList.add(vec);
+		public void execute() {
+			for (int i = this.start; i < this.end; i++) {
+				int index = indexes.get(i).intValue();
+				int posX = Protocol.getPosition(data[index], data[index + 1]);
+				int posY = Protocol.getPosition(data[index + 2], data[index + 3]);
+				int spanX = Protocol.getVectorSpanInt(data[index + 4]);
+				int spanY = Protocol.getVectorSpanInt(data[index + 5]);
+				int[] refAndSize = Protocol.getReferenceAndSizeInt(data[index + 6]);
+				int ref = refAndSize[0];
+				int size = refAndSize[1];
+				Vector vec = vectorManager.getCachedObj();
+				
+				if (vec == null) {
+					vec = new Vector(posX, posY, size);
 				}
+				
+				vec.setSize(size);
+				vec.setPosition(posX, posY);
+				
+				ArrayList<double[][][]> diffs = getVectorDifferences(data, Protocol.VECTOR_HEADER_LENGTH + index, size, vec);
+				vec.setAbsolutedifferenceDCTCoefficients(diffs);
+				vec.setSpanX(spanX);
+				vec.setSpanY(spanY);
+				vec.setReference(ref);
+				vectorManager.add(vec);
 			}
 		}
-		
-		public ArrayList<Vector> getResult() {
-			return this.tempList;
-		}
-		
-		
+
 		private ArrayList<double[][][]> getVectorDifferences(byte[] vectorPart, int startPos, int size, Vector cachedVector) {
 			ArrayList<double[][][]> cachedGroups = cachedVector.getDCTCoefficientsOfAbsoluteColorDifference();
 			ArrayList<double[][][]> DCTCoeffGroups = new ArrayList<double[][][]>();
