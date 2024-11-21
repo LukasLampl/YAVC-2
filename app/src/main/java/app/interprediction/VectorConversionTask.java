@@ -1,3 +1,24 @@
+/////////////////////////////////////////////////////////////
+///////////////////////    LICENSE    ///////////////////////
+/////////////////////////////////////////////////////////////
+/*
+The YAVC video / frame compressor compresses frames.
+Copyright (C) 2024  Lukas Nian En Lampl
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 package app.interprediction;
 
 import java.util.ArrayList;
@@ -7,17 +28,79 @@ import java.util.concurrent.RecursiveTask;
 import app.io.Protocol;
 import app.utils.ListManager;
 
+/**
+ * The {@code VectorConversionTask} class is a Recursive splitting
+ * task that allows to process a byte array containing the vectors and
+ * a list of the indexes within a very short amount of time.
+ * 
+ * <p><b>Stats:</b><br>
+ * Processing time for <u>~15.000</u> Vectors on a i7-7700HQ @ 2.80 GHz:<br><br>
+ * <table border="1">
+ * 	<tr>
+ * 		<td>Min</td><td>Max</td><td>Avg.</td>
+ * 	</tr>
+ * 	<tr>
+ * 		<td>7ms</td><td>86ms</td><td>~12ms</td>
+ * 	</tr>
+ * </table>
+ * <br>
+ * <i>The data is from the 21.11.2024 and might not represent the current stats.
+ * It is only there for an orientation.</i>
+ * </p>
+ * 
+ * @author Lukas Lampl
+ * @since 1.2.5 [Optimized prototype]
+ */
 public class VectorConversionTask extends RecursiveTask<Void> {
 	private static final long serialVersionUID = -1416920943935831433L;
+	
+	/**
+	 * Determines the total amount of work per Recursive task measured in pixels.
+	 */
 	private static final int MAX_WORK = 256 * 256;
+	
+	/**
+	 * Holds the start index in the indexes array.
+	 */
 	private int start = 0;
+	
+	/**
+	 * Holds the end index in the indexes array.
+	 */
 	private int end = 0;
+	
+	/**
+	 * A possible cache structure to reduce stress on GC, when the vectors
+	 * are read out.
+	 */
 	private double[][][] fileDataCache = null;
 	
+	/**
+	 * Holds the indexes of each vector.
+	 */
 	private List<Integer> indexes = null;
+	
+	/**
+	 * The raw data that contains all vectors.
+	 */
 	private byte[] data = null;
+	
+	/**
+	 * The vector manager in which to write all read in vector for
+	 * further processing.
+	 */
 	private ListManager<Vector> vectorManager = null;
 	
+	/**
+	 * Initializes a {@code VectorConversionTask} with the given
+	 * boundaries and data.
+	 * 
+	 * @param start			From where to start working in the indexes array.
+	 * @param end			To where working in the indexes array.
+	 * @param indexes		An array that contains all vector indexes/positions in the raw data.
+	 * @param data			Raw data containing the vectors in byte form.
+	 * @param vectorManager	The vector manager in which to write the vectors into.
+	 */
 	public VectorConversionTask(int start, int end, List<Integer> indexes, byte[] data, ListManager<Vector> vectorManager) {
 		this.start = start;
 		this.end = end;
@@ -26,6 +109,11 @@ public class VectorConversionTask extends RecursiveTask<Void> {
 		this.vectorManager = vectorManager;
 	}
 	
+	/**
+	 * Computes how much workload a task would have with the current
+	 * start and end and based on that decides whether to split further
+	 * or execute the vector translation.
+	 */
 	@Override
 	protected Void compute() {
 		int totalWorkload = getWorkloadOfThread();
@@ -43,6 +131,18 @@ public class VectorConversionTask extends RecursiveTask<Void> {
 		return null;
 	}
 	
+	/**
+	 * Calculates the current workload of the RecursiveTask
+	 * by adding the sizes of the vectors and returning it.
+	 * 
+	 * <p><b>Note:</b><br>
+	 * Since the task gets indexes the length of an object is
+	 * equal to this: {@code index_obj2 - index_obj1} or expressed
+	 * in other terms {@code obj[i] - obj[i - 1]}.
+	 * </p>
+	 * 
+	 * @return The workload of the current task measured in pixels.
+	 */
 	private int getWorkloadOfThread() {
 		int totalWorkload = 0;
 		
@@ -58,6 +158,11 @@ public class VectorConversionTask extends RecursiveTask<Void> {
 		return totalWorkload;
 	}
 	
+	/**
+	 * Sets up the {@link #fileDataCache} to assure that the
+	 * vector converter can use caches and thus reducing GC
+	 * pressure.
+	 */
 	private void initFileDataCache() {
 		//int[] sizes = {2 * 2, 4 * 4, 8 * 8, 16 * 16, 32 * 32, 64 * 64, 128 * 128};
 		int[] sizes = {4, 16, 64, 256, 1024, 4096, 16384};
@@ -71,6 +176,13 @@ public class VectorConversionTask extends RecursiveTask<Void> {
 		}
 	}
 	
+	/**
+	 * Converts a given length into an index.
+	 * 
+	 * @param length	The length to convert.
+	 * @return The index in the {@link #fileDataCache}.
+	 * @throws IllegalArgumentException	When the given length is not supported.
+	 */
 	private int convertLengthToIndex(int length) {
 		switch (length) {
 		case 4: //2 * 2
@@ -92,6 +204,12 @@ public class VectorConversionTask extends RecursiveTask<Void> {
 		}
 	}
 	
+	/**
+	 * Executes the given task by working the indexes from the given start
+	 * and end down. The function essentially creates the vectors based on the
+	 * {@link #data} and {@link #indexes}, in the end it adds the vectors to
+	 * the {@link #vectorManager}
+	 */
 	public void execute() {
 		for (int i = this.start; i < this.end; i++) {
 			int index = indexes.get(i).intValue();
@@ -120,6 +238,17 @@ public class VectorConversionTask extends RecursiveTask<Void> {
 		}
 	}
 
+	/**
+	 * Converts a raw data stream into the representing vector color differences.
+	 * First the data is received out of the data stream, then it is processed by
+	 * setting the according values.
+	 * 
+	 * @param vectorPart	The raw data containing the DCT-II coefficients.
+	 * @param startPos		The position from where to start getting the DCT-II coefficients.
+	 * @param size			The size of the vector.
+	 * @param cachedVector	A Vector that can be overwritten (GC reasons).
+	 * @return The converted vector color difference.
+	 */
 	private ArrayList<double[][][]> getVectorDifferences(byte[] vectorPart, int startPos, int size, Vector cachedVector) {
 		ArrayList<double[][][]> cachedGroups = cachedVector.getDCTCoefficientsOfAbsoluteColorDifference();
 		ArrayList<double[][][]> DCTCoeffGroups = new ArrayList<double[][][]>();
@@ -182,6 +311,13 @@ public class VectorConversionTask extends RecursiveTask<Void> {
 		return DCTCoeffGroups;
 	}
 	
+	/**
+	 * Creates an empty 3D array with the given size
+	 * and subsampled sizes. (4:2:0)
+	 * 
+	 * @param size	The size of the array.
+	 * @return The created 3D array.
+	 */
 	private double[][][] getArray(int size) {
 		int halfSize = size / 2;
 		double[][][] arr = new double[3][][];
@@ -191,6 +327,14 @@ public class VectorConversionTask extends RecursiveTask<Void> {
 		return arr;
 	}
 	
+	/**
+	 * Gets the DCT-II coefficients out of the raw data stream.
+	 * 
+	 * @param vectorPart	The raw data from which to get the DCT-II coefficients.
+	 * @param startPos		Position from where to start getting the DCT-II coefficients.
+	 * @param size			Size of the vector.
+	 * @return An array with the DCT-II coefficients.
+	 */
 	private double[][] getDCTCoeffsOutOfFile(byte[] vectorPart, int startPos, int size) {
 		int halfSize = size / 2;
 		int YLength = size * size;
