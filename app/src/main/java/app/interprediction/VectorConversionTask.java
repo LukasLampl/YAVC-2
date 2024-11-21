@@ -256,59 +256,82 @@ public class VectorConversionTask extends RecursiveTask<Void> {
 		int YLength = size * size;
 		
 		if (size == 4) {
-			double[][][] res = cachedGroups == null ? getArray(4) : cachedGroups.size() > 0 ? cachedGroups.remove(0) : getArray(4);
-			
-			for (int x = 0, i = 0; x < 4; x++) {
-				for (int y = 0; y < 4; y++) {
-					res[0][x][y] = data[0][i++];
-				}
-			}
-
-			for (int x = 0, i = 0; x < 2; x++) {
-				for (int y = 0; y < 2; y++) {
-					res[1][x][y] = data[1][i];
-					res[2][x][y] = data[2][i++];
-				}
-			}
-			
-			DCTCoeffGroups.add(res);
+			DCTCoeffGroups.add(process4x4DCTCoefficients(cachedGroups, data));
 		} else {
 			boolean wasCachedGroup4x4Block = cachedGroups == null ? true : cachedGroups.size() == 1;
 			
 			for (int u = 0; u < YLength; u += 64) {
-				int uFrac = (u / 4);
-				double[][][] res;
-				
-				if (cachedGroups == null) {
-					res = getArray(8);
-				} else {
-					if (cachedGroups.isEmpty()) {
-						res = getArray(8);
-					} else if (wasCachedGroup4x4Block) {
-						res = getArray(8);
-					} else {
-						res = cachedGroups.remove(0);
-					}
-				}
-				
-				for (int x = 0, i = 0; x < 8; x++) {
-					for (int y = 0; y < 8; y++) {
-						res[0][x][y] = data[0][u + i++];
-					}
-				}
-				
-				for (int x = 0, i = 0; x < 4; x++) {
-					for (int y = 0; y < 4; y++) {
-						res[1][x][y] = data[1][uFrac + i];
-						res[2][x][y] = data[2][uFrac + i++];
-					}
-				}
-				
-				DCTCoeffGroups.add(res);
+				DCTCoeffGroups.add(processNon4x4Coefficients(cachedGroups, data, u, wasCachedGroup4x4Block));
 			}
 		}
 		
 		return DCTCoeffGroups;
+	}
+	
+	/**
+	 * Processes a sub-block of a non 4x4 block.
+	 * 
+	 * @param cachedGroups				Cached double arrays. (GC reasons)
+	 * @param data						The data to put.
+	 * @param fraction					The fraction in which to put the data into.
+	 * @param wasCachedGroup4x4Block	Flag for whether the previous group was a 4x4 block.
+	 * @return An array filled with the data.
+	 */
+	private double[][][] processNon4x4Coefficients(ArrayList<double[][][]> cachedGroups,
+			double[][] data, int fraction, boolean wasCachedGroup4x4Block) {
+		int uFrac = (fraction / 4);
+		double[][][] res;
+		
+		if (cachedGroups == null) {
+			res = getArray(8);
+		} else {
+			if (cachedGroups.isEmpty() || wasCachedGroup4x4Block) {
+				res = getArray(8);
+			} else {
+				res = cachedGroups.remove(0);
+			}
+		}
+		
+		for (int x = 0, i = 0; x < 8; x++) {
+			for (int y = 0; y < 8; y++) {
+				res[0][x][y] = data[0][fraction + i++];
+			}
+		}
+		
+		for (int x = 0, i = 0; x < 4; x++) {
+			for (int y = 0; y < 4; y++) {
+				res[1][x][y] = data[1][uFrac + i];
+				res[2][x][y] = data[2][uFrac + i++];
+			}
+		}
+		
+		return res;
+	}
+	
+	/**
+	 * Processes a single 4x4 block.
+	 * 
+	 * @param cachedGroups	A cache of double arrays. (GC reasons)
+	 * @param data			The data to put.
+	 * @return An array filled with the coefficients.
+	 */
+	private double[][][] process4x4DCTCoefficients(ArrayList<double[][][]> cachedGroups, double[][] data) {
+		double[][][] res = cachedGroups == null ? getArray(4) : cachedGroups.size() > 0 ? cachedGroups.remove(0) : getArray(4);
+		
+		for (int x = 0, i = 0; x < 4; x++) {
+			for (int y = 0; y < 4; y++) {
+				res[0][x][y] = data[0][i++];
+			}
+		}
+
+		for (int x = 0, i = 0; x < 2; x++) {
+			for (int y = 0; y < 2; y++) {
+				res[1][x][y] = data[1][i];
+				res[2][x][y] = data[2][i++];
+			}
+		}
+		
+		return res;
 	}
 	
 	/**
