@@ -22,7 +22,7 @@ public class ArrayUtils {
 	 * 											or a position is greater than the array.
 	 * @throws IllegalArgumentException	When either the {@code src} of {@code dest} is {@code null}.
 	 */
-	public static void copy2DArray(double[][] src, final int srcX, final int srcY,
+	public static void copy2DArray(final double[][] src, final int srcX, final int srcY,
 									double[][] dest, final int destX, final int destY,
 									int copyWidth, int copyHeight) {
 		if (src == null || dest == null) {
@@ -71,7 +71,7 @@ public class ArrayUtils {
 	 * @param copyWidth		The length to copy in the x direction.
 	 * @param copyHeight	The length to copy in the y direction.
 	 */
-	private static void copy2DArrayManually(double[][] src, final int srcX, final int srcY,
+	private static void copy2DArrayManually(final double[][] src, final int srcX, final int srcY,
 											double[][] dest, final int destX, final int destY,
 											int copyWidth, int copyHeight) {
 		for (int x = 0; x < copyWidth; x++) {

@@ -118,7 +118,7 @@ public class MacroBlock implements Discardable {
 	 * @throws NullPointerException	When the position is null
 	 * @throws IllegalArgumentException	If the size is below 0
 	 */
-	public MacroBlock(final int x, final int y, int size, boolean initColor) {
+	public MacroBlock(final int x, final int y, final int size, final boolean initColor) {
 		if (size < 0 || size > 65535) {
 			throw new IllegalArgumentException("The size of " + size + " is not supported!");
 		}
@@ -129,7 +129,7 @@ public class MacroBlock implements Discardable {
 		this.squared_size = size * size;
 		
 		if (initColor) {
-			int halfSize = size / 2;
+			final int halfSize = size / 2;
 			this.Y = new double[size][size];
 			this.U = new double[halfSize][halfSize];
 			this.V = new double[halfSize][halfSize];
@@ -157,7 +157,7 @@ public class MacroBlock implements Discardable {
 	 * 
 	 * @throws IllegalArgumentException	If the size is below 0
 	 */
-	public MacroBlock(final int x, final int y, int size, double[][] Y, double[][] U, double[][] V) {
+	public MacroBlock(final int x, final int y, final int size, final double[][] Y, final double[][] U, final double[][] V) {
 		if (size < 0 || size > 65535) {
 			throw new IllegalArgumentException("The size of " + size + " is not supported!");
 		} else if (Y == null) {
@@ -202,7 +202,7 @@ public class MacroBlock implements Discardable {
 	 * 
 	 * @throws IllegalArgumentException	If the size is below 0
 	 */
-	public MacroBlock(final int x, final int y, int size, double[][][] colors) {
+	public MacroBlock(final int x, final int y, final int size, final double[][][] colors) {
 		if (size < 0 || size > 65535) {
 			throw new IllegalArgumentException("The size of " + size + " is not supported!");
 		} else if (colors[ColorManager.Y_INDEX] == null) {
@@ -234,7 +234,7 @@ public class MacroBlock implements Discardable {
 	 * <li>If the V component is null
 	 * </ul>
 	 */
-	public void setColorComponents(double[][][] colors) {
+	public void setColorComponents(final double[][][] colors) {
 		if (colors[ColorManager.Y_INDEX] == null) {
 			throw new NullPointerException("MacroBlock can't have a NULL Luma-Y channel");
 		} else if (colors[ColorManager.U_INDEX] == null) {
@@ -273,7 +273,7 @@ public class MacroBlock implements Discardable {
 	 * <li>If the A component is null
 	 * </ul>
 	 */
-	public void setColorComponents(double[][] Y, double[][] U, double[][] V) {
+	public void setColorComponents(final double[][] Y, final double[][] U, final double[][] V) {
 		if (Y == null) {
 			throw new NullPointerException("MacroBlock can't have a NULL Luma-Y channel");
 		} else if (U == null) {
@@ -329,8 +329,8 @@ public class MacroBlock implements Discardable {
 			throw new IllegalStateException("The MacroBlock is ready, but no data was set!");
 		}
 		
-		int subSX = x / 2;
-		int subSY = y / 2;
+		final int subSX = x / 2;
+		final int subSY = y / 2;
 		return new double[] {this.Y[x][y], this.U[subSX][subSY], this.V[subSX][subSY]};
 	}
 	
@@ -366,8 +366,8 @@ public class MacroBlock implements Discardable {
 			throw new IllegalStateException("The MacroBlock is ready, but no data was set!");
 		}
 		
-		int subSX = x / 2;
-		int subSY = y / 2;
+		final int subSX = x / 2;
+		final int subSY = y / 2;
 		cache[ColorManager.Y_INDEX] = this.Y[x][y];
 		cache[ColorManager.U_INDEX] = this.U[subSX][subSY];
 		cache[ColorManager.V_INDEX] = this.V[subSX][subSY];
@@ -382,15 +382,15 @@ public class MacroBlock implements Discardable {
 	 * @param y	position Y of the color
 	 * @param YUV	YUV color to set
 	 */
-	public void setYUV(int x, int y, double[] YUV) {
+	public void setYUV(final int x, final int y, final double[] YUV) {
 		if (x < 0 || x >= this.size) {
 			throw new ArrayIndexOutOfBoundsException("(X) " + x + " is out of bounds (" + this.size + ")");
 		} else if (y < 0 || y >= this.size) {
 			throw new ArrayIndexOutOfBoundsException("(Y) " + y + " is out of bounds (" + this.size + ")");
 		}
 		
-		int subSX = x / 2;
-		int subSY = y / 2;
+		final int subSX = x / 2;
+		final int subSY = y / 2;
 		this.Y[x][y] = YUV[ColorManager.Y_INDEX];
 		this.U[subSX][subSY] = YUV[ColorManager.U_INDEX];
 		this.V[subSX][subSY] = YUV[ColorManager.V_INDEX];
@@ -422,7 +422,7 @@ public class MacroBlock implements Discardable {
 	 * 
 	 * @param dim	Dimension of the PixelRaster
 	 */
-	public void subdivide(Dimension dim) {
+	public void subdivide(final Dimension dim) {
 		if (this.isSubdivided == true) {
 			return;
 		} else if (this.size <= 4) {
@@ -432,7 +432,7 @@ public class MacroBlock implements Discardable {
 		this.isSubdivided = true;
 		this.nodes = new MacroBlock[4];
 		int index = 0;
-		int fraction = this.size / 2;
+		final int fraction = this.size / 2;
 		int outlyers = 0;
 		
 		for (int x = 0; x < this.size; x += fraction) {
@@ -530,7 +530,7 @@ public class MacroBlock implements Discardable {
 	 * 
 	 * @param meanColor	mean color of the MacroBlock
 	 */
-	public void setMeanColor(int[] meanColor) {
+	public void setMeanColor(final int[] meanColor) {
 		this.meanColor = meanColor;
 	}
 	
@@ -566,7 +566,7 @@ public class MacroBlock implements Discardable {
 	 * @param MSE	Mean Square Error of the MacroBlock
 	 * received by the inter-prediction
 	 */
-	public void setMSE(double MSE) {
+	public void setMSE(final double MSE) {
 		this.MSE = MSE;
 	}
 	
@@ -576,7 +576,7 @@ public class MacroBlock implements Discardable {
 	 * @param ref	Reference of the MacroBlock
 	 * to the best matching block
 	 */
-	public void setReference(int ref) {
+	public void setReference(final int ref) {
 		this.reference = ref;
 	}
 	
@@ -602,10 +602,10 @@ public class MacroBlock implements Discardable {
 	 * @throws IllegalArgumentException	When the size is smaller than 1 or bigger
 	 * than the MacroBlock itself
 	 */
-	private MacroBlock getSubBlock(Point pos, int size) {
-		double[][][] res = getColorSubBlock(pos.x, pos.y, size, null);
-		int posX = pos.x + this.positionX;
-		int posY = pos.y + this.positionY;
+	private MacroBlock getSubBlock(final Point pos, final int size) {
+		final double[][][] res = getColorSubBlock(pos.x, pos.y, size, null);
+		final int posX = pos.x + this.positionX;
+		final int posY = pos.y + this.positionY;
 		return new MacroBlock(posX, posY, size, res[ColorManager.Y_INDEX], res[ColorManager.U_INDEX], res[ColorManager.V_INDEX]);
 	}
 	
@@ -625,7 +625,7 @@ public class MacroBlock implements Discardable {
 	 * @throws IllegalArgumentException	When the size is smaller than 1 or bigger
 	 * than the MacroBlock itself
 	 */
-	private double[][][] getColorSubBlock(int posX, int posY, int size, double[][][] cache) {
+	private double[][][] getColorSubBlock(final int posX, final int posY, final int size, double[][][] cache) {
 		if (posX < 0 || posX >= this.size) {
 			throw new ArrayIndexOutOfBoundsException();
 		} else if (posY < 0 || posY >= this.size) {
@@ -636,9 +636,9 @@ public class MacroBlock implements Discardable {
 			throw new IllegalStateException("The MacroBlock is ready, but no data was set!");
 		}
 		
-		int halfSize = size / 2;
-		int halfPosX = posX / 2;
-		int halfPosY = posY / 2;
+		final int halfSize = size / 2;
+		final int halfPosX = posX / 2;
+		final int halfPosY = posY / 2;
 		double[][][] res = cache == null ? getArray(size) : cache[ColorManager.Y_INDEX].length < size ? getArray(size) : cache;
 		ArrayUtils.copy2DArray(this.Y, posX, posY, res[ColorManager.Y_INDEX], 0, 0, size, size);
 		ArrayUtils.copy2DArray(this.U, halfPosX, halfPosY, res[ColorManager.U_INDEX], 0, 0, halfSize, halfSize);
@@ -653,7 +653,7 @@ public class MacroBlock implements Discardable {
 	 * @return initialized array
 	 */
 	private double[][][] getArray(final int size) {
-		int halfSize = size / 2;
+		final int halfSize = size / 2;
 		double[][][] res = new double[4][][]; //0 = Y; 1 = U; 2 = V
 		res[ColorManager.Y_INDEX] = new double[size][size];
 		res[ColorManager.U_INDEX] = new double[halfSize][halfSize];
@@ -667,7 +667,7 @@ public class MacroBlock implements Discardable {
 	 * 
 	 * @param convertedToVector	Flag for whether the block has been converted or not.
 	 */
-	public void setConvertedToVector(boolean convertedToVector) {
+	public void setConvertedToVector(final boolean convertedToVector) {
 		this.isConvertedToVector = convertedToVector;
 	}
 	
@@ -689,12 +689,12 @@ public class MacroBlock implements Discardable {
 	 * @param x	X position of the MacroBlock.
 	 * @param y	Y position of the MacroBlock.
 	 */
-	public void moveBlock(int x, int y) {
+	public void moveBlock(final int x, final int y) {
 		this.positionX = x;
 		this.positionY = y;
 	}
 	
-	public void reset(final int x, final int y, final int size, boolean initColors) {
+	public void reset(final int x, final int y, final int size, final boolean initColors) {
 		this.positionX = x;
 		this.positionY = y;
 		this.positionRelativeToParentX = 0;
@@ -702,7 +702,7 @@ public class MacroBlock implements Discardable {
 		this.size = size;
 		
 		if (initColors) {
-			int halfSize = size / 2;
+			final int halfSize = size / 2;
 			this.Y = new double[size][size];
 			this.U = new double[halfSize][halfSize];
 			this.V = new double[halfSize][halfSize];

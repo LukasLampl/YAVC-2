@@ -66,7 +66,7 @@ public class ReferenceFrameManager {
 	 * @see #manageSize()
 	 * @param frame	The frame to add as a reference.
 	 */
-	public void add(PixelRaster frame) {
+	public void add(final PixelRaster frame) {
 		if (this.lastFrame != null) {
 			this.lastFrame.lock();
 		}
@@ -96,7 +96,7 @@ public class ReferenceFrameManager {
 	 * @param index	The index from which to get the frame from.
 	 * @return The reference frame at the specified index.
 	 */
-	public PixelRaster get(int index) {
+	public PixelRaster get(final int index) {
 		return this.references.get(index);
 	}
 	
@@ -116,7 +116,7 @@ public class ReferenceFrameManager {
 	 * @param reference	The frames to go back until the reference.
 	 * @return The reference frame.
 	 */
-	public PixelRaster getByReference(int reference) {
+	public PixelRaster getByReference(final int reference) {
 		return this.references.get(config.MAX_REFERENCES - reference);
 	}
 	

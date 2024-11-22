@@ -84,7 +84,7 @@ public class ListManager<T> {
 	 * 
 	 * @param obj	The object to add.
 	 */
-	public void add(T obj) {
+	public void add(final T obj) {
 		if (obj == null) {
 			return;
 		}
@@ -97,7 +97,7 @@ public class ListManager<T> {
 	 * 
 	 * @param collection	The collection to add.
 	 */
-	public void addAll(Collection<? extends T> collection) {
+	public void addAll(final Collection<? extends T> collection) {
 		this.list.addAll(collection);
 	}
 	
@@ -109,7 +109,7 @@ public class ListManager<T> {
 	 * 
 	 * @throws ArrayIndexOutOfBoundsException	When the given index is bigger than the max size or below 0.
 	 */
-	public T get(int index) {
+	public T get(final int index) {
 		if (index < 0 || index >= this.list.size()) {
 			throw new ArrayIndexOutOfBoundsException("Index out of bounds " + index + " for " + this.list.size() + ".");
 		}

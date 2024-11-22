@@ -86,7 +86,7 @@ public class PixelRaster implements Discardable {
 	 * 
 	 * @param dim			The dimension of the PixelRaster.
 	 */
-	public PixelRaster(Dimension dim) {
+	public PixelRaster(final Dimension dim) {
 		this.dim = dim;
 		this.Y = new double[dim.width][dim.height];
 		this.U = new double[dim.width / 2][dim.height / 2];
@@ -193,7 +193,7 @@ public class PixelRaster implements Discardable {
 	 * 
 	 * @param img	Image to resize
 	 */
-	private BufferedImage scaleToNearest4Divisor(BufferedImage img) {
+	private BufferedImage scaleToNearest4Divisor(final BufferedImage img) {
 		int newWidth = img.getWidth() - (img.getWidth() % 4);
 		int newHeight = img.getHeight() - (img.getHeight() % 4);
 		
@@ -225,11 +225,11 @@ public class PixelRaster implements Discardable {
 	 * hasAlpha = false
 	 */
 	private void processByteBuffer(final byte[] buffer, final boolean hasAlpha) {
-		int length = hasAlpha ? PX_WITH_ALPHA_LENGTH : PX_WITHOUT_ALPHA_LENGTH;
+		final int length = hasAlpha ? PX_WITH_ALPHA_LENGTH : PX_WITHOUT_ALPHA_LENGTH;
 		final int width = this.dim.width;
 		final int height = this.dim.height;
 		final int threads = Runtime.getRuntime().availableProcessors();
-		int inc = (buffer.length / length) / threads;
+		final int inc = (buffer.length / length) / threads;
 		
 		ExecutorService executor = Executors.newFixedThreadPool(threads);
 
@@ -303,7 +303,7 @@ public class PixelRaster implements Discardable {
 	 * @param buffer	Data of the image in form of integers.
 	 */
 	private void processIntBuffer(final int[] buffer) {
-		int width = this.dim.width;
+		final int width = this.dim.width;
 		final int threads = Runtime.getRuntime().availableProcessors();
 		final int chunkSize = buffer.length / threads;
 		ExecutorService executor = Executors.newFixedThreadPool(threads);
@@ -365,8 +365,8 @@ public class PixelRaster implements Discardable {
 			throw new ArrayIndexOutOfBoundsException("(X) " + x + " is out of bounds!");
 		}
 		
-		int subSX = x / 2;
-		int subSY = y / 2;
+		final int subSX = x / 2;
+		final int subSY = y / 2;
 		return new double[] {this.Y[x][y], this.U[subSX][subSY], this.V[subSX][subSY]};
 	}
 	
@@ -398,8 +398,8 @@ public class PixelRaster implements Discardable {
 			throw new IllegalArgumentException("Cannot fill null cache.");
 		}
 		
-		int subSX = x / 2;
-		int subSY = y / 2;
+		final int subSX = x / 2;
+		final int subSY = y / 2;
 		cache[ColorManager.Y_INDEX] = this.Y[x][y];
 		cache[ColorManager.U_INDEX] = this.U[subSX][subSY];
 		cache[ColorManager.V_INDEX] = this.V[subSX][subSY];
@@ -432,8 +432,8 @@ public class PixelRaster implements Discardable {
 			throw new IllegalStateException("Can't modify a locked PixelRaster!");
 		}
 		
-		int subSX = x / 2;
-		int subSY = y / 2;
+		final int subSX = x / 2;
+		final int subSY = y / 2;
 		this.Y[x][y] = YUV[ColorManager.Y_INDEX];
 		this.U[subSX][subSY] = YUV[ColorManager.U_INDEX];
 		this.V[subSX][subSY] = YUV[ColorManager.V_INDEX];
@@ -462,8 +462,8 @@ public class PixelRaster implements Discardable {
 			throw new IllegalStateException("Can't modify a locked PixelRaster!");
 		}
 		
-		int subSX = x / 2;
-		int subSY = y / 2;
+		final int subSX = x / 2;
+		final int subSY = y / 2;
 		this.Y[x][y] = Y;
 		this.U[subSX][subSY] = U;
 		this.V[subSX][subSY] = V;
@@ -533,8 +533,8 @@ public class PixelRaster implements Discardable {
 			throw new IllegalStateException("Can't modify a locked PixelRaster!");
 		}
 		
-		int subSX = x / 2;
-		int subSY = y / 2;
+		final int subSX = x / 2;
+		final int subSY = y / 2;
 		this.Y[x][y] = YUV[ColorManager.Y_INDEX];
 
 		if (invokedUV == true) {
@@ -568,8 +568,8 @@ public class PixelRaster implements Discardable {
 			throw new IllegalStateException("Can't modify a locked PixelRaster!");
 		}
 		
-		int subSX = x / 2;
-		int subSY = y / 2;
+		final int subSX = x / 2;
+		final int subSY = y / 2;
 		this.U[subSX][subSY] = U;
 		this.V[subSX][subSY] = V;
 	}
@@ -653,11 +653,11 @@ public class PixelRaster implements Discardable {
 	 */
 	public double[][][] getPixelBlock(final int positionX, final int positionY, final int size, double[][][] cache) {
 		double[][][] res = cache == null ? getArray(size) : size > cache[ColorManager.Y_INDEX].length ? getArray(size) : cache;
-		int halfSize = size / 2;
-		int halfPosX = positionX / 2;
-		int halfPosY = positionY / 2;
-		int halfDimWidth = this.dim.width / 2;
-		int halfDimHeight = this.dim.height / 2;
+		final int halfSize = size / 2;
+		final int halfPosX = positionX / 2;
+		final int halfPosY = positionY / 2;
+		final int halfDimWidth = this.dim.width / 2;
+		final int halfDimHeight = this.dim.height / 2;
 		int xToCopy = positionX + size >= this.dim.width ? this.dim.width - positionX : size;
 		int yToCopy = positionY + size >= this.dim.height ? this.dim.height - positionY : size;
 		
@@ -668,7 +668,6 @@ public class PixelRaster implements Discardable {
 
 		ArrayUtils.copy2DArray(this.U, halfPosX, halfPosY, res[ColorManager.U_INDEX], 0, 0, xToCopy, yToCopy);
 		ArrayUtils.copy2DArray(this.V, halfPosX, halfPosY, res[ColorManager.V_INDEX], 0, 0, xToCopy, yToCopy);
-		
 		return res;
 	}
 	
@@ -679,7 +678,7 @@ public class PixelRaster implements Discardable {
 	 * @return initialized array
 	 */
 	private double[][][] getArray(final int size) {
-		int halfSize = size / 2;
+		final int halfSize = size / 2;
 		double[][][] res = new double[4][][]; //0 = Y; 1 = U; 2 = V
 		res[ColorManager.Y_INDEX] = new double[size][size];
 		res[ColorManager.U_INDEX] = new double[halfSize][halfSize];
@@ -704,7 +703,7 @@ public class PixelRaster implements Discardable {
 			double[] YUVCache = new double[3]; //Size of 3 because of 3 channels
 			
 			for (int innerY = 0; innerY < threads; innerY++) {
-				int actualY = innerY + (y * threads);
+				final int actualY = innerY + (y * threads);
 				
 				for (int x = 0; x < this.dim.width; x++) {
 					int argb = ColorManager.convertYUVToRGB(getYUV(x, actualY, YUVCache));
@@ -727,8 +726,8 @@ public class PixelRaster implements Discardable {
 		double[][] clonedU = new double[this.dim.width / 2][];
 		double[][] clonedV = new double[this.dim.width / 2][];
 		
-		int size = this.dim.width;
-		int halfSize = this.dim.width / 2;
+		final int size = this.dim.width;
+		final int halfSize = this.dim.width / 2;
 		
 		for (int i = 0; i < size; i++) {
 			clonedY[i] = this.Y[i].clone();

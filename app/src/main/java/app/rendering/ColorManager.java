@@ -70,13 +70,13 @@ public class ColorManager {
 	 * @param color	RGB color that should be
 	 * converted to an YUV color.
 	 */
-	public static double[] convertRGBToYUV(Color color) {
-		int r = color.getRed();
-		int g = color.getGreen();
-		int b = color.getBlue();
-		double Y = 0.299 * r + 0.587 * g + 0.114 * b;
-		double U = 128 - 0.168736 * r - 0.331264 * g + 0.5 * b;
-		double V = 128 + 0.5 * r - 0.418688 * g - 0.081312 * b;
+	public static double[] convertRGBToYUV(final Color color) {
+		final int r = color.getRed();
+		final int g = color.getGreen();
+		final int b = color.getBlue();
+		final double Y = 0.299 * r + 0.587 * g + 0.114 * b;
+		final double U = 128 - 0.168736 * r - 0.331264 * g + 0.5 * b;
+		final double V = 128 + 0.5 * r - 0.418688 * g - 0.081312 * b;
 		return new double[] {Y, U, V};
 	}
 	
@@ -97,13 +97,13 @@ public class ColorManager {
 	 * @param color	RGB color that should be
 	 * converted to an YUV color.
 	 */
-	public static double[] convertRGBToYUV(int color) {
-		int r = (color >> 16) & 0xFF;
-		int g = (color >> 8) & 0xFF;
-		int b = color & 0xFF;
-		double Y = 0.299 * r + 0.587 * g + 0.114 * b;
-		double U = 128 - 0.168736 * r - 0.331264 * g + 0.5 * b;
-		double V = 128 + 0.5 * r - 0.418688 * g - 0.081312 * b;
+	public static double[] convertRGBToYUV(final int color) {
+		final int r = (color >> 16) & 0xFF;
+		final int g = (color >> 8) & 0xFF;
+		final int b = color & 0xFF;
+		final double Y = 0.299 * r + 0.587 * g + 0.114 * b;
+		final double U = 128 - 0.168736 * r - 0.331264 * g + 0.5 * b;
+		final double V = 128 + 0.5 * r - 0.418688 * g - 0.081312 * b;
 		return new double[] {Y, U, V};
 	}
 	
@@ -128,19 +128,19 @@ public class ColorManager {
 	 * @throws IllegalArgumentException	if the provided YUV is
 	 * null or the length is not 3
 	 */
-	public static int convertYUVToRGB(double[] YUV) {
+	public static int convertYUVToRGB(final double[] YUV) {
 		if (YUV == null) {
 			throw new IllegalArgumentException("Can't convert NULL to RGB!");
 		} else if (YUV.length != 3) {
 			throw new IllegalArgumentException("YUV color contains " + YUV.length + " components instead of 3!");
 		}
 		
-		double Y = YUV[Y_INDEX];
-		double U = YUV[U_INDEX] - 128;
-		double V = YUV[V_INDEX] - 128;
-		int red = range(MathUtils.round(Y + 1.402 * V), 0, 255);
-		int green = range(MathUtils.round(Y - 0.344136 * U - 0.714136 * V), 0, 255);
-		int blue = range(MathUtils.round(Y + 1.772 * U), 0, 255);
+		final double Y = YUV[Y_INDEX];
+		final double U = YUV[U_INDEX] - 128;
+		final double V = YUV[V_INDEX] - 128;
+		final int red = range(MathUtils.round(Y + 1.402 * V), 0, 255);
+		final int green = range(MathUtils.round(Y - 0.344136 * U - 0.714136 * V), 0, 255);
+		final int blue = range(MathUtils.round(Y + 1.772 * U), 0, 255);
 		return (0xFF000000 | ((red & 0xFF) << 16) | ((green & 0xFF) << 8) | (blue & 0xFF));
 	}
 	
@@ -166,7 +166,7 @@ public class ColorManager {
 	 * when the length of the YUV color exceeds 3 or is shorter than 3
 	 * and if the rgbCache is not null, but does not have a length of 3.
 	 */
-	public static int[] convertYUVToRGB_intARR(double[] YUV, int[] rgbCache) {
+	public static int[] convertYUVToRGB_intARR(final double[] YUV, int[] rgbCache) {
 		if (YUV == null) {
 			throw new IllegalArgumentException("Can't convert NULL to RGB array!");
 		} else if (YUV.length != 3) {
@@ -175,12 +175,12 @@ public class ColorManager {
 			throw new IllegalArgumentException("RGB cache has length of " + rgbCache.length + "instead of 3");
 		}
 		
-		double Y = YUV[Y_INDEX];
-		double U = YUV[U_INDEX] - 128;
-		double V = YUV[V_INDEX] - 128;
-		int red = (int)Math.round(Y + 1.402 * V);
-		int green = (int)Math.round(Y - 0.344136 * U - 0.714136 * V);
-		int blue = (int)Math.round(Y + 1.772 * U);
+		final double Y = YUV[Y_INDEX];
+		final double U = YUV[U_INDEX] - 128;
+		final double V = YUV[V_INDEX] - 128;
+		final int red = range((int)Math.round(Y + 1.402 * V), 0, 255);
+		final int green = range((int)Math.round(Y - 0.344136 * U - 0.714136 * V), 0, 255);
+		final int blue = range((int)Math.round(Y + 1.772 * U), 0, 255);
 		
 		if (rgbCache != null) {
 			rgbCache[R_INDEX] = red;
@@ -189,7 +189,7 @@ public class ColorManager {
 			return null;
 		}
 		
-		return new int[] {range(red, 0, 255), range(green, 0, 255), range(blue, 0, 255)};
+		return new int[] {red, green, blue};
 	}
 
 	/**
@@ -206,7 +206,7 @@ public class ColorManager {
 	 * @param min	Minimum value that x is allowed to reach
 	 * @param max	Maximum value that x is allowed to reach
 	 */
-	private static int range(int x, int min, int max) {
+	private static int range(final int x, final int min, final int max) {
 		return x < min ? min : x > max ? max : x;
 	}
 }

@@ -1,10 +1,10 @@
 package app.utils;
 
 public class MeanStructure {
-	private int[][] meanArgbs = null;
-	private int[][][] argbs = null;
+	private final int[][] meanArgbs;
+	private final int[][][] argbs;
 	
-	public MeanStructure(int[][] meanArgbs, int[][][] argbs) {
+	public MeanStructure(final int[][] meanArgbs, final int[][][] argbs) {
 		this.meanArgbs = meanArgbs;
 		this.argbs = argbs;
 	}
@@ -15,13 +15,5 @@ public class MeanStructure {
 	
 	public int[][][] getArgbs() {
 		return this.argbs;
-	}
-	
-	public void set4x4Means(int[][] meanArgbs) {
-		this.meanArgbs = meanArgbs;
-	}
-	
-	public void setArgbs(int[][][] argbs) {
-		this.argbs = argbs;
 	}
 }

@@ -39,7 +39,7 @@ public class MathUtils {
 	 * @param value	The value from which to get the absolute value from.
 	 * @return The absolute value of the given value.
 	 */
-	public static double abs(double value) {
+	public static double abs(final double value) {
 		return (value < 0.0) ? -value : value;
 	}
 	
@@ -51,7 +51,7 @@ public class MathUtils {
 	 * @param value	The value to round.
 	 * @return The rounded value.
 	 */
-	public static int round(double value) {
+	public static int round(final double value) {
 		return value >= 0.0 ? (int)(value + 0.5) : (int)(value - 0.5);
 	}
 }

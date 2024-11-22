@@ -89,7 +89,7 @@ public class LoadDistributor<T> implements Discardable {
 		init();
 	};
 	
-	public LoadDistributor(int chunks) {
+	public LoadDistributor(final int chunks) {
 		this.numberOfChunks = chunks;
 		init();
 	}
@@ -121,7 +121,7 @@ public class LoadDistributor<T> implements Discardable {
 	 * 
 	 * @param obj	The object to add.
 	 */
-	public void setObj(T obj) {
+	public void setObj(final T obj) {
 		if (this.isShutdown) {
 			throw new IllegalStateException("Can't invoke object since the LoadDistributor has been shutdown!");
 		}
@@ -144,7 +144,7 @@ public class LoadDistributor<T> implements Discardable {
 	 * 
 	 * @param l		The List to add.
 	 */
-	public void setAll(List<T> l) {
+	public void setAll(final List<T> l) {
 		for (T obj : l) {
 			setObj(obj);
 		}
@@ -156,10 +156,10 @@ public class LoadDistributor<T> implements Discardable {
 	 * 
 	 * @param l		The List to add.
 	 */
-	public void setAllAndCompute(List<T> l) {
+	public void setAllAndCompute(final List<T> l) {
 		int totalSize = 0;
 		
-		for (T obj : l) {
+		for (final T obj : l) {
 			setObj(obj);
 			
 			if (obj instanceof Vector) {
@@ -177,7 +177,7 @@ public class LoadDistributor<T> implements Discardable {
 	 * 
 	 * @param numberOfData		The total amount of data (e.g. Pixels).
 	 */
-	public void compute(int numberOfData) {
+	public void compute(final int numberOfData) {
 		this.numberOfData = numberOfData;
 		compute();
 	}
@@ -244,7 +244,7 @@ public class LoadDistributor<T> implements Discardable {
 	 * @param index	Index from which to get the sub-work from.
 	 * @return The sub-work at the specified index.
 	 */
-	public List<T> getLoadOf(int index) {
+	public List<T> getLoadOf(final int index) {
 		if (!this.hasDistributed) {
 			throw new IllegalStateException("Tried to receive data before it was ready! (call compute(int) first)");
 		} else if (this.isShutdown) {
