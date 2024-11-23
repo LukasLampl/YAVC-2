@@ -7,6 +7,7 @@ import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -34,10 +35,14 @@ public class RenderEngine {
 			}
 
 			if (vecs != null) {
+				List<Callable<Void>> tasks = new ArrayList<Callable<Void>>();
+				
 				for (final List<Vector> vecList : vecs.getIterable()) {
-					Runnable task = createVectorRenderTask(vecList, refs, render, dim, allowModToAbsDiff);
-					executor.submit(task);
+					Callable<Void> task = createVectorRenderTask(vecList, refs, render, dim, allowModToAbsDiff);
+					tasks.add(task);
 				}
+				
+				executor.invokeAll(tasks);
 			}
 			
 			executor.shutdown();
@@ -72,8 +77,8 @@ public class RenderEngine {
 		return task;
 	}
 	
-	private static Runnable createVectorRenderTask(List<Vector> vecList, ReferenceFrameManager refs, PixelRaster render, Dimension dim, boolean allowModToAbsDiff) {
-		Runnable task = () -> {
+	private static Callable<Void> createVectorRenderTask(List<Vector> vecList, ReferenceFrameManager refs, PixelRaster render, Dimension dim, boolean allowModToAbsDiff) {
+		Callable<Void> task = () -> {
 			double[][][][] pixelBlockCache = new double[QuadtreeEngine.NUMBER_OF_SIZES][][][];
 			long iT = 0;
 			long pBT = 0;
@@ -124,6 +129,7 @@ public class RenderEngine {
 				pT += (System.currentTimeMillis() - sPT);
 			}
 			System.out.println(String.format("      > Init time: %4dms | PixelBlock grab time: %4dms | IDCT time: %4dms | Reconstruction time: %4dms | Put time: %4dms", iT, pBT, iDT, rT, pT));
+			return null;
 		};
 		
 		return task;

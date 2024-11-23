@@ -639,25 +639,11 @@ public class MacroBlock implements Discardable {
 		final int halfSize = size / 2;
 		final int halfPosX = posX / 2;
 		final int halfPosY = posY / 2;
-		double[][][] res = cache == null ? getArray(size) : cache[ColorManager.Y_INDEX].length < size ? getArray(size) : cache;
+		double[][][] res = cache == null ? ArrayUtils.get3DArray(size, true)
+				: cache[ColorManager.Y_INDEX].length < size ? ArrayUtils.get3DArray(size, true) : cache;
 		ArrayUtils.copy2DArray(this.Y, posX, posY, res[ColorManager.Y_INDEX], 0, 0, size, size);
 		ArrayUtils.copy2DArray(this.U, halfPosX, halfPosY, res[ColorManager.U_INDEX], 0, 0, halfSize, halfSize);
 		ArrayUtils.copy2DArray(this.V, halfPosX, halfPosY, res[ColorManager.V_INDEX], 0, 0, halfSize, halfSize);
-		return res;
-	}
-	
-	/**
-	 * <p>Get an array of 2D arrays.</p>
-	 * 
-	 * @param size	size if the arrays
-	 * @return initialized array
-	 */
-	private double[][][] getArray(final int size) {
-		final int halfSize = size / 2;
-		double[][][] res = new double[4][][]; //0 = Y; 1 = U; 2 = V
-		res[ColorManager.Y_INDEX] = new double[size][size];
-		res[ColorManager.U_INDEX] = new double[halfSize][halfSize];
-		res[ColorManager.V_INDEX] = new double[halfSize][halfSize];
 		return res;
 	}
 	

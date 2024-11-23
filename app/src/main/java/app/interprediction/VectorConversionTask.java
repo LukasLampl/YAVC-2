@@ -25,7 +25,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.RecursiveTask;
 
+import app.dct.DCTConstants;
 import app.io.Protocol;
+import app.utils.ArrayUtils;
 import app.utils.ListManager;
 
 /**
@@ -68,12 +70,6 @@ public class VectorConversionTask extends RecursiveTask<Void> {
 	 * Holds the end index in the indexes array.
 	 */
 	private int end = 0;
-	
-	/**
-	 * A possible cache structure to reduce stress on GC, when the vectors
-	 * are read out.
-	 */
-	private double[][][] fileDataCache = null;
 	
 	/**
 	 * Holds the indexes of each vector.
@@ -124,7 +120,6 @@ public class VectorConversionTask extends RecursiveTask<Void> {
 			VectorConversionTask tr = new VectorConversionTask(middle, this.end, this.indexes, this.data, this.vectorManager);
 			invokeAll(tl, tr);
 		} else {
-			initFileDataCache();
 			execute();
 		}
 		
@@ -159,52 +154,6 @@ public class VectorConversionTask extends RecursiveTask<Void> {
 	}
 	
 	/**
-	 * Sets up the {@link #fileDataCache} to assure that the
-	 * vector converter can use caches and thus reducing GC
-	 * pressure.
-	 */
-	private void initFileDataCache() {
-		//int[] sizes = {2 * 2, 4 * 4, 8 * 8, 16 * 16, 32 * 32, 64 * 64, 128 * 128};
-		int[] sizes = {4, 16, 64, 256, 1024, 4096, 16384};
-		this.fileDataCache = new double[7][][]; //First dim for index, second for optional two channels, thrid the actual cache
-		
-		for (int i = 0; i < sizes.length; i++) {
-			int index = convertLengthToIndex(sizes[i]);
-			this.fileDataCache[index] = new double[2][]; //For two channels (U and V)
-			this.fileDataCache[index][0] = new double[sizes[i]];
-			this.fileDataCache[index][1] = new double[sizes[i]];
-		}
-	}
-	
-	/**
-	 * Converts a given length into an index.
-	 * 
-	 * @param length	The length to convert.
-	 * @return The index in the {@link #fileDataCache}.
-	 * @throws IllegalArgumentException	When the given length is not supported.
-	 */
-	private int convertLengthToIndex(int length) {
-		switch (length) {
-		case 4: //2 * 2
-			return 0;
-		case 16: //4 * 4
-			return 1;
-		case 64: //8 * 8
-			return 2;
-		case 256: //16 * 16
-			return 3;
-		case 1024: //32 * 32
-			return 4;
-		case 4096: //64 * 64
-			return 5;
-		case 16384: //128 * 128
-			return 6;
-		default:
-			throw new IllegalArgumentException("The length " + length + " cannot be converted to an index.");
-		}
-	}
-	
-	/**
 	 * Executes the given task by working the indexes from the given start
 	 * and end down. The function essentially creates the vectors based on the
 	 * {@link #data} and {@link #indexes}, in the end it adds the vectors to
@@ -212,14 +161,14 @@ public class VectorConversionTask extends RecursiveTask<Void> {
 	 */
 	public void execute() {
 		for (int i = this.start; i < this.end; i++) {
-			int index = indexes.get(i).intValue();
-			int posX = Protocol.getPosition(data[index], data[index + 1]);
-			int posY = Protocol.getPosition(data[index + 2], data[index + 3]);
-			int spanX = Protocol.getVectorSpanInt(data[index + 4]);
-			int spanY = Protocol.getVectorSpanInt(data[index + 5]);
-			int[] refAndSize = Protocol.getReferenceAndSizeInt(data[index + 6]);
-			int ref = refAndSize[0];
-			int size = refAndSize[1];
+			final int index = indexes.get(i).intValue();
+			final int posX = Protocol.getPosition(data[index], data[index + 1]);
+			final int posY = Protocol.getPosition(data[index + 2], data[index + 3]);
+			final int spanX = Protocol.getVectorSpanInt(data[index + 4]);
+			final int spanY = Protocol.getVectorSpanInt(data[index + 5]);
+			final int[] refAndSize = Protocol.getReferenceAndSizeInt(data[index + 6]);
+			final int ref = refAndSize[0];
+			final int size = refAndSize[1];
 			Vector vec = vectorManager.getCachedObj();
 			
 			if (vec == null) {
@@ -239,29 +188,61 @@ public class VectorConversionTask extends RecursiveTask<Void> {
 	}
 
 	/**
-	 * Converts a raw data stream into the representing vector color differences.
-	 * First the data is received out of the data stream, then it is processed by
-	 * setting the according values.
+	 * Gets an ArrayList of 3D double arrays that represent the DCT-II coefficients.
 	 * 
-	 * @param vectorPart	The raw data containing the DCT-II coefficients.
+	 * <p><b>Note:</b><br>
+	 * The function gets one when the {@code size = 4}. When the {@code size > 4} the
+	 * function iterates multiple times until the size is fully read in. The partial reading
+	 * in is defined by the Protocol, which says that a n-sized block has 3 data channels for
+	 * the 3 color channels, each composes of 8x8 (or subsampled 4x4) datablocks that are
+	 * aligned in a row. In other terms:<br><br>
+	 * 
+	 * If I had an 16x16 sized DCT-II block data the Protocol will split it into these arrays:<br>
+	 * - Y[16 * 16]<br>
+	 * - U[8 * 8]<br>
+	 * - V[8 * 8]<br><br>
+	 * 
+	 * After that It'll split the 16x16 block into 8x8 subblocks, for performance reasons in the DCT-II
+	 * conversion process. Now we have 4 8x8 blocks each containing a 8x8 Y-Channel, 4x4 U-Channel and
+	 * 4x4 V-Channel.<br><br>
+	 * 
+	 * This data is then filled in the previously mentioned arrays by firstly taking the first block,
+	 * writing it's data into the given array (Y-Channel in Y-array, U-Channel in U-array and so on).
+	 * After the first has finished the second block is read in, but now the offset of the previous
+	 * data is used to offset the writer to the end of the previous block data, which in other words
+	 * mean, the second, third and fourth block are starting all at a offset of 64 from each other or
+	 * 16 for the subsampled channels.<br><br>
+	 * 
+	 * To convert it back it just has to be read with the same algorithm.
+	 * </p>
+	 * 
+	 * @param data			The raw data containing the DCT-II coefficients.
 	 * @param startPos		The position from where to start getting the DCT-II coefficients.
 	 * @param size			The size of the vector.
 	 * @param cachedVector	A Vector that can be overwritten (GC reasons).
 	 * @return The converted vector color difference.
 	 */
-	private ArrayList<double[][][]> getVectorDifferences(byte[] vectorPart, int startPos, int size, Vector cachedVector) {
+	private ArrayList<double[][][]> getVectorDifferences(final byte[] data, final int startPos, final int size, final Vector cachedVector) {
 		ArrayList<double[][][]> cachedGroups = cachedVector.getDCTCoefficientsOfAbsoluteColorDifference();
 		ArrayList<double[][][]> DCTCoeffGroups = new ArrayList<double[][][]>();
-		double[][] data = getDCTCoeffsOutOfFile(vectorPart, startPos, size);
-		int YLength = size * size;
+		final boolean wasCachedGroup4x4Block = cachedGroups == null ? true : cachedGroups.size() == 1;
+		final int YLength = size * size;
+		final int halfSize = size / 2;
+		final int UVLength = halfSize * halfSize;
+		
+		final int YStart = startPos;
+		final int UStart = YStart + YLength;
+		final int VStart = UStart + UVLength;
 		
 		if (size == 4) {
-			DCTCoeffGroups.add(process4x4DCTCoefficients(cachedGroups, data));
+			DCTCoeffGroups.add(getDCTCoeffsOutOfByteStream(data, 4, cachedGroups, wasCachedGroup4x4Block, YStart, UStart, VStart));
 		} else {
-			boolean wasCachedGroup4x4Block = cachedGroups == null ? true : cachedGroups.size() == 1;
-			
 			for (int u = 0; u < YLength; u += 64) {
-				DCTCoeffGroups.add(processNon4x4Coefficients(cachedGroups, data, u, wasCachedGroup4x4Block));
+				final int subsampledOffset = u / 4;
+				final int actualYStart = YStart + u;
+				final int actualUStart = UStart + subsampledOffset;
+				final int actualVStart = VStart + subsampledOffset;
+				DCTCoeffGroups.add(getDCTCoeffsOutOfByteStream(data, 8, cachedGroups, wasCachedGroup4x4Block, actualYStart, actualUStart, actualVStart));
 			}
 		}
 		
@@ -269,119 +250,64 @@ public class VectorConversionTask extends RecursiveTask<Void> {
 	}
 	
 	/**
-	 * Processes a sub-block of a non 4x4 block.
-	 * 
-	 * @param cachedGroups				Cached double arrays. (GC reasons)
-	 * @param data						The data to put.
-	 * @param fraction					The fraction in which to put the data into.
-	 * @param wasCachedGroup4x4Block	Flag for whether the previous group was a 4x4 block.
-	 * @return An array filled with the data.
-	 */
-	private double[][][] processNon4x4Coefficients(ArrayList<double[][][]> cachedGroups,
-			double[][] data, int fraction, boolean wasCachedGroup4x4Block) {
-		int uFrac = (fraction / 4);
-		double[][][] res;
-		
-		if (cachedGroups == null) {
-			res = getArray(8);
-		} else {
-			if (cachedGroups.isEmpty() || wasCachedGroup4x4Block) {
-				res = getArray(8);
-			} else {
-				res = cachedGroups.remove(0);
-			}
-		}
-		
-		for (int x = 0, i = 0; x < 8; x++) {
-			for (int y = 0; y < 8; y++) {
-				res[0][x][y] = data[0][fraction + i++];
-			}
-		}
-		
-		for (int x = 0, i = 0; x < 4; x++) {
-			for (int y = 0; y < 4; y++) {
-				res[1][x][y] = data[1][uFrac + i];
-				res[2][x][y] = data[2][uFrac + i++];
-			}
-		}
-		
-		return res;
-	}
-	
-	/**
-	 * Processes a single 4x4 block.
-	 * 
-	 * @param cachedGroups	A cache of double arrays. (GC reasons)
-	 * @param data			The data to put.
-	 * @return An array filled with the coefficients.
-	 */
-	private double[][][] process4x4DCTCoefficients(ArrayList<double[][][]> cachedGroups, double[][] data) {
-		double[][][] res = cachedGroups == null ? getArray(4) : cachedGroups.size() > 0 ? cachedGroups.remove(0) : getArray(4);
-		
-		for (int x = 0, i = 0; x < 4; x++) {
-			for (int y = 0; y < 4; y++) {
-				res[0][x][y] = data[0][i++];
-			}
-		}
-
-		for (int x = 0, i = 0; x < 2; x++) {
-			for (int y = 0; y < 2; y++) {
-				res[1][x][y] = data[1][i];
-				res[2][x][y] = data[2][i++];
-			}
-		}
-		
-		return res;
-	}
-	
-	/**
-	 * Creates an empty 3D array with the given size
-	 * and subsampled sizes. (4:2:0)
-	 * 
-	 * @param size	The size of the array.
-	 * @return The created 3D array.
-	 */
-	private double[][][] getArray(int size) {
-		int halfSize = size / 2;
-		double[][][] arr = new double[3][][];
-		arr[0] = new double[size][size];
-		arr[1] = new double[halfSize][halfSize];
-		arr[2] = new double[halfSize][halfSize];
-		return arr;
-	}
-	
-	/**
 	 * Gets the DCT-II coefficients out of the raw data stream.
 	 * 
-	 * @param vectorPart	The raw data from which to get the DCT-II coefficients.
-	 * @param startPos		Position from where to start getting the DCT-II coefficients.
-	 * @param size			Size of the vector.
-	 * @return An array with the DCT-II coefficients.
+	 * @param vectorPart				The raw data from which to get the DCT-II coefficients.
+	 * @param size						Size of the vector.
+	 * @param cachedGroups				Cached double[][][] arrays in an ArrayList. (To reduce GC)
+	 * @param wasCachedGroup4x4Block	Flag for whether the previous group was a 4x4 block or not.
+	 * @param YStart					Start of the Y channel data.
+	 * @param UStart					Start of the U channel data.
+	 * @param VStart					Start of the V channel data.
+	 * @return An 3D array with the DCT-II coefficients.
 	 */
-	private double[][] getDCTCoeffsOutOfFile(byte[] vectorPart, int startPos, int size) {
-		int halfSize = size / 2;
-		int YLength = size * size;
-		int UVLength = halfSize * halfSize;
-		int YStart = startPos;
-		int UStart = YStart + YLength;
-		int VStart = UStart + UVLength;
+	private double[][][] getDCTCoeffsOutOfByteStream(final byte[] vectorPart, final int size,
+			ArrayList<double[][][]> cachedGroups, final boolean wasCachedGroup4x4Block,
+			final int YStart, final int UStart, final int VStart) {
+		final int YLength = size * size;
+		final int halfSize = size / 2;
+		final int UVLength = halfSize * halfSize;
+		final int lengthTillMatrixBreak = size == 4 ? 4 : 8;
+		final int halfLengthTillMatrixBreak = lengthTillMatrixBreak / 2;
+		int x = 0;
+		int y = 0;
 		
-		int YIndex = convertLengthToIndex(YLength);
-		int UIndex = convertLengthToIndex(UVLength);
-		int VIndex = convertLengthToIndex(UVLength);
-		double[] YBytes = this.fileDataCache[YIndex][0];
-		double[] UBytes = this.fileDataCache[UIndex][0];
-		double[] VBytes = this.fileDataCache[VIndex][1];
-		
+		double[][][] res;
+				
+		if (size == 4) {
+			res = cachedGroups == null ? ArrayUtils.get3DArray(4, true)
+					: cachedGroups.size() > 0 ? cachedGroups.remove(0) : ArrayUtils.get3DArray(4, true);
+		} else {
+			res = cachedGroups == null ?  ArrayUtils.get3DArray(8, true)
+					: wasCachedGroup4x4Block || cachedGroups.isEmpty() ? ArrayUtils.get3DArray(8, true) : cachedGroups.remove(0);
+		}
+				
+		double[][] YChannel = res[DCTConstants.Y_COEFFS_INDEX];
+		double[][] UChannel = res[DCTConstants.U_COEFFS_INDEX];
+		double[][] VChannel = res[DCTConstants.V_COEFFS_INDEX];
+				
 		for (int n = 0; n < YLength; n++) {
-			YBytes[n] = Protocol.getDCTCoeff(vectorPart[YStart + n]);
+			YChannel[x][y++] = Protocol.getDCTCoeff(vectorPart[YStart + n]);
+			
+			if (y >= lengthTillMatrixBreak) {
+				x++;
+				y = 0;
+			}
 		}
 
+		x = 0;
+		y = 0;
+		
 		for (int n = 0; n < UVLength; n++) {
-			UBytes[n] = Protocol.getDCTCoeff(vectorPart[UStart + n]);
-			VBytes[n] = Protocol.getDCTCoeff(vectorPart[VStart + n]);
+			UChannel[x][y] = Protocol.getDCTCoeff(vectorPart[UStart + n]);
+			VChannel[x][y++] = Protocol.getDCTCoeff(vectorPart[VStart + n]);
+			
+			if (y >= halfLengthTillMatrixBreak) {
+				x++;
+				y = 0;
+			}
 		}
 
-		return new double[][] {YBytes, UBytes, VBytes};
+		return res;
 	}
 }

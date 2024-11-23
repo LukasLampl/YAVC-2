@@ -652,7 +652,8 @@ public class PixelRaster implements Discardable {
 	 * @return PixelBlock from the PixelRaster
 	 */
 	public double[][][] getPixelBlock(final int positionX, final int positionY, final int size, double[][][] cache) {
-		double[][][] res = cache == null ? getArray(size) : size > cache[ColorManager.Y_INDEX].length ? getArray(size) : cache;
+		double[][][] res = cache == null ? ArrayUtils.get3DArray(size, true)
+				: size > cache[ColorManager.Y_INDEX].length ? ArrayUtils.get3DArray(size, true) : cache;
 		final int halfSize = size / 2;
 		final int halfPosX = positionX / 2;
 		final int halfPosY = positionY / 2;
@@ -670,22 +671,7 @@ public class PixelRaster implements Discardable {
 		ArrayUtils.copy2DArray(this.V, halfPosX, halfPosY, res[ColorManager.V_INDEX], 0, 0, xToCopy, yToCopy);
 		return res;
 	}
-	
-	/**
-	 * <p>Get an array of 2D arrays.</p>
-	 * 
-	 * @param size	size if the arrays
-	 * @return initialized array
-	 */
-	private double[][][] getArray(final int size) {
-		final int halfSize = size / 2;
-		double[][][] res = new double[4][][]; //0 = Y; 1 = U; 2 = V
-		res[ColorManager.Y_INDEX] = new double[size][size];
-		res[ColorManager.U_INDEX] = new double[halfSize][halfSize];
-		res[ColorManager.V_INDEX] = new double[halfSize][halfSize];
-		return res;
-	}
-	
+
 	/**
 	 * <p>Converts the PixelRaster into a BufferedImage.</p>
 	 * 
