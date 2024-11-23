@@ -80,4 +80,21 @@ public class ArrayUtils {
 			}
 		}
 	}
+	
+	/**
+	 * Creates an empty 3D array that has the given size and can be subsampled
+	 * on the second and third channel.
+	 * 
+	 * @param size			Size of the 3D array.
+	 * @param subsampled	Whether the second and third channel should be subsampled or not.
+	 * @return The created array.
+	 */
+	public static double[][][] get3DArray(final int size, final boolean subsampled) {
+		final int channelSize = subsampled ? size / 2 : size;
+		double[][][] arr = new double[3][][];
+		arr[0] = new double[size][size];
+		arr[1] = new double[channelSize][channelSize];
+		arr[2] = new double[channelSize][channelSize];
+		return arr;
+	}
 }
