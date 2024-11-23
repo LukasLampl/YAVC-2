@@ -43,41 +43,8 @@ public class ArrayUtils {
 			copyWidth = dest.length - destX;
 		}
 		
-		if (copyWidth * copyHeight < 32) {
-			copy2DArrayManually(src, srcX, srcY, dest, destX, destY, copyWidth, copyHeight);
-			return;
-		}
-		
 		for (int x = 0; x < copyWidth; x++) {
 			System.arraycopy(src[x + srcX], srcY, dest[x + destX], destY, copyHeight);
-		}
-	}
-	
-	/**
-	 * Copies a given array ({@code src}) to a second array ({@code dest}).
-	 * 
-	 * <p><b>Note:</b><br>
-	 * This function does not check for boundaries and is only used for manual
-	 * copying, when the overhead of {@link System#arraycopy(Object, int, Object, int, int)}
-	 * would be larger.
-	 * </p>
-	 * 
-	 * @param src			The source array to copy.
-	 * @param srcX			The offset to the X in the source array.
-	 * @param srcY			The offset to the Y in the source array.
-	 * @param dest			The destination array to copy into.
-	 * @param destX			The X offset in the destination array.
-	 * @param destY			The Y offset in the destination array.
-	 * @param copyWidth		The length to copy in the x direction.
-	 * @param copyHeight	The length to copy in the y direction.
-	 */
-	private static void copy2DArrayManually(final double[][] src, final int srcX, final int srcY,
-											double[][] dest, final int destX, final int destY,
-											int copyWidth, int copyHeight) {
-		for (int x = 0; x < copyWidth; x++) {
-			for (int y = 0; y < copyHeight; y++) {
-				dest[destX + x][destY + y] = src[srcX + x][srcY + y];
-			}
 		}
 	}
 	
