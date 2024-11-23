@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import app.ArgumentProcessor;
+import app.dct.DCTConstants;
 import app.exceptions.CorruptedFileException;
 import app.interprediction.Vector;
 import app.interprediction.VectorConverterPool;
@@ -84,7 +85,7 @@ public class Protocol {
 	 * @param coeff	The coefficient to convert.
 	 * @return The byte representative of the coefficient.
 	 */
-	public static byte getDCTCoeffByte(double coeff) {
+	public static byte getDCTCoeffByte(final double coeff) {
 		byte result = (byte)((int)Math.abs(coeff) & 0x7F);
 		
 		if (coeff < 0) {
@@ -100,7 +101,7 @@ public class Protocol {
 	 * @param coeff	The byte to convert back to the DCT coefficient.
 	 * @return The converted coefficient.
 	 */
-	public static final double getDCTCoeff(byte coeff) {
+	public static final double getDCTCoeff(final byte coeff) {
 		int result = coeff & 0x7F;
 		return (coeff & 0x80) != 0 ? -result : result;
 	}
@@ -118,7 +119,7 @@ public class Protocol {
 	 * 
 	 * @throws IllegalArgumentException	When either the spanX or spanY is out of bounds: -127 <= span <= 127
 	 */
-	public static byte[] getVectorSpanBytes(int spanX, int spanY) throws IllegalArgumentException {
+	public static byte[] getVectorSpanBytes(final int spanX, final int spanY) throws IllegalArgumentException {
 		if (spanX > 127 || spanY > 127
 			|| spanX < -127 || spanY < -127) {
 			throw new IllegalArgumentException("Span has to be in this boundary: -127 <= span <= 127.");
@@ -144,7 +145,7 @@ public class Protocol {
 	 * @param span	The span byte to convert.
 	 * @return The converted span.
 	 */
-	public static int getVectorSpanInt(byte span) {
+	public static int getVectorSpanInt(final byte span) {
 		int res = span & 0x7F;
 		return (span & 0x80) != 0 ? -res : res;
 	}
@@ -160,7 +161,7 @@ public class Protocol {
 	 * <li>Bytes 4 to 8 - Size of the vector.
 	 * </ul>
 	 */
-	public static byte getReferenceAndSizeByte(int reference, int size) {
+	public static byte getReferenceAndSizeByte(final int reference, final int size) {
 		if (reference > 7 || reference < -7) {
 			throw new IllegalArgumentException("Reference out of range (-7 to 7)");
 		}
@@ -211,7 +212,7 @@ public class Protocol {
 	 * 
 	 * @see #getReferenceAndSizeByte(int, int)
 	 */
-	public static int[] getReferenceAndSizeInt(byte refAndSize) {
+	public static int[] getReferenceAndSizeInt(final byte refAndSize) {
 		int ref = (refAndSize >> 4) & 0x0F;
 		int size = refAndSize & 0x0F;
 		
@@ -247,7 +248,7 @@ public class Protocol {
 	 * 
 	 * @throws IllegalArgumentException	When the coordinate is below 0 or above 65536.
 	 */
-	public static byte[] getPositionBytes(int pos) {
+	public static byte[] getPositionBytes(final int pos) {
 		if (pos > 65536) {
 			throw new IllegalArgumentException("Position of vector exceeds maximum limit of 65536");
 		} else if (pos < 0) {
@@ -266,7 +267,7 @@ public class Protocol {
 	 * 
 	 * @see #getPositionBytes(int)
 	 */
-	public static int getPosition(byte c1, byte c2) {
+	public static int getPosition(final byte c1, final byte c2) {
 		int res = (c1 & 0xFF) << 8 | (c2 & 0xFF);
 		return res;
 	}
@@ -277,7 +278,7 @@ public class Protocol {
 	 * @param vecs	The vectors to write.
 	 * @return An estimated size of the total length of all vectors, when they're converted to bytes.
 	 */
-	public static int calculateSize(List<Vector> vecs) {
+	public static int calculateSize(final List<Vector> vecs) {
 		int size = Protocol.VECTOR_SIZE_CHECK_LENGTH;
 		
 		for (Vector v : vecs) {
@@ -298,13 +299,13 @@ public class Protocol {
 	 * 
 	 * @throws IllegalArgumentException	When a coefficient is > 127 or < -127.
 	 */
-	public static byte[][] getVectorAbsoluteColorDifferenceBytes(ArrayList<double[][][]> absoluteDifference, int size) {
-		int halfSize = size / 2;
-		int frac = size == 4 ? 4 : 8;
-		int halfFrac = frac / 2;
-		byte[] YBytes = new byte[size * size];
-		byte[] UBytes = new byte[halfSize * halfSize];
-		byte[] VBytes = new byte[halfSize * halfSize];
+	public static byte[][] getVectorAbsoluteColorDifferenceBytes(ArrayList<double[][][]> absoluteDifference, final int size) {
+		final int halfSize = size / 2;
+		final int frac = size == 4 ? 4 : 8;
+		final int halfFrac = frac / 2;
+		final byte[] YBytes = new byte[size * size];
+		final byte[] UBytes = new byte[halfSize * halfSize];
+		final byte[] VBytes = new byte[halfSize * halfSize];
 		
 		int YIndex = 0;
 		int UIndex = 0;
@@ -313,7 +314,8 @@ public class Protocol {
 		for (double[][][] coeffGroup : absoluteDifference) {
 			for (int x = 0; x < frac; x++) {
 				for (int y = 0; y < frac; y++) {
-					double value = coeffGroup[0][x][y];
+					double value = coeffGroup[DCTConstants.Y_COEFFS_INDEX][x][y];
+					
 					if (value > 127 || value < -127) {
 						double adjustedValue = ArgumentProcessor.autoAdjust ? value < -127 ? -127 : 127 : Double.NaN;
 						String autoAdjust = ArgumentProcessor.autoAdjust ? "on" : "off";
@@ -333,8 +335,9 @@ public class Protocol {
 			
 			for (int x = 0; x < halfFrac; x++) {
 				for (int y = 0; y < halfFrac; y++) {
-					double valueU = coeffGroup[1][x][y];
-					double valueV = coeffGroup[1][x][y];
+					double valueU = coeffGroup[DCTConstants.U_COEFFS_INDEX][x][y];
+					double valueV = coeffGroup[DCTConstants.V_COEFFS_INDEX][x][y];
+					
 					if (valueU > 127 || valueU < -127) {
 						double adjustedValue = ArgumentProcessor.autoAdjust ? valueU < -127 ? -127 : 127 : Double.NaN;
 						String autoAdjust = ArgumentProcessor.autoAdjust ? "on" : "off";
@@ -359,8 +362,8 @@ public class Protocol {
 						}
 					}
 					
-					UBytes[UIndex++] = getDCTCoeffByte(coeffGroup[1][x][y]);
-					VBytes[VIndex++] = getDCTCoeffByte(coeffGroup[2][x][y]);
+					UBytes[UIndex++] = getDCTCoeffByte(valueU);
+					VBytes[VIndex++] = getDCTCoeffByte(valueV);
 				}
 			}
 		}
@@ -374,7 +377,7 @@ public class Protocol {
 	 * @param integer	The integer to convert.
 	 * @return A byte array containing all information for reconstructing the integer.
 	 */
-	public static byte[] getIntBytes(int integer) {
+	public static byte[] getIntBytes(final int integer) {
 		byte[] arr = new byte[4];
 		arr[0] = (byte)((integer >> 24) & 0xFF);
 		arr[1] = (byte)((integer >> 16) & 0xFF);
@@ -391,7 +394,7 @@ public class Protocol {
 	 * 
 	 * @see #getIntBytes(int)
 	 */
-	public static int getIntFromBytes(byte[] data) {
+	public static int getIntFromBytes(final byte[] data) {
 		int num = 0;
 		num |= (data[0] & 0xFF) << 24;
 		num |= (data[1] & 0xFF) << 16;
@@ -410,7 +413,7 @@ public class Protocol {
 	 * @param size	The size to convert.
 	 * @return Byte array with the size.
 	 */
-	public static byte[] getSizeBytes(int size) {
+	public static byte[] getSizeBytes(final int size) {
 		byte[] arr = new byte[3];
 		arr[0] = (byte)((size >> 16) & 0xFF);
 		arr[1] = (byte)((size >> 8) & 0xFF);
@@ -425,7 +428,7 @@ public class Protocol {
 	 * @return The converted size.
 	 * @see #getSizeBytes(int)
 	 */
-	public static int getSizeFromBytes(byte[] data) {
+	public static int getSizeFromBytes(final byte[] data) {
 		int num = 0;
 		num |= (data[0] & 0xFF) << 16;
 		num |= (data[1] & 0xFF) << 8;
@@ -440,9 +443,9 @@ public class Protocol {
 	 * @param sizeOfChunk	The size of each chunk.
 	 * @return A 2D byte array with all split chunks.
 	 */
-	public static byte[][] splitArrayEvenly(byte[] data, int sizeOfChunk) {
-		int estimatedLen = data.length / sizeOfChunk;
-		byte[][] arr = new byte[estimatedLen][];
+	public static byte[][] splitArrayEvenly(final byte[] data, final int sizeOfChunk) {
+		final int estimatedLen = data.length / sizeOfChunk;
+		final byte[][] arr = new byte[estimatedLen][];
 		int index = 0;
 		
 		for (int i = 0; i < data.length; i += sizeOfChunk) {
@@ -462,41 +465,41 @@ public class Protocol {
 		return arr;
 	}
 	
-	public static byte[] getMetadata(Dimension dimensionOfFrames, int numberOfFrames) {
-		byte[] data = new byte[Protocol.META_DATA_LEN];//4 Bytes per integer.
-		byte[] width = Protocol.getIntBytes(dimensionOfFrames.width);
-		byte[] height = Protocol.getIntBytes(dimensionOfFrames.height);
-		byte[] numOfFrames = Protocol.getIntBytes(numberOfFrames);
+	public static byte[] getMetadata(final Dimension dimensionOfFrames, final int numberOfFrames) {
+		final byte[] data = new byte[Protocol.META_DATA_LEN];//4 Bytes per integer.
+		final byte[] width = Protocol.getIntBytes(dimensionOfFrames.width);
+		final byte[] height = Protocol.getIntBytes(dimensionOfFrames.height);
+		final byte[] numOfFrames = Protocol.getIntBytes(numberOfFrames);
 		writeBytesToByteArray(width, data, 0);
 		writeBytesToByteArray(height, data, 4);
 		writeBytesToByteArray(numOfFrames, data, 8);
 		return data;
 	}
 	
-	public static Metadata setMetadata(byte[] data) {
+	public static Metadata setMetadata(final byte[] data) {
 		if (data.length < Protocol.META_DATA_LEN) {
 			throw new IllegalArgumentException("Metadata has to be " + Protocol.META_DATA_LEN + " bytes long.");
 		}
 		
-		byte[][] parts = Protocol.splitArrayEvenly(data, Protocol.SIZE_OF_INT);
-		int width = Protocol.getIntFromBytes(parts[0]);
-		int height = Protocol.getIntFromBytes(parts[1]);
-		int frames = Protocol.getIntFromBytes(parts[2]);
+		final byte[][] parts = Protocol.splitArrayEvenly(data, Protocol.SIZE_OF_INT);
+		final int width = Protocol.getIntFromBytes(parts[0]);
+		final int height = Protocol.getIntFromBytes(parts[1]);
+		final int frames = Protocol.getIntFromBytes(parts[2]);
 		return new Metadata(frames, new Dimension(width, height));
 	}
 	
-	public static byte[] getVectorBytes(List<Vector> vecs, boolean discard) {
+	public static byte[] getVectorBytes(final List<Vector> vecs, final boolean discard) {
 		if (vecs == null) {
 			throw new NullPointerException("No vectors were passed for writing.");
 		}
 		
-		int size = Protocol.calculateSize(vecs);
+		final int size = Protocol.calculateSize(vecs);
 		int currentIndex = 0;
-		byte[] data = new byte[size];
+		final byte[] data = new byte[size];
 		writeBytesToByteArray(Protocol.getSizeBytes(vecs.size()), data, currentIndex);
 		currentIndex += Protocol.VECTOR_SIZE_CHECK_LENGTH;
 		
-		for (Vector v : vecs) {
+		for (final Vector v : vecs) {
 			currentIndex += writeSingleVectorToByteArray(v, currentIndex, data);
 			
 			if (discard) {
@@ -507,13 +510,13 @@ public class Protocol {
 		return data;
 	}
 	
-	private static int writeSingleVectorToByteArray(Vector v, int startIndex, byte[] data) {
+	private static int writeSingleVectorToByteArray(final Vector v, final int startIndex, final byte[] data) {
 		int index = startIndex;
-		byte[] posX = Protocol.getPositionBytes(v.getPosition().x);
-		byte[] posY = Protocol.getPositionBytes(v.getPosition().y);
-		byte[] span = Protocol.getVectorSpanBytes(v.getSpanX(), v.getSpanY());
-		byte refAndSize = Protocol.getReferenceAndSizeByte(v.getReference(), v.getSize());
-		byte[][] differences = Protocol.getVectorAbsoluteColorDifferenceBytes(v.getDCTCoefficientsOfAbsoluteColorDifference(), v.getSize());
+		final byte[] posX = Protocol.getPositionBytes(v.getPosition().x);
+		final byte[] posY = Protocol.getPositionBytes(v.getPosition().y);
+		final byte[] span = Protocol.getVectorSpanBytes(v.getSpanX(), v.getSpanY());
+		final byte refAndSize = Protocol.getReferenceAndSizeByte(v.getReference(), v.getSize());
+		final byte[][] differences = Protocol.getVectorAbsoluteColorDifferenceBytes(v.getDCTCoefficientsOfAbsoluteColorDifference(), v.getSize());
 		
 		writeBytesToByteArray(posX, data, index);
 		index += posX.length;
@@ -543,13 +546,13 @@ public class Protocol {
 	 * 
 	 * @see app.utils.ListManager
 	 */
-	public static void getVectors(byte[] data, ListManager<Vector> vectorListManager, boolean singleThread) throws CorruptedFileException {
+	public static void getVectors(final byte[] data, final ListManager<Vector> vectorListManager, final boolean singleThread) throws CorruptedFileException {
 		if (data.length <= 1) {
 			return;
 		}
 
-		byte[] lenOfVecs = {data[0], data[1], data[2]};
-		int estimatedLength = Protocol.getSizeFromBytes(lenOfVecs);
+		final byte[] lenOfVecs = {data[0], data[1], data[2]};
+		final int estimatedLength = Protocol.getSizeFromBytes(lenOfVecs);
 		ArrayList<Integer> indexesOfVectors = new ArrayList<Integer>();
 		precalculateVectorIndexes(data, indexesOfVectors);
 		
@@ -567,13 +570,13 @@ public class Protocol {
 	 * @param data	The data part with all vectors.
 	 * @param indexesOfVectors	A List to which to add the indexes to.
 	 */
-	private static void precalculateVectorIndexes(byte[] data, List<Integer> indexesOfVectors) {
+	private static void precalculateVectorIndexes(final byte[] data, final List<Integer> indexesOfVectors) {
 		int i = Protocol.VECTOR_SIZE_CHECK_LENGTH;
 		
 		while (i < data.length) {
 			indexesOfVectors.add(i);
-			int[] refAndSize = Protocol.getReferenceAndSizeInt(data[i + 6]);
-			int size = refAndSize[1];
+			final int[] refAndSize = Protocol.getReferenceAndSizeInt(data[i + 6]);
+			final int size = refAndSize[1];
 			//Length of the vector diffs
 			//Original formula: (size * size) + 2 * ((size / 2) * (size / 2)) + Protocol.VECTOR_HEADER_LENGTH
 			i += ((size * size) + 2 * ((size * size) / 4)) + Protocol.VECTOR_HEADER_LENGTH;
@@ -586,17 +589,17 @@ public class Protocol {
 	 * @param lengths	The list to convert.
 	 * @return A byte array that can represent all lengths.
 	 */
-	public static byte[] getLengthBytesOfFrame(List<Integer> lengths) {
-		int estimatedSize = lengths.size() * Protocol.SIZE_LENGTH + Protocol.SIZE_LENGTH;
-		byte[] data = new byte[estimatedSize];
+	public static byte[] getLengthBytesOfFrame(final List<Integer> lengths) {
+		final int estimatedSize = lengths.size() * Protocol.SIZE_LENGTH + Protocol.SIZE_LENGTH;
+		final byte[] data = new byte[estimatedSize];
 		int currentIndex = 0;
 		
-		byte[] lenOfIndexes = Protocol.getSizeBytes(lengths.size());
+		final byte[] lenOfIndexes = Protocol.getSizeBytes(lengths.size());
 		writeBytesToByteArray(lenOfIndexes, data, currentIndex);
 		currentIndex += Protocol.SIZE_LENGTH;
 		
 		for (int i : lengths) {
-			byte[] index = Protocol.getSizeBytes(i);
+			final byte[] index = Protocol.getSizeBytes(i);
 			writeBytesToByteArray(index, data, currentIndex);
 			currentIndex += Protocol.SIZE_LENGTH;
 		}
@@ -610,11 +613,11 @@ public class Protocol {
 	 * @param lengthStream	The data stream that holds all lengths.
 	 * @param lengthList	The list to which to add the lengths of the parts.
 	 */
-	public static void setLengthsOfEachFramePart(byte[] lengthStream, List<Integer> lengthList) {
-		byte[][] data = Protocol.splitArrayEvenly(lengthStream, Protocol.SIZE_LENGTH);
+	public static void setLengthsOfEachFramePart(final byte[] lengthStream, final List<Integer> lengthList) {
+		final byte[][] data = Protocol.splitArrayEvenly(lengthStream, Protocol.SIZE_LENGTH);
 		
 		for (byte[] byteNum : data) {
-			int length = Protocol.getSizeFromBytes(byteNum);
+			final int length = Protocol.getSizeFromBytes(byteNum);
 			lengthList.add(length);
 		}
 	}
@@ -625,8 +628,8 @@ public class Protocol {
 	 * @param raster	The {@code PixelRaster} to convert.
 	 * @return The converted PixelRaster.
 	 */
-	public static byte[] getStartFrameBytes(PixelRaster raster) {
-		byte[] data = new byte[raster.getWidth() * raster.getHeight() * 3 + 1];
+	public static byte[] getStartFrameBytes(final PixelRaster raster) {
+		final byte[] data = new byte[raster.getWidth() * raster.getHeight() * 3 + 1];
 		double[] YUVCache = new double[3]; //Size of 3, because of 3 channels
 		int index = 0;
 		
@@ -646,7 +649,7 @@ public class Protocol {
 		return data;
 	}
 	
-	public static PixelRaster reconstructStartFrame(byte[] data, Dimension dim) {
+	public static PixelRaster reconstructStartFrame(final byte[] data, final Dimension dim) {
 		PixelRaster render = new PixelRaster(dim);
 
 		for (int x = 0, index = 0; x < dim.width; x++) {
@@ -664,14 +667,14 @@ public class Protocol {
 		return render;
 	}
 	
-	public static byte[] getRawBlockBytes(List<MacroBlock> blocks) {
+	public static byte[] getRawBlockBytes(final List<MacroBlock> blocks) {
 		int size = Protocol.RAW_BLOCK_SIZE_CHECK_LENGTH;
 		
 		for (MacroBlock b : blocks) {
 			size += (b.getSquaredSize() * 3) + Protocol.RAW_BLOCK_HEADER_LENGTH;
 		}
 		
-		byte[] data = new byte[size];
+		final byte[] data = new byte[size];
 		double[] YUVCache = new double[3]; //Size of 3 because of 3 channels
 		int currentIndex = 0;
 		writeBytesToByteArray(Protocol.getIntBytes(blocks.size()), data, currentIndex);
@@ -685,13 +688,13 @@ public class Protocol {
 		return data;
 	}
 	
-	private static int writeSingleRawBlockToByteArray(MacroBlock block, double[] YUVCache, byte[] data, int startIndex) {
+	private static int writeSingleRawBlockToByteArray(final MacroBlock block, double[] YUVCache, final byte[] data, final int startIndex) {
 		int index = startIndex;
-		Point pos = block.getPosition();
-		byte[] posX = Protocol.getPositionBytes(pos.x);
-		byte[] posY = Protocol.getPositionBytes(pos.y);
-		byte sizeBytes = Protocol.getReferenceAndSizeByte(0, block.getSize());
-		byte[] differences = new byte[block.getSquaredSize() * 3];
+		final Point pos = block.getPosition();
+		final byte[] posX = Protocol.getPositionBytes(pos.x);
+		final byte[] posY = Protocol.getPositionBytes(pos.y);
+		final byte sizeBytes = Protocol.getReferenceAndSizeByte(0, block.getSize());
+		final byte[] differences = new byte[block.getSquaredSize() * 3];
 		
 		for (int y = 0, diffIndex = 0; y < block.getSize(); y++) {
 			for (int x = 0; x < block.getSize(); x++) {
@@ -717,11 +720,11 @@ public class Protocol {
 		return index - startIndex;
 	}
 	
-	public static ArrayList<MacroBlock> getRawBlocks(byte[] data) throws CorruptedFileException {
+	public static ArrayList<MacroBlock> getRawBlocks(final byte[] data) throws CorruptedFileException {
 		ArrayList<MacroBlock> blocks = new ArrayList<MacroBlock>();
 		int i = 0;
-		byte[] lenOfBlocks = {data[0], data[1], data[2], data[3]};
-		int estimatedLength = Protocol.getIntFromBytes(lenOfBlocks);
+		final byte[] lenOfBlocks = {data[0], data[1], data[2], data[3]};
+		final int estimatedLength = Protocol.getIntFromBytes(lenOfBlocks);
 		i += Protocol.RAW_BLOCK_SIZE_CHECK_LENGTH;
 		
 		while (i < data.length) {
@@ -735,14 +738,14 @@ public class Protocol {
 		return blocks;
 	}
 	
-	private static int addSingleRawBlockToList(byte[] data, int currentIndex, List<MacroBlock> list) {
-		int posX = Protocol.getPosition(data[currentIndex], data[currentIndex + 1]);
-		int posY = Protocol.getPosition(data[currentIndex + 2], data[currentIndex + 3]);
-		int[] sizeBytes = Protocol.getReferenceAndSizeInt(data[currentIndex + 4]);
-		int size = sizeBytes[1];
+	private static int addSingleRawBlockToList(final byte[] data, final int currentIndex, final List<MacroBlock> list) {
+		final int posX = Protocol.getPosition(data[currentIndex], data[currentIndex + 1]);
+		final int posY = Protocol.getPosition(data[currentIndex + 2], data[currentIndex + 3]);
+		final int[] sizeBytes = Protocol.getReferenceAndSizeInt(data[currentIndex + 4]);
+		final int size = sizeBytes[1];
 		MacroBlock block = new MacroBlock(posX, posY, size, true);
-		int length = block.getSquaredSize() * 3;
-		int offset = currentIndex + Protocol.RAW_BLOCK_HEADER_LENGTH;
+		final int length = block.getSquaredSize() * 3;
+		final int offset = currentIndex + Protocol.RAW_BLOCK_HEADER_LENGTH;
 		int x = 0;
 		int y = 0;
 		
@@ -772,7 +775,7 @@ public class Protocol {
 	 * 
 	 * @throws ArrayIndexOutOfBoundsException	When the written array + index exceed the array in which to write.
 	 */
-	private static void writeBytesToByteArray(byte[] bytes, byte[] arr, int index) {
+	private static void writeBytesToByteArray(final byte[] bytes, byte[] arr, int index) {
 		for (int i = 0; i < bytes.length; i++) {
 			arr[index++] = bytes[i];
 		}
