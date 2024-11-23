@@ -88,6 +88,12 @@ public class VectorConversionTask extends RecursiveTask<Void> {
 	private ListManager<Vector> vectorManager = null;
 	
 	/**
+	 * Flag for whether the vectors should be converted by a single thread or not.
+	 * This should only be used, when the order of vectors is important.
+	 */
+	private boolean executeOnSingleThread = false;
+	
+	/**
 	 * Initializes a {@code VectorConversionTask} with the given
 	 * boundaries and data.
 	 * 
@@ -106,6 +112,13 @@ public class VectorConversionTask extends RecursiveTask<Void> {
 	}
 	
 	/**
+	 * Sets the ConversionTask to a single threaded execution mode.
+	 */
+	public void setSingleThreaded() {
+		this.executeOnSingleThread = true;
+	}
+	
+	/**
 	 * Computes how much workload a task would have with the current
 	 * start and end and based on that decides whether to split further
 	 * or execute the vector translation.
@@ -114,7 +127,7 @@ public class VectorConversionTask extends RecursiveTask<Void> {
 	protected Void compute() {
 		int totalWorkload = getWorkloadOfThread();
 		
-		if (totalWorkload > MAX_WORK) {
+		if (totalWorkload > MAX_WORK && !this.executeOnSingleThread) {
 			int middle = (this.start + this.end) / 2;
 			VectorConversionTask tl = new VectorConversionTask(this.start, middle, this.indexes, this.data, this.vectorManager);
 			VectorConversionTask tr = new VectorConversionTask(middle, this.end, this.indexes, this.data, this.vectorManager);

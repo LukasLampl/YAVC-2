@@ -553,7 +553,7 @@ public class Protocol {
 		ArrayList<Integer> indexesOfVectors = new ArrayList<Integer>();
 		precalculateVectorIndexes(data, indexesOfVectors);
 		
-		VectorConverterPool pool = new VectorConverterPool(indexesOfVectors, data, vectorListManager);
+		VectorConverterPool pool = new VectorConverterPool(indexesOfVectors, data, vectorListManager, singleThread);
 		pool.run();
 		
 		if (vectorListManager.getList().size() != estimatedLength) {

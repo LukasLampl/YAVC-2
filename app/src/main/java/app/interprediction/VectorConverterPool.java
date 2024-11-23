@@ -56,17 +56,23 @@ public class VectorConverterPool {
 	private ListManager<Vector> vectorManager = null;
 	
 	/**
+	 * Flag for whether the vector conversion should be single threaded or not.
+	 */
+	private boolean singleThreadedExcution = false;
+	
+	/**
 	 * Initializes a {@code VectorConverterPool} with the given data.
 	 * 
 	 * @param indexes		The indexes of the vector starts.
 	 * @param data			The raw data containing the vectors.
 	 * @param vectorManager	A vector manager in which to write the results to.
 	 */
-	public VectorConverterPool(List<Integer> indexes, byte[] data, ListManager<Vector> vectorManager) {
+	public VectorConverterPool(List<Integer> indexes, byte[] data, ListManager<Vector> vectorManager, boolean singleThreaded) {
 		this.pool = new ForkJoinPool();
 		this.indexes = indexes;
 		this.data = data;
 		this.vectorManager = vectorManager;
+		this.singleThreadedExcution = singleThreaded;
 	}
 	
 	/**
@@ -75,7 +81,13 @@ public class VectorConverterPool {
 	 * @see app.interprediction.Vector
 	 */
 	public void run() {
-		this.pool.invoke(new VectorConversionTask(0, this.indexes.size(), this.indexes, this.data, this.vectorManager));
+		VectorConversionTask task = new VectorConversionTask(0, this.indexes.size(), this.indexes, this.data, this.vectorManager);
+		
+		if (this.singleThreadedExcution) {
+			task.setSingleThreaded();
+		}
+		
+		this.pool.invoke(task);
 		this.pool.shutdown();
 	}
 }
