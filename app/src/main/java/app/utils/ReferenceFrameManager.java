@@ -39,6 +39,8 @@ import app.config;
  * @see app.config
  */
 public class ReferenceFrameManager {
+	private static final int MAX_RASTERS_IN_QUEUE = 2;
+	
 	/**
 	 * Holds all PixelRasters that are available to be used again.
 	 */
@@ -87,7 +89,12 @@ public class ReferenceFrameManager {
 		}
 		
 		PixelRaster r = this.references.remove(0);
-		this.availableRasters.add(r);
+		
+		if (this.availableRasters.size() <= MAX_RASTERS_IN_QUEUE) {
+			this.availableRasters.add(r);
+		} else {
+			r.discard();
+		}
 	}
 	
 	/**
