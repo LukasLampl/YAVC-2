@@ -1,6 +1,10 @@
-package app.encoder;
+ package app.encoder;
 
+import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
+
+import javax.imageio.ImageIO;
 
 import app.ArgumentProcessor;
 import app.dct.DCTEngine;
@@ -81,14 +85,14 @@ public class Encoder {
 				
 //				BufferedImage[] part = RenderEngine.renderQuadtree(leaveNodes, curFrame.getDimension());
 				long start_difference = System.currentTimeMillis();
-				LoadDistributor<MacroBlock> differenceManager = DIFFERENCE_ENGINE.computeDifferences(prevFrame, leaveNodeManager);
+				List<MacroBlock> differences = DIFFERENCE_ENGINE.computeDifferences(prevFrame, leaveNodeManager);
 				long end_difference = System.currentTimeMillis();
 //				BufferedImage[] part = RenderEngine.renderQuadtree(leaveNodeManager.getRawData(), curFrame.getDimension());
 				
 				long start_vector_movement = System.currentTimeMillis();
-				VectorEngineResult vectorEngineResult = VECTOR_ENGINE.computeMovementVectors(differenceManager, this.referenceManager);
+				VectorEngineResult vectorEngineResult = VECTOR_ENGINE.computeMovementVectors(differences, this.referenceManager);
 				LoadDistributor<Vector> movementVectors = vectorEngineResult.getVectors();
-				differenceManager = vectorEngineResult.getRestBlocks();
+				LoadDistributor<MacroBlock> differenceManager = vectorEngineResult.getRestBlocks();
 				long end_vector_movement = System.currentTimeMillis();
 				
 //				BufferedImage vectors = RenderEngine.renderVectors(movementVectors, curFrame.getDimension());
@@ -104,7 +108,7 @@ public class Encoder {
 //				ImageIO.write(part[0], "png", new File(ArgumentProcessor.outputFile.getParent() + "/MB_" + i + ".png"));
 //				ImageIO.write(part[1], "png", new File(ArgumentProcessor.outputFile.getParent() + "/MBA_" + i + ".png"));
 //				ImageIO.write(vectors, "png", new File(output.getParent() + "/V_" + i + ".png"));
-//				ImageIO.write(composite.toBufferedImage(), "png", new File(ArgumentProcessor.outputFile.getParent() + "/VR_" + i + ".png"));
+				ImageIO.write(composite.toBufferedImage(), "png", new File(ArgumentProcessor.outputFile.getParent() + "/VR_" + i + ".png"));
 				
 				long end = System.currentTimeMillis();
 				long time = end - start;

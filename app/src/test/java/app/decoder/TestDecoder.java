@@ -67,7 +67,7 @@ public class TestDecoder {
 				ArrayList<MacroBlock> quadtreeRoots = qE.constructQuadtree(frame);
 				LoadDistributor<MacroBlock> leaveNodeManager = qE.getLeaveNodes(quadtreeRoots);
 				leaveNodeManager.compute(frame.getWidth() * frame.getHeight());
-				VectorEngineResult vectorEngineResult = vE.computeMovementVectors(leaveNodeManager, refMan);
+				VectorEngineResult vectorEngineResult = vE.computeMovementVectors(leaveNodeManager.getRawData(), refMan);
 				LoadDistributor<Vector> movementVectors = vectorEngineResult.getVectors();
 				List<Vector> originalVectors = movementVectors.getRawData();
 				byte[] vectorData = Protocol.getVectorBytes(originalVectors, false);
@@ -136,7 +136,7 @@ public class TestDecoder {
 				list.add(new MacroBlock(0, 0, 4, frame.getPixelBlock(new Point(0, 0), 4, null)));
 				LoadDistributor<MacroBlock> leaveNodeManager = qE.getLeaveNodes(list);
 				leaveNodeManager.compute(frame.getWidth() * frame.getHeight());
-				VectorEngineResult vectorEngineResult = vE.computeMovementVectors(leaveNodeManager, refMan);
+				VectorEngineResult vectorEngineResult = vE.computeMovementVectors(leaveNodeManager.getRawData(), refMan);
 				LoadDistributor<Vector> movementVectors = vectorEngineResult.getVectors();
 				List<Vector> originalVectors = movementVectors.getRawData();
 				byte[] vectorData = Protocol.getVectorBytes(originalVectors, false);

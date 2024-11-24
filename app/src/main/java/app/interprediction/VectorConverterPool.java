@@ -68,7 +68,7 @@ public class VectorConverterPool {
 	 * @param vectorManager	A vector manager in which to write the results to.
 	 */
 	public VectorConverterPool(List<Integer> indexes, byte[] data, ListManager<Vector> vectorManager, boolean singleThreaded) {
-		this.pool = new ForkJoinPool();
+		this.pool = ForkJoinPool.commonPool();
 		this.indexes = indexes;
 		this.data = data;
 		this.vectorManager = vectorManager;

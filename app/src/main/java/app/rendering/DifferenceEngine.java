@@ -17,10 +17,9 @@ public class DifferenceEngine {
 	private static final double DELTA_U = 3.2;
 	private static final double DELTA_V = 3.2;
 	
-	public LoadDistributor<MacroBlock> computeDifferences(PixelRaster prevFrame, LoadDistributor<MacroBlock> threadLoadManager) {
+	public List<MacroBlock> computeDifferences(PixelRaster prevFrame, LoadDistributor<MacroBlock> threadLoadManager) {
 		int predictedSize = threadLoadManager.getNumberOfObjects() / 2;
-		int totalDiffSize = 0;
-		LoadDistributor<MacroBlock> diffManager = new LoadDistributor<MacroBlock>();
+		List<MacroBlock> differences = new ArrayList<MacroBlock>();
 		ArrayList<Future<ArrayList<MacroBlock>>> futureDiffs = new ArrayList<Future<ArrayList<MacroBlock>>>(predictedSize);
 		
 		try {
@@ -80,10 +79,7 @@ public class DifferenceEngine {
 						continue;
 					}
 					
-					for (MacroBlock block : blockList) {
-						diffManager.setObj(block);
-						totalDiffSize += block.getSquaredSize();
-					}
+					differences.addAll(blockList);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -95,7 +91,6 @@ public class DifferenceEngine {
 			e.printStackTrace();
 		}
 		
-		diffManager.compute(totalDiffSize);
-		return diffManager;
+		return differences;
 	}
 }
