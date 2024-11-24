@@ -28,6 +28,7 @@ import java.util.concurrent.RecursiveAction;
 
 import app.config;
 import app.rendering.ColorManager;
+import app.utils.ArrayUtils;
 import app.utils.LoadDistributor;
 import app.utils.MacroBlock;
 import app.utils.PixelRaster;
@@ -175,7 +176,7 @@ public class VectorPredictionTask extends RecursiveAction {
 	 * @param referenceNumber	Number of the reference frame
 	 */
 	private MacroBlock getBestMatchingMacroBlock(final PixelRaster ref, MacroBlock blockToBeSearched, final int referenceNumber) {
-		double[][][] cache = null;
+		double[][][] cache = ArrayUtils.get3DArray(blockToBeSearched.getSize(), true);
 		MacroBlock bestMatch = computeHexagonSearch(ref, blockToBeSearched, cache);
 		bestMatch = computeExhaustiveSearch(blockToBeSearched, bestMatch, ref, cache);
 		
@@ -205,10 +206,10 @@ public class VectorPredictionTask extends RecursiveAction {
 		if (bestMatch != null) {
 			int size = blockToBeSearched.getSize();
 			blockToBeSearched.setConvertedToVector(true);
-			
-			PixelRaster referenceRaster = refs.get(config.MAX_REFERENCES - bestMatch.getReference());
-			double[][][] referenceColor = referenceRaster.getPixelBlock(bestMatch.getPosition(), size, null);
-			double[][][] absoluteColorDifference = getAbsoluteDifferenceOfColors(blockToBeSearched.getColors(), referenceColor, size);
+			//Re-init reference color since the cache is modified every loop.
+			PixelRaster referenceFrame = refs.getByReference(bestMatch.getReference());
+			double[][][] col = referenceFrame.getPixelBlock(bestMatch.getPosition(), size, null);
+			double[][][] absoluteColorDifference = getAbsoluteDifferenceOfColors(blockToBeSearched.getColors(), col, size);
 			
 			vec = new Vector(bestMatch.getPositonX(), bestMatch.getPositionY(), size);
 			vec.setAppendedBlock(blockToBeSearched);
@@ -430,15 +431,18 @@ public class VectorPredictionTask extends RecursiveAction {
 		double lowestMSE = bestMatchTillNow.getMSE();
 		Dimension dim = ref.getDimension();
 		Point pos = blockToSearch.getPosition();
-		Point bestMatchPos = bestMatchTillNow.getPosition();
-		MacroBlock mostEqualBlock = new MacroBlock(bestMatchPos.x, bestMatchPos.y, size, false);
+		MacroBlock mostEqualBlock = bestMatchTillNow;
+		final int startY = pos.y - searchWindow;
+		final int endY = pos.y + searchWindow;
+		final int startX = pos.x - searchWindow;
+		final int endX = pos.x + searchWindow;
 		
-		for (int y = pos.y - searchWindow; y < pos.y + searchWindow; y++) {
+		for (int y = startY; y < endY; y++) {
 			if (y < 0 || y >= dim.height) {
 				continue;
 			}
 			
-			for (int x = pos.x - searchWindow; x < pos.x + searchWindow; x++) {
+			for (int x = startX; x < endX; x++) {
 				if (x < 0 || x >= dim.width) {
 					continue;
 				}
@@ -458,7 +462,7 @@ public class VectorPredictionTask extends RecursiveAction {
 			mostEqualBlock.setMSE(lowestMSE);
 		}
 		
-		return mostEqualBlock == null ? bestMatchTillNow : mostEqualBlock;
+		return mostEqualBlock;
 	}
 	
 	/**

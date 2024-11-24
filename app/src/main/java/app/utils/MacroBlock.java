@@ -226,7 +226,7 @@ public class MacroBlock implements Discardable {
 	/**
 	 * <p>Initializes the color components of the MacroBlock individually.</p>
 	 * 
-	 * @param color	Color components of the MacroBlock.
+	 * @param colors	Color components of the MacroBlock.
 	 * 
 	 * @throws NullPointerException	if the following situations:
 	 * <ul><li>If the Y component is null
