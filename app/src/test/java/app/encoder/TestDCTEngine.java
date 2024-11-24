@@ -1,18 +1,19 @@
 package app.encoder;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.util.ArrayList;
 import java.util.Random;
 
 import org.junit.jupiter.api.Test;
 
 import app.dct.DCTEngine;
 import app.rendering.ColorManager;
+import app.utils.ArrayUtils;
 
 public class TestDCTEngine {
 	private Random random = new Random();
-	private double DELTA = 5.0;
+	private double DELTA = 0.05;
 	
 	@Test
 	public void testStep() {
@@ -44,15 +45,8 @@ public class TestDCTEngine {
 	
 	@Test
 	public void testDCTCoefficientsTime() {
-		double[][][] matrix_8x8 = new double[3][][];
-		matrix_8x8[ColorManager.Y_INDEX] = new double[8][8];
-		matrix_8x8[ColorManager.U_INDEX] = new double[4][4];
-		matrix_8x8[ColorManager.V_INDEX] = new double[4][4];
-		
-		double[][][] matrix_128x128 = new double[3][][];
-		matrix_128x128[ColorManager.Y_INDEX] = new double[128][128];
-		matrix_128x128[ColorManager.U_INDEX] = new double[64][64];
-		matrix_128x128[ColorManager.V_INDEX] = new double[64][64];
+		double[][][] matrix_8x8 = ArrayUtils.get3DArray(8, true);
+		double[][][] matrix_128x128 = ArrayUtils.get3DArray(128, true);
 		
 		long start_t = System.currentTimeMillis();
 		
@@ -74,16 +68,73 @@ public class TestDCTEngine {
 		double[][][] matrix = cache;
 		
 		if (matrix == null) {
-			matrix = new double[3][][];
-			matrix[ColorManager.Y_INDEX] = new double[size][size];
-			matrix[ColorManager.U_INDEX] = new double[size / 2][size / 2];
-			matrix[ColorManager.V_INDEX] = new double[size / 2][size / 2];
+			matrix = ArrayUtils.get3DArray(size, true);
 		}
 		
 		if (verbose) {
 			System.out.println(" > Filling out matrix");
 		}
 		
+		fillMatrix(matrix);
+		
+		if (verbose) {
+			System.out.println(" > Getting DCT-Coeffs");
+		}
+		
+		double[][][] coeffs = dE.computeDCTOfVectorColorDifference(matrix, size, false);
+		
+		if (verbose) {
+			System.out.println(" > Getting IDCT-Coeffs");
+		}
+		
+		double[][][] resultingMatrix = dE.computeIDCTOfVectorColorDifference(coeffs, size, false);
+		
+		if (verbose) {
+			System.out.println(" > Check values");
+		}
+		
+		for (int n = 0; n < matrix.length; n++) {
+			for (int i = 0; i < matrix[n].length; i++) {
+				assertArrayEquals(matrix[n][i], resultingMatrix[n][i], DELTA);
+			}
+		}
+	}
+	
+	@Test
+	public void testMatrixTranslation() {
+		int[] sizes = {4, 8, 16, 32, 64, 128};
+		
+		for (int size : sizes) {
+			testMatrixTranslationTask(size);
+		}
+	}
+	
+	private void testMatrixTranslationTask(int size) {
+		DCTEngine dE = new DCTEngine();
+		double[][][] matrix = ArrayUtils.get3DArray(size, true);
+		fillMatrix(matrix);
+		
+		double[][][] converted = dE.computeDCTOfVectorColorDifference(matrix, size, false);
+		assertEquals(matrix.length, converted.length);
+		
+		for (int i = 0; i < matrix.length; i++) {
+			assertEquals(matrix[i].length, converted[i].length);
+			
+			for (int n = 0; n < matrix[i].length; n++) {
+				assertEquals(matrix[i][n].length, converted[i][n].length);
+			}
+		}
+		
+		double[][][] decoded = dE.computeIDCTOfVectorColorDifference(converted, size, false);
+		
+		for (int n = 0; n < matrix.length; n++) {
+			for (int i = 0; i < matrix[n].length; i++) {
+				assertArrayEquals(matrix[n][i], decoded[n][i], DELTA);
+			}
+		}
+	}
+	
+	private void fillMatrix(double[][][] matrix) {
 		for (int x = 0; x < matrix[ColorManager.Y_INDEX].length; x++) {
 			for (int y = 0; y < matrix[ColorManager.Y_INDEX][x].length; y++) {
 				matrix[ColorManager.Y_INDEX][x][y] = this.random.nextDouble();
@@ -94,41 +145,6 @@ public class TestDCTEngine {
 			for (int y = 0; y < matrix[ColorManager.U_INDEX][x].length; y++) {
 				matrix[ColorManager.U_INDEX][x][y] = this.random.nextDouble();
 				matrix[ColorManager.V_INDEX][x][y] = this.random.nextDouble();
-			}
-		}
-		
-		if (verbose) {
-			System.out.println(" > Getting DCT-Coeffs");
-		}
-		
-		ArrayList<double[][][]> coeffs = dE.computeDCTOfVectorColorDifference(matrix, size);
-		
-		if (verbose) {
-			System.out.println(" > Getting IDCT-Coeffs");
-		}
-		
-		double[][][] resultingMatrix = dE.computeIDCTOfVectorColorDifference(coeffs, size);
-		
-		if (verbose) {
-			System.out.println(" > Check values");
-		}
-		
-		for (int x = 0; x < resultingMatrix[ColorManager.Y_INDEX].length; x++) {
-			for (int y = 0; y < resultingMatrix[ColorManager.Y_INDEX][x].length; y++) {
-				double rC = resultingMatrix[ColorManager.Y_INDEX][x][y];
-				double oC = matrix[ColorManager.Y_INDEX][x][y];
-				assertEquals(oC, rC, DELTA);
-			}
-		}
-		
-		for (int x = 0; x < resultingMatrix[ColorManager.U_INDEX].length; x++) {
-			for (int y = 0; y < resultingMatrix[ColorManager.U_INDEX][x].length; y++) {
-				double rCU = resultingMatrix[ColorManager.U_INDEX][x][y];
-				double rCV = resultingMatrix[ColorManager.V_INDEX][x][y];
-				double oCU = matrix[ColorManager.U_INDEX][x][y];
-				double oCV = matrix[ColorManager.V_INDEX][x][y];
-				assertEquals(oCU, rCU, DELTA);
-				assertEquals(oCV, rCV, DELTA);
 			}
 		}
 	}

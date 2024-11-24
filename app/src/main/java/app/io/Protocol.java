@@ -293,16 +293,36 @@ public class Protocol {
 	/**
 	 * Converts the absolute color difference of the vector to a byte matrix which can be then encoded.
 	 * 
+	 * <p><b>Process:</b><br>
+	 * Since using a DCT on {@code n} sized blocks where {@code n > 8} is time consuming, a block that
+	 * is bigger than 8x8 will be splitted.<br><br>
+	 * 
+	 * First a 4x4 and 8x8 block will be normally written with its 3 channels, first in a {@code n * n} long
+	 * Y-channel then two {@code 2 * (size * size / 4)} channels.<br><br>
+	 * 
+	 * But if a block exceeds 8x8 it'll be spitted into 8x8 blocks that are individually processed further.
+	 * This means if we had a 16x16 block it'll be splitted into 4 8x8 blocks. Those will be written from
+	 * Top-Left to Bottom-Right in each channel individually.<br><br>
+	 * 
+	 * If you want to perceive data, you'll have to get all 3 channels, then the offset of the Y-Channel,
+	 * the U-Channel and the V-Channel. After that the Y-Component in the Y-Channel is as long as
+	 * the block length ({@code n * n}). Now to get the U-Component you'll need to offset to the U start,
+	 * which can be achieved by calculating {@code UStart = YStart + YLength}. The U and V components are
+	 * approximately {@code (n / 2) * (n / 2)} or {@code (n * n) / 4} long. REMEMBER the layout is from Top-Left
+	 * to Bottom-Right.
+	 * </p>
+	 * 
 	 * @param absoluteDifference	The absolute color difference.
 	 * @param size					The size of the vector.
 	 * @return A matrix representation of the absolute color difference.
 	 * 
-	 * @throws IllegalArgumentException	When a coefficient is > 127 or < -127.
+	 * @throws IllegalArgumentException	When a coefficient is > 127 or < -127 and {@code autoAdjust} is off.
 	 */
-	public static byte[][] getVectorAbsoluteColorDifferenceBytes(ArrayList<double[][][]> absoluteDifference, final int size) {
+	public static byte[][] getVectorAbsoluteColorDifferenceBytes(double[][][] absoluteDifference, final int size) {
 		final int halfSize = size / 2;
 		final int frac = size == 4 ? 4 : 8;
 		final int halfFrac = frac / 2;
+		final int groups = size == 4 ? 1 : (size * size) / 64;
 		final byte[] YBytes = new byte[size * size];
 		final byte[] UBytes = new byte[halfSize * halfSize];
 		final byte[] VBytes = new byte[halfSize * halfSize];
@@ -311,64 +331,64 @@ public class Protocol {
 		int UIndex = 0;
 		int VIndex = 0;
 		
-		for (double[][][] coeffGroup : absoluteDifference) {
+		for (int n = 0, xToAdd = 0, halfXToAdd = 0, yToAdd = 0, halfYToAdd = 0; n < groups; n++, xToAdd += 8, halfXToAdd += 4) {
+			if (xToAdd >= size) {
+				xToAdd = 0;
+				halfXToAdd = 0;
+				yToAdd += 8;
+				halfYToAdd += 4;
+			}
+			
 			for (int x = 0; x < frac; x++) {
+				final int actualX = xToAdd + x;
+				
 				for (int y = 0; y < frac; y++) {
-					double value = coeffGroup[DCTConstants.Y_COEFFS_INDEX][x][y];
-					
-					if (value > 127 || value < -127) {
-						double adjustedValue = ArgumentProcessor.autoAdjust ? value < -127 ? -127 : 127 : Double.NaN;
-						String autoAdjust = ArgumentProcessor.autoAdjust ? "on" : "off";
-						String msg = "The DCT-Coefficient must lie between -127 and 127. You might need to adjust the quantization values. (Automatic adjust: " + autoAdjust + "; from: " + value + "; to: " + adjustedValue + "; size: " + size + "; x: " + x + "; y: " + y + ")";
-
-						if (ArgumentProcessor.autoAdjust) {
-							System.err.println(msg);
-							value = adjustedValue;
-						} else {
-							throw new IllegalArgumentException(msg);
-						}
-					}
-					
-					YBytes[YIndex++] = getDCTCoeffByte(value);
+					final int actualY = yToAdd + y;
+					double value = absoluteDifference[DCTConstants.Y_COEFFS_INDEX][actualX][actualY];
+					YBytes[YIndex++] = getDCTCoeffByte(getAdjustedDCTCoefficient(value));
 				}
 			}
 			
 			for (int x = 0; x < halfFrac; x++) {
+				final int actualX = halfXToAdd + x;
+				
 				for (int y = 0; y < halfFrac; y++) {
-					double valueU = coeffGroup[DCTConstants.U_COEFFS_INDEX][x][y];
-					double valueV = coeffGroup[DCTConstants.V_COEFFS_INDEX][x][y];
-					
-					if (valueU > 127 || valueU < -127) {
-						double adjustedValue = ArgumentProcessor.autoAdjust ? valueU < -127 ? -127 : 127 : Double.NaN;
-						String autoAdjust = ArgumentProcessor.autoAdjust ? "on" : "off";
-						String msg = "The DCT-Coefficient must lie between -127 and 127. You might need to adjust the quantization values. (Automatic adjust: " + autoAdjust + "; from: " + valueU + "; to: " + adjustedValue + "; size: " + size + "; x: " + x + "; y: " + y + ")";
-
-						if (ArgumentProcessor.autoAdjust) {
-							System.err.println(msg);
-							valueU = adjustedValue;
-						} else {
-							throw new IllegalArgumentException(msg);
-						}
-					} else if (valueV > 127 || valueV < -127) {
-						double adjustedValue = ArgumentProcessor.autoAdjust ? valueV < -127 ? -127 : 127 : Double.NaN;
-						String autoAdjust = ArgumentProcessor.autoAdjust ? "on" : "off";
-						String msg = "The DCT-Coefficient must lie between -127 and 127. You might need to adjust the quantization values. (Automatic adjust: " + autoAdjust + "; from: " + valueV + "; to: " + adjustedValue + "; size: " + size + "; x: " + x + "; y: " + y + ")";
-
-						if (ArgumentProcessor.autoAdjust) {
-							System.err.println(msg);
-							valueV = adjustedValue;
-						} else {
-							throw new IllegalArgumentException(msg);
-						}
-					}
-					
-					UBytes[UIndex++] = getDCTCoeffByte(valueU);
-					VBytes[VIndex++] = getDCTCoeffByte(valueV);
+					final int actualY = halfYToAdd + y;
+					double valueU = absoluteDifference[DCTConstants.U_COEFFS_INDEX][actualX][actualY];
+					double valueV = absoluteDifference[DCTConstants.V_COEFFS_INDEX][actualX][actualY];
+					UBytes[UIndex++] = getDCTCoeffByte(getAdjustedDCTCoefficient(valueU));
+					VBytes[VIndex++] = getDCTCoeffByte(getAdjustedDCTCoefficient(valueV));
 				}
 			}
 		}
 		
 		return new byte[][] {YBytes, UBytes, VBytes};
+	}
+	
+	/**
+	 * Adjusts an DCT coefficient if it's out of bounds, but only when
+	 * {@link app.ArgumentProcessor#autoAdjust ArgumentProcessor.autoAdjust} is on.
+	 * 
+	 * @param coeff	The coefficient to adjust when possible.
+	 * @return The adjusted coefficient.
+	 */
+	private static double getAdjustedDCTCoefficient(double coeff) {
+		if (coeff > 127 || coeff < -127) {
+			double adjustedValue = ArgumentProcessor.autoAdjust ? coeff < -127 ? -127 : 127 : Double.NaN;
+			String autoAdjust = ArgumentProcessor.autoAdjust ? "on" : "off";
+			String msg = "The DCT-Coefficient must lie between -127 and 127."
+					+ "You might need to adjust the quantization values. (Automatic adjust: "
+					+ autoAdjust + "; from: " + coeff + "; to: " + adjustedValue + ")";
+
+			if (ArgumentProcessor.autoAdjust) {
+				System.err.println(msg);
+				return adjustedValue;
+			} else {
+				throw new IllegalArgumentException(msg);
+			}
+		}
+		
+		return coeff;
 	}
 	
 	/**

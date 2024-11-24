@@ -34,6 +34,7 @@ public class RenderEngine {
 				}
 			}
 
+			long s_vrT = System.currentTimeMillis();
 			if (vecs != null) {
 				List<Callable<Void>> tasks = new ArrayList<Callable<Void>>();
 				
@@ -47,6 +48,8 @@ public class RenderEngine {
 			
 			executor.shutdown();
 			while (!executor.awaitTermination(250, TimeUnit.MICROSECONDS)) {}
+			long e_vrT = System.currentTimeMillis();
+			System.out.println(String.format("      >>> Vector render time: %4dms", (e_vrT - s_vrT)));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -86,17 +89,18 @@ public class RenderEngine {
 			long rT = 0;
 			long pT = 0;
 			
-			for (Vector v : vecList) {
+			for (final Vector v : vecList) {
 				long sIT = System.currentTimeMillis();
-				PixelRaster referencedFrame = v.getReference() == -1 ? null : refs.getByReference(v.getReference());
+				final PixelRaster referencedFrame = v.getReference() == -1 ? null : refs.getByReference(v.getReference());
 				Point pos = v.getPosition();
-				int endX = pos.x + v.getSpanX();
-				int endY = pos.y + v.getSpanY();
-				int size = v.getSize();
+				final int endX = pos.x + v.getSpanX();
+				final int endY = pos.y + v.getSpanY();
+				final int size = v.getSize();
+				try {
+				final double[][][] selectedCache = pixelBlockCache[QuadtreeEngine.getIndexBySize(size)];
 				iT += (System.currentTimeMillis() - sIT);
 				long sPBT = System.currentTimeMillis();
-				double[][][] selectedCache = pixelBlockCache[QuadtreeEngine.getIndexBySize(size)];
-				double[][][] block = referencedFrame.getPixelBlock(pos, size, selectedCache);
+				final double[][][] block = referencedFrame.getPixelBlock(pos, size, selectedCache);
 				pBT += (System.currentTimeMillis() - sPBT);
 				long sIDT = System.currentTimeMillis();
 				double[][][] coeffs = v.getIDCTCoefficientsOfAbsoluteColorDifference(allowModToAbsDiff);
@@ -104,30 +108,32 @@ public class RenderEngine {
 				//Use block as cache, because the pixel block is a allocated double[][][] from the image
 				//and thus editing it won't change the original frame.
 				long srT = System.currentTimeMillis();
-				double[][][] reconstructedColor = reconstructColors(coeffs, block, size, block);
+				final double[][][] reconstructedColor = reconstructColors(coeffs, block, size, block);
 				rT += (System.currentTimeMillis() - srT);
 				long sPT = System.currentTimeMillis();
-				
+
 				for (int x = 0; x < size; x++) {
-					int posX = endX + x;
-					int subSX = x / 2;
+					final int posX = endX + x;
+					final int subSX = x / 2;
 					if (posX < 0 || posX >= dim.width) continue;
 					if (pos.x + x < 0 || pos.x + x >= dim.width) continue;
 					
 					for (int y = 0; y < size; y++) {
-						int posY = endY + y;
-						int subSY = y / 2;
+						final int posY = endY + y;
+						final int subSY = y / 2;
 						if (posY < 0 || posY >= dim.height) continue;
 						if (pos.y + y < 0 || pos.y + y >= dim.height) continue;
 						
-						double Y = reconstructedColor[ColorManager.Y_INDEX][x][y];
-						double U = reconstructedColor[ColorManager.U_INDEX][subSX][subSY];
-						double V = reconstructedColor[ColorManager.V_INDEX][subSX][subSY];
+						final double Y = reconstructedColor[ColorManager.Y_INDEX][x][y];
+						final double U = reconstructedColor[ColorManager.U_INDEX][subSX][subSY];
+						final double V = reconstructedColor[ColorManager.V_INDEX][subSX][subSY];
 						render.setYUV(posX, posY, Y, U, V);
 					}
 				}
 				pT += (System.currentTimeMillis() - sPT);
+				} catch (Exception e) {e.printStackTrace(); System.exit(0);}
 			}
+
 			System.out.println(String.format("      > Init time: %4dms | PixelBlock grab time: %4dms | IDCT time: %4dms | Reconstruction time: %4dms | Put time: %4dms", iT, pBT, iDT, rT, pT));
 			return null;
 		};

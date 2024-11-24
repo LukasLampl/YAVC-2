@@ -45,14 +45,44 @@ import app.utils.MathUtils;
  */
 
 public class ColorManager {
+	/**
+	 * The index at which the Y component can be found in a 3D array.
+	 */
 	public static final int Y_INDEX = 0;
+	
+	/**
+	 * The index at which the U component can be found in a 3D array.
+	 */
 	public static final int U_INDEX = 1;
+	
+	/**
+	 * The index at which the V component can be found in a 3D array.
+	 */
 	public static final int V_INDEX = 2;
 	
+	/**
+	 * The index at which the R component can be found in a 3D array.
+	 */
 	public static final int R_INDEX = 0;
+	
+	/**
+	 * The index at which the G component can be found in a 3D array.
+	 */
 	public static final int G_INDEX = 1;
+	
+	/**
+	 * The index at which the B component can be found in a 3D array.
+	 */
 	public static final int B_INDEX = 2;
 	
+	/**
+	 * The number of total channels for colors.
+	 */
+	public static final int CHANNELS = 3;
+	
+	/**
+	 * Holds the color for a null color field (unset color).
+	 */
 	public static final int[] NULL_COLOR = {255, 0, 255};
 	
 	/**

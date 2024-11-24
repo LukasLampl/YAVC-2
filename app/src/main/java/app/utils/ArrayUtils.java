@@ -1,5 +1,7 @@
 package app.utils;
 
+import app.rendering.ColorManager;
+
 public class ArrayUtils {
 	/**
 	 * Copies a given array ({@code src}) to a second array ({@code dest}).
@@ -58,10 +60,14 @@ public class ArrayUtils {
 	 */
 	public static double[][][] get3DArray(final int size, final boolean subsampled) {
 		final int channelSize = subsampled ? size / 2 : size;
-		double[][][] arr = new double[3][][];
+		double[][][] arr = new double[ColorManager.CHANNELS][][];
 		arr[0] = new double[size][size];
 		arr[1] = new double[channelSize][channelSize];
 		arr[2] = new double[channelSize][channelSize];
 		return arr;
+	}
+	
+	public static void copyArray(final byte[] src, final int srcX, byte[] dest, final int destX, final int length) {
+		System.arraycopy(src, srcX, dest, destX, length);
 	}
 }

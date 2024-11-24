@@ -70,4 +70,15 @@ public class TestProtocol {
 			assertThrows(IllegalArgumentException.class, () -> Protocol.getReferenceAndSizeByte(refAndSize[0], refAndSize[1]));
 		}
 	}
+	
+	@Test
+	public void test_DCT_coefficient_bytes_001() {
+		double[] coeffs = {-51.0, 0, 37.0, -127.0, 127.0, 58.0, 65.0, 87.0, -32.0, -1.0, 1.0};
+		
+		for (double coeff : coeffs) {
+			byte b_c = Protocol.getDCTCoeffByte(coeff);
+			double convertedByte = Protocol.getDCTCoeff(b_c);
+			assertEquals(coeff, convertedByte);
+		}
+	}
 }

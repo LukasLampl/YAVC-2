@@ -663,7 +663,7 @@ public class PixelRaster implements Discardable {
 		int yToCopy = positionY + size >= this.dim.height ? this.dim.height - positionY : size;
 		
 		ArrayUtils.copy2DArray(this.Y, positionX, positionY, res[ColorManager.Y_INDEX], 0, 0, xToCopy, yToCopy);
-		
+
 		xToCopy = halfPosX + halfSize >= halfDimWidth ? halfDimWidth - halfPosX : halfSize;
 		yToCopy = halfPosY + halfSize >= halfDimHeight ? halfDimHeight - halfPosY : halfSize;
 

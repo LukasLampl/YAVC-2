@@ -21,9 +21,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package app.interprediction;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.RecursiveTask;
+import java.util.concurrent.RecursiveAction;
 
 import app.dct.DCTConstants;
 import app.io.Protocol;
@@ -53,13 +52,13 @@ import app.utils.ListManager;
  * @author Lukas Lampl
  * @since 1.2.5 [Optimized prototype]
  */
-public class VectorConversionTask extends RecursiveTask<Void> {
+public class VectorConversionTask extends RecursiveAction {
 	private static final long serialVersionUID = -1416920943935831433L;
 	
 	/**
 	 * Determines the total amount of work per Recursive task measured in pixels.
 	 */
-	private static final int MAX_WORK = 256 * 256;
+	private static final int MAX_WORK = 512 * 512;
 	
 	/**
 	 * Holds the start index in the indexes array.
@@ -124,7 +123,7 @@ public class VectorConversionTask extends RecursiveTask<Void> {
 	 * or execute the vector translation.
 	 */
 	@Override
-	protected Void compute() {
+	protected void compute() {
 		int totalWorkload = getWorkloadOfThread();
 		
 		if (totalWorkload > MAX_WORK && !this.executeOnSingleThread) {
@@ -135,8 +134,6 @@ public class VectorConversionTask extends RecursiveTask<Void> {
 		} else {
 			execute();
 		}
-		
-		return null;
 	}
 	
 	/**
@@ -175,11 +172,11 @@ public class VectorConversionTask extends RecursiveTask<Void> {
 	public void execute() {
 		for (int i = this.start; i < this.end; i++) {
 			final int index = indexes.get(i).intValue();
-			final int posX = Protocol.getPosition(data[index], data[index + 1]);
-			final int posY = Protocol.getPosition(data[index + 2], data[index + 3]);
-			final int spanX = Protocol.getVectorSpanInt(data[index + 4]);
-			final int spanY = Protocol.getVectorSpanInt(data[index + 5]);
-			final int[] refAndSize = Protocol.getReferenceAndSizeInt(data[index + 6]);
+			final int posX = Protocol.getPosition(this.data[index], this.data[index + 1]);
+			final int posY = Protocol.getPosition(this.data[index + 2], this.data[index + 3]);
+			final int spanX = Protocol.getVectorSpanInt(this.data[index + 4]);
+			final int spanY = Protocol.getVectorSpanInt(this.data[index + 5]);
+			final int[] refAndSize = Protocol.getReferenceAndSizeInt(this.data[index + 6]);
 			final int ref = refAndSize[0];
 			final int size = refAndSize[1];
 			Vector vec = vectorManager.getCachedObj();
@@ -191,7 +188,7 @@ public class VectorConversionTask extends RecursiveTask<Void> {
 			vec.setSize(size);
 			vec.setPosition(posX, posY);
 			
-			ArrayList<double[][][]> diffs = getVectorDifferences(data, Protocol.VECTOR_HEADER_LENGTH + index, size, vec);
+			double[][][] diffs = getVectorDifferences(this.data, index + Protocol.VECTOR_HEADER_LENGTH, size, vec);
 			vec.setAbsolutedifferenceDCTCoefficients(diffs);
 			vec.setSpanX(spanX);
 			vec.setSpanY(spanY);
@@ -201,7 +198,7 @@ public class VectorConversionTask extends RecursiveTask<Void> {
 	}
 
 	/**
-	 * Gets an ArrayList of 3D double arrays that represent the DCT-II coefficients.
+	 * Gets an 3D double array that represent the DCT-II coefficients.
 	 * 
 	 * <p><b>Note:</b><br>
 	 * The function gets one when the {@code size = 4}. When the {@code size > 4} the
@@ -235,10 +232,8 @@ public class VectorConversionTask extends RecursiveTask<Void> {
 	 * @param cachedVector	A Vector that can be overwritten (GC reasons).
 	 * @return The converted vector color difference.
 	 */
-	private ArrayList<double[][][]> getVectorDifferences(final byte[] data, final int startPos, final int size, final Vector cachedVector) {
-		ArrayList<double[][][]> cachedGroups = cachedVector.getDCTCoefficientsOfAbsoluteColorDifference();
-		ArrayList<double[][][]> DCTCoeffGroups = new ArrayList<double[][][]>();
-		final boolean wasCachedGroup4x4Block = cachedGroups == null ? true : cachedGroups.size() == 1;
+	private double[][][] getVectorDifferences(final byte[] data, final int startPos, final int size, final Vector cachedVector) {
+		double[][][] DCTCoeffGroups = ArrayUtils.get3DArray(size, true);
 		final int YLength = size * size;
 		final int halfSize = size / 2;
 		final int UVLength = halfSize * halfSize;
@@ -248,14 +243,18 @@ public class VectorConversionTask extends RecursiveTask<Void> {
 		final int VStart = UStart + UVLength;
 		
 		if (size == 4) {
-			DCTCoeffGroups.add(getDCTCoeffsOutOfByteStream(data, 4, cachedGroups, wasCachedGroup4x4Block, YStart, UStart, VStart));
+			writeDCTCoeffsOutOfByteStream(data, 4, DCTCoeffGroups, YStart, UStart, VStart, 0, 0);
 		} else {
-			for (int u = 0; u < YLength; u += 64) {
-				final int subsampledOffset = u / 4;
+			for (int u = 0, subSU = 0, x = 0, y = 0; u < YLength; u += 64, subSU += 16, x += 8) {
+				if (x >= size) {
+					y += 8;
+					x = 0;
+				}
+				
 				final int actualYStart = YStart + u;
-				final int actualUStart = UStart + subsampledOffset;
-				final int actualVStart = VStart + subsampledOffset;
-				DCTCoeffGroups.add(getDCTCoeffsOutOfByteStream(data, 8, cachedGroups, wasCachedGroup4x4Block, actualYStart, actualUStart, actualVStart));
+				final int actualUStart = UStart + subSU;
+				final int actualVStart = VStart + subSU;
+				writeDCTCoeffsOutOfByteStream(data, 8, DCTCoeffGroups, actualYStart, actualUStart, actualVStart, x, y);
 			}
 		}
 		
@@ -263,64 +262,58 @@ public class VectorConversionTask extends RecursiveTask<Void> {
 	}
 	
 	/**
-	 * Gets the DCT-II coefficients out of the raw data stream.
+	 * Gets the DCT-II coefficients out of the raw data stream and writes them into the given array.
 	 * 
 	 * @param vectorPart				The raw data from which to get the DCT-II coefficients.
 	 * @param size						Size of the vector.
-	 * @param cachedGroups				Cached double[][][] arrays in an ArrayList. (To reduce GC)
-	 * @param wasCachedGroup4x4Block	Flag for whether the previous group was a 4x4 block or not.
+	 * @param arrayToWriteInto			Array to write the coefficients into.
 	 * @param YStart					Start of the Y channel data.
 	 * @param UStart					Start of the U channel data.
 	 * @param VStart					Start of the V channel data.
-	 * @return An 3D array with the DCT-II coefficients.
+	 * @param offsetX					The offset to the x in which to write the data.
+	 * @param offsetY					The offset to the y in which to write the data.
 	 */
-	private double[][][] getDCTCoeffsOutOfByteStream(final byte[] vectorPart, final int size,
-			ArrayList<double[][][]> cachedGroups, final boolean wasCachedGroup4x4Block,
-			final int YStart, final int UStart, final int VStart) {
+	private void writeDCTCoeffsOutOfByteStream(final byte[] vectorPart, final int size,
+			double[][][] arrayToWriteInto, final int YStart, final int UStart, final int VStart,
+			final int offsetX, final int offsetY) {
 		final int YLength = size * size;
 		final int halfSize = size / 2;
 		final int UVLength = halfSize * halfSize;
-		final int lengthTillMatrixBreak = size == 4 ? 4 : 8;
-		final int halfLengthTillMatrixBreak = lengthTillMatrixBreak / 2;
+		final int lengthTillMatrixBreak = size;
+		final int halfLengthTillMatrixBreak = halfSize;
+		final int halfOffsetX = offsetX / 2;
+		final int halfOffsetY = offsetY  / 2;
 		int x = 0;
 		int y = 0;
 		
-		double[][][] res;
+		double[][] YChannel = arrayToWriteInto[DCTConstants.Y_COEFFS_INDEX];
+		double[][] UChannel = arrayToWriteInto[DCTConstants.U_COEFFS_INDEX];
+		double[][] VChannel = arrayToWriteInto[DCTConstants.V_COEFFS_INDEX];
 				
-		if (size == 4) {
-			res = cachedGroups == null ? ArrayUtils.get3DArray(4, true)
-					: cachedGroups.size() > 0 ? cachedGroups.remove(0) : ArrayUtils.get3DArray(4, true);
-		} else {
-			res = cachedGroups == null ?  ArrayUtils.get3DArray(8, true)
-					: wasCachedGroup4x4Block || cachedGroups.isEmpty() ? ArrayUtils.get3DArray(8, true) : cachedGroups.remove(0);
-		}
-				
-		double[][] YChannel = res[DCTConstants.Y_COEFFS_INDEX];
-		double[][] UChannel = res[DCTConstants.U_COEFFS_INDEX];
-		double[][] VChannel = res[DCTConstants.V_COEFFS_INDEX];
-				
-		for (int n = 0; n < YLength; n++) {
-			YChannel[x][y++] = Protocol.getDCTCoeff(vectorPart[YStart + n]);
-			
+		for (int n = 0; n < YLength; n++, y++) {
 			if (y >= lengthTillMatrixBreak) {
 				x++;
 				y = 0;
 			}
+			
+			final int actualX = x + offsetX;
+			final int actualY = y + offsetY;
+			YChannel[actualX][actualY] = Protocol.getDCTCoeff(vectorPart[YStart + n]);
 		}
 
 		x = 0;
 		y = 0;
 		
-		for (int n = 0; n < UVLength; n++) {
-			UChannel[x][y] = Protocol.getDCTCoeff(vectorPart[UStart + n]);
-			VChannel[x][y++] = Protocol.getDCTCoeff(vectorPart[VStart + n]);
-			
+		for (int n = 0; n < UVLength; n++, y++) {
 			if (y >= halfLengthTillMatrixBreak) {
 				x++;
 				y = 0;
 			}
+			
+			final int actualX = halfOffsetX + x;
+			final int actualY = halfOffsetY + y;
+			UChannel[actualX][actualY] = Protocol.getDCTCoeff(vectorPart[UStart + n]);
+			VChannel[actualX][actualY] = Protocol.getDCTCoeff(vectorPart[VStart + n]);
 		}
-
-		return res;
 	}
 }

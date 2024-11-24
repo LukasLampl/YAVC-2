@@ -22,9 +22,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 package app.interprediction;
 
 import java.awt.Point;
-import java.util.ArrayList;
 
 import app.dct.DCTEngine;
+import app.rendering.ColorManager;
 import app.utils.ArrayUtils;
 import app.utils.Discardable;
 import app.utils.MacroBlock;
@@ -92,12 +92,18 @@ public class Vector implements Discardable {
 	private MacroBlock mostEqualBlock = null;
 	
 	/**
-	 * AbsoluteColorDifferenceDCTCoefficients is an ArrayList containing
+	 * AbsoluteColorDifferenceDCTCoefficients is an 3D array containing
 	 * the absolute color difference in form of 4x4 or 8x8 DCT matrices.
 	 * The invokedDCTOfDifferences is set the true, if the absolute difference was invoked,
 	 * else it's false
+	 * 
+	 * @see app.io.Protocol#getVectorAbsoluteColorDifferenceBytes(double[][][], int)
 	 */
-	private ArrayList<double[][][]> AbsoluteColorDifferenceDCTCoefficients = null;
+	private double[][][] absoluteColorDifferenceDCTCoefficients = null;
+	
+	/**
+	 * Flag for whether the absolute color difference has been invoked or not.
+	 */
 	private boolean invokedDCTOfDifferences = false;
 	
 	/**
@@ -147,9 +153,9 @@ public class Vector implements Discardable {
 	 * <p>The function sets the spanX of the vector to a given integer.
 	 * The span starts from the origin (startPoint).</p>
 	 * 
-	 * <p><strong>Warning:</strong><br> The set span might exceed the encoding
-	 * maximum of 8 bits = 255. The offset is excluded
-	 * ({@link app.io.Protocol#CODING_OFFSET}).</p>
+	 * <p><b>Warning:</b><br>
+	 * The span should be in between -127 and 127 to fit into a byte.
+	 * </p>
 	 * 
 	 * @param span	Span to the x direction
 	 */
@@ -161,9 +167,9 @@ public class Vector implements Discardable {
 	 * <p>The function sets the spanY of the vector to a given integer.
 	 * The span starts from the origin (startPoint).</p>
 	 * 
-	 * <p><strong>Warning:</strong><br> The set span might exceed the encoding
-	 * maximum of 8 bits = 255. The offset is excluded
-	 * ({@link app.io.Protocol#CODING_OFFSET}).</p>
+	 * <p><b>Warning:</b><br>
+	 * The span should be in between -127 and 127 to fit into a byte.
+	 * </p>
 	 * 
 	 * @param span	Span to the y direction
 	 */
@@ -177,8 +183,8 @@ public class Vector implements Discardable {
 	 * was extracted from.</p>
 	 * 
 	 * <p><strong>Warning:</strong><br> The max reference is set by
-	 * {@link app.io.Protocol#MAX_REFERENCES}.<br>
-	 * <u>The encoding only supports till 4 references into the past!</u></p>
+	 * {@link app.config#MAX_REFERENCES config.MAX_REFERENCES}.<br>
+	 * </p>
 	 * 
 	 * @param reference	reference frame number
 	 */
@@ -263,54 +269,48 @@ public class Vector implements Discardable {
 	}
 	
 	/**
-	 * <p>Sets the AbsoluteColorDifferenceDCTCoefficients to the
-	 * prepared list, that is provided by the parameters.</p>
-	 * <p>The order is as followed:
-	 * <ul><li>ArrayList order: Left-to-Right & Top-to-Bottom
-	 * <li>Double order: [0] = Y-DCT; [1] = U-DCT; [2] = V-DCT
-	 * </ul></p>
+	 * <p>
+	 * Sets the absoulute color difference dct coefficients of the vector,
+	 * thus enabling the ability to reconstruct the "original" colors.
+	 * </p>
 	 * 
-	 * @param diffs	The prepared list to set
+	 * @param diffs	The prepared array to set.
+	 * 
+	 * @see app.io.Protocol#getVectorAbsoluteColorDifferenceBytes(double[][][], int)
 	 */
-	public void setAbsolutedifferenceDCTCoefficients(final ArrayList<double[][][]> diffs) {
+	public void setAbsolutedifferenceDCTCoefficients(final double[][][] diffs) {
 		if (diffs == null) {
 			throw new NullPointerException("Can't use NULL as difference");
 		}
 		
-		this.AbsoluteColorDifferenceDCTCoefficients = diffs;
+		this.absoluteColorDifferenceDCTCoefficients = diffs;
 		this.invokedDCTOfDifferences = true;
 	}
 	
 	/**
-	 * <p>Sets the AbsoluteColorDifferenceDCTCoefficients.
-	 * First the provided YUVDifference, with the order
-	 * [0] = Y; [1] = U; [2] = V is passed to the DCTEngine, which
-	 * calculates the DCT-Coefficients for each part individually.
-	 * After that the AbsoluteColorDifferenceDCTCoefficients is set to
-	 * the result.</p>
+	 * <p>
+	 * Sets the absoulute color difference dct coefficients of the vector,
+	 * thus enabling the ability to reconstruct the "original" colors.
+	 * </p>
 	 * 
-	 * <p><strong>NOTE: </strong><br> The DCT matrices are always in the sizes
-	 * 2x2, 4x4 and 8x8! If the size of the difference is bigger than that
-	 * the difference is split into equally sized 8x8 blocks. Those are the
-	 * order of the returned ArrayList.
-	 * <ul><li>ArrayList order: Left-to-Rigth & Top-to-Bottom
-	 * <li>Double order: [0] = Y-DCT; [1] = U-DCT; [2] = V-DCT
-	 * </ul></p>
+	 * @param YUVDifference	The prepared array to set.
 	 * 
-	 * @param diffs	The prepared list to set
+	 * @see app.io.Protocol#getVectorAbsoluteColorDifferenceBytes(double[][][], int)
 	 */
 	public void setAbsoluteDifferences(final double[][][] YUVDifference) {
-		this.AbsoluteColorDifferenceDCTCoefficients = DCT_ENGINE.computeDCTOfVectorColorDifference(YUVDifference, this.size);
+		this.absoluteColorDifferenceDCTCoefficients = DCT_ENGINE.computeDCTOfVectorColorDifference(YUVDifference, this.size, true);
 		this.invokedDCTOfDifferences = true;
 	}
 	
 	/**
-	 * <p>Get the ArrayList with all DCT coefficients of color differences.</p>
+	 * <p>Get the matrix with all DCT coefficients of color differences.</p>
 	 * 
-	 * @return ArrayList with the DCT coefficients of the color difference
+	 * @return Matrix with the DCT coefficients of the color difference
+	 * 
+	 * @see app.io.Protocol#getVectorAbsoluteColorDifferenceBytes(double[][][], int)
 	 */
-	public ArrayList<double[][][]> getDCTCoefficientsOfAbsoluteColorDifference() {
-		return this.AbsoluteColorDifferenceDCTCoefficients;
+	public double[][][] getDCTCoefficientsOfAbsoluteColorDifference() {
+		return this.absoluteColorDifferenceDCTCoefficients;
 	}
 	
 	/**
@@ -323,7 +323,7 @@ public class Vector implements Discardable {
 	 * 
 	 * @return Reconstructed YUV color difference
 	 * 
-	 * @throws NullPointerException	if no DCT-Coefficients were invoked
+	 * @throws NullPointerException	If no DCT-Coefficients were invoked
 	 */
 	public double[][][] getIDCTCoefficientsOfAbsoluteColorDifference(boolean allowModificationToOriginalData) {
 		if (this.invokedDCTOfDifferences == false) {
@@ -331,51 +331,39 @@ public class Vector implements Discardable {
 		}
 		
 		if (allowModificationToOriginalData) {
-			return DCT_ENGINE.computeIDCTOfVectorColorDifference(this.AbsoluteColorDifferenceDCTCoefficients, this.size);
+			return DCT_ENGINE.computeIDCTOfVectorColorDifference(this.absoluteColorDifferenceDCTCoefficients, this.size, true);
 		}
 		
-		ArrayList<double[][][]> clone = cloneAbsoluteColorDifference();
-		return DCT_ENGINE.computeIDCTOfVectorColorDifference(clone, this.size);
+		double[][][] clone = cloneAbsoluteColorDifference();
+		return DCT_ENGINE.computeIDCTOfVectorColorDifference(clone, this.size, true);
 	}
 	
 	/**
-	 * <p>Clones the absoluteColorDifferenceDCTCoefficients ArrayList.
+	 * <p>Clones the {@link #absoluteColorDifferenceDCTCoefficients} array.
 	 * This function should be used for getting the IDCT values, since the
-	 * original ArrayList is referenced and might get quantified by mistake
+	 * original array is referenced and might get quantified by mistake
 	 * if not cloned.</p>
 	 * 
-	 * @return Cloned ArrayList with all data.
+	 * @return Cloned array with all the data.
 	 */
-	private ArrayList<double[][][]> cloneAbsoluteColorDifference() {
-		int len = this.AbsoluteColorDifferenceDCTCoefficients.size();
-		ArrayList<double[][][]> copy = new ArrayList<double[][][]>(len);
-		int size = this.size;
-		int halfSize = this.size / 2;
+	private double[][][] cloneAbsoluteColorDifference() {
+		double[][][] ref = this.absoluteColorDifferenceDCTCoefficients;
+		double[][][] clone = ArrayUtils.get3DArray(size, true);
 		
-		for (int i = 0; i < len; i++) {
-			double[][][] ref = this.AbsoluteColorDifferenceDCTCoefficients.get(i);
-			double[][][] clone = new double[3][][];
-			clone[0] = new double[size][size];
-			clone[1] = new double[halfSize][halfSize];
-			clone[2] = new double[halfSize][halfSize];
-			
-			for (int n = 0; n < ref.length; n++) {
-				ArrayUtils.copy2DArray(ref[n], 0, 0, clone[n], 0, 0, ref[n].length, ref[n].length);
-			}
-			
-			copy.add(clone);
+		for (int i = 0; i < ColorManager.CHANNELS; i++) {
+			ArrayUtils.copy2DArray(ref[i], 0, 0, clone[i], 0, 0, this.size, this.size);
 		}
 		
-		return copy;
+		return clone;
 	}
 	
 	/**
-	 * <p>Sets the mostEqual MacroBlock to the provided
+	 * <p>Sets the {@link #mostEqualBlock} to the provided
 	 * MacroBlock. The mostEqual MacroBlock describes the best
 	 * match in the inter-prediction step.</p>
 	 * 
-	 * <p><u>This function is DEBUG ONLY and provides a good way for
-	 * debugging inter-prediction.</u></p>
+	 * <p><u>This function should only be used for DEBUG ONLY. It provides a
+	 * good way for debugging inter-prediction.</u></p>
 	 * 
 	 * @param block	Block to set as mostEqualBlock
 	 */
@@ -392,6 +380,10 @@ public class Vector implements Discardable {
 		return this.mostEqualBlock;
 	}
 	
+	/**
+	 * Resets the data inside the vector to the standard values, in order
+	 * to reuse the vector.
+	 */
 	public void reset(final int x, final int y, final int size, boolean forceClear) {
 		this.startingPointX = x;
 		this.startingPointY = y;
@@ -404,8 +396,8 @@ public class Vector implements Discardable {
 		this.mostEqualBlock = null;
 		this.invokedDCTOfDifferences = false;
 		
-		if (!this.AbsoluteColorDifferenceDCTCoefficients.isEmpty() || forceClear) {
-			this.AbsoluteColorDifferenceDCTCoefficients.clear();
+		if (this.absoluteColorDifferenceDCTCoefficients != null || forceClear) {
+			this.absoluteColorDifferenceDCTCoefficients = null;
 		}
 	}
 	

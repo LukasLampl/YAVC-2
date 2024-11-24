@@ -235,7 +235,7 @@ public class QuadtreeEngine {
 			throw new IllegalArgumentException("The size " + size + " is currently no supported.");
 		}
 	}
-	
+
 	/**
 	 * Get the leaves of the current block, till
 	 * the blocks are the leaves of the quadtree itself.

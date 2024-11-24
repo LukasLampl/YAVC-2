@@ -139,7 +139,7 @@ public class MacroBlock implements Discardable {
 	
 	/**
 	 * <p>Initializes a MacroBlock with Position, Size,
-	 * Y, U, V and A.</p>
+	 * Y, U and V.</p>
 	 * 
 	 * @param x		Position x of the MacroBlock based on the PixelRaster.
 	 * @param y		Position y of the MacroBlock based on the PixelRaster.
@@ -180,7 +180,7 @@ public class MacroBlock implements Discardable {
 	
 	/**
 	 * <p>Initializes a MacroBlock with Position, Size,
-	 * Y, U, V and A. The color components should have the following order:
+	 * Y, U and V. The color components should have the following order:
 	 * <ul><li>[0] = Y
 	 * <li> [1] = U
 	 * <li> [2] = V
@@ -264,13 +264,11 @@ public class MacroBlock implements Discardable {
 	 * @param Y	Y values in the MacroBlock
 	 * @param U	U values in the MacroBlock
 	 * @param V	V values in the MacroBlock
-	 * @param A	A values in the MacroBlock
 	 * 
 	 * @throws NullPointerException	if the following situations:
 	 * <ul><li>If the Y component is null
 	 * <li>If the U component is null
 	 * <li>If the V component is null
-	 * <li>If the A component is null
 	 * </ul>
 	 */
 	public void setColorComponents(final double[][] Y, final double[][] U, final double[][] V) {

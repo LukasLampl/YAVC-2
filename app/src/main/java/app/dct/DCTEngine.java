@@ -21,12 +21,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package app.dct;
 
-import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import app.config;
+import app.rendering.ColorManager;
+import app.utils.ArrayUtils;
 import app.utils.MathUtils;
 
 /**
@@ -245,38 +246,39 @@ public class DCTEngine {
 	 * @param diffs	AbsoluteColorDifference from vector
 	 * @param size	Size of the matrix to process
 	 */
-	public ArrayList<double[][][]> computeDCTOfVectorColorDifference(double[][][] diffs, int size) {
-		int estimatedSize = (size / 8) * (size / 8);
-		ArrayList<double[][][]> coeffs = new ArrayList<double[][][]>(estimatedSize <= 0 ? 2 : estimatedSize);
+	public double[][][] computeDCTOfVectorColorDifference(double[][][] diffs, int size, boolean quantizize) {
+		double[][][] coeffs = new double[ColorManager.CHANNELS][][];
 
 		if (size == 4) {
-			double[][][] chromaDCT = computeChromaDCTCoefficients(diffs[1], diffs[2], 2);
-			double[][] lumaDCT = computeLumaDCTCoefficients(diffs[0], 4);
-			quantizeChromaDCTCoefficients(chromaDCT, 2);
-			quantizeLumaDCTCoefficients(lumaDCT, 4);
+			double[][][] chromaDCT = computeChromaDCTCoefficients(diffs[1], diffs[2], 2, 0, 0);
+			double[][] lumaDCT = computeLumaDCTCoefficients(diffs[0], 4, 0, 0);
 			
-			double[][][] cache = new double[3][][];
-			cache[0] = lumaDCT;
-			cache[1] = chromaDCT[0];
-			cache[2] = chromaDCT[1];
+			if (quantizize) {
+				quantizeChromaDCTCoefficients(chromaDCT, 2, 0, 0);
+				quantizeLumaDCTCoefficients(lumaDCT, 4, 0, 0);
+			}
 			
-			coeffs.add(cache);
+			coeffs[DCTConstants.Y_COEFFS_INDEX] = lumaDCT;
+			coeffs[DCTConstants.U_COEFFS_INDEX] = chromaDCT[0];
+			coeffs[DCTConstants.V_COEFFS_INDEX] = chromaDCT[1];
 			return coeffs;
 		}
 
-		for (int x = 0; x < size; x += 8) {
-			for (int y = 0; y < size; y += 8) {
-				double[][][] subArr = getSubArray(diffs, 8, x, y);
-				double[][][] chromaDCT = computeChromaDCTCoefficients(subArr[1], subArr[2], 4);
-				double[][] lumaDCT = computeLumaDCTCoefficients(subArr[0], 8);
-				quantizeChromaDCTCoefficients(chromaDCT, 4);
-				quantizeLumaDCTCoefficients(lumaDCT, 8);
+		coeffs = ArrayUtils.get3DArray(size, true);
+		
+		for (int x = 0, halfX = 0; x < size; x += 8, halfX += 4) {
+			for (int y = 0, halfY = 0; y < size; y += 8, halfY += 4) {
+				double[][][] chromaDCT = computeChromaDCTCoefficients(diffs[1], diffs[2], 4, halfX, halfY);
+				double[][] lumaDCT = computeLumaDCTCoefficients(diffs[0], 8, x, y);
 				
-				double[][][] cache = new double[3][][];
-				cache[0] = lumaDCT;
-				cache[1] = chromaDCT[0];
-				cache[2] = chromaDCT[1];
-				coeffs.add(cache);
+				if (quantizize) {
+					quantizeChromaDCTCoefficients(chromaDCT, 4, 0, 0);
+					quantizeLumaDCTCoefficients(lumaDCT, 8, 0, 0);
+				}
+				
+				ArrayUtils.copy2DArray(lumaDCT, 0, 0, coeffs[DCTConstants.Y_COEFFS_INDEX], x, y, 8, 8);
+				ArrayUtils.copy2DArray(chromaDCT[0], 0, 0, coeffs[DCTConstants.U_COEFFS_INDEX], halfX, halfY, 4, 4);
+				ArrayUtils.copy2DArray(chromaDCT[1], 0, 0, coeffs[DCTConstants.V_COEFFS_INDEX], halfX, halfY, 4, 4);
 			}
 		}
 
@@ -294,142 +296,62 @@ public class DCTEngine {
 	 * For order see {@code encoder.DCTEngine.computeDCTOfVectorColorDifference()}.
 	 * @param size	Size of the original matrix
 	 */
-	public double[][][] computeIDCTOfVectorColorDifference(ArrayList<double[][][]> DCTCoeff, int size) {
-		if (DCTCoeff == null || DCTCoeff.size() == 0) {
+	public double[][][] computeIDCTOfVectorColorDifference(double[][][] DCTCoeff, int size, boolean quantizize) {
+		if (DCTCoeff == null) {
 			System.err.println("No DCT-II Coefficients to apply IDCT-II on! > NULL");
 			return null;
 		}
 
 		if (size == 4) {
-			return compute4x4IDCT(DCTCoeff);
+			return compute4x4IDCT(DCTCoeff, quantizize);
 		}
 		
 		int fraction = 8;
-		int halfFraction = fraction / 2;
+		int halfFraction = 4;
 		int halfSize = size / 2;
+		double[][][] chromaIDCT = new double[][][] {DCTCoeff[DCTConstants.U_COEFFS_INDEX], DCTCoeff[DCTConstants.V_COEFFS_INDEX]};
+		double[][] lumaIDCT = DCTCoeff[DCTConstants.Y_COEFFS_INDEX];
 		double[][][] res = new double[3][][];
-		res[0] = new double[size][size];
-		res[1] = new double[halfSize][halfSize];
-		res[2] = new double[halfSize][halfSize];
-		
-		for (int x = 0, index = 0; x < size; x += fraction) {
-			for (int y = 0; y < size; y += fraction) {
-				double[][][] CoeffGroup = DCTCoeff.get(index++);
-				double[][][] chromaIDCT = new double[][][] {CoeffGroup[1], CoeffGroup[2]};
-				double[][] lumaIDCT = CoeffGroup[0];
-				dequantizeChromaDCTCoefficients(chromaIDCT, halfFraction);
-				dequantizeLumaDCTCoefficients(lumaIDCT, fraction);
-				chromaIDCT = computeChromaIDCTCoefficients(chromaIDCT[0], chromaIDCT[1], halfFraction);
-				lumaIDCT = computeLumaIDCTCoefficients(lumaIDCT, fraction);
-				double[][][] cache = new double[3][][];
-				cache[0] = lumaIDCT;
-				cache[1] = chromaIDCT[0];
-				cache[2] = chromaIDCT[1];
-				writeSubArrayInArray(cache, res, x, y);
+		res[DCTConstants.Y_COEFFS_INDEX] = new double[size][size];
+		res[DCTConstants.U_COEFFS_INDEX] = new double[halfSize][halfSize];
+		res[DCTConstants.V_COEFFS_INDEX] = new double[halfSize][halfSize];
+
+		for (int x = 0, halfX = 0; x < size; x += fraction, halfX += halfFraction) {
+			for (int y = 0, halfY = 0; y < size; y += fraction, halfY += halfFraction) {
+				if (quantizize) {
+					dequantizeChromaDCTCoefficients(chromaIDCT, halfFraction, halfX, halfY);
+					dequantizeLumaDCTCoefficients(lumaIDCT, fraction, x, y);
+				}
+				
+				double[][][] chromaIDCTVals = computeChromaIDCTCoefficients(chromaIDCT[0], chromaIDCT[1], halfFraction, halfX, halfY);
+				double[][] lumaIDCTVals = computeLumaIDCTCoefficients(lumaIDCT, fraction, x, y);
+				ArrayUtils.copy2DArray(lumaIDCTVals, 0, 0, res[DCTConstants.Y_COEFFS_INDEX], x, y, fraction, fraction);
+				ArrayUtils.copy2DArray(chromaIDCTVals[0], 0, 0, res[DCTConstants.U_COEFFS_INDEX], halfX, halfY, halfFraction, halfFraction);
+				ArrayUtils.copy2DArray(chromaIDCTVals[1], 0, 0, res[DCTConstants.V_COEFFS_INDEX], halfX, halfY, halfFraction, halfFraction);
 			}
 		}
 		
 		return res;
 	}
 	
-	private double[][][] compute4x4IDCT(ArrayList<double[][][]> DCTCoeff) {
+	private double[][][] compute4x4IDCT(double[][][] DCTCoeff, boolean quantizize) {
 		double[][][] res = new double[3][][];
-		double[][][] objToProcess = DCTCoeff.get(0);
-		double[][][] chromaIDCT = new double[][][] {objToProcess[1], objToProcess[2]};
-		double[][] lumaIDCT = objToProcess[0];
-		dequantizeChromaDCTCoefficients(chromaIDCT, 2);
-		dequantizeLumaDCTCoefficients(lumaIDCT, 4);
-		chromaIDCT = computeChromaIDCTCoefficients(chromaIDCT[0], chromaIDCT[1], 2);
-		lumaIDCT = computeLumaIDCTCoefficients(lumaIDCT, 4);
-		res[0] = lumaIDCT;
-		res[1] = chromaIDCT[0];
-		res[2] = chromaIDCT[1];
+		double[][][] chromaIDCT = new double[][][] {DCTCoeff[DCTConstants.U_COEFFS_INDEX], DCTCoeff[DCTConstants.V_COEFFS_INDEX]};
+		double[][] lumaIDCT = DCTCoeff[DCTConstants.Y_COEFFS_INDEX];
+		
+		if (quantizize) {
+			dequantizeChromaDCTCoefficients(chromaIDCT, 2, 0, 0);
+			dequantizeLumaDCTCoefficients(lumaIDCT, 4, 0, 0);
+		}
+		
+		double[][][] chromaIDCTVals = computeChromaIDCTCoefficients(chromaIDCT[0], chromaIDCT[1], 2, 0, 0);
+		double[][] lumaIDCTVals = computeLumaIDCTCoefficients(lumaIDCT, 4, 0, 0);
+		res[0] = lumaIDCTVals;
+		res[1] = chromaIDCTVals[0];
+		res[2] = chromaIDCTVals[1];
 		return res;
 	}
-	
-	/**
-	 * <p>Writes a subarray into another array</p>
-	 * 
-	 * @param subArray	subarray to put into the array
-	 * @param dest	destination to put the subarray into 
-	 * @param posX	position x in the destination array
-	 * @param posY	position y in the destination array
-	 */
-	private void writeSubArrayInArray(double[][][] subArray, double[][][] dest, int posX, int posY) {
-		int size = subArray[0].length;
-		int halfSize = subArray[1].length;
-		int actualSubSPosX = posX / 2;
-		int actualSubSPosY = posY / 2;
-		
-		for (int x = 0; x < size; x++) {
-			int actualX = posX + x;
-			
-			for (int y = 0; y < size; y++) {
-				dest[0][actualX][posY + y] = subArray[0][x][y];
-			}
-		}
-		
-		for (int x = 0; x < halfSize; x++) {
-			int subSX = actualSubSPosX + x;
 
-			for (int y = 0; y < halfSize; y++) {
-				int subSY = actualSubSPosY + y;
-				dest[1][subSX][subSY] = subArray[1][x][y];
-				dest[2][subSX][subSY] = subArray[2][x][y];
-			}
-		}
-	}
-	
-	/**
-	 * <p>Gets a subarray from an array.</p>
-	 * 
-	 * @return Created subarray from the original array
-	 * 
-	 * @param org	Original array to get the sub-array from
-	 * @param size	size of the subarray
-	 * @param posX	position x in the original array
-	 * @param posY	position y in the original array
-	 * 
-	 * @throws ArrayIndexOutOfBoundsException	when the size is bigger than the
-	 * original array or the subarray exceeds the original array
-	 */
-	private double[][][] getSubArray(double[][][] org, int size, int posX, int posY) {
-		if (size > org[0].length) {
-			throw new ArrayIndexOutOfBoundsException("Size of the subarray can't be bigger than the original");
-		} else if (size + posX > org[0].length) {
-			throw new ArrayIndexOutOfBoundsException("Subarray exceeds the original array");
-		} else if (size + posY > org[0].length) {
-			throw new ArrayIndexOutOfBoundsException("Subarray exceeds the original array");
-		}
-		
-		double arr[][][] = new double[3][][];
-		int halfSize = size / 2;
-		int actualSubSPosX = posX / 2;
-		int actualSubSPosY = posY / 2;
-		
-		arr[0] = new double[size][size];
-		arr[1] = new double[halfSize][halfSize];
-		arr[2] = new double[halfSize][halfSize];
-		
-		for (int x = 0; x < size; x++) {
-			for (int y = 0; y < size; y++) {
-				arr[0][x][y] = org[0][posX + x][posY + y];
-			}
-		}
-		
-		for (int x = 0; x < halfSize; x++) {
-			int subSX = actualSubSPosX + x;
-
-			for (int y = 0; y < halfSize; y++) {
-				int subSY = actualSubSPosY + y;
-				arr[1][x][y] = org[1][subSX][subSY];
-				arr[2][x][y] = org[2][subSX][subSY];
-			}
-		}
-		
-		return arr;
-	}
-	
 	/**
 	 * <p>Computes the DCT-II coefficients for the chroma channels.
 	 * Important to know is, that the chroma is subsampled unlike the
@@ -444,7 +366,7 @@ public class DCTEngine {
 	 * @param V	V values to convert
 	 * @param m	size of the matrix
 	 */
-	protected double[][][] computeChromaDCTCoefficients(double[][] U, double[][] V, int m) {
+	protected double[][][] computeChromaDCTCoefficients(double[][] U, double[][] V, int m, final int offsetX, final int offsetY) {
 		double resU[][] = new double[m][m];
 		double resV[][] = new double[m][m];
 		int index = setIndexOfDCT(m);
@@ -456,10 +378,13 @@ public class DCTEngine {
 				double sumV = 0;
 
 				for (int x = 0; x < m; x++) {
+					final int actualX = x + offsetX;
+					
 					for (int y = 0; y < m; y++) {
+						final int actualY = y + offsetY;
 						double cos = DCT_COEFFICIENTS[index][v][u][x][y];
-						sumU += (U[x][y] - 128) * cos;
-						sumV += (V[x][y] - 128) * cos;
+						sumU += (U[actualX][actualY] - 128) * cos;
+						sumV += (V[actualX][actualY] - 128) * cos;
 					}
 				}
 				
@@ -486,7 +411,7 @@ public class DCTEngine {
 	 * @param V	DCT-II V values to convert
 	 * @param m	size of the matrix
 	 */
-	private double[][][] computeChromaIDCTCoefficients(double[][] U, double[][] V, int m) {
+	private double[][][] computeChromaIDCTCoefficients(double[][] U, double[][] V, int m, final int offsetX, final int offsetY) {
 		double[][] resU = new double[m][m];
 		double[][] resV = new double[m][m];
 		double[] steps = {step(0, m), step(1, m)};
@@ -498,11 +423,14 @@ public class DCTEngine {
 				double sumV = 0;
 				
 				for (int u = 0; u < m; u++) {
+					final int actualU = u + offsetX;
+					
 					for (int v = 0; v < m; v++) {
+						final int actualV = v + offsetY;
 						double step = (u == 0 ? steps[0] : steps[1]) * (v == 0 ? steps[0] : steps[1]);
 						double cos = IDCT_COEFFICIENTS[index][x][y][u][v];
-						sumU += U[u][v] * step * cos;
-						sumV += V[u][v] * step * cos;
+						sumU += U[actualU][actualV] * step * cos;
+						sumV += V[actualU][actualV] * step * cos;
 					}
 				}
 				
@@ -526,7 +454,7 @@ public class DCTEngine {
 	 * @param double[][] Y => Y values to convert
 	 * @param int m => size of the matrix
 	 */
-	protected double[][] computeLumaDCTCoefficients(double[][] Y, int m) {
+	protected double[][] computeLumaDCTCoefficients(double[][] Y, int m, final int offsetX, final int offsetY) {
 		double resY[][] = new double[m][m];
 		int index = setIndexOfDCT(m);
 		double[] steps = {step(0, m), step(1, m)};
@@ -536,9 +464,12 @@ public class DCTEngine {
 				double sum = 0;
 				
 				for (int x = 0; x < m; x++) {
+					final int actualX = x + offsetX;
+					
 					for (int y = 0; y < m; y++) {
+						final int actualY = y + offsetY;
 						double cos = DCT_COEFFICIENTS[index][v][u][x][y];
-						sum += (Y[x][y] - 128) * cos;
+						sum += (Y[actualX][actualY] - 128) * cos;
 					}
 				}
 				
@@ -561,7 +492,7 @@ public class DCTEngine {
 	 * @param Y	DCT-II Y values to convert
 	 * @param m	size of the matrix
 	 */
-	private double[][] computeLumaIDCTCoefficients(double[][] Y, int m) {
+	private double[][] computeLumaIDCTCoefficients(double[][] Y, int m, final int offsetX, final int offsetY) {
 		double[][] resY = new double[m][m];
 		double[] steps = {step(0, m), step(1, m)};
 		int index = setIndexOfDCT(m);
@@ -571,10 +502,13 @@ public class DCTEngine {
 				double sum = 0;
 				
 				for (int u = 0; u < m; u++) {
+					final int actualU = u + offsetX;
+					
 					for (int v = 0; v < m; v++) {
+						final int actualV = v + offsetY;
 						double step = (u == 0 ? steps[0] : steps[1]) * (v == 0 ? steps[0] : steps[1]);
 						double cos = IDCT_COEFFICIENTS[index][x][y][u][v];
-						sum += Y[u][v] * step * cos;
+						sum += Y[actualU][actualV] * step * cos;
 					}
 				}
 				
@@ -594,13 +528,16 @@ public class DCTEngine {
 	 * @param coefficients	Coefficients to quantify
 	 * @param size	size of the matrix
 	 */
-	public void quantizeChromaDCTCoefficients(double[][][] coefficients, int size) {
+	public void quantizeChromaDCTCoefficients(double[][][] coefficients, int size, final int offsetX, final int offsetY) {
 		int[][] chromaQuant = getChromaQuantizationTable(size);
 		
 		for (int x = 0; x < size; x++) {
+			final int actualX = x + offsetX;
+			
 			for (int y = 0; y < size; y++) {
-				coefficients[0][x][y] = (int)MathUtils.round(coefficients[0][x][y] / (double)chromaQuant[x][y]);
-				coefficients[1][x][y] = (int)MathUtils.round(coefficients[1][x][y] / (double)chromaQuant[x][y]);
+				final int actualY = y + offsetY;
+				coefficients[0][actualX][actualY] = (int)MathUtils.round(coefficients[0][actualX][actualY] / (double)chromaQuant[x][y]);
+				coefficients[1][actualX][actualY] = (int)MathUtils.round(coefficients[1][actualX][actualY] / (double)chromaQuant[x][y]);
 			}
 		}
 	}
@@ -614,12 +551,15 @@ public class DCTEngine {
 	 * @param coefficients	Coefficients to quantify
 	 * @param size	size of the matrix
 	 */
-	public void quantizeLumaDCTCoefficients(double[][] coefficients, int size) {
+	public void quantizeLumaDCTCoefficients(double[][] coefficients, int size, final int offsetX, final int offsetY) {
 		int[][] lumaQuant = getLumaQuantizationTable(size);
 		
 		for (int x = 0; x < size; x++) {
+			final int actualX = x + offsetX;
+			
 			for (int y = 0; y < size; y++) {
-				coefficients[x][y] = (int)MathUtils.round(coefficients[x][y] / (double)lumaQuant[x][y]);
+				final int actualY = y + offsetY;
+				coefficients[actualX][actualY] = (int)MathUtils.round(coefficients[actualX][actualY] / (double)lumaQuant[x][y]);
 			}
 		}
 	}
@@ -633,13 +573,16 @@ public class DCTEngine {
 	 * @param coefficients	Coefficients to dequantizize.
 	 * @param size			Size of the matrix.
 	 */
-	public void dequantizeChromaDCTCoefficients(double[][][] coefficients, int size) {
+	public void dequantizeChromaDCTCoefficients(double[][][] coefficients, int size, final int offsetX, final int offsetY) {
 		int[][] chromaQuant = getChromaQuantizationTable(size);
 		
 		for (int x = 0; x < size; x++) {
+			final int actualX = x + offsetX;
+			
 			for (int y = 0; y < size; y++) {
-				coefficients[0][x][y] *= (double)chromaQuant[x][y];
-				coefficients[1][x][y] *= (double)chromaQuant[x][y];
+				final int actualY = y + offsetY;
+				coefficients[0][actualX][actualY] *= (double)chromaQuant[x][y];
+				coefficients[1][actualX][actualY] *= (double)chromaQuant[x][y];
 			}
 		}
 	}
@@ -653,12 +596,15 @@ public class DCTEngine {
 	 * @param coefficients	Coefficients to dequantizize.
 	 * @param size			Size of the matrix.
 	 */
-	public void dequantizeLumaDCTCoefficients(double[][] coefficients, int size) {
+	public void dequantizeLumaDCTCoefficients(double[][] coefficients, int size, final int offsetX, final int offsetY) {
 		int[][] lumaQuant = getLumaQuantizationTable(size);
 		
 		for (int x = 0; x < size; x++) {
+			final int actualX = x + offsetX;
+			
 			for (int y = 0; y < size; y++) {
-				coefficients[x][y] *= (double)lumaQuant[x][y];
+				final int actualY = y + offsetY;
+				coefficients[actualX][actualY] *= (double)lumaQuant[x][y];
 			}
 		}
 	}
