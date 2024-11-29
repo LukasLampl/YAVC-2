@@ -365,7 +365,7 @@ public class RenderEngine {
 	 * @param dim		Dimension of the render.
 	 * @return An image with all differences.
 	 */
-	public BufferedImage renderDifferences(ArrayList<MacroBlock> leaves, Dimension dim) {
+	public static BufferedImage renderDifferences(List<MacroBlock> leaves, Dimension dim) {
 		BufferedImage render = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
 		double[] YUVCache = new double[3]; //Size of 3 because of 3 channels
 		
@@ -386,5 +386,33 @@ public class RenderEngine {
 		}
 		
 		return render;
+	}
+	
+	public static BufferedImage[] renderIntraPrediction(List<MacroBlock> intraBlocks, Dimension dim) {
+		BufferedImage render = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
+		BufferedImage overlay = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g2d = (Graphics2D)overlay.getGraphics();
+		g2d.setColor(new Color(255, 70, 70, 100));
+		double[] YUVCache = new double[3]; //Size of 3 because of 3 channels
+		
+		for (MacroBlock b : intraBlocks) {
+			g2d.fillRect(b.getPositonX(), b.getPositionY(), b.getSize(), b.getSize());
+			
+			for (int x = 0; x < b.getSize(); x++) {
+				for (int y = 0; y < b.getSize(); y++) {
+					if (x + b.getPosition().x >= dim.width
+						|| x + b.getPosition().x < 0
+						|| y + b.getPosition().y >= dim.height
+						|| y + b.getPosition().y < 0) {
+						continue;
+					}
+					
+					int argb = ColorManager.convertYUVToRGB(b.getYUV(x, y, YUVCache));
+					render.setRGB(x + b.getPosition().x, y + b.getPosition().y, argb);
+				}
+			}
+		}
+		
+		return new BufferedImage[] {render, overlay};
 	}
 }

@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package app.encoder;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +34,7 @@ import app.filter.Deblocker;
 import app.interprediction.Vector;
 import app.interprediction.VectorEngine;
 import app.interprediction.VectorEngineResult;
+import app.intraprediction.IntraEngine;
 import app.io.ImagePreReader;
 import app.io.OutputStream;
 import app.io.QueueObject;
@@ -76,6 +78,8 @@ public class Encoder {
 	 * encoding process.
 	 */
 	private static VectorEngine VECTOR_ENGINE = new VectorEngine();
+	
+	private IntraEngine INTRA_ENGINE = new IntraEngine();
 	
 	/**
 	 * The {@link app.utils.ReferenceFrameManager ReferenceFrameManager} used for
@@ -124,7 +128,7 @@ public class Encoder {
 				if (frame == null) {
 					System.out.println("Skip: " + i);
 					continue;
-				} else if (frame.invokedWithData == false) {
+				} else if (frame.notInvokedWithData == false) {
 					System.out.println("Skip: " + i);
 					continue;
 				}
@@ -152,6 +156,12 @@ public class Encoder {
 				List<MacroBlock> differences = DIFFERENCE_ENGINE.computeDifferences(prevFrame, leaveNodeManager);
 				long end_difference = System.currentTimeMillis();
 //				BufferedImage[] part = RenderEngine.renderQuadtree(leaveNodeManager.getRawData(), curFrame.getDimension());
+				
+				List<MacroBlock> intraBlocks =  INTRA_ENGINE.computeIntraPrediction(differences, curFrame, new double[] {2.0e+1, 0.8, 0.8});
+				BufferedImage[] intraComposit = RenderEngine.renderIntraPrediction(intraBlocks, curFrame.getDimension());
+				ImageIO.write(intraComposit[0], "png", new File(ArgumentProcessor.outputFile.getParent() + "/IP_" + i + ".png"));
+				ImageIO.write(intraComposit[1], "png", new File(ArgumentProcessor.outputFile.getParent() + "/IPO_" + i + ".png"));
+				
 				
 				long start_vector_movement = System.currentTimeMillis();
 				VectorEngineResult vectorEngineResult = VECTOR_ENGINE.computeMovementVectors(differences, this.referenceManager);
