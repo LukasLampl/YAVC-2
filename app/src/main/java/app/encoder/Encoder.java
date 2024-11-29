@@ -34,6 +34,7 @@ import app.filter.Deblocker;
 import app.interprediction.Vector;
 import app.interprediction.VectorEngine;
 import app.interprediction.VectorEngineResult;
+import app.intraprediction.IntraEngine;
 import app.io.ImagePreReader;
 import app.io.OutputStream;
 import app.io.QueueObject;
@@ -77,6 +78,8 @@ public class Encoder {
 	 * encoding process.
 	 */
 	private static VectorEngine VECTOR_ENGINE = new VectorEngine();
+	
+	private IntraEngine INTRA_ENGINE = new IntraEngine();
 	
 	/**
 	 * The {@link app.utils.ReferenceFrameManager ReferenceFrameManager} used for
@@ -153,6 +156,12 @@ public class Encoder {
 				List<MacroBlock> differences = DIFFERENCE_ENGINE.computeDifferences(prevFrame, leaveNodeManager);
 				long end_difference = System.currentTimeMillis();
 //				BufferedImage[] part = RenderEngine.renderQuadtree(leaveNodeManager.getRawData(), curFrame.getDimension(), curFrame);
+				
+				List<MacroBlock> intraBlocks =  INTRA_ENGINE.computeIntraPrediction(differences, curFrame, new double[] {2.0e+1, 0.8, 0.8});
+				BufferedImage[] intraComposit = RenderEngine.renderIntraPrediction(intraBlocks, curFrame.getDimension());
+				ImageIO.write(intraComposit[0], "png", new File(ArgumentProcessor.outputFile.getParent() + "/IP_" + i + ".png"));
+				ImageIO.write(intraComposit[1], "png", new File(ArgumentProcessor.outputFile.getParent() + "/IPO_" + i + ".png"));
+				
 				
 				long start_vector_movement = System.currentTimeMillis();
 				VectorEngineResult vectorEngineResult = VECTOR_ENGINE.computeMovementVectors(differences, this.referenceManager);
