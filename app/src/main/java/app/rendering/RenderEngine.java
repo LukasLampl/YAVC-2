@@ -1,3 +1,24 @@
+/////////////////////////////////////////////////////////////
+///////////////////////    LICENSE    ///////////////////////
+/////////////////////////////////////////////////////////////
+/*
+The YAVC video / frame compressor compresses frames.
+Copyright (C) 2024  Lukas Nian En Lampl
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 package app.rendering;
 
 import java.awt.Color;
@@ -7,7 +28,6 @@ import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -19,8 +39,27 @@ import app.utils.MacroBlock;
 import app.utils.PixelRaster;
 import app.utils.ReferenceFrameManager;
 
+/**
+ * The {@code RenderEngine} is one of the main parts and is responsible
+ * for the whole rendering pipeline of the YAVC program. The {@code RenderEngine}
+ * provides basic utilities for rendering intermediate YAVC steps, like the
+ * differences, the Quadtree, the Vectors and the composit image.
+ * 
+ * @author Lukas Lampl
+ * @since 1.1
+ */
 public class RenderEngine {
-	public static PixelRaster renderResult(LoadDistributor<Vector> vecs, ReferenceFrameManager refs, LoadDistributor<MacroBlock> differenceManager, boolean allowModToAbsDiff) {
+	/**
+	 * Renders a composited image of all vectors, non-coded blocks and reference
+	 * frames used. It runs asynchronously to achieve a higher throughput.
+	 * 
+	 * @param vecs					The vector to use for the composit.
+	 * @param refs					The reference frames used by the vectors.
+	 * @param differenceManager		All non-coded MacroBlocks.
+	 * @param allowModToAbsDiff		Flag for whether modifications can be made to the vectors absolute color difference or not.
+	 * @return A composit PixelRaster with all vectors, non-coded blocks and reference used.
+	 */
+	public static PixelRaster renderComposit(LoadDistributor<Vector> vecs, ReferenceFrameManager refs, LoadDistributor<MacroBlock> differenceManager, boolean allowModToAbsDiff) {
 		long sRT = System.currentTimeMillis();
 		PixelRaster render = refs.getLastFrame().copy();
 		Dimension dim = refs.getLastFrame().getDimension();
@@ -36,14 +75,10 @@ public class RenderEngine {
 
 			long s_vrT = System.currentTimeMillis();
 			if (vecs != null) {
-				List<Callable<Void>> tasks = new ArrayList<Callable<Void>>();
-				
 				for (final List<Vector> vecList : vecs.getIterable()) {
-					Callable<Void> task = createVectorRenderTask(vecList, refs, render, dim, allowModToAbsDiff);
-					tasks.add(task);
+					Runnable task = createVectorRenderTask(vecList, refs, render, dim, allowModToAbsDiff);
+					executor.submit(task);
 				}
-				
-				executor.invokeAll(tasks);
 			}
 			
 			executor.shutdown();
@@ -59,6 +94,15 @@ public class RenderEngine {
 		return render;
 	}
 	
+	/**
+	 * Creates a runnable task for rendering a list of MacroBlocks into a
+	 * given PixelRaster.
+	 * 
+	 * @param blockList	The MacroBlocks to render.
+	 * @param dim		The Dimension of the frame.
+	 * @param render	Frame in which to render into.
+	 * @return A runnable task, executing rendering a list of MacroBlocks.
+	 */
 	private static Runnable createMacroBlockRenderTask(List<MacroBlock> blockList, Dimension dim, PixelRaster render) {
 		Runnable task = () -> { 
 			for (MacroBlock block : blockList) {
@@ -80,8 +124,18 @@ public class RenderEngine {
 		return task;
 	}
 	
-	private static Callable<Void> createVectorRenderTask(List<Vector> vecList, ReferenceFrameManager refs, PixelRaster render, Dimension dim, boolean allowModToAbsDiff) {
-		Callable<Void> task = () -> {
+	/**
+	 * Creates a runnable task for rendering vectors into a given PixelRaster.
+	 * 
+	 * @param vecList			The vectors to render.
+	 * @param refs				All reference frames used by the vectors.
+	 * @param render			The PixelRaster in which to write.
+	 * @param dim				Dimension of the PixelRaster.
+	 * @param allowModToAbsDiff	Flag for whether the vector absolute color difference data can be modified or not.
+	 * @return A runnable task, which renders all given vectors onto the given frame.
+	 */
+	private static Runnable createVectorRenderTask(List<Vector> vecList, ReferenceFrameManager refs, PixelRaster render, Dimension dim, boolean allowModToAbsDiff) {
+		Runnable task = () -> {
 			double[][][][] pixelBlockCache = new double[QuadtreeEngine.NUMBER_OF_SIZES][][][];
 			long iT = 0;
 			long pBT = 0;
@@ -135,12 +189,40 @@ public class RenderEngine {
 			}
 
 			System.out.println(String.format("      > Init time: %4dms | PixelBlock grab time: %4dms | IDCT time: %4dms | Reconstruction time: %4dms | Put time: %4dms", iT, pBT, iDT, rT, pT));
-			return null;
 		};
 		
 		return task;
 	}
 	
+	/**
+	 * Reconstructs the "original" color by adding the difference back to the
+	 * data referenced by the vector.
+	 * 
+	 * <p><b>Help:</b><br>
+	 * Let's say we have 3 variables, {@code a} {@code b} and {@code c}. {@code a}
+	 * stands for the color at the exact position as {@code b} in the referenced
+	 * frame. But {@code b} is the color that is needed to get the color {@code c},
+	 * which is the color in the actual frame. This means to get the difference or
+	 * {@code b} we have to solve for {@code b}:<br>
+	 * 
+	 * <blockquote>
+	 *     {@code a} + {@code b} = {@code c} | -{@code a}<br>
+	 * <=> {@code b} = {@code c} - {@code a}<br>
+	 * </blockquote>
+	 * 
+	 * To get out color, we want to reconstruct, we just reverse and solve for {@code c}:<br>
+	 * 
+	 * <blockquote>
+	 *     {@code b} = {@code c} - {@code a} | +{@code a}<br>
+	 * <=> {@code a} + {@code b} = {@code c}<br>
+	 * </blockquote></p>
+	 * 
+	 * @param differenceOfColor	The color difference of a vector.
+	 * @param referenceColor	The original color to which the add the difference to get the "original" in the next frame.
+	 * @param size				Size of the difference color.
+	 * @param cache				Caching structure. (To reduce GC pressure)
+	 * @return An 3D array with the "original" reconstructed colors.
+	 */
 	private static double[][][] reconstructColors(double[][][] differenceOfColor, double[][][] referenceColor, int size, double[][][] cache) {
 		int halfSize = size / 2;
 		double[][][] reconstructedColor = cache;
@@ -173,6 +255,17 @@ public class RenderEngine {
 		return reconstructedColor;
 	}
 	
+	/**
+	 * Renders an image of the quadtree with the given leave nodes.
+	 * 
+	 * @param leaveNodes	The leave nodes of the quadtree.
+	 * @param dim			Dimension of the frame.
+	 * @return An array of BufferedImages, where at:
+	 * <ul>
+	 * <li>[0] - The quadtree boxes can be seen.
+	 * <li>[1] - The mean color of each MacroBlock can be seen.
+	 * </ul>
+	 */
 	public static BufferedImage[] renderQuadtree(List<MacroBlock> leaveNodes, Dimension dim) {
 		BufferedImage[] render = new BufferedImage[3];
 		render[0] = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
@@ -258,7 +351,20 @@ public class RenderEngine {
 		g2d.dispose();
 		return render;
 	}
-
+	
+	/**
+	 * Renders the given differences an returns the image.
+	 * 
+	 * <p><b>Notice:</b><br>
+	 * The difference of the frame is meant, this means what color has
+	 * changed over the period of time. Thus some parts might be transparent,
+	 * if no difference was found.
+	 * </p>
+	 * 
+	 * @param leaves	The differences.
+	 * @param dim		Dimension of the render.
+	 * @return An image with all differences.
+	 */
 	public BufferedImage renderDifferences(ArrayList<MacroBlock> leaves, Dimension dim) {
 		BufferedImage render = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
 		double[] YUVCache = new double[3]; //Size of 3 because of 3 channels

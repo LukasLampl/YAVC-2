@@ -46,45 +46,59 @@ import app.rendering.ColorManager;
  * chroma.</p>
  * 
  * @author Lukas Lampl
- * @since 17.0
- * @version 1.0 29 May 2024
+ * @since 1.1.0
  */
 
 public class PixelRaster implements Discardable {
+	/**
+	 * The length of bytes in a DataBuffer when the ALPHA channel exists.
+	 */
 	private static final int PX_WITH_ALPHA_LENGTH = 4;
+	
+	/**
+	 * The length of bytes in a DataBuffer when the ALPHA channel is non existent.
+	 */
 	private static final int PX_WITHOUT_ALPHA_LENGTH = 3;
 	
-	public boolean invokedWithData = true;
+	/**
+	 * Flag for whether the PixelRaster is locked or not.
+	 * (Not writeable)
+	 */
 	private boolean locked = false;
 	
 	/**
-	 * The Y stores all luma values of the image without subsampling
+	 * The Y stores all luma values of the image without subsampling.
 	 */
 	private double[][] Y = null;
 	
 	/**
-	 * The U stores all chroma-u values of the image with 4:2:0 subsampling
+	 * The U stores all chroma-u values of the image with 4:2:0 subsampling.
 	 */
 	private double[][] U = null;
 	
 	/**
-	 * The V stores all chroma-v values of the image wit 4:2:0 subsampling
+	 * The V stores all chroma-v values of the image wit 4:2:0 subsampling.
 	 */
 	private double[][] V = null;
 	
 	/**
-	 * Dimension of the PixelRaster (width and height)
+	 * Dimension of the PixelRaster (width and height).
 	 */
 	private Dimension dim = null;
 	
+	/**
+	 * Flag for whether the data fields were invoked or not.
+	 */
+	public boolean invokedWithData = false;
+	
 	public PixelRaster() {
-		this.invokedWithData = false;
+		this.invokedWithData = true;
 	}
 	
 	/**
-	 * <p>Initializes the PixelRaster to an empty image, but with a dimension.</p>
+	 * Initializes the PixelRaster to an empty image, but with a dimension.
 	 * 
-	 * @param dim			The dimension of the PixelRaster.
+	 * @param dim	The dimension of the PixelRaster.
 	 */
 	public PixelRaster(final Dimension dim) {
 		this.dim = dim;
@@ -94,13 +108,13 @@ public class PixelRaster implements Discardable {
 	}
 	
 	/**
-	 * <p>Initialize the PixelRaster using the data of a BufferedImage.
-	 * If the image is not a divisor by 4, the image gets resized.</p>
+	 * Initialize the PixelRaster using the data of a BufferedImage.
+	 * If the image is not a divisor by 4, the image gets resized.
 	 * 
-	 * @param img	Image to convert to PixelRaster
+	 * @param img	Image to convert to PixelRaster.
 	 * 
-	 * @throws NullPointerException	if the BufferedImage is null
-	 * @throws IllegalArgumentException	when the image DataBuffer is not supported
+	 * @throws NullPointerException	If the BufferedImage is null.
+	 * @throws IllegalArgumentException	When the image DataBuffer is not supported.
 	 */
 	public PixelRaster(BufferedImage img) {
 		if (img == null) {
@@ -127,16 +141,16 @@ public class PixelRaster implements Discardable {
 	}
 	
 	/**
-	 * <p>Initialize the PixelRaster using a Dimension, the Y components,
-	 * U components and V components</p>
+	 * Initialize the PixelRaster using a Dimension, the Y components,
+	 * U components and V components.
 	 * 
-	 * @param dim	Dimension of the PixelRaster (width and height)
-	 * @param Y		Y component for the PixelRaster
-	 * @param U		U component for the PixelRaster
-	 * @param V		V component for the PixelRaster	
+	 * @param dim	Dimension of the PixelRaster (width and height).
+	 * @param Y		Y component for the PixelRaster.
+	 * @param U		U component for the PixelRaster.
+	 * @param V		V component for the PixelRaster.
 	 * 
-	 * @throws NullPointerException	if one of the provided components is null
-	 * @throws IllegalArgumentException	when either width or height is lower or equal to 0
+	 * @throws NullPointerException	If one of the provided components is null.
+	 * @throws IllegalArgumentException	When either width or height is lower or equal to 0.
 	 */
 	public PixelRaster(final Dimension dim, final double[][] Y, final double[][] U, final double[][] V) {
 		if (dim.getWidth() <= 0) {
@@ -157,6 +171,11 @@ public class PixelRaster implements Discardable {
 		this.V = V;
 	}
 	
+	/**
+	 * Sets the data of the PixelRaster to the given BufferedImage.
+	 * 
+	 * @param img	Image to use as a data provider.
+	 */
 	public void setData(BufferedImage img) {
 		if (img == null) {
 			throw new NullPointerException("Can't invoke NULL image");
@@ -189,9 +208,9 @@ public class PixelRaster implements Discardable {
 	}
 	
 	/**
-	 * <p>Resizes the provided image to the smaller divisor of 4</p>
+	 * Resizes the provided image to the smaller divisor of 4.
 	 * 
-	 * @param img	Image to resize
+	 * @param img	Image to resize.
 	 */
 	private BufferedImage scaleToNearest4Divisor(final BufferedImage img) {
 		int newWidth = img.getWidth() - (img.getWidth() % 4);
@@ -210,19 +229,19 @@ public class PixelRaster implements Discardable {
 	}
 	
 	/**
-	 * <p>Reads the buffer byte by byte and fills out the YUV colors.
+	 * Reads the buffer byte by byte and fills out the YUV colors.
 	 * The buffer is packed into batches, which then are processed using
-	 * multithreading.</p>
+	 * multithreading.
 	 * 
-	 * <p><strong>Performance Warning:</strong> Even though there is multi-
-	 * threading involved, the overall performance is totally dependent
-	 * on the buffer size.
-	 * Time: O(n)</p>
+	 * <p><b>Performance Warning:</b><br>
+	 * Even though there is multi-threading involved, the overall
+	 * performance is totally dependent on the buffer size.
+	 * </p>
 	 * 
 	 * @param buffer	Raw data of the image, that should be processed
 	 * to YUV colors.
-	 * @param hasAlpha	true if the image has an alpha channel, if not
-	 * hasAlpha = false
+	 * @param hasAlpha	{@code true} if the image has an alpha channel, if not
+	 * hasAlpha = {@code false}.
 	 */
 	private void processByteBuffer(final byte[] buffer, final boolean hasAlpha) {
 		final int length = hasAlpha ? PX_WITH_ALPHA_LENGTH : PX_WITHOUT_ALPHA_LENGTH;
@@ -282,17 +301,17 @@ public class PixelRaster implements Discardable {
 	}
 	
 	/**
-	 * <p>Convert the DataBufferInt to the YUV colorspace
+	 * Convert the DataBufferInt to the YUV colorspace
 	 * and initialize the according colors in the Y, U and V
-	 * components.</p>
+	 * components.
 	 * 
-	 * <p><strong>Performance Warning:</strong> Even though there is multi-
-	 * threading involved, the overall performance is totally dependent
-	 * on the buffer size.
-	 * Time: O(n)</p>
+	 * <p><b>Performance Warning:</b><br>
+	 * Even though there is multi-threading involved, the overall
+	 * performance is totally dependent on the buffer size.
+	 * </p>
 	 * 
-	 * <p><strong>NOTE:</strong> the integers should be in the order of
-	 * ARGB.
+	 * <p><b>NOTE:</b><br>
+	 * The integers should be in the order of ARGB.
 	 * <ul><li>First 8 bits:	Alpha
 	 * <li>Bits from 8 to 16:	Red
 	 * <li>Bits from 16 to 8:	Green
@@ -415,12 +434,12 @@ public class PixelRaster implements Discardable {
 	 * <li>double[2] = V
 	 * </ul></p>
 	 * 
-	 * @param x	position X to set the YUV color
-	 * @param y	position Y to set the YUV color
-	 * @param YUV	YUV color to set
+	 * @param x		Position X to set the YUV color.
+	 * @param y		Position Y to set the YUV color.
+	 * @param YUV	YUV color to set.
 	 * 
-	 * @throws ArrayIndexOutOfBoundsException	when either the x
-	 * or y coordinate is out of the raster
+	 * @throws ArrayIndexOutOfBoundsException	When either the x
+	 * or y coordinate is out of the raster.
 	 * @throws IllegalStateException	When the raster was locked but modified.
 	 */
 	public void setYUV(final int x, final int y, final double[] YUV) {
@@ -449,8 +468,8 @@ public class PixelRaster implements Discardable {
 	 * @param U	The U value to set.
 	 * @param V	The V value to set.
 	 * 
-	 * @throws ArrayIndexOutOfBoundsException	when either the x
-	 * or y coordinate is out of the raster
+	 * @throws ArrayIndexOutOfBoundsException	When either the x
+	 * or y coordinate is out of the raster.
 	 * @throws IllegalStateException	When the raster was locked but modified.
 	 */
 	public void setYUV(final int x, final int y, final double Y, final double U, final double V) {
@@ -478,7 +497,8 @@ public class PixelRaster implements Discardable {
 	 * <li>double[2] = V
 	 * </ul></p>
 	 * 
-	 * <p><strong>NOTE:</strong> the chroma subsampling is automatically
+	 * <p><b>NOTE:</b><br>
+	 * The chroma subsampling is automatically
 	 * handled here (from 4:4:4 to 4:2:0). chroma subsampling
 	 * means, that on basis of the original luma values there
 	 * is only a fraction of the chroma values, due to the
@@ -520,8 +540,8 @@ public class PixelRaster implements Discardable {
 	 * @param invokedUV	is it the first Chroma-sample
 	 * of the 2x2 pixel area
 	 * 
-	 * @throws ArrayIndexOutOfBoundsException	when either the x
-	 * or y coordinate is out of the raster
+	 * @throws ArrayIndexOutOfBoundsException	When either the x
+	 * or y coordinate is out of the raster.
 	 * @throws IllegalStateException	When the raster was locked but modified.
 	 */
 	public void setYUV(final int x, final int y, final double[] YUV, final boolean invokedUV) {
@@ -550,13 +570,13 @@ public class PixelRaster implements Discardable {
 	 * <p>Sets the desired chroma value at the
 	 * desired position.</p>
 	 * 
-	 * @param x	position X to set the YUV color
-	 * @param y	position Y to set the YUV color
-	 * @param U	U value to set
-	 * @param V	V value to set
+	 * @param x	Position X to set the YUV color.
+	 * @param y	Position Y to set the YUV color.
+	 * @param U	U value to set.
+	 * @param V	V value to set.
 	 * 
-	 * @throws ArrayIndexOutOfBoundsException	when either the x
-	 * or y coordinate is out of the raster
+	 * @throws ArrayIndexOutOfBoundsException	When either the x
+	 * or y coordinate is out of the raster.
 	 * @throws IllegalStateException	When the raster was locked but modified.
 	 */
 	public void setChroma(final int x, final int y, final double U, final double V) {
@@ -578,12 +598,12 @@ public class PixelRaster implements Discardable {
 	 * <p>Sets the desired luma value at the
 	 * desired position.</p>
 	 * 
-	 * @param x	position X to set the YUV color
-	 * @param y	position Y to set the YUV color
+	 * @param x	Position X to set the YUV color
+	 * @param y	Position Y to set the YUV color
 	 * @param Y	Y value to set
 	 * 
-	 * @throws ArrayIndexOutOfBoundsException	when either the x
-	 * or y coordinate is out of the raster
+	 * @throws ArrayIndexOutOfBoundsException	When either the x
+	 * or y coordinate is out of the raster.
 	 * @throws IllegalStateException	When the raster was locked but modified.
 	 */
 	public void setLuma(final int x, final int y, final double Y) {
@@ -601,7 +621,7 @@ public class PixelRaster implements Discardable {
 	/**
 	 * <p>Get the width of the PixelRaster.</p>
 	 * 
-	 * @return width of the PixelRaster
+	 * @return Width of the PixelRaster.
 	 */
 	public int getWidth() {
 		return this.dim.width;
@@ -610,7 +630,7 @@ public class PixelRaster implements Discardable {
 	/**
 	 * <p>Get the height of the PixelRaster.</p>
 	 * 
-	 * @return height of the PixelRaster
+	 * @return Height of the PixelRaster.
 	 */
 	public int getHeight() {
 		return this.dim.height;
@@ -619,7 +639,7 @@ public class PixelRaster implements Discardable {
 	/**
 	 * <p>Get the Dimension of the PixelRaster.</p>
 	 * 
-	 * @return dimension of the PixelRaster
+	 * @return Dimension of the PixelRaster.
 	 */
 	public Dimension getDimension() {
 		return this.dim;
@@ -641,15 +661,15 @@ public class PixelRaster implements Discardable {
 	 * The block is ordered like a PixelRaster, full 4:4:4
 	 * luma and 4:2:0 chroma.</p>
 	 * 
-	 * <p><strong>Performance Warning:</strong> The performance is
-	 * totally dependent on the size of the block.
-	 * Time: O(n)</p>
+	 * <p><b>Performance Warning:</b><br>
+	 * The performance is totally dependent on the size of the block.
+	 * </p>
 	 * 
-	 * @param position	Position of the block
-	 * @param size	Size of the block
-	 * @param cache	double array to store the values in
-	 * without creating a new array
-	 * @return PixelBlock from the PixelRaster
+	 * @param position	Position of the block.
+	 * @param size		Size of the block.
+	 * @param cache		double array to store the values in
+	 * without creating a new array.
+	 * @return PixelBlock from the PixelRaster.
 	 */
 	public double[][][] getPixelBlock(final int positionX, final int positionY, final int size, double[][][] cache) {
 		double[][][] res = cache == null ? ArrayUtils.get3DArray(size, true)
@@ -675,11 +695,12 @@ public class PixelRaster implements Discardable {
 	/**
 	 * <p>Converts the PixelRaster into a BufferedImage.</p>
 	 * 
-	 * <p><strong>Performance Warning:</strong><br> Even though there is multi-
-	 * threading involved, the overall performance is totally dependent
-	 * on the Image dimensions.<br>
+	 * <p><b>Performance Warning:</b><br>
+	 * Even though there is multi-threading involved, the overall
+	 * performance is totally dependent on the Image dimensions.
+	 * <br>
 	 * 
-	 * @return Reconstructed BufferedImage
+	 * @return Reconstructed BufferedImage.
 	 */
 	public BufferedImage toBufferedImage() {
 		BufferedImage render = new BufferedImage(this.dim.width, this.dim.height, BufferedImage.TYPE_INT_ARGB);
@@ -703,9 +724,9 @@ public class PixelRaster implements Discardable {
 	
 	/**
 	 * <p>Creates a copy of the PixelRaster
-	 * without any references to other values</p>
+	 * without any references to other values.</p>
 	 * 
-	 * @return Cloned PixelRaster
+	 * @return Cloned PixelRaster.
 	 */
 	public PixelRaster copy() {
 		double[][] clonedY = new double[this.dim.width][];
@@ -734,6 +755,15 @@ public class PixelRaster implements Discardable {
 		this.locked = true;
 	}
 	
+	/**
+	 * Unlocks the PixelRaster, so colors are changeable.
+	 * 
+	 * @param unlockingClass	The unlocker must be a ReferenceFrameManager instance to
+	 * 							ensure that no other class tries to unlock.
+	 * 
+	 * @throws IllegalStateException	When another class than {@code ReferenceFrameManager}
+	 * tries to unlock the PixelRaster.
+	 */
 	public void unlock(Object unlockingClass) {
 		if (!(unlockingClass instanceof ReferenceFrameManager)) {
 			throw new IllegalStateException("Tried to unlock a PixelRaster without a ReferenceFrameManager!");
@@ -747,6 +777,7 @@ public class PixelRaster implements Discardable {
 		this.Y = null;
 		this.U = null;
 		this.V = null;
+		this.invokedWithData = false;
 		lock();
 	}
 }

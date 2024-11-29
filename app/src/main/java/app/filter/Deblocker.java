@@ -41,20 +41,30 @@ import app.utils.PixelRaster;
  * the pixels out that are at the affected MacroBlock</p>
  * 
  * @author Lukas Lampl
- * @since 17.0
- * @version 1.0 31 May 2024
+ * @since 1.2.1
  * 
  * @see app.utils.PixelRaster
  * @see app.utils.MacroBlock
  */
 
 public class Deblocker {
+	/**
+	 * The offset of the alpha value in the alpha-table.
+	 */
 	private static int ALPHA_OFFSET = 4;
+	
+	/**
+	 * The offset of the beta value in the beta-table.
+	 */
 	private static int BETA_OFFSET = 51;
+	
+	/**
+	 * The strength of the filter.
+	 */
 	private static int STRENGTH = 7;
 	
 	/**
-	 * <p>Defines the maximum quantity of coefficients the filter can use.</p>
+	 * Defines the maximum quantity of coefficients the filter can use.
 	 * 
 	 * @see app.io.Protocol
 	 */
@@ -65,13 +75,13 @@ public class Deblocker {
 	 * <p>The Position of the vectorized MacroBlocks is calculated and then
 	 * the filter is applied. The process is multithreaded.</p>
 	 * 
-	 * <p><strong>Performance Warning:</strong> Even though the process
+	 * <p><b>Performance Warning:</b> Even though the process
 	 * is executed multithreaded, the function might impact performance a
 	 * lot if either it is called often or there are a large amount of
 	 * vectors to deblock.</p>
 	 * 
-	 * @param movementVecs	Vectors from the inter-prediction step
-	 * @param composite	Frame that has the encoded vectors in it
+	 * @param movementVecs	Vectors from the inter-prediction step.
+	 * @param composite		Frame that has the encoded vectors in it.
 	 */
 	public void deblock(LoadDistributor<Vector> movementVecs, PixelRaster composite) {
 		if (ArgumentProcessor.noDeblock) {
@@ -113,12 +123,12 @@ public class Deblocker {
 	 * 
 	 * @return Runnable that executes the deblocking filter for a MacroBlock
 	 * 
-	 * @param composite	Frame that has the encoded vectors in it
-	 * @param blockPos	Position of the block that should be deblocked
-	 * @param offset	Offset to the block position (row and line)
-	 * @param alpha	Threshold for the filter to stop filtering
-	 * @param beta	"Strength" of the filtering
-	 * @param c	Boundary and "strength" of the filter
+	 * @param composite	Frame that has the encoded vectors in it.
+	 * @param blockPos	Position of the block that should be deblocked.
+	 * @param offset	Offset to the block position (row and line).
+	 * @param alpha		Threshold for the filter to stop filtering.
+	 * @param beta		"Strength" of the filtering.
+	 * @param c			Boundary and "strength" of the filter.
 	 */
 	private Runnable createMacroBlockDeblockRunnable(PixelRaster composite, Point blockPos, int size, int alpha, int beta, int c) {
 		Runnable task = () -> {
@@ -136,16 +146,15 @@ public class Deblocker {
 	
 	/**
 	 * <p>Executed the deblocking filter for either vertical or horizontal direction.</p>
-	 * <p>The dimension of the deblocking is approximately 6px x 1px. The deblocking only
-	 * occur on the luma channel, due to chroma / color loss.</p>
+	 * <p>The dimension of the deblocking is approximately 6px x 1px.</p>
 	 * 
-	 * @param composite	Frame that has the encoded vectors in it
-	 * @param blockPos	Position of the block that should be deblocked
-	 * @param offset	Offset to the block position (row and line)
-	 * @param alpha	Threshold for the filter to stop filtering
-	 * @param beta	"Strength" of the filtering
-	 * @param c	Boundary and "strength" of the filter
-	 * @param vertical	Is the filter applied vertically or horizontally
+	 * @param composite	Frame that has the encoded vectors in it.
+	 * @param blockPos	Position of the block that should be deblocked.
+	 * @param offset	Offset to the block position (row and line).
+	 * @param alpha		Threshold for the filter to stop filtering.
+	 * @param beta		"Strength" of the filtering.
+	 * @param c			Boundary and "strength" of the filter.
+	 * @param vertical	Whether the filter is applied vertically or horizontally.
 	 */
 	private void executeDeblocking(PixelRaster composite, Point blockPos, int offset, int alpha, int beta, int c, boolean vertical) {
 		Point[] points = getPositionPoints(vertical, offset, blockPos);
@@ -181,11 +190,11 @@ public class Deblocker {
 	 * <li>[5] = p2
 	 * </ul></p>
 	 * 
-	 * @return A list of points containing q0, q1, q2, p0, p1 and p2.	
+	 * @return A list of points containing q0, q1, q2, p0, p1 and p2.
 	 * 
-	 * @param vertical	Is the deblocking executed vertically or not
-	 * @param offset	Offset the the original position (row and line)
-	 * @param blockPos	Position of the MacroBlock to deblock
+	 * @param vertical	Is the deblocking executed vertically or not.
+	 * @param offset	Offset the the original position (row and line).
+	 * @param blockPos	Position of the MacroBlock to deblock.
 	 */
 	private Point[] getPositionPoints(boolean vertical, int offset, Point blockPos) {
 		Point p[] = new Point[6];
@@ -221,15 +230,15 @@ public class Deblocker {
 	 * 
 	 * @return An array that contains the smoothed values
 	 * 
-	 * @param q0	Pixel 0 in the current block
-	 * @param q1	Pixel 1 in the current block
-	 * @param q2	Pixel 2 in the current block
-	 * @param p0	Pixel (size - 1) of the left neighboring block
-	 * @param p1	Pixel (size - 2) of the left neighboring block
-	 * @param p2	Pixel (size - 3) of the left neighboring block
-	 * @param beta	"Strength" of the filtering
-	 * @param alpha	Threshold for the filtering to occur
-	 * @param c	Boundary and "strength" of the filtering
+	 * @param q0	Pixel 0 in the current block.
+	 * @param q1	Pixel 1 in the current block.
+	 * @param q2	Pixel 2 in the current block.
+	 * @param p0	Pixel (size - 1) of the left neighbouring block.
+	 * @param p1	Pixel (size - 2) of the left neighbouring block.
+	 * @param p2	Pixel (size - 3) of the left neighbouring block.
+	 * @param beta	"Strength" of the filtering.
+	 * @param alpha	Threshold for the filtering to occur.
+	 * @param c		Boundary and "strength" of the filtering.
 	 */
 	private double[] executeDeblocking(double q0, double q1, double q2, double p0, double p1, double p2, int beta, int alpha, int c) {
 		double[] newColors = new double[] {q0, q1, p0, p1};
@@ -258,10 +267,10 @@ public class Deblocker {
 	 * 
 	 * @return A value where <u>min <= x <= max</u>.
 	 * 
-	 * @param x	Value to clip
+	 * @param x		Value to clip
 	 * @param min	Minimum value
 	 * @param max	Maximum value
-	 * @return
+	 * @return The clipped value where {@code min <= x <= max}.
 	 */
 	private int clip(int x, int min, int max) {
 		return x < min ? min : x > max ? max : x;

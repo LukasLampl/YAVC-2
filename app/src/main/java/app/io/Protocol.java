@@ -485,6 +485,13 @@ public class Protocol {
 		return arr;
 	}
 	
+	/**
+	 * Gets the metadata in form of an byte array.
+	 * 
+	 * @param dimensionOfFrames	Dimension of all frames.
+	 * @param numberOfFrames	The number of frames.
+	 * @return A byte representation of the metadata.
+	 */
 	public static byte[] getMetadata(final Dimension dimensionOfFrames, final int numberOfFrames) {
 		final byte[] data = new byte[Protocol.META_DATA_LEN];//4 Bytes per integer.
 		final byte[] width = Protocol.getIntBytes(dimensionOfFrames.width);
@@ -496,6 +503,12 @@ public class Protocol {
 		return data;
 	}
 	
+	/**
+	 * Gets the metadata out of an byte array.
+	 * 
+	 * @param data	The byte array containing the metadata.
+	 * @return A {@link app.io.Metadata Metadata} object with data.
+	 */
 	public static Metadata setMetadata(final byte[] data) {
 		if (data.length < Protocol.META_DATA_LEN) {
 			throw new IllegalArgumentException("Metadata has to be " + Protocol.META_DATA_LEN + " bytes long.");
@@ -508,6 +521,13 @@ public class Protocol {
 		return new Metadata(frames, new Dimension(width, height));
 	}
 	
+	/**
+	 * Converts a list of vectors into byte form.
+	 * 
+	 * @param vecs		The vectors to convert.
+	 * @param discard	Flag for whether the vectors should be discarded afterwards.
+	 * @return An byte array with all vectors.
+	 */
 	public static byte[] getVectorBytes(final List<Vector> vecs, final boolean discard) {
 		if (vecs == null) {
 			throw new NullPointerException("No vectors were passed for writing.");
@@ -530,6 +550,14 @@ public class Protocol {
 		return data;
 	}
 	
+	/**
+	 * Writes a single vector into the given byte array.
+	 * 
+	 * @param v				The vector to convert and write.
+	 * @param startIndex	Index at where to start writing the vector.
+	 * @param data			Byte array in which to write.
+	 * @return The length of the written vector in bytes.
+	 */
 	private static int writeSingleVectorToByteArray(final Vector v, final int startIndex, final byte[] data) {
 		int index = startIndex;
 		final byte[] posX = Protocol.getPositionBytes(v.getPosition().x);
@@ -669,6 +697,13 @@ public class Protocol {
 		return data;
 	}
 	
+	/**
+	 * Reconstructs the start frame based on the given data and dimension.
+	 * 
+	 * @param data	The data containing pixel information about the start frame.
+	 * @param dim	The dimension of the start frame.
+	 * @return A reconstructed start frame.
+	 */
 	public static PixelRaster reconstructStartFrame(final byte[] data, final Dimension dim) {
 		PixelRaster render = new PixelRaster(dim);
 
@@ -687,6 +722,12 @@ public class Protocol {
 		return render;
 	}
 	
+	/**
+	 * Converts a list of MacroBlocks into an byte array.
+	 * 
+	 * @param blocks	MacroBlocks to convert.
+	 * @return A byte representation of the MacroBlock list.
+	 */
 	public static byte[] getRawBlockBytes(final List<MacroBlock> blocks) {
 		int size = Protocol.RAW_BLOCK_SIZE_CHECK_LENGTH;
 		
@@ -708,6 +749,15 @@ public class Protocol {
 		return data;
 	}
 	
+	/**
+	 * Writes a single MacroBlock into the given byte array.
+	 * 
+	 * @param block			MacroBlock to convert and write.
+	 * @param YUVCache		A color cache to prevent GC pressure.
+	 * @param data			Byte array in which to write.
+	 * @param startIndex	Index at where to start writing the MacroBlock.
+	 * @return The length of the MacroBlock in bytes.
+	 */
 	private static int writeSingleRawBlockToByteArray(final MacroBlock block, double[] YUVCache, final byte[] data, final int startIndex) {
 		int index = startIndex;
 		final Point pos = block.getPosition();
@@ -740,6 +790,13 @@ public class Protocol {
 		return index - startIndex;
 	}
 	
+	/**
+	 * Gets a list of MacroBlocks out of an byte array.
+	 * 
+	 * @param data	Byte array containing the MacroBlocks.
+	 * @return An list of MacroBlocks.
+	 * @throws CorruptedFileException	When the decoded MacroBlock size does not match the coded one.
+	 */
 	public static ArrayList<MacroBlock> getRawBlocks(final byte[] data) throws CorruptedFileException {
 		ArrayList<MacroBlock> blocks = new ArrayList<MacroBlock>();
 		int i = 0;
@@ -758,6 +815,14 @@ public class Protocol {
 		return blocks;
 	}
 	
+	/**
+	 * Converts a single MacroBlock and adds it to the given list.
+	 * 
+	 * @param data			Data with the MacroBlock to convert.
+	 * @param currentIndex	Index at which the MacroBlock is located.
+	 * @param list			List in which to add the converted MacroBlock.
+	 * @return The length of the converted MacroBlock in bytes.
+	 */
 	private static int addSingleRawBlockToList(final byte[] data, final int currentIndex, final List<MacroBlock> list) {
 		final int posX = Protocol.getPosition(data[currentIndex], data[currentIndex + 1]);
 		final int posY = Protocol.getPosition(data[currentIndex + 2], data[currentIndex + 3]);
@@ -787,7 +852,7 @@ public class Protocol {
 	}
 	
 	/**
-	 * Writes a subarray into another array at the specified index.
+	 * Writes a sub-array into another array at the specified index.
 	 * 
 	 * @param bytes	The byte array to write into the other array.
 	 * @param arr	The array to write into.

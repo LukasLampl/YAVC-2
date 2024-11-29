@@ -1,40 +1,83 @@
+/////////////////////////////////////////////////////////////
+///////////////////////    LICENSE    ///////////////////////
+/////////////////////////////////////////////////////////////
+/*
+The YAVC video / frame compressor compresses frames.
+Copyright (C) 2024  Lukas Nian En Lampl
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 package app.interprediction;
 
 import app.utils.LoadDistributor;
 import app.utils.MacroBlock;
 
+/**
+ * The {@code VectorEngineResult} class is a wrapper class to group
+ * the results of the interprediction step together and return them
+ * as a result.
+ * 
+ * @author Lukas Lampl
+ * @since 1.4.1 [Optimized prototype]
+ */
 public class VectorEngineResult {
+	/**
+	 * Holds the rest blocks after the interprediction.
+	 */
 	private LoadDistributor<MacroBlock> restBlocks;
+	
+	/**
+	 * Holds all vectors after the interprediction.
+	 */
 	private LoadDistributor<Vector> vectors;
 	
+	/**
+	 * A new Instance of the {@code VectorEngineResult} which holds
+	 * the given data.
+	 * 
+	 * @param restBlocks	Remaining non-coded blocks after the interprediction.
+	 * @param vectors		All coded vectors.
+	 */
 	public VectorEngineResult(LoadDistributor<MacroBlock> restBlocks, LoadDistributor<Vector> vectors) {
 		this.restBlocks = restBlocks;
 		this.vectors = vectors;
 	}
 
 	/**
-	 * @return the restBlocks
+	 * @return The restBlocks.
 	 */
 	public LoadDistributor<MacroBlock> getRestBlocks() {
 		return restBlocks;
 	}
 
 	/**
-	 * @param restBlocks the restBlocks to set
+	 * @param restBlocks	The restBlocks to set.
 	 */
 	public void setRestBlocks(LoadDistributor<MacroBlock> restBlocks) {
 		this.restBlocks = restBlocks;
 	}
 
 	/**
-	 * @return the vectors
+	 * @return The vectors.
 	 */
 	public LoadDistributor<Vector> getVectors() {
 		return vectors;
 	}
 
 	/**
-	 * @param vectors the vectors to set
+	 * @param vectors	The vectors to set.
 	 */
 	public void setVectors(LoadDistributor<Vector> vectors) {
 		this.vectors = vectors;

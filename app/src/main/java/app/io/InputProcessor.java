@@ -1,3 +1,24 @@
+/////////////////////////////////////////////////////////////
+///////////////////////    LICENSE    ///////////////////////
+/////////////////////////////////////////////////////////////
+/*
+The YAVC video / frame compressor compresses frames.
+Copyright (C) 2024  Lukas Nian En Lampl
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 package app.io;
 
 import java.awt.Dimension;
@@ -5,7 +26,6 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 
 import app.exceptions.CorruptedFileException;
-import app.exceptions.WrongBlockAssignedException;
 import app.filter.Deblocker;
 import app.interprediction.Vector;
 import app.rendering.RenderEngine;
@@ -15,11 +35,35 @@ import app.utils.MacroBlock;
 import app.utils.PixelRaster;
 import app.utils.ReferenceFrameManager;
 
+/**
+ * The {@code InputProcessor} class processes byte based input from
+ * a YAVC coded file and turns it into individual frames.
+ * 
+ * @author Lukas Lampl
+ * @since 1.5
+ */
 public class InputProcessor {
+	/**
+	 * The current frame count.
+	 */
 	public static int FrameCount = 0;
+	
+	/**
+	 * Dimension of all frames.
+	 */
 	private Dimension FRAME_DIM = null;
+	
+	/**
+	 * The individual lengths of each frame/frame part in the
+	 * coded YAVC file.
+	 */
 	private LinkedList<Integer> lengthOfFrames = new LinkedList<Integer>();
 	
+	/**
+	 * Gets the metadata out of a byte array.
+	 * 
+	 * @param stream	The byte array containing the metadata.
+	 */
 	public void proessMetadata(byte[] stream) {
 		Metadata meta = Protocol.setMetadata(stream);
 		this.FRAME_DIM = meta.getDimensionOfFrames();
@@ -28,14 +72,33 @@ public class InputProcessor {
 		System.out.println("FRAMES: " + FrameCount);
 	}
 	
+	/**
+	 * Get the length of the part, where the length of each frame part
+	 * is stored.
+	 * 
+	 * @param stream	The byte array containing the size.
+	 * @return Number of frame parts.
+	 */
 	public int initFrameReader(byte[] stream) {
 		return Protocol.getSizeFromBytes(stream);
 	}
 	
+	/**
+	 * Get the start index of each frame part from a byte array.
+	 * 
+	 * @param stream	The byte array containing the frame part lengths.
+	 */
 	public void getIndexes(byte[] stream) {
 		Protocol.setLengthsOfEachFramePart(stream, this.lengthOfFrames);
 	}
 	
+	/**
+	 * Tries to get the next length from the {@link #lengthOfFrames} queue.
+	 * 
+	 * @return The length of the next part.
+	 * 
+	 * @throws IllegalStateException	When no lengths are set or available.
+	 */
 	public int getNextLength() {
 		if (this.lengthOfFrames.isEmpty()) {
 			throw new IllegalStateException("Cannot provide data reader, since all markers are missing! (Indexes)");
@@ -44,11 +107,29 @@ public class InputProcessor {
 		return this.lengthOfFrames.poll();
 	}
 	
+	/**
+	 * Creates the start frame of the video from a byte array.
+	 * 
+	 * @param data	The start frame data.
+	 * @return The constructed start frame.
+	 */
 	public PixelRaster constructStartFrame(byte[] data) {
 		return Protocol.reconstructStartFrame(data, this.FRAME_DIM);
 	}
 	
-	public PixelRaster processFrame(byte[] content, byte[] rawBlocks, ReferenceFrameManager refs, ListManager<Vector> vectorListManager) throws CorruptedFileException, WrongBlockAssignedException {
+	/**
+	 * Converts a content byte array (vector byte array) and a raw block byte array
+	 * (non-coded block byte array) to a PixelRaster which represents a frame.
+	 * 
+	 * @param content			The vectors to decode.
+	 * @param rawBlocks			The non-coded blocks to decode.
+	 * @param refs				All reference frames untill now.
+	 * @param vectorListManager	List manager in which to store and get the vectors from.
+	 * @return A PixelRaster with all non-coded blocks and vectors resolved.
+	 * @throws CorruptedFileException	When either the decoded vector size or non-coded
+	 * block size is unequal to the coded size.
+	 */
+	public PixelRaster processFrame(byte[] content, byte[] rawBlocks, ReferenceFrameManager refs, ListManager<Vector> vectorListManager) throws CorruptedFileException {
 		long start_copy = System.currentTimeMillis();
 		PixelRaster render = refs.getLastFrame().copy();
 		long end_copy = System.currentTimeMillis();
@@ -67,7 +148,7 @@ public class InputProcessor {
 		long end_load_dist = System.currentTimeMillis();
 		long start_render = System.currentTimeMillis();
 		if (vectorListManager.getList() != null) {
-			render = RenderEngine.renderResult(vecManager, refs, blockManager, true);
+			render = RenderEngine.renderComposit(vecManager, refs, blockManager, true);
 			deblocker.deblock(vecManager, render);
 		}
 		long end_render = System.currentTimeMillis();
@@ -80,14 +161,34 @@ public class InputProcessor {
 		return render;
 	}
 	
-	private ArrayList<MacroBlock> getRawBlocks(byte[] rawBlocks) throws CorruptedFileException, WrongBlockAssignedException {
+	/**
+	 * Get all non-coded block out of an byte array.
+	 * 
+	 * @param rawBlocks	Byte array with the non-coded blocks.
+	 * @return An ArrayList with all non-coded blocks.
+	 * @throws CorruptedFileException	When the decoded non-coded blocks size does not match with the coded size.
+	 */
+	private ArrayList<MacroBlock> getRawBlocks(byte[] rawBlocks) throws CorruptedFileException {
 		return Protocol.getRawBlocks(rawBlocks);
 	}
 	
-	protected void getVectors(byte[] vectorPart, ListManager<Vector> vectorListManager, boolean singleThread) throws CorruptedFileException, WrongBlockAssignedException {
+	/**
+	 * Get all vectors of a frame out of an byte array.
+	 * 
+	 * @param vectorPart		The byte array with the vectors.
+	 * @param vectorListManager	A ListManager in which to add the vectors to.
+	 * @param singleThread		Flag for whether the process should be single threaded (retains order).
+	 * @throws CorruptedFileException	When the decoded vector size is not equal to the coded size.
+	 */
+	protected void getVectors(byte[] vectorPart, ListManager<Vector> vectorListManager, boolean singleThread) throws CorruptedFileException {
 		Protocol.getVectors(vectorPart, vectorListManager, singleThread);
 	}
 	
+	/**
+	 * Gets the Dimension of all frames.
+	 * 
+	 * @return The Dimension of all frames.
+	 */
 	public Dimension getSizeOfFrames() {
 		return this.FRAME_DIM;
 	}

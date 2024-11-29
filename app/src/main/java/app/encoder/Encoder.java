@@ -1,4 +1,25 @@
- package app.encoder;
+/////////////////////////////////////////////////////////////
+///////////////////////    LICENSE    ///////////////////////
+/////////////////////////////////////////////////////////////
+/*
+The YAVC video / frame compressor compresses frames.
+Copyright (C) 2024  Lukas Nian En Lampl
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+package app.encoder;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -23,17 +44,60 @@ import app.utils.MacroBlock;
 import app.utils.PixelRaster;
 import app.utils.ReferenceFrameManager;
 
+/**
+ * The {@code Encoder} class is responsible for encoding given frames into
+ * a YAVC portable format that can be read by the {@code Encoder}. This class
+ * is a wrapper that is only responsible for calling the encoding methods.
+ * 
+ * @author Lukas Lampl
+ * @since 1.1.0
+ */
 public class Encoder {
+	/**
+	 * The {@link app.dct.DCTEngine DCTEngine} used in the encoding process,
+	 * with precalculated values and tables.
+	 */
 	public DCTEngine DCT_ENGINE = null;
+	
+	/**
+	 * The {@link app.quadtree.QuadtreeEngine QuadtreeEngine} used for the whole
+	 * encoding process.
+	 */
 	private static QuadtreeEngine QUADTREE_ENGINE = new QuadtreeEngine();
+	
+	/**
+	 * The {@link app.rendering.DifferenceEngine DifferenceEngine} used for the whole
+	 * encoding process.
+	 */
 	private static DifferenceEngine DIFFERENCE_ENGINE = new DifferenceEngine();
+	
+	/**
+	 * The {@link app.interprediction.VectorEngine VectorEngine} used for the whole
+	 * encoding process.
+	 */
 	private static VectorEngine VECTOR_ENGINE = new VectorEngine();
+	
+	/**
+	 * The {@link app.utils.ReferenceFrameManager ReferenceFrameManager} used for
+	 * managing all reference frames.
+	 */
 	private ReferenceFrameManager referenceManager = new ReferenceFrameManager();
 	
+	/**
+	 * Creates a new Encoder object that is ready for encoding a list or folder
+	 * of frames.
+	 * 
+	 * @param dctEngine	The DCTEngine to use in the encoding process.
+	 */
 	public Encoder(DCTEngine dctEngine) {
 		this.DCT_ENGINE = dctEngine;
 	}
 	
+	/**
+	 * The main encode function that invokes the sub-tasks sequentially by
+	 * first generating a Quadtree then calculating the differences, followed
+	 * by interprediction and finally rendering and output.
+	 */
 	public void encode() {
 		int files = ArgumentProcessor.inputFile.listFiles().length;
 		OutputStream outStream = new OutputStream(ArgumentProcessor.outputFile);
@@ -97,7 +161,7 @@ public class Encoder {
 				
 //				BufferedImage vectors = RenderEngine.renderVectors(movementVectors, curFrame.getDimension());
 				long start_render = System.currentTimeMillis();
-				PixelRaster composite = RenderEngine.renderResult(movementVectors, this.referenceManager, differenceManager, false);
+				PixelRaster composite = RenderEngine.renderComposit(movementVectors, this.referenceManager, differenceManager, false);
 				outStream.addObjectToOutputQueue(new QueueObject(movementVectors, differenceManager));
 				long end_render = System.currentTimeMillis();
 				

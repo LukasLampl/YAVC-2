@@ -35,7 +35,6 @@ import app.quadtree.QuadtreeEngine;
  * 
  * @param <T>	The type of the main-work that should be splitted.
  * 
- * @version 1.1.0
  * @author Lukas Lampl
  * @author Hans Lampl
  * 
@@ -89,6 +88,10 @@ public class LoadDistributor<T> implements Discardable {
 		init();
 	};
 	
+	/**
+	 * <p>Creates an empty {@code LoadDistributor} with nothing to distribute,
+	 * but with predetermined amount of chunks.</p>
+	 */
 	public LoadDistributor(final int chunks) {
 		this.numberOfChunks = chunks;
 		init();

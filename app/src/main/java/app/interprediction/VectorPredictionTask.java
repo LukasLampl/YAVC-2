@@ -169,11 +169,11 @@ public class VectorPredictionTask extends RecursiveAction {
 	 * After the hexagonal search the exhaustive search pattern is applied to find the absolute
 	 * best match in a 4x4 search window.</p>
 	 * 
-	 * @return Best matching MacroBlock in the reference frame
+	 * @return Best matching MacroBlock in the reference frame.
 	 * 
-	 * @param ref	Reference to search the best match in
-	 * @param blockToBeSearched	MaccroBlock that should be matched
-	 * @param referenceNumber	Number of the reference frame
+	 * @param ref				Reference to search the best match in.
+	 * @param blockToBeSearched	MaccroBlock that should be matched.
+	 * @param referenceNumber	Number of the reference frame.
 	 */
 	private MacroBlock getBestMatchingMacroBlock(final PixelRaster ref, MacroBlock blockToBeSearched, final int referenceNumber) {
 		double[][][] cache = ArrayUtils.get3DArray(blockToBeSearched.getSize(), true);
@@ -192,11 +192,11 @@ public class VectorPredictionTask extends RecursiveAction {
 	 * <p>First the absolute color difference is calculated and set, then the vector is
 	 * filled with other important data, like position, size, reference, etc.</p>
 	 * 
-	 * @return Movement vector with all data to "reconstruct" the frame
+	 * @return Movement vector with all data to "reconstruct" the frame.
 	 * 
-	 * @param refs	Reference frames
-	 * @param bestMatch	Best matching MacroBlock
-	 * @param blockToBeSearched	MacroBlock that was searched at the beginning
+	 * @param refs				Reference frames.
+	 * @param bestMatch			Best matching MacroBlock.
+	 * @param blockToBeSearched	MacroBlock that was searched at the beginning.
 	 * 
 	 * @see T.Vector
 	 */
@@ -227,9 +227,9 @@ public class VectorPredictionTask extends RecursiveAction {
 	 * <p>The function evaluates the best guess among the array of "best matches"
 	 * from every reference frame.</p>
 	 * 
-	 * @return The actual "best match" among all other "best matches"
+	 * @return The actual "best match" among all other "best matches".
 	 * 
-	 * @param canidates	Canidates to check
+	 * @param canidates	Canidates to check.
 	 */
 	private MacroBlock evaluateBestGuess(MacroBlock[] canidates) {
 		MacroBlock best = canidates[0];
@@ -260,7 +260,7 @@ public class VectorPredictionTask extends RecursiveAction {
 	 * <li>Check the points around the "best guess" and get the one with the lowest MSE >> this is the best match.
 	 * </ol>
 	 * 
-	 * @return Best match in the reference image
+	 * @return Best match in the reference image.
 	 * 
 	 * @param ref				Reference image.
 	 * @param blockToBeSearched	MacroBlock for which a match should be searched.
@@ -338,10 +338,10 @@ public class VectorPredictionTask extends RecursiveAction {
 	 * <p>Basically this gets all points around the center position
 	 * and the center itself.</p>
 	 * 
-	 * @return Array of points
+	 * @return Array of points.
 	 * 
-	 * @param center	Center of the small hexagon
-	 * @param radius	Radius of the hexagon
+	 * @param center	Center of the small hexagon.
+	 * @param radius	Radius of the hexagon.
 	 */
 	private Point[] getSmallHexagonSearchPoints(Point center, int radius) {
 		Point[] searchPoints = new Point[9];
@@ -366,10 +366,10 @@ public class VectorPredictionTask extends RecursiveAction {
 	 * <li>false = Point is out of boundary
 	 * </ul>
 	 * 
-	 * @param blockPos	Position of the MacroBlock (start position)
-	 * @param searchWindow	Search window
-	 * @param edgeOfHexagon	The point to check
-	 * @param dim	Dimension of the frame
+	 * @param blockPos		Position of the MacroBlock (start position).
+	 * @param searchWindow	Search window.
+	 * @param edgeOfHexagon	The point to check.
+	 * @param dim			Dimension of the frame.
 	 */
 	private boolean isHexagonPointInSearchWindow(final Point blockPos, int searchWindow, final Point edgeOfHexagon, final Dimension dim) {
 		if ((edgeOfHexagon.x > blockPos.x + searchWindow)
@@ -414,11 +414,11 @@ public class VectorPredictionTask extends RecursiveAction {
 	 * <li>Find the MacroBlock with the lowest MSE >> Best match.
 	 * </ol>
 	 * 
-	 * @return Best match in the reference image
+	 * @return Best match in the reference image.
 	 * 
-	 * @param ref				Reference image
-	 * @param blockToBeSearched	MacroBlock for which a match should be searched
-	 * @param bestMatchTillNow	Best matching MacroBlock from the previous hexagonal search
+	 * @param ref				Reference image.
+	 * @param blockToBeSearched	MacroBlock for which a match should be searched.
+	 * @param bestMatchTillNow	Best matching MacroBlock from the previous hexagonal search.
 	 * @param cache				Cache for storing color values.
 	 */
 	private MacroBlock computeExhaustiveSearch(MacroBlock blockToSearch, MacroBlock bestMatchTillNow, PixelRaster ref, double[][][] cache) {
@@ -473,9 +473,9 @@ public class VectorPredictionTask extends RecursiveAction {
 	 * Everything is written into the passed cache!
 	 * </p>
 	 * 
-	 * @param radius	Radius of the hexagon
-	 * @param pos	Position of the hexagon
-	 * @param cache	Cache of previously stored points
+	 * @param radius	Radius of the hexagon.
+	 * @param pos		Position of the hexagon.
+	 * @param cache		Cache of previously stored points.
 	 */
 	private void getHexagonPoints(final int radius, final Point pos, Point[] cache) {
 		if (cache == null) {
@@ -500,9 +500,9 @@ public class VectorPredictionTask extends RecursiveAction {
 	 * 
 	 * @return Array containing the differences.
 	 * 
-	 * @param col1	First color array
-	 * @param col2	Second color array
-	 * @param size	Size of the color arrays
+	 * @param col1	First color array.
+	 * @param col2	Second color array.
+	 * @param size	Size of the color arrays.
 	 */
 	private double[][][] getAbsoluteDifferenceOfColors(double[][][] col1, double[][][] col2, int size) {
 		int halfSize = size / 2;

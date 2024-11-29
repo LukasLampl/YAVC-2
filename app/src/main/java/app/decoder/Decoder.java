@@ -1,8 +1,28 @@
+/////////////////////////////////////////////////////////////
+///////////////////////    LICENSE    ///////////////////////
+/////////////////////////////////////////////////////////////
+/*
+The YAVC video / frame compressor compresses frames.
+Copyright (C) 2024  Lukas Nian En Lampl
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 package app.decoder;
 
 import app.ArgumentProcessor;
 import app.exceptions.CorruptedFileException;
-import app.exceptions.WrongBlockAssignedException;
 import app.interprediction.Vector;
 import app.io.ImageWriter;
 import app.io.InputProcessor;
@@ -12,9 +32,27 @@ import app.utils.ListManager;
 import app.utils.PixelRaster;
 import app.utils.ReferenceFrameManager;
 
+/**
+ * The {@code Decoder} class is responsible for decoding a given file
+ * to the frame representation and do "high level" work, like video playback
+ * and so on.
+ * 
+ * @author Lukas Lampl
+ * @since 1.1.0
+ */
 public class Decoder {
+	/**
+	 * A {@link app.utils.ReferenceFrameManager ReferenceFrameManager} that manages
+	 * all reference frames for the decoder.
+	 */
 	private ReferenceFrameManager referenceManager = new ReferenceFrameManager();
 	
+	/**
+	 * The main decode function that invokes the whole decoding process by
+	 * first reading in the video file partially and finally extracting the
+	 * start frame, the vectors and non-coded blocks which are then in turn
+	 * processed.
+	 */
 	public void decode() {
 		VideoPlayer player = ArgumentProcessor.playback ? new VideoPlayer() : null;
 		ListManager<Vector> vectorListManager = new ListManager<Vector>();
@@ -68,8 +106,6 @@ public class Decoder {
 				vectorListManager.switchList();
 			}
 		} catch (CorruptedFileException e) {
-			e.printStackTrace();
-		} catch (WrongBlockAssignedException e) {
 			e.printStackTrace();
 		} finally {
 			imageWriter.terminate();

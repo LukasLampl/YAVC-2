@@ -31,6 +31,7 @@ package app;
 
 public class config {
 	public static final int MAX_REFERENCES = 4;
+	public static final int MAX_PRE_READ_IMAGES = 2;
 
 	public static final int[][] QUANTIZATION_MATRIX_8x8_Luma = {
 		{20, 11, 10, 16, 24, 40, 51, 61},

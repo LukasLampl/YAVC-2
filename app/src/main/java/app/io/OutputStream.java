@@ -1,3 +1,24 @@
+/////////////////////////////////////////////////////////////
+///////////////////////    LICENSE    ///////////////////////
+/////////////////////////////////////////////////////////////
+/*
+The YAVC video / frame compressor compresses frames.
+Copyright (C) 2024  Lukas Nian En Lampl
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 package app.io;
 
 import java.awt.Dimension;
@@ -15,16 +36,55 @@ import app.interprediction.Vector;
 import app.utils.MacroBlock;
 import app.utils.PixelRaster;
 
+/**
+ * The {@code OutputStream} class is the output writer of the YAVC-Encoder.
+ * It provides an asynchronous running writer thread which is thread safe.
+ * 
+ * @author Lukas Lampl
+ */
 public class OutputStream {
-	private static final int SLEEP_TIME = 30; //ms
-	private File OUTPUT_FILE = null;
-	private File TEMP_OUTPUT_FILE = null;
-	private boolean canWrite = false;
-	private boolean finishQueue = false;
-	private ConcurrentLinkedQueue<QueueObject> QUEUE = new ConcurrentLinkedQueue<QueueObject>();
+	/**
+	 * Time to sleep, when no frame is available to write.
+	 * Unit in ms.
+	 */
+	private static final int SLEEP_TIME = 30;
 	
+	/**
+	 * File in which to write the data to.
+	 */
+	private File OUTPUT_FILE = null;
+	
+	/**
+	 * Temporary file in which to write the data to.
+	 */
+	private File TEMP_OUTPUT_FILE = null;
+	
+	/**
+	 * Flag for whether the {@code OutputStream} is allowed to write or not.
+	 */
+	private boolean canWrite = false;
+	
+	/**
+	 * Flag that the {@code OutputStream} should finish its writing process as
+	 * soon as possible.
+	 */
+	private boolean finishQueue = false;
+	
+	/**
+	 * Queue of all objects to write.
+	 */
+	private ConcurrentLinkedQueue<QueueObject> queue = new ConcurrentLinkedQueue<QueueObject>();
+	
+	/**
+	 * List of all lengths that is written into the file as a header.
+	 */
 	private ArrayList<Integer> lengthOfEachPart = new ArrayList<Integer>();
 	
+	/**
+	 * Opens an {@code OutputStream} to the given output file.
+	 * 
+	 * @param output	File to which to write.
+	 */
 	public OutputStream(File output) {
 		try {			
 			File dir = new File(output.getParent());
@@ -39,6 +99,12 @@ public class OutputStream {
 		}
 	}
 	
+	/**
+	 * Writes the metadata into the output file and truncates existing data.
+	 * 
+	 * @param dim			Dimension of all frames.
+	 * @param filesCount	Number of frames.
+	 */
 	public void writeMetadata(Dimension dim, int filesCount) {
 		try {
 			byte[] data = Protocol.getMetadata(dim, filesCount);
@@ -48,6 +114,11 @@ public class OutputStream {
 		}
 	}
 	
+	/**
+	 * Writes the start frame into the temporary output.
+	 * 
+	 * @param raster	The start frame.
+	 */
 	public void writeStartFrame(PixelRaster raster) {
 		try {
 			byte[] data = Protocol.getStartFrameBytes(raster);
@@ -58,6 +129,12 @@ public class OutputStream {
 		}
 	}
 	
+	/**
+	 * Writes a list of non-coded blocks to the given file.
+	 * 
+	 * @param file		File in which to write.
+	 * @param blocks	Non-coded blocks to write.
+	 */
 	private void writeRawBlocks(File file, ArrayList<MacroBlock> blocks) {
 		try {
 			byte[] data = Protocol.getRawBlockBytes(blocks);
@@ -68,6 +145,12 @@ public class OutputStream {
 		}
 	}
 	
+	/**
+	 * Writes a list of vectors into the given file.
+	 * 
+	 * @param file	File in which to write.
+	 * @param vecs	Vectors to write.
+	 */
 	private void writeVectors(File file, ArrayList<Vector> vecs) {
 		try {
 			byte[] data = Protocol.getVectorBytes(vecs, true);
@@ -78,10 +161,24 @@ public class OutputStream {
 		}
 	}
 
+	/**
+	 * Adds an object to the writing queue.
+	 * 
+	 * @param obj	The object to write.
+	 */
 	public void addObjectToOutputQueue(QueueObject obj) {
-		this.QUEUE.add(obj);
+		this.queue.add(obj);
 	}
 	
+	/**
+	 * Starts the writer thread. First it writes the metadata in the output file,
+	 * then the vectors and non-coded blocks into the temporary file. After
+	 * finishing the length of each frame part is appended to the output file
+	 * and finally the data of the temporary file is transmitted to the output
+	 * file as well.
+	 * 
+	 * @throws IllegalStateException	When the output file is {@code null}.
+	 */
 	public void activate() throws IllegalStateException {
 		if (this.OUTPUT_FILE == null) {
 			throw new IllegalStateException("Output is defined as null!");
@@ -91,7 +188,7 @@ public class OutputStream {
 		
 		Thread writer = new Thread(() -> {
 			while (canWrite) {
-				if (QUEUE.isEmpty()) {
+				if (queue.isEmpty()) {
 					if (finishQueue) {
 						break;
 					}
@@ -101,7 +198,7 @@ public class OutputStream {
 					} catch (InterruptedException e) {}
 				} else {
 					try {
-						QueueObject obj = this.QUEUE.poll();
+						QueueObject obj = this.queue.poll();
 						writeVectors(this.TEMP_OUTPUT_FILE, obj.getVectors());
 						writeRawBlocks(this.TEMP_OUTPUT_FILE, obj.getDifferences());
 						obj.discard();
@@ -113,13 +210,16 @@ public class OutputStream {
 			}
 			
 			writeLengths();
-			transferVectors();
+			transferTempFile();
 		});
 		
 		writer.setName("YAVC_Frame_Output_Stream");
 		writer.start();
 	}
 	
+	/**
+	 * Write the lengths of each frame part into the the output file.
+	 */
 	private void writeLengths() {
 		try {
 			byte[] data = Protocol.getLengthBytesOfFrame(this.lengthOfEachPart);
@@ -129,7 +229,11 @@ public class OutputStream {
 		}
 	}
 	
-	private void transferVectors() {
+	/**
+	 * Transfers the temporary file data into the output file.
+	 * After that the temporary file is deleted.
+	 */
+	private void transferTempFile() {
 		byte[] buffer = new byte[65536];
 		int bytesRead = 0;
 		
@@ -147,10 +251,17 @@ public class OutputStream {
 		}
 	}
 	
+	/**
+	 * Shuts the {@code OutputStream} down.
+	 */
 	public void shutdown() {
 		this.canWrite = false;
 	}
 	
+	/**
+	 * Signals the {@code OutputStream} to finish the writing queue as
+	 * soon as possible.
+	 */
 	public void finishQueue() {
 		this.finishQueue = true;
 	}

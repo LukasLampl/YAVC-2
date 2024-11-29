@@ -1,3 +1,24 @@
+/////////////////////////////////////////////////////////////
+///////////////////////    LICENSE    ///////////////////////
+/////////////////////////////////////////////////////////////
+/*
+The YAVC video / frame compressor compresses frames.
+Copyright (C) 2024  Lukas Nian En Lampl
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 package app.quadtree;
 
 import java.awt.Dimension;
@@ -11,9 +32,28 @@ import app.utils.MacroBlock;
 import app.utils.MathUtils;
 import app.utils.MeanStructure;
 
+/**
+ * The {@code QuadtreeTask} is responsible for subdividing individual MacroBlocks
+ * into smaller MacroBlocks. The met condition for splitting is that the standard
+ * deviation of the mean color in the block is larger than a specified threshold.
+ * 
+ * @author Lukas Lampl
+ * @since 1.4 [Optimized prototype]
+ */
 public class QuadtreeTask {
+	/**
+	 * The structure holding all mean color values and RGB values.
+	 */
 	private MeanStructure meanOf4x4Blocks = null;
 	
+	/**
+	 * Splits a given origin block into sub-blocks, until the standard deviation
+	 * of the block's mean color is below a certain threshold.
+	 * 
+	 * @param origin			The origin block to split.
+	 * @param dim				Dimension of the frame (to keep track of out of bounds blocks).
+	 * @param errorThreshold	The standard deviation threshold.
+	 */
 	public void splitOriginBlock(MacroBlock origin, Dimension dim, double errorThreshold) {
 		this.meanOf4x4Blocks = calculate4x4Means(origin);
 		splitToOptimalSize(errorThreshold, origin, dim);
@@ -30,7 +70,7 @@ public class QuadtreeTask {
 	 * 
 	 * @param errorThreshold	Maximum error, until the block is split.
 	 * @param currentBlock		The currentBlock to split to optimum.
-	 * @param dim	Dimension of the PixelRaster.
+	 * @param dim				Dimension of the PixelRaster.
 	 * 
 	 * @throws NullPointerException	When the mean of 4x4 blocks is null or the
 	 * argb array is null.
@@ -81,7 +121,7 @@ public class QuadtreeTask {
 	 * Event though it might lead to performance impact if used a lot.</p>
 	 * 
 	 * @return A structure that contains the 4x4 mean colors and the
-	 * RGB array
+	 * RGB array.
 	 */
 	private MeanStructure calculate4x4Means(MacroBlock block) {
 		int[][] meanArgbs = new int[block.getSize() / 4][block.getSize() / 4];
@@ -113,11 +153,11 @@ public class QuadtreeTask {
 	 * @return Runnable that calculates the 4x4 means as well as the RGB color for an area
 	 * within the MacroBlock, starting from startX and startY with the size frac.
 	 * 
-	 * @param startX	Start position X within the MacroBlock
-	 * @param startY	Start position Y within the MacroBlock
-	 * @param frac		Size of the fraction that should be worked down
-	 * @param argbs		Array for storing all RGB colors in the fraction
-	 * @param meanArgbs	Array for storing all 4x4 means
+	 * @param startX	Start position X within the MacroBlock.
+	 * @param startY	Start position Y within the MacroBlock.
+	 * @param frac		Size of the fraction that should be worked down.
+	 * @param argbs		Array for storing all RGB colors in the fraction.
+	 * @param meanArgbs	Array for storing all 4x4 means.
 	 */
 	private Runnable create4x4MeansFractionTask(final int startX, final int startY, final int frac, int[][][] argbs, int[][] meanArgbs, MacroBlock block) {
 		Runnable task = () -> {
@@ -159,9 +199,9 @@ public class QuadtreeTask {
 	 * <li>[2] = Blue
 	 * </ul>
 	 * 
-	 * @param meanOf4x4Blocks	Precalculated 4x4 mean colors
-	 * @param pos	Position of the child block within the root MacroBlock
-	 * @param size	Size of the child block
+	 * @param meanOf4x4Blocks	Precalculated 4x4 mean colors.
+	 * @param pos				Position of the child block within the root MacroBlock.
+	 * @param size				Size of the child block.
 	 */
 	private int[] calculateMeanOfBlock(int[][] meanOf4x4Blocks, Point pos, int size) {
 		double sumR = 0;
@@ -199,10 +239,10 @@ public class QuadtreeTask {
 	 * 
 	 * @return The standard deviation of red, green and blue combined.
 	 * 
-	 * @param mean	Mean color of the MacroBlock
-	 * @param argbs	RGB color array of the root MacroBlock
-	 * @param pos	Position of the child block within the root MacroBlock
-	 * @param size	Size of the child block
+	 * @param mean	Mean color of the MacroBlock.
+	 * @param argbs	RGB color array of the root MacroBlock.
+	 * @param pos	Position of the child block within the root MacroBlock.
+	 * @param size	Size of the child block.
 	 */
 	private double computeStandardDeviation(int[] mean, int[][][] argbs, Point pos, int size) {
 		double resR = 0;

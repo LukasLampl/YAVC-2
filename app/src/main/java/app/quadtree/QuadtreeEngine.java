@@ -56,19 +56,49 @@ import app.utils.PixelRaster;
  * @see app.utils.PixelRaster
  * 
  * @author Lukas Lampl
- * @since 17.0
- * @version 1.0 29 May 2024
+ * @since 1.0
  */
 
 public class QuadtreeEngine {
+	/**
+	 * The start size and maximum size of a Quadtree MacroBlock.
+	 */
 	private final int MAX_SIZE = 128;
 	
+	/**
+	 * Total amount of sizes.
+	 * 4x4, 8x8, 16x16, 32x32, 64x64 and 128x128
+	 */
 	public static final int NUMBER_OF_SIZES = 6;
+	
+	/**
+	 * Index at which to expect 4x4 blocks.
+	 */
 	public static final int INDEX_4x4 = 0;
+	
+	/**
+	 * Index at which to expect 8x8 blocks.
+	 */
 	public static final int INDEX_8x8 = 1;
+	
+	/**
+	 * Index at which to expect 16x16 blocks.
+	 */
 	public static final int INDEX_16x16 = 2;
+	
+	/**
+	 * Index at which to expect 32x32 blocks.
+	 */
 	public static final int INDEX_32x32 = 3;
+	
+	/**
+	 * Index at which to expect 64x64 blocks.
+	 */
 	public static final int INDEX_64x64 = 4;
+	
+	/**
+	 * Index at which to expect 128x128 blocks.
+	 */
 	public static final int INDEX_128x128 = 5;
 	
 	/**
@@ -91,7 +121,7 @@ public class QuadtreeEngine {
 	 * 
 	 * @param currentFrame PixelRaster to "convert" to Quadtree.
 	 * 
-	 * @throws NullPointerException, when the passed frame is null
+	 * @throws NullPointerException	When the passed frame is {@code null}.
 	 */
 	public ArrayList<MacroBlock> constructQuadtree(PixelRaster currentFrame) {
 		if (currentFrame == null) {
@@ -140,12 +170,11 @@ public class QuadtreeEngine {
 	/**
 	 * <p>Creates a subdivision task for a single root.</p>
 	 * 
-	 * @return Runnable task for subdividing a root
+	 * @return Runnable task for subdividing a root.
 	 * 
-	 * @param pos	Position of the root
-	 * @param frame	Current frame
-	 * @param errorThreshold	Maximum error before subdivision
-	 * @param currentOrder	Order of the root
+	 * @param pos				Position of the root.
+	 * @param frame				Current frame.
+	 * @param errorThreshold	Maximum error before subdivision.
 	 */
 	private Callable<MacroBlock> createQuadtreeConstructionTask(final Point pos, final PixelRaster frame, final int errorThreshold) {
 		Callable<MacroBlock> task = () -> {
@@ -164,13 +193,13 @@ public class QuadtreeEngine {
 	/**
 	 * Get all leave nodes of the quadtree roots.
 	 * The leaves are recursively searched.
-	 * @see YAVC.Encoder.QuadtreeEngine.getLeaves()
 	 * 
-	 * @return ArrayList<MacroBlock> => All leaf nodes
+	 * @return All leaf nodes
 	 * 
-	 * @param ArrayList<MacroBlock> roots => Roots to get the leaves from
+	 * @param roots	Roots from which to get the leaves from.
+	 * @see #getLeaves(MacroBlock)
 	 * 
-	 * @throws NullPointerException, when no root is provided
+	 * @throws NullPointerException	When no root is provided.
 	 */
 	public LoadDistributor<MacroBlock> getLeaveNodes(ArrayList<MacroBlock> roots) {
 		if (roots == null) {
@@ -217,6 +246,13 @@ public class QuadtreeEngine {
 		return loadManager;
 	}
 	
+	/**
+	 * Get the index in an array with all MacroBlock sizes represented based
+	 * on the given size.
+	 * 
+	 * @param size	The size to convert to an index.
+	 * @return The index.
+	 */
 	public static int getIndexBySize(int size) {
 		switch (size) {
 		case 128:
@@ -240,9 +276,9 @@ public class QuadtreeEngine {
 	 * Get the leaves of the current block, till
 	 * the blocks are the leaves of the quadtree itself.
 	 * 
-	 * @return ArrayList<MacroBlock> => Leave nodes
+	 * @return The leave nodes.
 	 * 
-	 * @param MacroBlock block => Block to go down recursively
+	 * @param block	Block to go down recursively.
 	 */
 	private ArrayList<MacroBlock> getLeaves(MacroBlock block) {
 		if (block == null) {

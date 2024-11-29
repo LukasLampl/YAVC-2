@@ -34,28 +34,27 @@ import app.utils.ReferenceFrameManager;
  * {@link app.interprediction.VectorPredictionTask VectorPredictionTask}.
  * </p>
  * 
- * <p><strong>Performance warning:</strong><br> Even though this process is
+ * <p><b>Performance warning:</b><br> Even though this process is
  * multithreaded, it might impact the overall performance due to increasing
  * amount of data on larger frames.</p>
  * 
  * @author Lukas Lampl
  * @since 1.0.0
- * @version 1.0 11 November 2024
  */
 
 public class VectorEngine {
 	/**
-	 * <p>Variable to store the PI radian.</p>
+	 * Variable to store the PI radian.
 	 */
 	public static double PI_RAD = Math.PI / 3;
 	
 	/**
-	 * <p>Holds a temporary table with all cosines for constructing a hexagon.</p>
+	 * Holds a temporary table with all cosines for constructing a hexagon.
 	 */
 	public static double[] COS_TABLE_HEXAGON = new double[6];
 	
 	/**
-	 * <p>Holds a temporary table with all sines for constructing a hexagon.</p>
+	 * Holds a temporary table with all sines for constructing a hexagon.
 	 */
 	public static double[] SIN_TABLE_HEXAGON = new double[6];
 	
@@ -65,7 +64,7 @@ public class VectorEngine {
 	private int totalPixelsProcessed = 0;
 	
 	/**
-	 * <p>Variable to store the total MSE of all "best matches".</p>
+	 * Variable to store the total MSE of all "best matches".
 	 */
 	private double TOTAL_MSE = 0;
 	
@@ -82,11 +81,11 @@ public class VectorEngine {
 	 * 
 	 * @return An VectorEgineResult with the managers.
 	 * 
-	 * @param differences	MacroBlocks to search a match for
-	 * @param refs			Reference frames that are allowed to use during the search
+	 * @param differences	MacroBlocks to search a match for.
+	 * @param refs			Reference frames that are allowed to use during the search.
 	 *
 	 * @throws NullPointerException	When no MacroBlocks are passed for prediction or
-	 * if no references to refer to are available
+	 * if no references to refer to is available.
 	 * 
 	 * @see T.Vector
 	 */
@@ -137,9 +136,10 @@ public class VectorEngine {
 	}
 	
 	/**
-	 * <p>Returns the total MSE of the "best matching" vectors.</p>
-	 * @return Total MSE
+	 * Returns the total MSE of the "best matching" vectors.
+	 * @return Total MSE.
 	 */
+	@Deprecated
 	public double getVectorMSE() {
 		return this.TOTAL_MSE;
 	}

@@ -28,11 +28,12 @@ import app.rendering.ColorManager;
 
 /**
  * <p>The class {@code MacroBlock} is the main transform unit
- * in the YAVC video compressor.</p>
+ * in the YAVC video compressor. It is either a 128x128, 64x64, 32x32,
+ * 16x16, 8x8 or 4x4 part of a frame and is used for all transformations.
+ * </p>
  * 
  * @author Lukas Lampl
- * @since 17.0
- * @version 1.0 29 May 2024
+ * @since 1.0.0
  */
 
 public class MacroBlock implements Discardable {
@@ -78,8 +79,14 @@ public class MacroBlock implements Discardable {
 	 */
 	private boolean isSubdivided = false;
 	
+	/**
+	 * Flag for whether the block has been converted to a Vector or not.
+	 */
 	private boolean isConvertedToVector = false;
 	
+	/**
+	 * Flag for whether the colors of the MacroBlock are set or not.
+	 */
 	private boolean isColorSet = false;
 	
 	/**

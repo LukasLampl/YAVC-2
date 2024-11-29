@@ -1,3 +1,24 @@
+/////////////////////////////////////////////////////////////
+///////////////////////    LICENSE    ///////////////////////
+/////////////////////////////////////////////////////////////
+/*
+The YAVC video / frame compressor compresses frames.
+Copyright (C) 2024  Lukas Nian En Lampl
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 package app.rendering;
 
 import java.util.ArrayList;
@@ -12,11 +33,38 @@ import app.utils.LoadDistributor;
 import app.utils.MacroBlock;
 import app.utils.PixelRaster;
 
+/**
+ * The {@code DifferenceEngine} filters out MacroBlocks that resemble old ones.
+ * Blocks are only filtered, when the colors are below a certain threshold.
+ * 
+ * @author Lukas Lampl
+ * @since 1.2
+ */
 public class DifferenceEngine {
+	/**
+	 * The Y threshold value.
+	 */
 	private static final double DELTA_Y = 1.4;
+	
+	/**
+	 * The U threshold value.
+	 */
 	private static final double DELTA_U = 3.2;
+	
+	/**
+	 * The V threshold value.
+	 */
 	private static final double DELTA_V = 3.2;
 	
+	/**
+	 * Computes the difference by iterating over every MacroBlock, calculating
+	 * the delta color of each channel and decides based on the thresholds whether
+	 * the block should be processed or not.
+	 * 
+	 * @param prevFrame				The frame to use as a color reference.
+	 * @param threadLoadManager		The LoadDistributor with all MacroBlocks.
+	 * @return A list of all MacroBlocks that should be further processed.
+	 */
 	public List<MacroBlock> computeDifferences(PixelRaster prevFrame, LoadDistributor<MacroBlock> threadLoadManager) {
 		int predictedSize = threadLoadManager.getNumberOfObjects() / 2;
 		List<MacroBlock> differences = new ArrayList<MacroBlock>();

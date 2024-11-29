@@ -14,7 +14,6 @@ import javax.imageio.ImageIO;
 import org.junit.jupiter.api.Test;
 
 import app.exceptions.CorruptedFileException;
-import app.exceptions.WrongBlockAssignedException;
 import app.interprediction.Vector;
 import app.interprediction.VectorEngine;
 import app.interprediction.VectorEngineResult;
@@ -55,7 +54,7 @@ public class TestDecoder {
 		}
 		
 		class VectorTranslationTester extends InputProcessor {
-			public void run() throws CorruptedFileException, WrongBlockAssignedException {
+			public void run() throws CorruptedFileException {
 				ReferenceFrameManager refMan = new ReferenceFrameManager();
 				refMan.add(new PixelRaster(TEST_FRAMES[0]));
 				refMan.add(new PixelRaster(TEST_FRAMES[1]));
@@ -108,8 +107,6 @@ public class TestDecoder {
 			executor.run();
 		} catch (CorruptedFileException e) {
 			e.printStackTrace();
-		} catch (WrongBlockAssignedException e) {
-			e.printStackTrace();
 		}
 	}
 	
@@ -123,7 +120,7 @@ public class TestDecoder {
 		}
 		
 		class VectorTranslationTester extends InputProcessor {
-			public void run() throws CorruptedFileException, WrongBlockAssignedException {
+			public void run() throws CorruptedFileException {
 				ReferenceFrameManager refMan = new ReferenceFrameManager();
 				refMan.add(new PixelRaster(TEST_FRAMES[0]));
 				refMan.add(new PixelRaster(TEST_FRAMES[1]));
@@ -176,8 +173,6 @@ public class TestDecoder {
 		try {
 			executor.run();
 		} catch (CorruptedFileException e) {
-			e.printStackTrace();
-		} catch (WrongBlockAssignedException e) {
 			e.printStackTrace();
 		}
 	}

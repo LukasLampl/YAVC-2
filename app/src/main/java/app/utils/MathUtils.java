@@ -22,15 +22,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 package app.utils;
 
 /**
- * originator: Hans Lampl
- */
-/**
  * The class {@code MathUtils} is a replacement of the
  * standard {@code Math} class to only do the necessary
  * calculation needed for the YAVC instead of generalizing everything.
  * 
  * @author Hans Lampl
- * @since 1.2 [Optomized prototype]
+ * @since 1.2 [Optimized prototype]
  */
 public class MathUtils {
 	/**
