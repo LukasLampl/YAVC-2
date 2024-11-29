@@ -89,10 +89,10 @@ public class PixelRaster implements Discardable {
 	/**
 	 * Flag for whether the data fields were invoked or not.
 	 */
-	public boolean invokedWithData = false;
+	public boolean notInvokedWithData = false;
 	
 	public PixelRaster() {
-		this.invokedWithData = true;
+		this.notInvokedWithData = true;
 	}
 	
 	/**
@@ -777,7 +777,7 @@ public class PixelRaster implements Discardable {
 		this.Y = null;
 		this.U = null;
 		this.V = null;
-		this.invokedWithData = false;
+		this.notInvokedWithData = false;
 		lock();
 	}
 }

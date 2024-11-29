@@ -458,6 +458,11 @@ public class MacroBlock implements Discardable {
 				this.nodes[index++] = b;
 			}
 		}
+		
+		//All color components are referenced by the children.
+		this.Y = null;
+		this.U = null;
+		this.V = null;
 	}
 	
 	/**

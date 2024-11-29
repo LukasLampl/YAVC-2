@@ -124,7 +124,7 @@ public class Encoder {
 				if (frame == null) {
 					System.out.println("Skip: " + i);
 					continue;
-				} else if (frame.invokedWithData == false) {
+				} else if (frame.notInvokedWithData == true) {
 					System.out.println("Skip: " + i);
 					continue;
 				}
