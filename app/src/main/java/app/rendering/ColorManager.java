@@ -83,7 +83,22 @@ public class ColorManager {
 	/**
 	 * Holds the color for a null color field (unset color).
 	 */
-	public static final int[] NULL_COLOR = {255, 0, 255};
+	public static final double[] NULL_COLOR = {0, 0, 0};
+	
+	/**
+	 * Weighting for the Y-Channel. This is higher than U and V, since human perception is stronger for lightness.
+	 */
+	public static final double Y_WEIGHT = 1.55;
+	
+	/**
+	 * Weighting for the U-Channel.
+	 */
+	public static final double U_WEIGHT = 0.95;
+	
+	/**
+	 * Weighting for the V-Channel.
+	 */
+	public static final double V_WEIGHT = 0.95;
 	
 	/**
 	 * Convert a RGB color, based on a Color object
@@ -216,7 +231,7 @@ public class ColorManager {
 			rgbCache[R_INDEX] = red;
 			rgbCache[G_INDEX] = green;
 			rgbCache[B_INDEX] = blue;
-			return null;
+			return rgbCache;
 		}
 		
 		return new int[] {red, green, blue};

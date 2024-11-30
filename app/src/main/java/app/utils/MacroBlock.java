@@ -100,7 +100,7 @@ public class MacroBlock implements Discardable {
 	 * <p>Mean color based on the subdivision of
 	 * the MacroBlock.</p>
 	 */
-	private int[] meanColor = ColorManager.NULL_COLOR;
+	private double[] meanColor = ColorManager.NULL_COLOR;
 	
 	/**
 	 * <p>Defines the total MSE (= Mean Square Error) from the
@@ -527,7 +527,7 @@ public class MacroBlock implements Discardable {
 	 * <p>Get the mean color of the MacroBlock.</p>
 	 * @return Mean color of the MacroBlock
 	 */
-	public int[] getMeanColor() {
+	public double[] getMeanColor() {
 		if (!this.isColorSet) {
 			throw new IllegalStateException("The MacroBlock is ready, but no data was set!");
 		}
@@ -540,7 +540,7 @@ public class MacroBlock implements Discardable {
 	 * 
 	 * @param meanColor	mean color of the MacroBlock
 	 */
-	public void setMeanColor(final int[] meanColor) {
+	public void setMeanColor(final double[] meanColor) {
 		this.meanColor = meanColor;
 	}
 	

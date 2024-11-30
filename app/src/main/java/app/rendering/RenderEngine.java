@@ -264,15 +264,19 @@ public class RenderEngine {
 	 * <ul>
 	 * <li>[0] - The quadtree boxes can be seen.
 	 * <li>[1] - The mean color of each MacroBlock can be seen.
+	 * <li>[2] - The fused image.
 	 * </ul>
 	 */
-	public static BufferedImage[] renderQuadtree(List<MacroBlock> leaveNodes, Dimension dim) {
+	public static BufferedImage[] renderQuadtree(List<MacroBlock> leaveNodes, Dimension dim, PixelRaster curFrame) {
+		int[] colorCache = new int[3];
 		BufferedImage[] render = new BufferedImage[3];
 		render[0] = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
 		render[1] = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
+		render[2] = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
 		
 		Graphics2D g2d1 = (Graphics2D)render[0].createGraphics();
 		Graphics2D g2d2 = (Graphics2D)render[1].createGraphics();
+		Graphics2D g2d3 = (Graphics2D)render[2].createGraphics();
 		g2d1.setColor(Color.RED);
 		
 		for (MacroBlock leaf : leaveNodes) {
@@ -281,14 +285,17 @@ public class RenderEngine {
 			g2d1.drawRect(pos.x, pos.y, size, size);
 			g2d1.drawLine(pos.x, pos.y, pos.x + size, pos.y + size);
 			
-			int[] rgb = leaf.getMeanColor();
-			g2d2.setColor(new Color(rgb[0], rgb[1], rgb[2]));
+			int[] rgb = ColorManager.convertYUVToRGB_intARR(leaf.getMeanColor(), colorCache);
+			g2d2.setColor(new Color(rgb[ColorManager.R_INDEX], rgb[ColorManager.G_INDEX], rgb[ColorManager.B_INDEX]));
 			g2d2.fillRect(pos.x, pos.y, size, size);
 		}
 		
+		g2d3.drawImage(curFrame.toBufferedImage(), 0, 0, null);
+		g2d3.drawImage(render[0], 0, 0, null);
+		
 		g2d1.dispose();
 		g2d2.dispose();
-		
+		g2d3.dispose();
 		return render;
 	}
 	

@@ -66,6 +66,11 @@ public class QuadtreeEngine {
 	private final int MAX_SIZE = 128;
 	
 	/**
+	 * The error threshold, at which MacroBlocks stop splitting.
+	 */
+	private final double ERROR_THRESHOLD = 20.0;
+	
+	/**
 	 * Total amount of sizes.
 	 * 4x4, 8x8, 16x16, 32x32, 64x64 and 128x128
 	 */
@@ -131,7 +136,6 @@ public class QuadtreeEngine {
 		ArrayList<MacroBlock> roots = new ArrayList<MacroBlock>();
 		
 		try {
-			final int errorThreshold = 45;
 			int width = currentFrame.getWidth();
 			int height = currentFrame.getHeight();
 			int threads = Runtime.getRuntime().availableProcessors();
@@ -141,7 +145,7 @@ public class QuadtreeEngine {
 			
 			for (int x = 0; x < width; x += this.MAX_SIZE) {
 				for (int y = 0; y < height; y += this.MAX_SIZE) {
-					Callable<MacroBlock> task = createQuadtreeConstructionTask(new Point(x, y), currentFrame, errorThreshold);
+					Callable<MacroBlock> task = createQuadtreeConstructionTask(new Point(x, y), currentFrame, this.ERROR_THRESHOLD);
 					futureRoots.add(executor.submit(task));
 				}
 			}
@@ -176,7 +180,7 @@ public class QuadtreeEngine {
 	 * @param frame				Current frame.
 	 * @param errorThreshold	Maximum error before subdivision.
 	 */
-	private Callable<MacroBlock> createQuadtreeConstructionTask(final Point pos, final PixelRaster frame, final int errorThreshold) {
+	private Callable<MacroBlock> createQuadtreeConstructionTask(final Point pos, final PixelRaster frame, final double errorThreshold) {
 		Callable<MacroBlock> task = () -> {
 			MacroBlock origin = new MacroBlock(pos.x, pos.y, this.MAX_SIZE, false);
 			double[][][] comps = frame.getPixelBlock(new Point(pos.x, pos.y), origin.getSize(), null);

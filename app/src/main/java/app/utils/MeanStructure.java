@@ -30,40 +30,40 @@ package app.utils;
  */
 public class MeanStructure {
 	/**
-	 * Array with all 4x4 mean RGB colors.
+	 * Array with all 4x4 mean YUV colors.
 	 */
-	private final int[][] meanArgbs;
+	private final double[][][] meanArgbs;
 	
 	/**
-	 * Array with all RGB colors.
+	 * Array with all YUV colors.
 	 */
-	private final int[][][] argbs;
+	private final double[][][] argbs;
 	
 	/**
 	 * Creates a new MeanStructure with the given 4x4 mean color and RGB values.
 	 * 
-	 * @param meanArgbs	The 4x4 mean RGB values.
-	 * @param argbs		The RGB values of every pixel.
+	 * @param meanArgbs	The 4x4 mean YUV values.
+	 * @param argbs		The YUV values of every pixel.
 	 */
-	public MeanStructure(final int[][] meanArgbs, final int[][][] argbs) {
+	public MeanStructure(final double[][][] meanArgbs, final double[][][] argbs) {
 		this.meanArgbs = meanArgbs;
 		this.argbs = argbs;
 	}
 	
 	/**
-	 * Gets the 4x4 mean RGB value matrix.
-	 * @return The 4x4 mean RGB value matrix.
+	 * Gets the 4x4 mean YUV value matrix.
+	 * @return The 4x4 mean YUV value matrix.
 	 */
-	public int[][] get4x4Means() {
+	public double[][][] get4x4Means() {
 		return this.meanArgbs;
 	}
 	
 	/**
-	 * Gets the RGB values of all pixels.
+	 * Gets the YUV values of all pixels.
 	 * 
-	 * @return The RGB values of all pixels.
+	 * @return The YUV values of all pixels.
 	 */
-	public int[][][] getArgbs() {
+	public double[][][] getArgbs() {
 		return this.argbs;
 	}
 }
