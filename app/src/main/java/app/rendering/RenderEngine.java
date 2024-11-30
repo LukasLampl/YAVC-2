@@ -374,37 +374,39 @@ public class RenderEngine {
 	 */
 	public static BufferedImage renderDifferences(List<MacroBlock> leaves, Dimension dim) {
 		BufferedImage render = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
-		double[] YUVCache = new double[3]; //Size of 3 because of 3 channels
-		
-		for (MacroBlock b : leaves) {
-			for (int x = 0; x < b.getSize(); x++) {
-				for (int y = 0; y < b.getSize(); y++) {
-					if (x + b.getPosition().x >= dim.width
-						|| x + b.getPosition().x < 0
-						|| y + b.getPosition().y >= dim.height
-						|| y + b.getPosition().y < 0) {
-						continue;
+		Graphics2D g2d = (Graphics2D) render.getGraphics();
+		try {
+			g2d.setColor(new Color(255, 0, 0));
+			double[] YUVCache = new double[3]; // Size of 3 because of 3 channels
+
+			for (MacroBlock b : leaves) {
+				for (int x = 0; x < b.getSize(); x++) {
+					for (int y = 0; y < b.getSize(); y++) {
+						if (x + b.getPosition().x >= dim.width || x + b.getPosition().x < 0
+								|| y + b.getPosition().y >= dim.height || y + b.getPosition().y < 0) {
+							continue;
+						}
+
+						int argb = ColorManager.convertYUVToRGB(b.getYUV(x, y, YUVCache));
+						render.setRGB(x + b.getPosition().x, y + b.getPosition().y, argb);
 					}
-					
-					int argb = ColorManager.convertYUVToRGB(b.getYUV(x, y, YUVCache));
-					render.setRGB(x + b.getPosition().x, y + b.getPosition().y, argb);
 				}
+
+				g2d.drawRect(b.getPositionX(), b.getPositionY(), b.getSize(), b.getSize());
 			}
+		} finally {
+			g2d.dispose();
 		}
-		
 		return render;
 	}
 	
-	public static BufferedImage[] renderIntraPrediction(List<MacroBlock> intraBlocks, Dimension dim) {
+	public static BufferedImage renderIntraPrediction(List<MacroBlock> intraBlocks, Dimension dim) {
 		BufferedImage render = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
-		BufferedImage overlay = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
-		Graphics2D g2d = (Graphics2D)overlay.getGraphics();
+		Graphics2D g2d = (Graphics2D)render.getGraphics();
 		g2d.setColor(new Color(255, 70, 70, 100));
 		double[] YUVCache = new double[3]; //Size of 3 because of 3 channels
 		
 		for (MacroBlock b : intraBlocks) {
-			g2d.fillRect(b.getPositonX(), b.getPositionY(), b.getSize(), b.getSize());
-			
 			for (int x = 0; x < b.getSize(); x++) {
 				for (int y = 0; y < b.getSize(); y++) {
 					if (x + b.getPosition().x >= dim.width
@@ -420,6 +422,10 @@ public class RenderEngine {
 			}
 		}
 		
-		return new BufferedImage[] {render, overlay};
+		for (MacroBlock b : intraBlocks) {
+			g2d.drawRect(b.getPositionX(), b.getPositionY(), b.getSize(), b.getSize());
+		}
+		
+		return render;
 	}
 }

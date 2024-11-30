@@ -153,18 +153,18 @@ public class Encoder {
 				
 //				BufferedImage[] part = RenderEngine.renderQuadtree(leaveNodes, curFrame.getDimension());
 				long start_difference = System.currentTimeMillis();
-				List<MacroBlock> differences = DIFFERENCE_ENGINE.computeDifferences(prevFrame, leaveNodeManager);
+//				List<MacroBlock> differences = DIFFERENCE_ENGINE.computeDifferences(prevFrame, leaveNodeManager);
 				long end_difference = System.currentTimeMillis();
 //				BufferedImage[] part = RenderEngine.renderQuadtree(leaveNodeManager.getRawData(), curFrame.getDimension(), curFrame);
 				
-				List<MacroBlock> intraBlocks =  INTRA_ENGINE.computeIntraPrediction(differences, curFrame, new double[] {2.0e+1, 0.8, 0.8});
-				BufferedImage[] intraComposit = RenderEngine.renderIntraPrediction(intraBlocks, curFrame.getDimension());
-				ImageIO.write(intraComposit[0], "png", new File(ArgumentProcessor.outputFile.getParent() + "/IP_" + i + ".png"));
-				ImageIO.write(intraComposit[1], "png", new File(ArgumentProcessor.outputFile.getParent() + "/IPO_" + i + ".png"));
-				
+				INTRA_ENGINE.computeIntraPrediction(leaveNodeManager.getRawData(), curFrame);
+			//	BufferedImage intraComposit = RenderEngine.renderIntraPrediction(intraBlocks, curFrame.getDimension());
+			//	ImageIO.write(intraComposit, "png", new File(ArgumentProcessor.outputFile.getParent() + "/IP_" + i + ".png"));
+				BufferedImage r = RenderEngine.renderDifferences(leaveNodeManager.getRawData(), curFrame.getDimension());
+				ImageIO.write(r, "png", new File(ArgumentProcessor.outputFile.getParent() + "/INTRA_" + i + ".png"));
 				
 				long start_vector_movement = System.currentTimeMillis();
-				VectorEngineResult vectorEngineResult = VECTOR_ENGINE.computeMovementVectors(differences, this.referenceManager);
+				VectorEngineResult vectorEngineResult = VECTOR_ENGINE.computeMovementVectors(leaveNodeManager.getRawData(), this.referenceManager);
 				LoadDistributor<Vector> movementVectors = vectorEngineResult.getVectors();
 				LoadDistributor<MacroBlock> differenceManager = vectorEngineResult.getRestBlocks();
 				long end_vector_movement = System.currentTimeMillis();

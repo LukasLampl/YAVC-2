@@ -115,7 +115,7 @@ public class MacroBlock implements Discardable {
 	private int reference = 0;
 	
 	public MacroBlock(MacroBlock block) {
-		this.positionX = block.getPositonX();
+		this.positionX = block.getPositionX();
 		this.positionY = block.getPositionY();
 		this.positionRelativeToParentX = block.getPositionRelativeToParentX();
 		this.positionRelativeToParentY = block.getPositionRelativeToParentY();
@@ -507,7 +507,7 @@ public class MacroBlock implements Discardable {
 	 * 
 	 * @return The x position of the MacroBlock.
 	 */
-	public int getPositonX() {
+	public int getPositionX() {
 		return this.positionX;
 	}
 	
