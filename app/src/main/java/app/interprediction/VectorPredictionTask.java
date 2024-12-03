@@ -211,7 +211,7 @@ public class VectorPredictionTask extends RecursiveAction {
 			double[][][] col = referenceFrame.getPixelBlock(bestMatch.getPosition(), size, null);
 			double[][][] absoluteColorDifference = getAbsoluteDifferenceOfColors(blockToBeSearched.getColors(), col, size);
 			
-			vec = new Vector(bestMatch.getPositionX(), bestMatch.getPositionY(), size);
+			vec = new Vector(bestMatch.getPositonX(), bestMatch.getPositionY(), size);
 			vec.setAppendedBlock(blockToBeSearched);
 			vec.setMostEqualBlock(bestMatch);
 			vec.setReference(bestMatch.getReference());
