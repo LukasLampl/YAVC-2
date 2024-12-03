@@ -39,6 +39,8 @@ import app.utils.MathUtils;
  * YUV and back involve floatingpoint-arithmetic, which might impact
  * performance, if used frequently.</p>
  * 
+ * <p><a>https://en.wikipedia.org/wiki/YCbCr#JPEG_conversion</a> (called on 02.12.2024)</p>
+ * 
  * @author Lukas Lampl
  * @since 1.0
  * @version 1.0 09 November 2024
