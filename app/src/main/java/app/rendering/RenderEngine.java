@@ -327,7 +327,7 @@ public class RenderEngine {
 	 * @see app.interprediction.T
 	 * @see java.awt.Color
 	 */
-	public static BufferedImage renderVectors(ArrayList<Vector> vecs, Dimension dim) {
+	public static BufferedImage renderVectors(List<Vector> vecs, Dimension dim) {
 		BufferedImage render = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D g2d = (Graphics2D)render.createGraphics();
 		g2d.setColor(Color.RED);
@@ -340,8 +340,6 @@ public class RenderEngine {
 			int y2 = pos.y + v.getSpanY();
 			
 			switch (v.getReference()) {
-			case -1:
-				g2d.setColor(Color.GREEN); break;
 			case 0:
 				g2d.setColor(Color.ORANGE); break;
 			case 1:
@@ -350,6 +348,14 @@ public class RenderEngine {
 				g2d.setColor(Color.BLUE); break;
 			case 3:
 				g2d.setColor(Color.RED); break;
+			case 4:
+				g2d.setColor(Color.MAGENTA); break;
+			case 5:
+				g2d.setColor(Color.GREEN); break;
+			case 6:
+				g2d.setColor(Color.CYAN); break;
+			case 7:
+				g2d.setColor(Color.GRAY); break;
 			}
 			
 			g2d.drawLine(x1, y1, x2, y2);
