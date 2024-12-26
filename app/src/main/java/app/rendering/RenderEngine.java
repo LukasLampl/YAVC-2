@@ -67,17 +67,21 @@ public class RenderEngine {
 		
 		try {
 			if (differenceManager != null) {
-				for (final List<MacroBlock> blockList : differenceManager.getIterable()) {
-					Runnable task = createMacroBlockRenderTask(blockList, dim, render);
-					executor.submit(task);
+				if (differenceManager.hasDistributed()) {
+					for (final List<MacroBlock> blockList : differenceManager.getIterable()) {
+						Runnable task = createMacroBlockRenderTask(blockList, dim, render);
+						executor.submit(task);
+					}
 				}
 			}
 
 			long s_vrT = System.currentTimeMillis();
 			if (vecs != null) {
-				for (final List<Vector> vecList : vecs.getIterable()) {
-					Runnable task = createVectorRenderTask(vecList, refs, render, dim, allowModToAbsDiff);
-					executor.submit(task);
+				if (vecs.hasDistributed()) {
+					for (final List<Vector> vecList : vecs.getIterable()) {
+						Runnable task = createVectorRenderTask(vecList, refs, render, dim, allowModToAbsDiff);
+						executor.submit(task);
+					}
 				}
 			}
 			
@@ -247,7 +251,7 @@ public class RenderEngine {
 			for (int y = 0; y < halfSize; y++) {
 				reconstructedColor[ColorManager.U_INDEX][x][y] = referenceColor[ColorManager.U_INDEX][x][y]
 																+ differenceOfColor[ColorManager.U_INDEX][x][y];
-				reconstructedColor[ColorManager.U_INDEX][x][y] = referenceColor[ColorManager.U_INDEX][x][y]
+				reconstructedColor[ColorManager.V_INDEX][x][y] = referenceColor[ColorManager.V_INDEX][x][y]
 																+ differenceOfColor[ColorManager.V_INDEX][x][y];
 			}
 		}

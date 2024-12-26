@@ -308,6 +308,20 @@ public class LoadDistributor<T> implements Discardable {
 	}
 	
 	/**
+	 * Returns a flag for whether the {@code LoadDistributor} has
+	 * distributed ass items or not.
+	 * 
+	 * @return
+	 * <ul>
+	 * <li>{@code true} - When the items were distributed.
+	 * <li>{@code false} - When the items are not distributed.
+	 * </ul>
+	 */
+	public boolean hasDistributed() {
+		return this.hasDistributed;
+	}
+	
+	/**
 	 * <p>Returns all invoked data in the LoadDistributor.</p>
 	 * @return The invoked data in the LoadDistributor.
 	 */
