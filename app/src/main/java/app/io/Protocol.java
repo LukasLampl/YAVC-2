@@ -34,6 +34,7 @@ import app.interprediction.VectorConverterPool;
 import app.rendering.ColorManager;
 import app.utils.ListManager;
 import app.utils.MacroBlock;
+import app.utils.MathUtils;
 import app.utils.PixelRaster;
 
 /**
@@ -85,14 +86,17 @@ public class Protocol {
 	 * @param coeff	The coefficient to convert.
 	 * @return The byte representative of the coefficient.
 	 */
-	public static byte getDCTCoeffByte(final double coeff) {
-		byte result = (byte)((int)Math.abs(coeff) & 0x7F);
+	public static byte[] getDCTCoeffByte(final double coeff) {
+		byte[] result = new byte[2];
+		final int r_coeff = MathUtils.round(Math.abs(coeff));
+		result[0] = (byte)((r_coeff >> 8) & 0x7F);
+		result[1] = (byte)(r_coeff & 0xFF);
 		
 		if (coeff < 0) {
-			result |= (1 << 7);
+			result[0] |= (1 << 7);
 		}
 		
-		return (byte)(result & 0xFF);
+		return result;
 	}
 	
 	/**
@@ -101,9 +105,20 @@ public class Protocol {
 	 * @param coeff	The byte to convert back to the DCT coefficient.
 	 * @return The converted coefficient.
 	 */
-	public static final double getDCTCoeff(final byte coeff) {
-		int result = coeff & 0x7F;
-		return (coeff & 0x80) != 0 ? -result : result;
+	public static final double getDCTCoeff(final byte[] coeff) {
+		int result = ((coeff[0] & 0x7F) << 8) | (coeff[1] & 0xFF);
+		return (coeff[0] & 0x80) != 0 ? -result : result;
+	}
+	
+	/**
+	 * Get the DCT coefficient from a DCT coefficient byte.
+	 * 
+	 * @param coeff	The byte to convert back to the DCT coefficient.
+	 * @return The converted coefficient.
+	 */
+	public static final double getDCTCoeff(final byte uppCoeff, final byte lowerCoeff) {
+		int result = ((uppCoeff & 0x7F) << 8) | (lowerCoeff & 0xFF);
+		return (uppCoeff & 0x80) != 0 ? -result : result;
 	}
 	
 	/**
@@ -284,7 +299,7 @@ public class Protocol {
 		for (Vector v : vecs) {
 			int refSize = v.getSize();
 			size += Protocol.VECTOR_HEADER_LENGTH;
-			size += (refSize * refSize) + 2 * ((refSize * refSize) / 4);
+			size += (refSize * refSize * 2) + 2 * ((refSize * refSize * 2) / 4);
 		}
 		
 		return size;
@@ -323,9 +338,9 @@ public class Protocol {
 		final int frac = size == 4 ? 4 : 8;
 		final int halfFrac = frac / 2;
 		final int groups = size == 4 ? 1 : (size * size) / 64;
-		final byte[] YBytes = new byte[size * size];
-		final byte[] UBytes = new byte[halfSize * halfSize];
-		final byte[] VBytes = new byte[halfSize * halfSize];
+		final byte[] YBytes = new byte[size * size * 2];
+		final byte[] UBytes = new byte[halfSize * halfSize * 2];
+		final byte[] VBytes = new byte[halfSize * halfSize * 2];
 		
 		int YIndex = 0;
 		int UIndex = 0;
@@ -345,7 +360,9 @@ public class Protocol {
 				for (int y = 0; y < frac; y++) {
 					final int actualY = yToAdd + y;
 					double value = absoluteDifference[DCTConstants.Y_COEFFS_INDEX][actualX][actualY];
-					YBytes[YIndex++] = getDCTCoeffByte(getAdjustedDCTCoefficient(value));
+					byte[] yCoeffBytes = getDCTCoeffByte(getAdjustedDCTCoefficient(value));
+					writeBytesToByteArray(yCoeffBytes, YBytes, YIndex);
+					YIndex += 2;
 				}
 			}
 			
@@ -356,8 +373,13 @@ public class Protocol {
 					final int actualY = halfYToAdd + y;
 					double valueU = absoluteDifference[DCTConstants.U_COEFFS_INDEX][actualX][actualY];
 					double valueV = absoluteDifference[DCTConstants.V_COEFFS_INDEX][actualX][actualY];
-					UBytes[UIndex++] = getDCTCoeffByte(getAdjustedDCTCoefficient(valueU));
-					VBytes[VIndex++] = getDCTCoeffByte(getAdjustedDCTCoefficient(valueV));
+					
+					byte[] uCoeffBytes = getDCTCoeffByte(getAdjustedDCTCoefficient(valueU));
+					byte[] vCoeffBytes = getDCTCoeffByte(getAdjustedDCTCoefficient(valueV));
+					writeBytesToByteArray(uCoeffBytes, UBytes, UIndex);
+					writeBytesToByteArray(vCoeffBytes, VBytes, VIndex);
+					UIndex += 2;
+					VIndex += 2;
 				}
 			}
 		}
@@ -373,10 +395,10 @@ public class Protocol {
 	 * @return The adjusted coefficient.
 	 */
 	private static double getAdjustedDCTCoefficient(double coeff) {
-		if (coeff > 127 || coeff < -127) {
-			double adjustedValue = ArgumentProcessor.autoAdjust ? coeff < -127 ? -127 : 127 : Double.NaN;
+		if (coeff > 32767 || coeff < -32767) {
+			double adjustedValue = ArgumentProcessor.autoAdjust ? coeff < -32767 ? -32767 : 32767 : Double.NaN;
 			String autoAdjust = ArgumentProcessor.autoAdjust ? "on" : "off";
-			String msg = "The DCT-Coefficient must lie between -127 and 127."
+			String msg = "The DCT-Coefficient must lie between -32767 and 32767."
 					+ "You might need to adjust the quantization values. (Automatic adjust: "
 					+ autoAdjust + "; from: " + coeff + "; to: " + adjustedValue + ")";
 
@@ -627,7 +649,7 @@ public class Protocol {
 			final int size = refAndSize[1];
 			//Length of the vector diffs
 			//Original formula: (size * size) + 2 * ((size / 2) * (size / 2)) + Protocol.VECTOR_HEADER_LENGTH
-			i += ((size * size) + 2 * ((size * size) / 4)) + Protocol.VECTOR_HEADER_LENGTH;
+			i += ((size * size * 2) + 2 * ((size * size * 2) / 4)) + Protocol.VECTOR_HEADER_LENGTH;
 		}
 	}
 	

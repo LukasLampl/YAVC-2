@@ -62,7 +62,7 @@ public class RenderEngine {
 	public static PixelRaster renderComposit(LoadDistributor<Vector> vecs, ReferenceFrameManager refs, LoadDistributor<MacroBlock> differenceManager, boolean allowModToAbsDiff) {
 		long sRT = System.currentTimeMillis();
 		PixelRaster render = refs.getLastFrame().copy();
-		Dimension dim = refs.getLastFrame().getDimension();
+		Dimension dim = render.getDimension();
 		ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 		
 		try {

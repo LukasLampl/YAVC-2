@@ -309,7 +309,7 @@ public class LoadDistributor<T> implements Discardable {
 	
 	/**
 	 * Returns a flag for whether the {@code LoadDistributor} has
-	 * distributed ass items or not.
+	 * distributed all items or not.
 	 * 
 	 * @return
 	 * <ul>

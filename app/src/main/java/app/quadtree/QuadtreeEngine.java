@@ -68,7 +68,7 @@ public class QuadtreeEngine {
 	/**
 	 * The error threshold, at which MacroBlocks stop splitting.
 	 */
-	private final double ERROR_THRESHOLD = 20.0;
+	private final double ERROR_THRESHOLD = 10.0;//20.0;
 	
 	/**
 	 * Total amount of sizes.

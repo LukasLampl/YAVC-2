@@ -234,9 +234,9 @@ public class VectorConversionTask extends RecursiveAction {
 	 */
 	private double[][][] getVectorDifferences(final byte[] data, final int startPos, final int size, final Vector cachedVector) {
 		double[][][] DCTCoeffGroups = ArrayUtils.get3DArray(size, true);
-		final int YLength = size * size;
+		final int YLength = size * size * 2;
 		final int halfSize = size / 2;
-		final int UVLength = halfSize * halfSize;
+		final int UVLength = halfSize * halfSize * 2;
 		
 		final int YStart = startPos;
 		final int UStart = YStart + YLength;
@@ -245,7 +245,8 @@ public class VectorConversionTask extends RecursiveAction {
 		if (size == 4) {
 			writeDCTCoeffsOutOfByteStream(data, 4, DCTCoeffGroups, YStart, UStart, VStart, 0, 0);
 		} else {
-			for (int u = 0, subSU = 0, x = 0, y = 0; u < YLength; u += 64, subSU += 16, x += 8) {
+			/// IMPORTANT: HARCODED NUMBERS FOR 8x8 MATRICES (NOW WITH 2 BYTE PER LK)
+			for (int u = 0, subSU = 0, x = 0, y = 0; u < YLength; u += 128, subSU += 32, x += 8) {
 				if (x >= size) {
 					y += 8;
 					x = 0;
@@ -276,9 +277,9 @@ public class VectorConversionTask extends RecursiveAction {
 	private void writeDCTCoeffsOutOfByteStream(final byte[] vectorPart, final int size,
 			double[][][] arrayToWriteInto, final int YStart, final int UStart, final int VStart,
 			final int offsetX, final int offsetY) {
-		final int YLength = size * size;
+		final int YLength = size * size * 2;
 		final int halfSize = size / 2;
-		final int UVLength = halfSize * halfSize;
+		final int UVLength = halfSize * halfSize * 2;
 		final int lengthTillMatrixBreak = size;
 		final int halfLengthTillMatrixBreak = halfSize;
 		final int halfOffsetX = offsetX / 2;
@@ -290,7 +291,7 @@ public class VectorConversionTask extends RecursiveAction {
 		double[][] UChannel = arrayToWriteInto[DCTConstants.U_COEFFS_INDEX];
 		double[][] VChannel = arrayToWriteInto[DCTConstants.V_COEFFS_INDEX];
 				
-		for (int n = 0; n < YLength; n++, y++) {
+		for (int n = 0; n < YLength; n += 2, y++) {
 			if (y >= lengthTillMatrixBreak) {
 				x++;
 				y = 0;
@@ -298,13 +299,13 @@ public class VectorConversionTask extends RecursiveAction {
 			
 			final int actualX = x + offsetX;
 			final int actualY = y + offsetY;
-			YChannel[actualX][actualY] = Protocol.getDCTCoeff(vectorPart[YStart + n]);
+			YChannel[actualX][actualY] = Protocol.getDCTCoeff(vectorPart[YStart + n], vectorPart[YStart + n + 1]);
 		}
 
 		x = 0;
 		y = 0;
 		
-		for (int n = 0; n < UVLength; n++, y++) {
+		for (int n = 0; n < UVLength; n += 2, y++) {
 			if (y >= halfLengthTillMatrixBreak) {
 				x++;
 				y = 0;
@@ -312,8 +313,8 @@ public class VectorConversionTask extends RecursiveAction {
 			
 			final int actualX = halfOffsetX + x;
 			final int actualY = halfOffsetY + y;
-			UChannel[actualX][actualY] = Protocol.getDCTCoeff(vectorPart[UStart + n]);
-			VChannel[actualX][actualY] = Protocol.getDCTCoeff(vectorPart[VStart + n]);
+			UChannel[actualX][actualY] = Protocol.getDCTCoeff(vectorPart[UStart + n], vectorPart[UStart + n + 1]);
+			VChannel[actualX][actualY] = Protocol.getDCTCoeff(vectorPart[VStart + n], vectorPart[VStart + n + 1]);
 		}
 	}
 }

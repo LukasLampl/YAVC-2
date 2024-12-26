@@ -23,7 +23,7 @@ package app.dct;
 
 /**
  * The {@code DCTConstants} class is a collection of all
- * constatns used for the DCT-II operations performed by the
+ * constants used for the DCT-II operations performed by the
  * {@link app.dct.DCTEngine DCTEngine}.
  * 
  * @author Lukas Lampl

@@ -324,13 +324,15 @@ public class Vector implements Discardable {
 		if (this.invokedDCTOfDifferences == false) {
 			throw new NullPointerException("No absolute difference were invoked, NULL DCT-Coefficients to process");
 		}
+
+		final boolean quantizize = true;
 		
 		if (allowModificationToOriginalData) {
-			return DCT_ENGINE.computeIDCTOfVectorColorDifference(this.absoluteColorDifferenceDCTCoefficients, this.size, true);
+			return DCT_ENGINE.computeIDCTOfVectorColorDifference(this.absoluteColorDifferenceDCTCoefficients, this.size, quantizize);
 		}
 		
 		double[][][] clone = cloneAbsoluteColorDifference();
-		return DCT_ENGINE.computeIDCTOfVectorColorDifference(clone, this.size, true);
+		return DCT_ENGINE.computeIDCTOfVectorColorDifference(clone, this.size, quantizize);
 	}
 	
 	/**

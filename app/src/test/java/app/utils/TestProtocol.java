@@ -73,11 +73,13 @@ public class TestProtocol {
 	
 	@Test
 	public void test_DCT_coefficient_bytes_001() {
-		double[] coeffs = {-51.0, 0, 37.0, -127.0, 127.0, 58.0, 65.0, 87.0, -32.0, -1.0, 1.0};
+		double[] coeffs = {-32767.0, 32767.0, 16799.0, -8354.0, -4096.0, 2040.0, 993.0,
+				-51.0, 0, 37.0, -127.0, 127.0, 58.0, 65.0, 87.0, -32.0, -1.0, 1.0,
+				-512.0, 239.0, 100.0, 68.0};
 		
 		for (double coeff : coeffs) {
-			byte b_c = Protocol.getDCTCoeffByte(coeff);
-			double convertedByte = Protocol.getDCTCoeff(b_c);
+			byte[] b_c = Protocol.getDCTCoeffByte(coeff);
+			double convertedByte = Protocol.getDCTCoeff(b_c[0], b_c[1]);
 			assertEquals(coeff, convertedByte);
 		}
 	}

@@ -93,7 +93,7 @@ public class ReferenceFrameManager {
 		if (this.availableRasters.size() <= MAX_RASTERS_IN_QUEUE) {
 			this.availableRasters.add(r);
 		} else {
-			r.discard();
+//			r.discard();
 		}
 	}
 	

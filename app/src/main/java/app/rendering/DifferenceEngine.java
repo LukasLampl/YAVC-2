@@ -44,17 +44,17 @@ public class DifferenceEngine {
 	/**
 	 * The Y threshold value.
 	 */
-	private static final double DELTA_Y = 1.4;
+	private static final double DELTA_Y = 0.7; //1.4;
 	
 	/**
 	 * The U threshold value.
 	 */
-	private static final double DELTA_U = 3.2;
+	private static final double DELTA_U = 1.6; //3.2;
 	
 	/**
 	 * The V threshold value.
 	 */
-	private static final double DELTA_V = 3.2;
+	private static final double DELTA_V = 1.6; //3.2;
 	
 	/**
 	 * Computes the difference by iterating over every MacroBlock, calculating
