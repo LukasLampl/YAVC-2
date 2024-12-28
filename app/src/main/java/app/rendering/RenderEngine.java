@@ -25,6 +25,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Point;
+import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
@@ -403,7 +404,8 @@ public class RenderEngine {
 	public static BufferedImage renderIntraPrediction(List<MacroBlock> intraBlocks, Dimension dim) {
 		BufferedImage render = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D g2d = (Graphics2D)render.getGraphics();
-		g2d.setColor(new Color(255, 70, 70, 100));
+		g2d.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_SPEED);
+		g2d.setColor(new Color(255, 0, 0, 100));
 		double[] YUVCache = new double[3]; //Size of 3 because of 3 channels
 		
 		for (MacroBlock b : intraBlocks) {
@@ -426,6 +428,7 @@ public class RenderEngine {
 			g2d.drawRect(b.getPositionX(), b.getPositionY(), b.getSize(), b.getSize());
 		}
 		
+		g2d.dispose();
 		return render;
 	}
 }
