@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package app.utils;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Point;
@@ -780,5 +781,31 @@ public class PixelRaster implements Discardable {
 		this.V = null;
 		this.notInvokedWithData = false;
 		lock();
+	}
+	
+	public static PixelRaster generateChessBoard(final int width, final int height) {
+		BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+		int index = 0;
+		
+		for (int x = 0; x < width; x += 2) {
+			for (int y = 0; y < height; y += 2) {
+				for (int x1 = 0; x1 < 2; x1++) {
+					for (int y1 = 0; y1 < 2; y1++) {
+						if (index % 2 == 0) {
+							img.setRGB(x1 + x, y1 + y, Color.BLACK.getRGB());
+						} else {
+							img.setRGB(x1 + x, y1 + y, Color.WHITE.getRGB());
+						}
+					}
+				}
+				
+				index++;
+			}
+			
+			index++;
+		}
+		
+		PixelRaster r = new PixelRaster(img);
+		return r;
 	}
 }

@@ -497,7 +497,7 @@ public class MacroBlock implements Discardable {
 	 * 
 	 * @return The x position of the MacroBlock.
 	 */
-	public int getPositonX() {
+	public int getPositionX() {
 		return this.positionX;
 	}
 	
