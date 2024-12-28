@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package app.utils;
 
+import app.config;
 import app.rendering.ColorManager;
 
 /**
@@ -84,7 +85,7 @@ public class ArrayUtils {
 	 * @return The created array.
 	 */
 	public static double[][][] get3DArray(final int size, final boolean subsampled) {
-		final int channelSize = subsampled ? size / 2 : size;
+		final int channelSize = subsampled ? size / config.SUBSAMPLE_COEFFICIENT : size;
 		double[][][] arr = new double[ColorManager.CHANNELS][][];
 		arr[0] = new double[size][size];
 		arr[1] = new double[channelSize][channelSize];

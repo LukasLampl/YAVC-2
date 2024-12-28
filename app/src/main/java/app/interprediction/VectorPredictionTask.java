@@ -505,10 +505,10 @@ public class VectorPredictionTask extends RecursiveAction {
 	 * @param size	Size of the color arrays.
 	 */
 	private double[][][] getAbsoluteDifferenceOfColors(double[][][] col1, double[][][] col2, int size) {
-		int halfSize = size / 2;
+		int subSSize = size / config.SUBSAMPLE_COEFFICIENT;
 		double[][] Y = new double[size][size];
-		double[][] U = new double[halfSize][halfSize];
-		double[][] V = new double[halfSize][halfSize];
+		double[][] U = new double[subSSize][subSSize];
+		double[][] V = new double[subSSize][subSSize];
 		
 		for (int y = 0; y < size; y++) {
 			for (int x = 0; x < size; x++) {
@@ -517,8 +517,8 @@ public class VectorPredictionTask extends RecursiveAction {
 			}
 		}
 		
-		for (int y = 0; y < halfSize; y++) {
-			for (int x = 0; x < halfSize; x++) {
+		for (int y = 0; y < subSSize; y++) {
+			for (int x = 0; x < subSSize; x++) {
 				double diffU = col1[ColorManager.U_INDEX][x][y] - col2[ColorManager.U_INDEX][x][y];
 				double diffV = col1[ColorManager.V_INDEX][x][y] - col2[ColorManager.V_INDEX][x][y];
 				U[x][y] = diffU;

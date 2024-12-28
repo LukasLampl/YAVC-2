@@ -32,6 +32,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import app.config;
 import app.interprediction.Vector;
 import app.quadtree.QuadtreeEngine;
 import app.utils.LoadDistributor;
@@ -172,13 +173,13 @@ public class RenderEngine {
 
 				for (int x = 0; x < size; x++) {
 					final int posX = endX + x;
-					final int subSX = x / 2;
+					final int subSX = x / config.SUBSAMPLE_COEFFICIENT;
 					if (posX < 0 || posX >= dim.width) continue;
 					if (pos.x + x < 0 || pos.x + x >= dim.width) continue;
 					
 					for (int y = 0; y < size; y++) {
 						final int posY = endY + y;
-						final int subSY = y / 2;
+						final int subSY = y / config.SUBSAMPLE_COEFFICIENT;
 						if (posY < 0 || posY >= dim.height) continue;
 						if (pos.y + y < 0 || pos.y + y >= dim.height) continue;
 						
@@ -228,14 +229,14 @@ public class RenderEngine {
 	 * @return An 3D array with the "original" reconstructed colors.
 	 */
 	private static double[][][] reconstructColors(double[][][] differenceOfColor, double[][][] referenceColor, int size, double[][][] cache) {
-		int halfSize = size / 2;
+		int subSSize = size / config.SUBSAMPLE_COEFFICIENT;
 		double[][][] reconstructedColor = cache;
 		
 		if (reconstructedColor == null) {
 			reconstructedColor = new double[3][][];
 			reconstructedColor[ColorManager.Y_INDEX] = new double[size][size];
-			reconstructedColor[ColorManager.U_INDEX] = new double[halfSize][halfSize];
-			reconstructedColor[ColorManager.V_INDEX] = new double[halfSize][halfSize];
+			reconstructedColor[ColorManager.U_INDEX] = new double[subSSize][subSSize];
+			reconstructedColor[ColorManager.V_INDEX] = new double[subSSize][subSSize];
 		}
 		
 		//Reconstruct Y-Comp
@@ -247,8 +248,8 @@ public class RenderEngine {
 		}
 		
 		//Reconstruct U,V-Comp
-		for (int x = 0; x < halfSize; x++) {
-			for (int y = 0; y < halfSize; y++) {
+		for (int x = 0; x < subSSize; x++) {
+			for (int y = 0; y < subSSize; y++) {
 				reconstructedColor[ColorManager.U_INDEX][x][y] = referenceColor[ColorManager.U_INDEX][x][y]
 																+ differenceOfColor[ColorManager.U_INDEX][x][y];
 				reconstructedColor[ColorManager.V_INDEX][x][y] = referenceColor[ColorManager.V_INDEX][x][y]

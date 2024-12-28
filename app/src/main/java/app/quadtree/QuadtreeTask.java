@@ -86,7 +86,7 @@ public class QuadtreeTask {
 		if (means == null) {
 			throw new NullPointerException("No 4x4Mean, can't subdivide MacroBlock.");
 		} else if (color == null) {
-			throw new NullPointerException("No ARGB colors, can't subdivide MacroBlock.");
+			throw new NullPointerException("No RGB colors, can't subdivide MacroBlock.");
 		}
 		
 		Point bPos = currentBlock.getPosition();

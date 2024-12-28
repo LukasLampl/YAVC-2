@@ -29,6 +29,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import app.config;
 import app.utils.LoadDistributor;
 import app.utils.MacroBlock;
 import app.utils.PixelRaster;
@@ -89,10 +90,10 @@ public class DifferenceEngine {
 						double sumV = 0;
 						
 						for (int x = 0; x < size; x++) {
-							int subSX = x / 2;
+							int subSX = x / config.SUBSAMPLE_COEFFICIENT;
 							
 							for (int y = 0; y < size; y++) {
-								int subSY = y / 2;
+								int subSY = y / config.SUBSAMPLE_COEFFICIENT;
 								double deltaY = refCols[ColorManager.Y_INDEX][x][y] - curCols[ColorManager.Y_INDEX][x][y];
 								double deltaU = refCols[ColorManager.U_INDEX][subSX][subSY] - curCols[ColorManager.U_INDEX][subSX][subSY];
 								double deltaV = refCols[ColorManager.V_INDEX][subSX][subSY] - curCols[ColorManager.V_INDEX][subSX][subSY];

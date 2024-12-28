@@ -24,6 +24,7 @@ package app.interprediction;
 import java.util.List;
 import java.util.concurrent.RecursiveAction;
 
+import app.config;
 import app.dct.DCTConstants;
 import app.io.Protocol;
 import app.utils.ArrayUtils;
@@ -235,8 +236,8 @@ public class VectorConversionTask extends RecursiveAction {
 	private double[][][] getVectorDifferences(final byte[] data, final int startPos, final int size, final Vector cachedVector) {
 		double[][][] DCTCoeffGroups = ArrayUtils.get3DArray(size, true);
 		final int YLength = size * size;
-		final int halfSize = size / 2;
-		final int UVLength = halfSize * halfSize;
+		final int subSSize = size / config.SUBSAMPLE_COEFFICIENT;
+		final int UVLength = subSSize * subSSize;
 		
 		final int YStart = startPos;
 		final int UStart = YStart + YLength;
@@ -245,7 +246,9 @@ public class VectorConversionTask extends RecursiveAction {
 		if (size == 4) {
 			writeDCTCoeffsOutOfByteStream(data, 4, DCTCoeffGroups, YStart, UStart, VStart, 0, 0);
 		} else {
-			for (int u = 0, subSU = 0, x = 0, y = 0; u < YLength; u += 64, subSU += 16, x += 8) {
+			final int subSInc = 64 / config.SUBSAMPLE_COEFFICIENT;
+			
+			for (int u = 0, subSU = 0, x = 0, y = 0; u < YLength; u += 64, subSU += subSInc, x += 8) {
 				if (x >= size) {
 					y += 8;
 					x = 0;
@@ -277,12 +280,12 @@ public class VectorConversionTask extends RecursiveAction {
 			double[][][] arrayToWriteInto, final int YStart, final int UStart, final int VStart,
 			final int offsetX, final int offsetY) {
 		final int YLength = size * size;
-		final int halfSize = size / 2;
-		final int UVLength = halfSize * halfSize;
+		final int subSSize = size / config.SUBSAMPLE_COEFFICIENT;
+		final int UVLength = subSSize * subSSize;
 		final int lengthTillMatrixBreak = size;
-		final int halfLengthTillMatrixBreak = halfSize;
-		final int halfOffsetX = offsetX / 2;
-		final int halfOffsetY = offsetY  / 2;
+		final int halfLengthTillMatrixBreak = subSSize;
+		final int subSOffsetX = offsetX / config.SUBSAMPLE_COEFFICIENT;
+		final int subSOffsetY = offsetY / config.SUBSAMPLE_COEFFICIENT;
 		int x = 0;
 		int y = 0;
 		
@@ -310,8 +313,8 @@ public class VectorConversionTask extends RecursiveAction {
 				y = 0;
 			}
 			
-			final int actualX = halfOffsetX + x;
-			final int actualY = halfOffsetY + y;
+			final int actualX = subSOffsetX + x;
+			final int actualY = subSOffsetY + y;
 			UChannel[actualX][actualY] = Protocol.getDCTCoeff(vectorPart[UStart + n]);
 			VChannel[actualX][actualY] = Protocol.getDCTCoeff(vectorPart[VStart + n]);
 		}

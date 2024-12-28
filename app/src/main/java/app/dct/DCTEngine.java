@@ -278,11 +278,11 @@ public class DCTEngine {
 		double[][][] coeffs = new double[ColorManager.CHANNELS][][];
 
 		if (size == 4) {
-			double[][][] chromaDCT = computeChromaDCTCoefficients(diffs[1], diffs[2], 2, 0, 0);
+			double[][][] chromaDCT = computeChromaDCTCoefficients(diffs[1], diffs[2], 4 / config.SUBSAMPLE_COEFFICIENT, 0, 0);
 			double[][] lumaDCT = computeLumaDCTCoefficients(diffs[0], 4, 0, 0);
 			
 			if (quantizize) {
-				quantizeChromaDCTCoefficients(chromaDCT, 2, 0, 0);
+				quantizeChromaDCTCoefficients(chromaDCT, 4 / config.SUBSAMPLE_COEFFICIENT, 0, 0);
 				quantizeLumaDCTCoefficients(lumaDCT, 4, 0, 0);
 			}
 			
@@ -293,20 +293,21 @@ public class DCTEngine {
 		}
 
 		coeffs = ArrayUtils.get3DArray(size, true);
+		final int subSInc = 8 / config.SUBSAMPLE_COEFFICIENT;
 		
-		for (int x = 0, halfX = 0; x < size; x += 8, halfX += 4) {
-			for (int y = 0, halfY = 0; y < size; y += 8, halfY += 4) {
-				double[][][] chromaDCT = computeChromaDCTCoefficients(diffs[1], diffs[2], 4, halfX, halfY);
+		for (int x = 0, halfX = 0; x < size; x += 8, halfX += subSInc) {
+			for (int y = 0, halfY = 0; y < size; y += 8, halfY += subSInc) {
+				double[][][] chromaDCT = computeChromaDCTCoefficients(diffs[1], diffs[2], subSInc, halfX, halfY);
 				double[][] lumaDCT = computeLumaDCTCoefficients(diffs[0], 8, x, y);
 				
 				if (quantizize) {
-					quantizeChromaDCTCoefficients(chromaDCT, 4, 0, 0);
+					quantizeChromaDCTCoefficients(chromaDCT, subSInc, 0, 0);
 					quantizeLumaDCTCoefficients(lumaDCT, 8, 0, 0);
 				}
 				
 				ArrayUtils.copy2DArray(lumaDCT, 0, 0, coeffs[DCTConstants.Y_COEFFS_INDEX], x, y, 8, 8);
-				ArrayUtils.copy2DArray(chromaDCT[0], 0, 0, coeffs[DCTConstants.U_COEFFS_INDEX], halfX, halfY, 4, 4);
-				ArrayUtils.copy2DArray(chromaDCT[1], 0, 0, coeffs[DCTConstants.V_COEFFS_INDEX], halfX, halfY, 4, 4);
+				ArrayUtils.copy2DArray(chromaDCT[0], 0, 0, coeffs[DCTConstants.U_COEFFS_INDEX], halfX, halfY, subSInc, subSInc);
+				ArrayUtils.copy2DArray(chromaDCT[1], 0, 0, coeffs[DCTConstants.V_COEFFS_INDEX], halfX, halfY, subSInc, subSInc);
 			}
 		}
 
@@ -334,23 +335,23 @@ public class DCTEngine {
 		}
 		
 		int fraction = 8;
-		int halfFraction = 4;
+		int subSFrac = fraction / config.SUBSAMPLE_COEFFICIENT;
 		double[][][] chromaIDCT = new double[][][] {DCTCoeff[DCTConstants.U_COEFFS_INDEX], DCTCoeff[DCTConstants.V_COEFFS_INDEX]};
 		double[][] lumaIDCT = DCTCoeff[DCTConstants.Y_COEFFS_INDEX];
 		double[][][] res = ArrayUtils.get3DArray(size, true);
 
-		for (int x = 0, halfX = 0; x < size; x += fraction, halfX += halfFraction) {
-			for (int y = 0, halfY = 0; y < size; y += fraction, halfY += halfFraction) {
+		for (int x = 0, subSX = 0; x < size; x += fraction, subSX += subSFrac) {
+			for (int y = 0, subSY = 0; y < size; y += fraction, subSY += subSFrac) {
 				if (quantizize) {
-					dequantizeChromaDCTCoefficients(chromaIDCT, halfFraction, halfX, halfY);
+					dequantizeChromaDCTCoefficients(chromaIDCT, subSFrac, subSX, subSY);
 					dequantizeLumaDCTCoefficients(lumaIDCT, fraction, x, y);
 				}
 				
-				double[][][] chromaIDCTVals = computeChromaIDCTCoefficients(chromaIDCT[0], chromaIDCT[1], halfFraction, halfX, halfY);
+				double[][][] chromaIDCTVals = computeChromaIDCTCoefficients(chromaIDCT[0], chromaIDCT[1], subSFrac, subSX, subSY);
 				double[][] lumaIDCTVals = computeLumaIDCTCoefficients(lumaIDCT, fraction, x, y);
 				ArrayUtils.copy2DArray(lumaIDCTVals, 0, 0, res[DCTConstants.Y_COEFFS_INDEX], x, y, fraction, fraction);
-				ArrayUtils.copy2DArray(chromaIDCTVals[0], 0, 0, res[DCTConstants.U_COEFFS_INDEX], halfX, halfY, halfFraction, halfFraction);
-				ArrayUtils.copy2DArray(chromaIDCTVals[1], 0, 0, res[DCTConstants.V_COEFFS_INDEX], halfX, halfY, halfFraction, halfFraction);
+				ArrayUtils.copy2DArray(chromaIDCTVals[0], 0, 0, res[DCTConstants.U_COEFFS_INDEX], subSX, subSY, subSFrac, subSFrac);
+				ArrayUtils.copy2DArray(chromaIDCTVals[1], 0, 0, res[DCTConstants.V_COEFFS_INDEX], subSX, subSY, subSFrac, subSFrac);
 			}
 		}
 		
@@ -371,13 +372,14 @@ public class DCTEngine {
 		double[][][] res = new double[3][][];
 		double[][][] chromaIDCT = new double[][][] {DCTCoeff[DCTConstants.U_COEFFS_INDEX], DCTCoeff[DCTConstants.V_COEFFS_INDEX]};
 		double[][] lumaIDCT = DCTCoeff[DCTConstants.Y_COEFFS_INDEX];
+		final int subSFrac = 4 / config.SUBSAMPLE_COEFFICIENT;
 		
 		if (quantizize) {
-			dequantizeChromaDCTCoefficients(chromaIDCT, 2, 0, 0);
+			dequantizeChromaDCTCoefficients(chromaIDCT, subSFrac, 0, 0);
 			dequantizeLumaDCTCoefficients(lumaIDCT, 4, 0, 0);
 		}
 		
-		double[][][] chromaIDCTVals = computeChromaIDCTCoefficients(chromaIDCT[0], chromaIDCT[1], 2, 0, 0);
+		double[][][] chromaIDCTVals = computeChromaIDCTCoefficients(chromaIDCT[0], chromaIDCT[1], subSFrac, 0, 0);
 		double[][] lumaIDCTVals = computeLumaIDCTCoefficients(lumaIDCT, 4, 0, 0);
 		res[0] = lumaIDCTVals;
 		res[1] = chromaIDCTVals[0];
@@ -675,6 +677,8 @@ public class DCTEngine {
 	 */
 	private int[][] getChromaQuantizationTable(int size) {
 		switch (size) {
+		case 8:
+			return config.QUANTIZATION_MATRIX_8x8_Chroma;
 		case 4:
 			return config.QUANTIZATION_MATRIX_4x4_Chroma;
 		case 2:

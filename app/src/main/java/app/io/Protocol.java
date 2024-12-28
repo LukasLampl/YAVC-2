@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import app.ArgumentProcessor;
+import app.config;
 import app.dct.DCTConstants;
 import app.exceptions.CorruptedFileException;
 import app.interprediction.Vector;
@@ -284,7 +285,9 @@ public class Protocol {
 		for (Vector v : vecs) {
 			int refSize = v.getSize();
 			size += Protocol.VECTOR_HEADER_LENGTH;
-			size += (refSize * refSize) + 2 * ((refSize * refSize) / 4);
+			final int YSize = refSize * refSize;
+			final int UVSize = (refSize / config.SUBSAMPLE_COEFFICIENT) * (refSize / config.SUBSAMPLE_COEFFICIENT);
+			size += YSize + 2 * UVSize;
 		}
 		
 		return size;
@@ -319,19 +322,20 @@ public class Protocol {
 	 * @throws IllegalArgumentException	When a coefficient is > 127 or < -127 and {@code autoAdjust} is off.
 	 */
 	public static byte[][] getVectorAbsoluteColorDifferenceBytes(double[][][] absoluteDifference, final int size) {
-		final int halfSize = size / 2;
+		final int subSSize = size / config.SUBSAMPLE_COEFFICIENT;
 		final int frac = size == 4 ? 4 : 8;
-		final int halfFrac = frac / 2;
+		final int subSFrac = frac / config.SUBSAMPLE_COEFFICIENT;
 		final int groups = size == 4 ? 1 : (size * size) / 64;
 		final byte[] YBytes = new byte[size * size];
-		final byte[] UBytes = new byte[halfSize * halfSize];
-		final byte[] VBytes = new byte[halfSize * halfSize];
+		final byte[] UBytes = new byte[subSSize * subSSize];
+		final byte[] VBytes = new byte[subSSize * subSSize];
 		
 		int YIndex = 0;
 		int UIndex = 0;
 		int VIndex = 0;
+		final int subSInc = 8 / config.SUBSAMPLE_COEFFICIENT;
 		
-		for (int n = 0, xToAdd = 0, halfXToAdd = 0, yToAdd = 0, halfYToAdd = 0; n < groups; n++, xToAdd += 8, halfXToAdd += 4) {
+		for (int n = 0, xToAdd = 0, halfXToAdd = 0, yToAdd = 0, halfYToAdd = 0; n < groups; n++, xToAdd += 8, halfXToAdd += subSInc) {
 			if (xToAdd >= size) {
 				xToAdd = 0;
 				halfXToAdd = 0;
@@ -349,10 +353,10 @@ public class Protocol {
 				}
 			}
 			
-			for (int x = 0; x < halfFrac; x++) {
+			for (int x = 0; x < subSFrac; x++) {
 				final int actualX = halfXToAdd + x;
 				
-				for (int y = 0; y < halfFrac; y++) {
+				for (int y = 0; y < subSFrac; y++) {
 					final int actualY = halfYToAdd + y;
 					double valueU = absoluteDifference[DCTConstants.U_COEFFS_INDEX][actualX][actualY];
 					double valueV = absoluteDifference[DCTConstants.V_COEFFS_INDEX][actualX][actualY];
@@ -627,7 +631,7 @@ public class Protocol {
 			final int size = refAndSize[1];
 			//Length of the vector diffs
 			//Original formula: (size * size) + 2 * ((size / 2) * (size / 2)) + Protocol.VECTOR_HEADER_LENGTH
-			i += ((size * size) + 2 * ((size * size) / 4)) + Protocol.VECTOR_HEADER_LENGTH;
+			i += ((size * size) + 2 * ((size * size) / (2 * config.SUBSAMPLE_COEFFICIENT))) + Protocol.VECTOR_HEADER_LENGTH;
 		}
 	}
 	

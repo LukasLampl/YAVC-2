@@ -33,6 +33,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
+import app.config;
 import app.rendering.ColorManager;
 
 /**
@@ -103,8 +104,8 @@ public class PixelRaster implements Discardable {
 	public PixelRaster(final Dimension dim) {
 		this.dim = dim;
 		this.Y = new double[dim.width][dim.height];
-		this.U = new double[dim.width / 2][dim.height / 2];
-		this.V = new double[dim.width / 2][dim.height / 2];
+		this.U = new double[dim.width / config.SUBSAMPLE_COEFFICIENT][dim.height / config.SUBSAMPLE_COEFFICIENT];
+		this.V = new double[dim.width / config.SUBSAMPLE_COEFFICIENT][dim.height / config.SUBSAMPLE_COEFFICIENT];
 	}
 	
 	/**
@@ -125,8 +126,8 @@ public class PixelRaster implements Discardable {
 		
 		this.dim = new Dimension(img.getWidth(), img.getHeight());
 		this.Y = new double[img.getWidth()][img.getHeight()];
-		this.U = new double[img.getWidth() / 2][img.getHeight() / 2];
-		this.V = new double[img.getWidth() / 2][img.getHeight() / 2];
+		this.U = new double[img.getWidth() / config.SUBSAMPLE_COEFFICIENT][img.getHeight() / config.SUBSAMPLE_COEFFICIENT];
+		this.V = new double[img.getWidth() / config.SUBSAMPLE_COEFFICIENT][img.getHeight() / config.SUBSAMPLE_COEFFICIENT];
 		
 		if (img.getRaster().getDataBuffer() instanceof DataBufferInt) {
 			int temp[] = ((DataBufferInt)img.getRaster().getDataBuffer()).getData();
@@ -186,11 +187,11 @@ public class PixelRaster implements Discardable {
 		}
 		
 		if (this.U == null) {
-			this.U = new double[this.dim.width / 2][this.dim.height / 2];
+			this.U = new double[this.dim.width / config.SUBSAMPLE_COEFFICIENT][this.dim.height / config.SUBSAMPLE_COEFFICIENT];
 		}
 		
 		if (this.V == null) {
-			this.V = new double[this.dim.width / 2][this.dim.height / 2];
+			this.V = new double[this.dim.width / config.SUBSAMPLE_COEFFICIENT][this.dim.height / config.SUBSAMPLE_COEFFICIENT];
 		}
 		
 		img = scaleToNearest4Divisor(img);
@@ -384,8 +385,8 @@ public class PixelRaster implements Discardable {
 			throw new ArrayIndexOutOfBoundsException("(X) " + x + " is out of bounds!");
 		}
 		
-		final int subSX = x / 2;
-		final int subSY = y / 2;
+		final int subSX = x / config.SUBSAMPLE_COEFFICIENT;
+		final int subSY = y / config.SUBSAMPLE_COEFFICIENT;
 		return new double[] {this.Y[x][y], this.U[subSX][subSY], this.V[subSX][subSY]};
 	}
 	
@@ -417,8 +418,8 @@ public class PixelRaster implements Discardable {
 			throw new IllegalArgumentException("Cannot fill null cache.");
 		}
 		
-		final int subSX = x / 2;
-		final int subSY = y / 2;
+		final int subSX = x / config.SUBSAMPLE_COEFFICIENT;
+		final int subSY = y / config.SUBSAMPLE_COEFFICIENT;
 		cache[ColorManager.Y_INDEX] = this.Y[x][y];
 		cache[ColorManager.U_INDEX] = this.U[subSX][subSY];
 		cache[ColorManager.V_INDEX] = this.V[subSX][subSY];
@@ -451,8 +452,8 @@ public class PixelRaster implements Discardable {
 			throw new IllegalStateException("Can't modify a locked PixelRaster!");
 		}
 		
-		final int subSX = x / 2;
-		final int subSY = y / 2;
+		final int subSX = x / config.SUBSAMPLE_COEFFICIENT;
+		final int subSY = y / config.SUBSAMPLE_COEFFICIENT;
 		this.Y[x][y] = YUV[ColorManager.Y_INDEX];
 		this.U[subSX][subSY] = YUV[ColorManager.U_INDEX];
 		this.V[subSX][subSY] = YUV[ColorManager.V_INDEX];
@@ -481,8 +482,8 @@ public class PixelRaster implements Discardable {
 			throw new IllegalStateException("Can't modify a locked PixelRaster!");
 		}
 		
-		final int subSX = x / 2;
-		final int subSY = y / 2;
+		final int subSX = x / config.SUBSAMPLE_COEFFICIENT;
+		final int subSY = y / config.SUBSAMPLE_COEFFICIENT;
 		this.Y[x][y] = Y;
 		this.U[subSX][subSY] = U;
 		this.V[subSX][subSY] = V;
@@ -553,16 +554,16 @@ public class PixelRaster implements Discardable {
 			throw new IllegalStateException("Can't modify a locked PixelRaster!");
 		}
 		
-		final int subSX = x / 2;
-		final int subSY = y / 2;
+		final int subSX = x / config.SUBSAMPLE_COEFFICIENT;
+		final int subSY = y / config.SUBSAMPLE_COEFFICIENT;
 		this.Y[x][y] = YUV[ColorManager.Y_INDEX];
 
 		if (invokedUV == true) {
 			this.U[subSX][subSY] = YUV[ColorManager.U_INDEX];
 			this.V[subSX][subSY] = YUV[ColorManager.V_INDEX];
 		} else {
-			this.U[subSX][subSY] = (this.U[subSX][subSY] + YUV[ColorManager.U_INDEX]) / 2;
-			this.V[subSX][subSY] = (this.V[subSX][subSY] + YUV[ColorManager.V_INDEX]) / 2;
+			this.U[subSX][subSY] = (this.U[subSX][subSY] + YUV[ColorManager.U_INDEX]) / config.SUBSAMPLE_COEFFICIENT;
+			this.V[subSX][subSY] = (this.V[subSX][subSY] + YUV[ColorManager.V_INDEX]) / config.SUBSAMPLE_COEFFICIENT;
 		}
 	}
 
@@ -588,8 +589,8 @@ public class PixelRaster implements Discardable {
 			throw new IllegalStateException("Can't modify a locked PixelRaster!");
 		}
 		
-		final int subSX = x / 2;
-		final int subSY = y / 2;
+		final int subSX = x / config.SUBSAMPLE_COEFFICIENT;
+		final int subSY = y / config.SUBSAMPLE_COEFFICIENT;
 		this.U[subSX][subSY] = U;
 		this.V[subSX][subSY] = V;
 	}
@@ -674,21 +675,21 @@ public class PixelRaster implements Discardable {
 	public double[][][] getPixelBlock(final int positionX, final int positionY, final int size, double[][][] cache) {
 		double[][][] res = cache == null ? ArrayUtils.get3DArray(size, true)
 				: size > cache[ColorManager.Y_INDEX].length ? ArrayUtils.get3DArray(size, true) : cache;
-		final int halfSize = size / 2;
-		final int halfPosX = positionX / 2;
-		final int halfPosY = positionY / 2;
-		final int halfDimWidth = this.dim.width / 2;
-		final int halfDimHeight = this.dim.height / 2;
+		final int subSSize = size / config.SUBSAMPLE_COEFFICIENT;
+		final int subSPosX = positionX / config.SUBSAMPLE_COEFFICIENT;
+		final int subSPosY = positionY / config.SUBSAMPLE_COEFFICIENT;
+		final int subSDimWidth = this.dim.width / config.SUBSAMPLE_COEFFICIENT;
+		final int subSDimHeight = this.dim.height / config.SUBSAMPLE_COEFFICIENT;
 		int xToCopy = positionX + size >= this.dim.width ? this.dim.width - positionX : size;
 		int yToCopy = positionY + size >= this.dim.height ? this.dim.height - positionY : size;
 		
 		ArrayUtils.copy2DArray(this.Y, positionX, positionY, res[ColorManager.Y_INDEX], 0, 0, xToCopy, yToCopy);
 
-		xToCopy = halfPosX + halfSize >= halfDimWidth ? halfDimWidth - halfPosX : halfSize;
-		yToCopy = halfPosY + halfSize >= halfDimHeight ? halfDimHeight - halfPosY : halfSize;
+		xToCopy = subSPosX + subSSize >= subSDimWidth ? subSDimWidth - subSPosX : subSSize;
+		yToCopy = subSPosY + subSSize >= subSDimHeight ? subSDimHeight - subSPosY : subSSize;
 
-		ArrayUtils.copy2DArray(this.U, halfPosX, halfPosY, res[ColorManager.U_INDEX], 0, 0, xToCopy, yToCopy);
-		ArrayUtils.copy2DArray(this.V, halfPosX, halfPosY, res[ColorManager.V_INDEX], 0, 0, xToCopy, yToCopy);
+		ArrayUtils.copy2DArray(this.U, subSPosX, subSPosY, res[ColorManager.U_INDEX], 0, 0, xToCopy, yToCopy);
+		ArrayUtils.copy2DArray(this.V, subSPosX, subSPosY, res[ColorManager.V_INDEX], 0, 0, xToCopy, yToCopy);
 		return res;
 	}
 
@@ -730,17 +731,17 @@ public class PixelRaster implements Discardable {
 	 */
 	public PixelRaster copy() {
 		double[][] clonedY = new double[this.dim.width][];
-		double[][] clonedU = new double[this.dim.width / 2][];
-		double[][] clonedV = new double[this.dim.width / 2][];
+		double[][] clonedU = new double[this.dim.width / config.SUBSAMPLE_COEFFICIENT][];
+		double[][] clonedV = new double[this.dim.width / config.SUBSAMPLE_COEFFICIENT][];
 		
 		final int size = this.dim.width;
-		final int halfSize = this.dim.width / 2;
+		final int subSSize = this.dim.width / config.SUBSAMPLE_COEFFICIENT;
 		
 		for (int i = 0; i < size; i++) {
 			clonedY[i] = this.Y[i].clone();
 		}
 		
-		for (int i = 0; i < halfSize; i++) {
+		for (int i = 0; i < subSSize; i++) {
 			clonedU[i] = this.U[i].clone();
 			clonedV[i] = this.V[i].clone();
 		}
