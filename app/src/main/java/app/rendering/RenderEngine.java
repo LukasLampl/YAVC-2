@@ -23,10 +23,10 @@ package app.rendering;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -37,6 +37,7 @@ import app.interprediction.Vector;
 import app.quadtree.QuadtreeEngine;
 import app.utils.LoadDistributor;
 import app.utils.MacroBlock;
+import app.utils.MathUtils;
 import app.utils.PixelRaster;
 import app.utils.ReferenceFrameManager;
 
@@ -383,8 +384,12 @@ public class RenderEngine {
 	 * @param dim		Dimension of the render.
 	 * @return An image with all differences.
 	 */
-	public BufferedImage renderDifferences(ArrayList<MacroBlock> leaves, Dimension dim) {
+	public static BufferedImage[] renderDifferences(List<MacroBlock> leaves, Dimension dim, final PixelRaster curFrame) {
 		BufferedImage render = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
+		BufferedImage render2 = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
+		BufferedImage render3 = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g2d = (Graphics2D)render2.getGraphics();
+		g2d.setColor(Color.WHITE);
 		double[] YUVCache = new double[3]; //Size of 3 because of 3 channels
 		
 		for (MacroBlock b : leaves) {
@@ -397,12 +402,71 @@ public class RenderEngine {
 						continue;
 					}
 					
-					int argb = ColorManager.convertYUVToRGB(b.getYUV(x, y, YUVCache));
-					render.setRGB(x + b.getPosition().x, y + b.getPosition().y, argb);
+					final int posX = x + b.getPositionX();
+					final int posY = y + b.getPositionY();
+					final int pred_argb = ColorManager.convertYUVToRGB(b.getYUV(x, y, YUVCache));
+					final int cur_argb = ColorManager.convertYUVToRGB(curFrame.getYUV(posX, posY));
+					final int deltaRed = (int)MathUtils.abs(((pred_argb >> 16) & 0xFF) - ((cur_argb >> 16) & 0xFF));
+					final int deltaGreen = (int)MathUtils.abs(((pred_argb >> 8) & 0xFF) - ((cur_argb >> 8) & 0xFF));
+					final int deltaBlue = (int)MathUtils.abs((pred_argb & 0xFF) - (cur_argb & 0xFF));
+					final int argb = 0xFF000000 | ((deltaRed & 0xFF) << 16) | ((deltaGreen & 0xFF) << 8) | (deltaBlue & 0xFF);
+					render.setRGB(posX, posY, argb);
+					render3.setRGB(posX, posY, ColorManager.convertYUVToRGB(b.getYUV(x, y)));
 				}
+			}
+			
+			if (b.getSize() >= 16) {
+				final String angleStr = String.valueOf(b.getAngle());
+				FontMetrics metrics = g2d.getFontMetrics();
+				final int angleWidth = metrics.stringWidth(angleStr);
+				final int angleHeight = g2d.getFont().getSize();
+				final int angleTextPosX = b.getPositionX() + ((b.getSize() / 2) - (angleWidth / 2));
+				final int angleTextPosY = b.getPositionY() + ((b.getSize() / 2) + (angleHeight / 2));
+				g2d.drawString(angleStr, angleTextPosX, angleTextPosY);
 			}
 		}
 		
+//		g2d.setColor(Color.RED);
+//		for (MacroBlock b : leaves) {
+//			g2d.drawRect(b.getPositionX(), b.getPositionY(), b.getSize(), b.getSize());
+//		}
+		
+		g2d.dispose();
+		return new BufferedImage[] {render, render2, render3};
+	}
+	
+	// ============================================================
+	
+	/**
+	 * Renders the given differences an returns the image.
+	 * 
+	 * <p><b>Notice:</b><br>
+	 * The difference of the frame is meant, this means what color has
+	 * changed over the period of time. Thus some parts might be transparent,
+	 * if no difference was found.
+	 * </p>
+	 * 
+	 * @param leaves	The differences.
+	 * @param dim		Dimension of the render.
+	 * @return An image with all differences.
+	 */
+	public static BufferedImage renderResidual(final PixelRaster composit, final PixelRaster curFrame) {
+		BufferedImage render = new BufferedImage(composit.getWidth(), composit.getHeight(), BufferedImage.TYPE_INT_ARGB);
+		final int width = composit.getWidth();
+		final int height = composit.getHeight();
+		
+		for (int x = 0; x < width; x++) {
+			for (int y = 0; y < height; y++) {
+				final int pred_argb = ColorManager.convertYUVToRGB(composit.getYUV(x, y));
+				final int cur_argb = ColorManager.convertYUVToRGB(curFrame.getYUV(x, y));
+				final int deltaRed = (int)MathUtils.abs(((pred_argb >> 16) & 0xFF) - ((cur_argb >> 16) & 0xFF));
+				final int deltaGreen = (int)MathUtils.abs(((pred_argb >> 8) & 0xFF) - ((cur_argb >> 8) & 0xFF));
+				final int deltaBlue = (int)MathUtils.abs((pred_argb & 0xFF) - (cur_argb & 0xFF));
+				final int argb = 0xFF000000 | ((deltaRed & 0xFF) << 16) | ((deltaGreen & 0xFF) << 8) | (deltaBlue & 0xFF);
+				render.setRGB(x, y, argb);
+			}
+		}
+
 		return render;
 	}
 }

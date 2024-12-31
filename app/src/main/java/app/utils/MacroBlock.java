@@ -433,7 +433,7 @@ public class MacroBlock implements Discardable {
 	public void subdivide(final Dimension dim) {
 		if (this.isSubdivided == true) {
 			return;
-		} else if (this.size <= 4) {
+		} else if (this.size <= 32) {
 			return;
 		}
 		
@@ -498,6 +498,10 @@ public class MacroBlock implements Discardable {
 	 * @return The x position of the MacroBlock.
 	 */
 	public int getPositionX() {
+		return this.positionX;
+	}
+	
+	public int getPositonX() {
 		return this.positionX;
 	}
 	
@@ -724,5 +728,15 @@ public class MacroBlock implements Discardable {
 	@Override
 	public void discard() {
 		reset(0, 0, 0, false);
+	}
+	
+	private int angle = 0;
+	
+	public int getAngle() {
+		return this.angle;
+	}
+	
+	public void setAngle(final int angle) {
+		this.angle = angle;
 	}
 }

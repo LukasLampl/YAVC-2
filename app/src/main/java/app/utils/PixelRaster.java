@@ -792,7 +792,15 @@ public class PixelRaster implements Discardable {
 				for (int x1 = 0; x1 < 2; x1++) {
 					for (int y1 = 0; y1 < 2; y1++) {
 						if (index % 2 == 0) {
-							img.setRGB(x1 + x, y1 + y, Color.BLACK.getRGB());
+							if (x1 == 0 && y1 == 0) {
+								img.setRGB(x1 + x, y1 + y, Color.BLUE.getRGB());
+							} else if (x1 == 1 && y1 == 0) {
+								img.setRGB(x1 + x, y1 + y, Color.RED.getRGB());
+							} else if (x1 == 0 && y1 == 1) {
+								img.setRGB(x1 + x, y1 + y, Color.ORANGE.getRGB());
+							} else if (x1 == 1 && y1 == 1) {
+								img.setRGB(x1 + x, y1 + y, Color.GREEN.getRGB());
+							}
 						} else {
 							img.setRGB(x1 + x, y1 + y, Color.WHITE.getRGB());
 						}
