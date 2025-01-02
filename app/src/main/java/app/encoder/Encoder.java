@@ -106,7 +106,7 @@ public class Encoder {
 		int files = ArgumentProcessor.inputFile.listFiles().length;
 		OutputStream outStream = new OutputStream(ArgumentProcessor.outputFile);
 		Deblocker deblocker = new Deblocker();
-//		ImagePreReader imgReader = new ImagePreReader(files, ArgumentProcessor.inputFile, referenceManager);
+		ImagePreReader imgReader = new ImagePreReader(files, ArgumentProcessor.inputFile, referenceManager);
 		
 		PixelRaster curFrame = null;
 		PixelRaster prevFrame = null;
@@ -123,7 +123,7 @@ public class Encoder {
 				System.out.println("Frame " + i + ":");
 				long start = System.currentTimeMillis();
 				long start_img_read = System.currentTimeMillis();
-				PixelRaster frame = PixelRaster.generateChessBoard(64, 64);//imgReader.getNextImage();
+				PixelRaster frame = imgReader.getNextImage();
 				long end_img_read = System.currentTimeMillis();
 				
 				if (frame == null) {

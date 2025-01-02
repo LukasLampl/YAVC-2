@@ -443,7 +443,7 @@ public class MacroBlock implements Discardable {
 	public void subdivide(final Dimension dim) {
 		if (this.isSubdivided == true) {
 			return;
-		} else if (this.size <= 32) {
+		} else if (this.size <= 4) {
 			return;
 		}
 		
