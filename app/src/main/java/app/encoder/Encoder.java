@@ -35,6 +35,7 @@ import app.interprediction.Vector;
 import app.interprediction.VectorEngine;
 import app.interprediction.VectorEngineResult;
 import app.intraprediction.IntraEngine;
+import app.intraprediction.IntraPredictionBlock;
 import app.io.ImagePreReader;
 import app.io.OutputStream;
 import app.io.QueueObject;
@@ -159,12 +160,15 @@ public class Encoder {
 //				BufferedImage[] part = RenderEngine.renderQuadtree(leaveNodeManager.getRawData(), curFrame.getDimension(), curFrame);
 
 				long start_intra = System.currentTimeMillis();
-				INTRA_ENGINE.computeIntraPrediction(leaveNodeManager.getRawData(), curFrame);
+				List<IntraPredictionBlock> intraPredictedBlocks = INTRA_ENGINE.computeIntraPrediction(leaveNodeManager.getRawData(), curFrame);
 				long end_intra = System.currentTimeMillis();
 			//	BufferedImage intraComposit = RenderEngine.renderIntraPrediction(intraBlocks, curFrame.getDimension());
 			//	ImageIO.write(intraComposit, "png", new File(ArgumentProcessor.outputFile.getParent() + "/IP_" + i + ".png"));
 				BufferedImage r = RenderEngine.renderDifferences(leaveNodeManager.getRawData(), curFrame.getDimension());
+				BufferedImage[] d = RenderEngine.renderIntraPredictionDeltas(intraPredictedBlocks, curFrame.getDimension());
 				ImageIO.write(r, "png", new File(ArgumentProcessor.outputFile.getParent() + "/INTRA_" + i + ".png"));
+				ImageIO.write(d[0], "png", new File(ArgumentProcessor.outputFile.getParent() + "/INTRA_DELTAS_" + i + ".png"));
+				ImageIO.write(d[1], "png", new File(ArgumentProcessor.outputFile.getParent() + "/INTRA_RECONSTRUCTED_" + i + ".png"));
 				
 				long start_vector_movement = System.currentTimeMillis();
 				VectorEngineResult vectorEngineResult = VECTOR_ENGINE.computeMovementVectors(leaveNodeManager.getRawData(), this.referenceManager);
@@ -175,7 +179,7 @@ public class Encoder {
 //				BufferedImage vectors = RenderEngine.renderVectors(movementVectors, curFrame.getDimension());
 				long start_render = System.currentTimeMillis();
 				PixelRaster composite = RenderEngine.renderComposit(movementVectors, this.referenceManager, differenceManager, false);
-				outStream.addObjectToOutputQueue(new QueueObject(movementVectors, differenceManager));
+//				outStream.addObjectToOutputQueue(new QueueObject(movementVectors, differenceManager));
 				long end_render = System.currentTimeMillis();
 				
 				long start_deblock = System.currentTimeMillis();
@@ -186,7 +190,7 @@ public class Encoder {
 //				ImageIO.write(part[1], "png", new File(ArgumentProcessor.outputFile.getParent() + "/MBA_" + i + ".png"));
 //				ImageIO.write(part[2], "png", new File(ArgumentProcessor.outputFile.getParent() + "/MBAV_" + i + ".png"));
 //				ImageIO.write(vectors, "png", new File(output.getParent() + "/V_" + i + ".png"));
-//				ImageIO.write(composite.toBufferedImage(), "png", new File(ArgumentProcessor.outputFile.getParent() + "/VR_" + i + ".png"));
+				ImageIO.write(composite.toBufferedImage(), "png", new File(ArgumentProcessor.outputFile.getParent() + "/VR_" + i + ".png"));
 				
 				long end = System.currentTimeMillis();
 				long time = end - start;

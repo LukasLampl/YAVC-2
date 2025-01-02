@@ -1,9 +1,8 @@
 package app.intraprediction;
 
-import java.awt.Color;
+import java.util.ArrayList;
 import java.util.List;
 
-import app.config;
 import app.rendering.ColorManager;
 import app.utils.ArrayUtils;
 import app.utils.MacroBlock;
@@ -216,18 +215,22 @@ public class IntraEngine {
 	}
 
 	static MSECost costFnc = new IntraEngine().new MSECost();
-
+	private final static int YUV_HORIZONTAL_INDEX = 0;
+	private final static int YUV_VERTICAL_INDEX = 1;
+	
 	public IntraEngine() {
 	}
 
-	public void computeIntraPrediction(final List<MacroBlock> predictionList, final PixelRaster curFrame) {
-		predictionList.forEach(p -> computeIntraPredictionBlock(p, curFrame, costFnc));
+	public List<IntraPredictionBlock> computeIntraPrediction(final List<MacroBlock> predictionList, final PixelRaster curFrame) {
+		List<IntraPredictionBlock> predictedBlocks = new ArrayList<IntraPredictionBlock>(predictionList.size());
+		predictionList.forEach(p -> predictedBlocks.add(computeIntraPredictionBlock(p, curFrame, costFnc)));
+		return predictedBlocks;
 	}
 
-	private void computeIntraPredictionBlock(final MacroBlock predictionBlock, final PixelRaster curFrame,
+	private IntraPredictionBlock computeIntraPredictionBlock(final MacroBlock predictionBlock, final PixelRaster curFrame,
 			final CostFunction cost) {
 		if (predictionBlock.getPositionX() == 0 || predictionBlock.getPositionY() == 0) {
-			return;
+			return null;
 		}
 
 		int bestAngle = -1;
@@ -244,7 +247,7 @@ public class IntraEngine {
 				predictionBlock.getSize() / 2);
 
 		double error = Double.MAX_VALUE;
-		computeAverageIntraPredictionBlock(predictionBlock, curFrame);
+		double [][][] AYUV = computeAverageIntraPredictionBlock(predictionBlock, curFrame);
 		double err = cost.calcCost(copy, predictionBlock);
 		if (cost.bestError(err, error)) {
 			error = err;
@@ -254,7 +257,7 @@ public class IntraEngine {
 			ArrayUtils.copy2DArray(data[ColorManager.V_INDEX], 0, 0, temp[ColorManager.V_INDEX], 0, 0, predictionBlock.getSize() / 2, predictionBlock.getSize() / 2);
 		}
 		for (int angle = 0; angle <= 180; angle += 5) {
-			computeAngularIntraPredictionBlock(predictionBlock, curFrame, angle);
+			double [][][] TYUV = computeAngularIntraPredictionBlock(predictionBlock, curFrame, angle);
 			err = cost.calcCost(copy, predictionBlock);
 			if (cost.bestError(err, error)) {
 				error = err;
@@ -268,26 +271,27 @@ public class IntraEngine {
 						predictionBlock.getSize() / 2,
 						predictionBlock.getSize() / 2);
 				bestAngle = angle;
+				AYUV = TYUV;
 			}
 		}
 		predictionBlock.setColorComponents(temp);
+		return computeDelta(predictionBlock, bestAngle, AYUV, temp, copy);
 	}
 
-	private void computeAngularIntraPredictionBlock(MacroBlock predictionBlock, final PixelRaster curFrame,
+	private double[][][] computeAngularIntraPredictionBlock(MacroBlock predictionBlock, final PixelRaster curFrame,
 			final float angle) {
 		if (predictionBlock.getPositionX() <= 0 || predictionBlock.getPositionY() <= 0
 				|| predictionBlock.getPositionX() + predictionBlock.getSize() >= curFrame.getWidth()
 				|| predictionBlock.getPositionY() + predictionBlock.getSize() >= curFrame.getHeight()) {
-			return;
+			return null;
 		}
 		if (angle == 0 || MathUtils.abs(angle) == 180) {
-			computeVerticalIntraPredictionBlock(predictionBlock, curFrame);
-			return;
+			return computeVerticalIntraPredictionBlock(predictionBlock, curFrame);
 		} else if (MathUtils.abs(angle) == 90 || MathUtils.abs(angle) == 270) {
-			computeHorizontalIntraPredictionBlock(predictionBlock, curFrame);
-			return;
+			return computeHorizontalIntraPredictionBlock(predictionBlock, curFrame);
 		}
 
+		double [][][] AYUV = new double[2][predictionBlock.getSize()][];
 		double tan = Math.tan(Math.toRadians(angle));
 		for (int t = 0; t < predictionBlock.getSize(); t++) {
 //			double YUVver[] = (t % 1 == 0) ? ColorManager.convertRGBToYUV(Color.ORANGE.getRGB()) : ColorManager.convertRGBToYUV(Color.WHITE.getRGB());
@@ -303,6 +307,8 @@ public class IntraEngine {
 				}
 				bresenham(t, 0, t, tan, predictionBlock, YUVver);
 				bresenham(0, t, t, tan, predictionBlock, YUVhor);
+				AYUV[YUV_HORIZONTAL_INDEX][t] = YUVhor;
+				AYUV[YUV_VERTICAL_INDEX][t] = YUVver;
 			} else {
 				YUVver = curFrame.getYUV(predictionBlock.getPositionX() + (predictionBlock.getSize() - t), predictionBlock.getPositionY() - 1);
 				YUVhor = curFrame.getYUV(predictionBlock.getSize() + predictionBlock.getPositionX(), predictionBlock.getPositionY() + t);
@@ -312,8 +318,11 @@ public class IntraEngine {
 				}
 				bresenhamR(predictionBlock.getSize() - t - 1, 0, t, tan, predictionBlock, YUVver);
 				bresenhamR(predictionBlock.getSize() - 1, t, t, tan, predictionBlock, YUVhor);
+				AYUV[YUV_VERTICAL_INDEX][predictionBlock.getSize() - t - 1] = YUVver;
+				AYUV[YUV_HORIZONTAL_INDEX][t] = YUVhor;
 			}
 		}
+		return AYUV;
 	}
 
 	private void bresenham(final int x, final int y, final int t, final double m, final MacroBlock block, final double[] YUV) {
@@ -374,36 +383,78 @@ public class IntraEngine {
 		}
 	}
 
-	private void computeVerticalIntraPredictionBlock(MacroBlock predictionBlock, final PixelRaster curFrame) {
+	private double [][][] computeVerticalIntraPredictionBlock(MacroBlock predictionBlock, final PixelRaster curFrame) {
 		if (predictionBlock.getPositionY() <= 0) {
-			return;
+			throw new IllegalArgumentException("Cannot intrapredict border blocks.");
 		}
+		double [][][] AYUV = new double[2][predictionBlock.getSize()][];
 		for (int x = 0; x < predictionBlock.getSize(); x++) {
 			double[] YUV = curFrame.getYUV(predictionBlock.getPositionX() + x, predictionBlock.getPositionY() - 1);
 			for (int y = 0; y < predictionBlock.getSize(); y++) {
 				predictionBlock.setYUV(x, y, YUV);
 			}
+			AYUV[YUV_VERTICAL_INDEX][x] = YUV;
+			AYUV[YUV_HORIZONTAL_INDEX][x] = null;
 		}
+		return AYUV;
 	}
 
-	private void computeHorizontalIntraPredictionBlock(MacroBlock predictionBlock, final PixelRaster curFrame) {
+	private double [][][] computeHorizontalIntraPredictionBlock(MacroBlock predictionBlock, final PixelRaster curFrame) {
 		if (predictionBlock.getPositionX() <= 0) {
-			return;
+			throw new IllegalArgumentException("Cannot intrapredict border blocks.");
 		}
+		double [][][] AYUV = new double[2][predictionBlock.getSize()][];
 		for (int y = 0; y < predictionBlock.getSize(); y++) {
 			double[] YUV = curFrame.getYUV(predictionBlock.getPositionX() - 1, predictionBlock.getPositionY() + y);
 			for (int x = 0; x < predictionBlock.getSize(); x++) {
 				predictionBlock.setYUV(x, y, YUV);
 			}
+			AYUV[YUV_VERTICAL_INDEX][y] = null;
+			AYUV[YUV_HORIZONTAL_INDEX][y] = YUV;
 		}
+		return AYUV;
 	}
 
-	private void computeAverageIntraPredictionBlock(MacroBlock predictionBlock, final PixelRaster curFrame) {
+	private double[][][] computeAverageIntraPredictionBlock(MacroBlock predictionBlock, final PixelRaster curFrame) {
 		double[] YUV = predictionBlock.getMeanColor();
+		double [][][] AYUV = new double[2][predictionBlock.getSize()][];
 		for (int y = 0; y < predictionBlock.getSize(); y++) {
 			for (int x = 0; x < predictionBlock.getSize(); x++) {
 				predictionBlock.setYUV(x, y, YUV);
 			}
+			AYUV[YUV_VERTICAL_INDEX][y] = YUV;
+			AYUV[YUV_HORIZONTAL_INDEX][y] = YUV;
+ 		}
+		return AYUV;
+	}
+	
+	private IntraPredictionBlock computeDelta(final MacroBlock predictionBlock, final float angle, final double[][][] ayuv, final double[][][] predicted, final double[][][] origin) {
+		IntraPredictionBlock intra = new IntraPredictionBlock();
+		intra.setSize(predictionBlock.getSize());
+		intra.setPosX(predictionBlock.getPositionX());
+		intra.setPosY(predictionBlock.getPositionY());
+		intra.setAngle((int) angle);
+		intra.setHorizontal(ayuv[YUV_HORIZONTAL_INDEX]);
+		intra.setVertical(ayuv[YUV_VERTICAL_INDEX]);
+		intra.setAppendedBlock(predictionBlock);
+		
+		final int halfSize = predictionBlock.getSize() / 2;
+		final double[][][] deltas = ArrayUtils.get3DArray(predictionBlock.getSize(), true);
+		
+		for (int x = 0; x < predictionBlock.getSize(); x++) {
+			for (int y = 0; y < predictionBlock.getSize(); y++) {
+				deltas[ColorManager.Y_INDEX][x][y] = origin[ColorManager.Y_INDEX][x][y] - predicted[ColorManager.Y_INDEX][x][y];
+			}
 		}
+		
+		for (int x = 0; x < halfSize; x++) {
+			for (int y = 0; y < halfSize; y++) {
+				deltas[ColorManager.U_INDEX][x][y] = origin[ColorManager.U_INDEX][x][y] - predicted[ColorManager.U_INDEX][x][y];
+				deltas[ColorManager.V_INDEX][x][y] = origin[ColorManager.V_INDEX][x][y] - predicted[ColorManager.V_INDEX][x][y];
+			}
+		}
+		
+		intra.setDelta(deltas);
+		return intra;
 	}
 }

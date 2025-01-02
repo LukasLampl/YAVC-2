@@ -34,6 +34,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import app.interprediction.Vector;
+import app.intraprediction.IntraPredictionBlock;
 import app.quadtree.QuadtreeEngine;
 import app.utils.LoadDistributor;
 import app.utils.MacroBlock;
@@ -393,12 +394,61 @@ public class RenderEngine {
 					}
 				}
 
-				g2d.drawRect(b.getPositionX(), b.getPositionY(), b.getSize(), b.getSize());
+//				g2d.drawRect(b.getPositionX(), b.getPositionY(), b.getSize(), b.getSize());
 			}
 		} finally {
 			g2d.dispose();
 		}
 		return render;
+	}
+	
+	public static BufferedImage[] renderIntraPredictionDeltas(List<IntraPredictionBlock> intraPredictedBlocks,
+			Dimension dim) {
+		BufferedImage render = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
+		BufferedImage render2 = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
+		
+		for (IntraPredictionBlock b : intraPredictedBlocks) {
+			if (b == null) continue;
+			
+			final double[][][] deltas = b.getDelta();
+			
+			for (int x = 0; x < b.getSize(); x++) {
+				final int imgX = x + b.getPosX();
+				
+				for (int y = 0; y < b.getSize(); y++) {
+					final int imgY = y + b.getPosY();
+					final double Y = deltas[ColorManager.Y_INDEX][x][y];
+					final double U = deltas[ColorManager.U_INDEX][x / 2][y / 2];
+					final double V = deltas[ColorManager.V_INDEX][x / 2][y  / 2];
+					render.setRGB(imgX, imgY, ColorManager.convertYUVToRGB(new double[] {Y, U, V}));
+				}
+			}
+		}
+		
+		for (IntraPredictionBlock b : intraPredictedBlocks) {
+			if (b == null) continue;
+			
+			final MacroBlock m = b.getAppendedBlock();
+			
+			final double[][][] deltas = b.getDelta();
+			final double[][][] color = m.getColors();
+			
+			for (int x = 0; x < b.getSize(); x++) {
+				final int imgX = x + b.getPosX();
+				
+				for (int y = 0; y < b.getSize(); y++) {
+					final int imgY = y + b.getPosY();
+					
+					final double Y = color[ColorManager.Y_INDEX][x][y] + deltas[ColorManager.Y_INDEX][x][y];
+					final double U = color[ColorManager.U_INDEX][x / 2][y / 2] + deltas[ColorManager.U_INDEX][x / 2][y / 2];
+					final double V = color[ColorManager.V_INDEX][x / 2][y / 2] + deltas[ColorManager.V_INDEX][x / 2][y / 2];
+					
+					render2.setRGB(imgX, imgY, ColorManager.convertYUVToRGB(new double[] {Y, U, V}));
+				}
+			}
+		}
+		
+		return new BufferedImage[] {render, render2};
 	}
 	
 	public static BufferedImage renderIntraPrediction(List<MacroBlock> intraBlocks, Dimension dim) {
