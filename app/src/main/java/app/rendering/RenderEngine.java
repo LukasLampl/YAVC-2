@@ -23,6 +23,8 @@ package app.rendering;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.RenderingHints;
@@ -38,6 +40,7 @@ import app.intraprediction.IntraPredictionBlock;
 import app.quadtree.QuadtreeEngine;
 import app.utils.LoadDistributor;
 import app.utils.MacroBlock;
+import app.utils.MathUtils;
 import app.utils.PixelRaster;
 import app.utils.ReferenceFrameManager;
 
@@ -534,6 +537,31 @@ public class RenderEngine {
 			g2d.drawRect(b.getPositionX(), b.getPositionY(), b.getSize(), b.getSize());
 		}
 		
+		g2d.dispose();
+		return render;
+	}
+	
+	public static BufferedImage renderDeviation(List<MacroBlock> intraBlocks, boolean intra, Dimension dim) {
+		BufferedImage render = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g2d = (Graphics2D)render.getGraphics();
+		g2d.setColor(intra ? Color.RED : Color.YELLOW);
+		g2d.setFont(new Font("Arial", Font.PLAIN, 8));
+		FontMetrics metrics = g2d.getFontMetrics();
+		Font font = g2d.getFont();
+		
+		for (MacroBlock b : intraBlocks) {
+			if (b.getSize() > 8) {
+				String dev = String.valueOf(MathUtils.round(b.getDeviation() * 100));
+				final int x = b.getPositionX() + ((b.getSize() / 2) - (metrics.stringWidth(dev) / 2));
+				final int y = b.getPositionY() + ((b.getSize() / 2) + (font.getSize() / 2));
+				g2d.drawString(dev, x, y);
+			} else {
+				g2d.drawLine(b.getPositionX(), b.getPositionY(), b.getPositionX() + b.getSize(), b.getPositionY() + b.getSize());
+			}
+			
+			g2d.drawRect(b.getPositionX(), b.getPositionY(), b.getSize(), b.getSize());
+		}
+
 		g2d.dispose();
 		return render;
 	}

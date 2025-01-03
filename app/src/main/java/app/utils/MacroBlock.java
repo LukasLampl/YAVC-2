@@ -747,4 +747,14 @@ public class MacroBlock implements Discardable {
 		ArrayUtils.copy2DArray(this.V, 0, 0, VClone, 0, 0, halfSize, halfSize);
 		return new MacroBlock(this.positionX, this.positionY, this.size, YClone, UClone, VClone);
 	}
+	
+	private double deviation = 0;
+	
+	public double getDeviation() {
+		return this.deviation;
+	}
+	
+	public void setDeviation(double deviation) {
+		this.deviation = deviation;
+	}
 }

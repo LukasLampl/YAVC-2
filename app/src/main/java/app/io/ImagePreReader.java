@@ -109,7 +109,7 @@ public class ImagePreReader {
 	 */
 	private void run() {
 		Thread task = new Thread(() -> {
-			int currentImage = 445;
+			int currentImage = 0;
 			
 			while (currentImage < framesToReadIn) {
 				if (queue.size() >= config.MAX_PRE_READ_IMAGES) {

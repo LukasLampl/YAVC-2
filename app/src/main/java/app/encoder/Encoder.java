@@ -43,6 +43,7 @@ import app.rendering.RenderEngine;
 import app.utils.LoadDistributor;
 import app.utils.MacroBlock;
 import app.utils.PixelRaster;
+import app.utils.PredictionDistributor;
 import app.utils.ReferenceFrameManager;
 
 /**
@@ -79,6 +80,7 @@ public class Encoder {
 	private static VectorEngine VECTOR_ENGINE = new VectorEngine();
 	
 	private IntraEngine INTRA_ENGINE = new IntraEngine();
+	private PredictionDistributor predictionDistributor = new PredictionDistributor();
 	
 	/**
 	 * The {@link app.utils.ReferenceFrameManager ReferenceFrameManager} used for
@@ -156,8 +158,10 @@ public class Encoder {
 				long end_difference = System.currentTimeMillis();
 //				BufferedImage[] part = RenderEngine.renderQuadtree(leaveNodeManager.getRawData(), curFrame.getDimension(), curFrame);
 
+				PredictionDistributor.Result predictionTypes = this.predictionDistributor.estimateBlockPredictionType(leaveNodeManager, curFrame.getDimension());
+				
 				long start_intra = System.currentTimeMillis();
-				LoadDistributor<IntraPredictionBlock> intraPredictedBlocks = INTRA_ENGINE.computeIntraPrediction(leaveNodeManager.getRawData(), curFrame);
+				LoadDistributor<IntraPredictionBlock> intraPredictedBlocks = INTRA_ENGINE.computeIntraPrediction(predictionTypes.getIntraPredictables(), curFrame);
 				long end_intra = System.currentTimeMillis();
 			//	BufferedImage intraComposit = RenderEngine.renderIntraPrediction(intraBlocks, curFrame.getDimension());
 			//	ImageIO.write(intraComposit, "png", new File(ArgumentProcessor.outputFile.getParent() + "/IP_" + i + ".png"));
@@ -167,8 +171,13 @@ public class Encoder {
 				ImageIO.write(d[0], "png", new File(ArgumentProcessor.outputFile.getParent() + "/INTRA_DELTAS_" + i + ".png"));
 				ImageIO.write(d[1], "png", new File(ArgumentProcessor.outputFile.getParent() + "/INTRA_RECONSTRUCTED_" + i + ".png"));
 				
+				BufferedImage devIntra = RenderEngine.renderDeviation(predictionTypes.getIntraPredictables(), true, curFrame.getDimension());
+				BufferedImage devInter = RenderEngine.renderDeviation(predictionTypes.getInterPredictables(), false, curFrame.getDimension());
+				ImageIO.write(devIntra, "png", new File(ArgumentProcessor.outputFile.getParent() + "/DEV_INTRA_" + i + ".png"));
+				ImageIO.write(devInter, "png", new File(ArgumentProcessor.outputFile.getParent() + "/DEV_INTER_" + i + ".png"));
+				
 				long start_vector_movement = System.currentTimeMillis();
-				VectorEngineResult vectorEngineResult = new VectorEngineResult(null, null);//VECTOR_ENGINE.computeMovementVectors(leaveNodeManager.getRawData(), this.referenceManager);
+				VectorEngineResult vectorEngineResult = VECTOR_ENGINE.computeMovementVectors(predictionTypes.getInterPredictables(), this.referenceManager);
 				LoadDistributor<Vector> movementVectors = vectorEngineResult.getVectors();
 				LoadDistributor<MacroBlock> differenceManager = vectorEngineResult.getRestBlocks();
 				long end_vector_movement = System.currentTimeMillis();
