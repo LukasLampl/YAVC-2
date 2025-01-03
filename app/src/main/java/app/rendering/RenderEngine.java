@@ -25,14 +25,16 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Point;
+import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import app.interprediction.Vector;
+import app.intraprediction.IntraDecoder;
+import app.intraprediction.IntraPredictionBlock;
 import app.quadtree.QuadtreeEngine;
 import app.utils.LoadDistributor;
 import app.utils.MacroBlock;
@@ -49,6 +51,8 @@ import app.utils.ReferenceFrameManager;
  * @since 1.1
  */
 public class RenderEngine {
+	private static IntraDecoder intraDecoder = new IntraDecoder();
+	
 	/**
 	 * Renders a composited image of all vectors, non-coded blocks and reference
 	 * frames used. It runs asynchronously to achieve a higher throughput.
@@ -59,7 +63,9 @@ public class RenderEngine {
 	 * @param allowModToAbsDiff		Flag for whether modifications can be made to the vectors absolute color difference or not.
 	 * @return A composit PixelRaster with all vectors, non-coded blocks and reference used.
 	 */
-	public static PixelRaster renderComposit(LoadDistributor<Vector> vecs, ReferenceFrameManager refs, LoadDistributor<MacroBlock> differenceManager, boolean allowModToAbsDiff) {
+	public static PixelRaster renderComposit(LoadDistributor<Vector> vecs, ReferenceFrameManager refs,
+			LoadDistributor<MacroBlock> differenceManager, LoadDistributor<IntraPredictionBlock> intraBlocks,
+			boolean allowModToAbsDiff) {
 		long sRT = System.currentTimeMillis();
 		PixelRaster render = refs.getLastFrame().copy();
 		Dimension dim = refs.getLastFrame().getDimension();
@@ -85,6 +91,15 @@ public class RenderEngine {
 				}
 			}
 			
+			if (intraBlocks != null) {
+				if (intraBlocks.hasDistributed()) {
+					for (final List<IntraPredictionBlock> intraBlockList : intraBlocks.getIterable()) {
+						Runnable task = createIntrapredictionBlockRenderTask(intraBlockList, dim, render);
+						executor.submit(task);
+					}
+				}
+			}
+			
 			executor.shutdown();
 			while (!executor.awaitTermination(250, TimeUnit.MICROSECONDS)) {}
 			long e_vrT = System.currentTimeMillis();
@@ -96,6 +111,35 @@ public class RenderEngine {
 		long rT = (System.currentTimeMillis() - sRT);
 		System.out.println(String.format("      >>> Visual render time: %4dms", rT));
 		return render;
+	}
+	
+	private static Runnable createIntrapredictionBlockRenderTask(List<IntraPredictionBlock> blockList, Dimension dim,
+			PixelRaster render) {
+		Runnable task = () -> {
+			for (IntraPredictionBlock block : blockList) {
+				MacroBlock b = new MacroBlock(block.getPosX(), block.getPosY(), block.getSize(), true);
+				final int size = b.getSize();
+				final Point pos = b.getPosition();
+				intraDecoder.computeAngularIntraPredictionBlock(b, block.getVertical(), block.getHorizontal(), block.getAngle(), dim);
+				double[][][] deltas = block.getDelta();
+				
+				for (int x = 0; x < size; x++) {
+					if (pos.x + x < 0 || pos.x + x >= dim.width) continue;
+					
+					for (int y = 0; y < size; y++) {
+						if (pos.y + y < 0 || pos.y + y >= dim.height) continue;
+						
+						double[] YUV = b.getYUV(x, y);
+						YUV[ColorManager.Y_INDEX] += deltas[ColorManager.Y_INDEX][x][y];
+						YUV[ColorManager.U_INDEX] += deltas[ColorManager.U_INDEX][x / 2][y / 2];
+						YUV[ColorManager.V_INDEX] += deltas[ColorManager.V_INDEX][x / 2][y / 2];
+						render.setYUV(x + pos.x, y + pos.y, YUV);
+					}
+				}
+			}
+		};
+		
+		return task;
 	}
 	
 	/**
@@ -382,11 +426,95 @@ public class RenderEngine {
 	 * @param dim		Dimension of the render.
 	 * @return An image with all differences.
 	 */
-	public BufferedImage renderDifferences(ArrayList<MacroBlock> leaves, Dimension dim) {
+	public static BufferedImage renderDifferences(List<MacroBlock> leaves, Dimension dim) {
 		BufferedImage render = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g2d = (Graphics2D) render.getGraphics();
+		try {
+			g2d.setColor(new Color(255, 0, 0));
+			double[] YUVCache = new double[3]; // Size of 3 because of 3 channels
+
+			for (MacroBlock b : leaves) {
+				for (int x = 0; x < b.getSize(); x++) {
+					for (int y = 0; y < b.getSize(); y++) {
+						if (x + b.getPosition().x >= dim.width || x + b.getPosition().x < 0
+								|| y + b.getPosition().y >= dim.height || y + b.getPosition().y < 0) {
+							continue;
+						}
+
+						int argb = ColorManager.convertYUVToRGB(b.getYUV(x, y, YUVCache));
+						render.setRGB(x + b.getPosition().x, y + b.getPosition().y, argb);
+					}
+				}
+
+//				g2d.drawRect(b.getPositionX(), b.getPositionY(), b.getSize(), b.getSize());
+			}
+		} finally {
+			g2d.dispose();
+		}
+		return render;
+	}
+	
+	public static BufferedImage[] renderIntraPredictionDeltas(LoadDistributor<IntraPredictionBlock> intraPredictedBlocks,
+			Dimension dim) {
+		BufferedImage render = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
+		BufferedImage render2 = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
+		
+		for (List<IntraPredictionBlock> blockList : intraPredictedBlocks.getIterable()) {
+			for (IntraPredictionBlock b : blockList) {
+				if (b == null) continue;
+				
+				final double[][][] deltas = b.getDelta();
+				
+				for (int x = 0; x < b.getSize(); x++) {
+					final int imgX = x + b.getPosX();
+					
+					for (int y = 0; y < b.getSize(); y++) {
+						final int imgY = y + b.getPosY();
+						final double Y = deltas[ColorManager.Y_INDEX][x][y];
+						final double U = deltas[ColorManager.U_INDEX][x / 2][y / 2];
+						final double V = deltas[ColorManager.V_INDEX][x / 2][y  / 2];
+						render.setRGB(imgX, imgY, ColorManager.convertYUVToRGB(new double[] {Y, U, V}));
+					}
+				}
+			}
+		}
+		
+		for (List<IntraPredictionBlock> blockList : intraPredictedBlocks.getIterable()) {
+			for (IntraPredictionBlock b : blockList) {
+				if (b == null) continue;
+				
+				final MacroBlock m = b.getAppendedBlock();
+				
+				final double[][][] deltas = b.getDelta();
+				final double[][][] color = m.getColors();
+				
+				for (int x = 0; x < b.getSize(); x++) {
+					final int imgX = x + b.getPosX();
+					
+					for (int y = 0; y < b.getSize(); y++) {
+						final int imgY = y + b.getPosY();
+						
+						final double Y = color[ColorManager.Y_INDEX][x][y] + deltas[ColorManager.Y_INDEX][x][y];
+						final double U = color[ColorManager.U_INDEX][x / 2][y / 2] + deltas[ColorManager.U_INDEX][x / 2][y / 2];
+						final double V = color[ColorManager.V_INDEX][x / 2][y / 2] + deltas[ColorManager.V_INDEX][x / 2][y / 2];
+						
+						render2.setRGB(imgX, imgY, ColorManager.convertYUVToRGB(new double[] {Y, U, V}));
+					}
+				}
+			}
+		}
+		
+		return new BufferedImage[] {render, render2};
+	}
+	
+	public static BufferedImage renderIntraPrediction(List<MacroBlock> intraBlocks, Dimension dim) {
+		BufferedImage render = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g2d = (Graphics2D)render.getGraphics();
+		g2d.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_SPEED);
+		g2d.setColor(new Color(255, 0, 0, 100));
 		double[] YUVCache = new double[3]; //Size of 3 because of 3 channels
 		
-		for (MacroBlock b : leaves) {
+		for (MacroBlock b : intraBlocks) {
 			for (int x = 0; x < b.getSize(); x++) {
 				for (int y = 0; y < b.getSize(); y++) {
 					if (x + b.getPosition().x >= dim.width
@@ -402,6 +530,11 @@ public class RenderEngine {
 			}
 		}
 		
+		for (MacroBlock b : intraBlocks) {
+			g2d.drawRect(b.getPositionX(), b.getPositionY(), b.getSize(), b.getSize());
+		}
+		
+		g2d.dispose();
 		return render;
 	}
 }

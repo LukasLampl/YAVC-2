@@ -114,6 +114,19 @@ public class MacroBlock implements Discardable {
 	 */
 	private int reference = 0;
 	
+	public MacroBlock(MacroBlock block) {
+		this.positionX = block.getPositionX();
+		this.positionY = block.getPositionY();
+		this.positionRelativeToParentX = block.getPositionRelativeToParentX();
+		this.positionRelativeToParentY = block.getPositionRelativeToParentY();
+		this.size = block.getSize();
+		double[][][] col = block.getColors();
+		this.Y = col[0];
+		this.U = col[1];
+		this.V = col[2];
+		this.isColorSet = true;
+	}
+	
 	/**
 	 * <p>Creates an empty MacroBlock, with a position and size.</p>
 	 * 
@@ -721,5 +734,17 @@ public class MacroBlock implements Discardable {
 	@Override
 	public void discard() {
 		reset(0, 0, 0, false);
+	}
+	
+	@Override
+	public MacroBlock clone() {
+		final int halfSize = this.size / 2;
+		double[][] YClone = new double[this.size][this.size];
+		double[][] UClone = new double[halfSize][halfSize];
+		double[][] VClone = new double[halfSize][halfSize];
+		ArrayUtils.copy2DArray(this.Y, 0, 0, YClone, 0, 0, this.size, this.size);
+		ArrayUtils.copy2DArray(this.U, 0, 0, UClone, 0, 0, halfSize, halfSize);
+		ArrayUtils.copy2DArray(this.V, 0, 0, VClone, 0, 0, halfSize, halfSize);
+		return new MacroBlock(this.positionX, this.positionY, this.size, YClone, UClone, VClone);
 	}
 }
