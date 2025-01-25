@@ -3,7 +3,7 @@
 /////////////////////////////////////////////////////////////
 /*
 The YAVC video / frame compressor compresses frames.
-Copyright (C) 2024  Lukas Nian En Lampl
+Copyright (C) 2025  Lukas Nian En Lampl, Hans Lampl
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -21,7 +21,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package app.encoder;
 
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
 

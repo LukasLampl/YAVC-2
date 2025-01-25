@@ -3,7 +3,7 @@
 /////////////////////////////////////////////////////////////
 /*
 The YAVC video / frame compressor compresses frames.
-Copyright (C) 2024  Lukas Nian En Lampl
+Copyright (C) 2025  Lukas Nian En Lampl, Hans Lampl
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+
 
 package app.io;
 
