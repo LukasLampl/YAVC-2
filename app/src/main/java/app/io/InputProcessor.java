@@ -148,7 +148,7 @@ public class InputProcessor {
 		long end_load_dist = System.currentTimeMillis();
 		long start_render = System.currentTimeMillis();
 		if (vectorListManager.getList() != null) {
-			render = RenderEngine.renderComposit(vecManager, refs, blockManager, true);
+			render = RenderEngine.renderComposit(vecManager, refs, blockManager, null, true);
 			deblocker.deblock(vecManager, render);
 		}
 		long end_render = System.currentTimeMillis();

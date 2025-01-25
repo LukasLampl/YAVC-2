@@ -7,11 +7,6 @@ import app.utils.Discardable;
 import app.utils.MacroBlock;
 
 public class IntraPredictionBlock implements Discardable {
-	/**
-	 * Provides a DCTEngine with pre-calculated cosine table.
-	 */
-	private static DCTEngine DCT_ENGINE = app.Main.DCT_ENGINE;	
-	
 	private MacroBlock appendedBlock = null;
 	
 	private int size = 0;
