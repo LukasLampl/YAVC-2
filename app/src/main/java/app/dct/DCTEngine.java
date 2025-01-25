@@ -335,13 +335,9 @@ public class DCTEngine {
 		
 		int fraction = 8;
 		int halfFraction = 4;
-		int halfSize = size / 2;
 		double[][][] chromaIDCT = new double[][][] {DCTCoeff[DCTConstants.U_COEFFS_INDEX], DCTCoeff[DCTConstants.V_COEFFS_INDEX]};
 		double[][] lumaIDCT = DCTCoeff[DCTConstants.Y_COEFFS_INDEX];
-		double[][][] res = new double[3][][];
-		res[DCTConstants.Y_COEFFS_INDEX] = new double[size][size];
-		res[DCTConstants.U_COEFFS_INDEX] = new double[halfSize][halfSize];
-		res[DCTConstants.V_COEFFS_INDEX] = new double[halfSize][halfSize];
+		double[][][] res = ArrayUtils.get3DArray(size, true);
 
 		for (int x = 0, halfX = 0; x < size; x += fraction, halfX += halfFraction) {
 			for (int y = 0, halfY = 0; y < size; y += fraction, halfY += halfFraction) {

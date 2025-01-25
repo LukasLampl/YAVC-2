@@ -80,8 +80,8 @@ public class QuadtreeTask {
 			throw new NullPointerException("The MeanStructure is null, can't split with null color!");
 		}
 		
-		int[][] means = this.meanOf4x4Blocks.get4x4Means();
-		int[][][] color = this.meanOf4x4Blocks.getArgbs();
+		double[][][] means = this.meanOf4x4Blocks.get4x4Means();
+		double[][][] color = this.meanOf4x4Blocks.getArgbs();
 		
 		if (means == null) {
 			throw new NullPointerException("No 4x4Mean, can't subdivide MacroBlock.");
@@ -92,9 +92,9 @@ public class QuadtreeTask {
 		Point bPos = currentBlock.getPosition();
 		Point posInParent = currentBlock.getPositionRelativeToParent();
 		Point newInnerPos = new Point(posInParent.x, posInParent.y);
-		int[] meanRGB = calculateMeanOfBlock(means, newInnerPos, currentBlock.getSize());
-		double standardDeviation = computeStandardDeviation(meanRGB, color, newInnerPos, currentBlock.getSize());
-		currentBlock.setMeanColor(meanRGB);
+		double[] meanYUV = calculateMeanOfBlock(means, newInnerPos, currentBlock.getSize());
+		double standardDeviation = computeStandardDeviation(meanYUV, color, newInnerPos, currentBlock.getSize());
+		currentBlock.setMeanColor(meanYUV);
 		
 		if (standardDeviation > errorThreshold
 			|| bPos.x + currentBlock.getSize() > dim.width
@@ -124,14 +124,14 @@ public class QuadtreeTask {
 	 * RGB array.
 	 */
 	private MeanStructure calculate4x4Means(MacroBlock block) {
-		int[][] meanArgbs = new int[block.getSize() / 4][block.getSize() / 4];
-		int[][][] argbs = new int[block.getSize()][block.getSize()][3];
+		double[][][] meanYuvs = new double[block.getSize() / 4][block.getSize() / 4][];
+		double[][][] yuvs = new double[block.getSize()][block.getSize()][];
 		final int fraction = 64;
 		ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 		
 		for (int i = 0; i < block.getSize(); i += fraction) {
 			for (int j = 0; j < block.getSize(); j += fraction) {
-				executor.submit(create4x4MeansFractionTask(i, j, fraction, argbs, meanArgbs, block));
+				executor.submit(create4x4MeansFractionTask(i, j, fraction, yuvs, meanYuvs, block));
 			}
 		}
 
@@ -143,7 +143,7 @@ public class QuadtreeTask {
 			e.printStackTrace();
 		}
 		
-		return new MeanStructure(meanArgbs, argbs);
+		return new MeanStructure(meanYuvs, yuvs);
 	}
 	
 	/**
@@ -156,32 +156,32 @@ public class QuadtreeTask {
 	 * @param startX	Start position X within the MacroBlock.
 	 * @param startY	Start position Y within the MacroBlock.
 	 * @param frac		Size of the fraction that should be worked down.
-	 * @param argbs		Array for storing all RGB colors in the fraction.
-	 * @param meanArgbs	Array for storing all 4x4 means.
+	 * @param yuvs		Array for storing all YUV colors in the fraction.
+	 * @param meanYuvs	Array for storing all 4x4 means.
 	 */
-	private Runnable create4x4MeansFractionTask(final int startX, final int startY, final int frac, int[][][] argbs, int[][] meanArgbs, MacroBlock block) {
+	private Runnable create4x4MeansFractionTask(final int startX, final int startY, final int frac, double[][][] yuvs, double[][][] meanYuvs, MacroBlock block) {
 		Runnable task = () -> {
 			for (int u = 0; u < frac; u += 4) {
 				for (int v = 0; v < frac; v += 4) {
-					int sumR = 0;
-					int sumG = 0;
-					int sumB = 0;
+					int sumY = 0;
+					int sumU = 0;
+					int sumV = 0;
 					
 					for (int x = 0; x < 4; x++) {
 						int iPosX = startX + u + x;
 						
 						for (int y = 0; y < 4; y++) {
 							int iPosY = startY + v + y;
-							int[] col = ColorManager.convertYUVToRGB_intARR(block.getYUV(iPosX, iPosY), null);
-							sumR += col[ColorManager.R_INDEX];
-							sumG += col[ColorManager.G_INDEX];
-							sumB += col[ColorManager.B_INDEX];
-							argbs[iPosX][iPosY] = col;
+							double[] col = block.getYUV(iPosX, iPosY);
+							sumY += col[ColorManager.Y_INDEX];
+							sumU += col[ColorManager.U_INDEX];
+							sumV += col[ColorManager.V_INDEX];
+							yuvs[iPosX][iPosY] = col;
 						}
 					}
 					
-					int meanColor = (((sumR / 16) & 0xFF) << 16) | (((sumG / 16) & 0xFF) << 8) | ((sumB / 16) & 0xFF);
-					meanArgbs[(startX + u) / 4][(startY + v) / 4] = meanColor;
+					double[] meanColor = new double[] {sumY / 16, sumU / 16, sumV / 16};
+					meanYuvs[(startX + u) / 4][(startY + v) / 4] = meanColor;
 				}
 			}
 		};
@@ -194,19 +194,19 @@ public class QuadtreeTask {
 	 * 
 	 * @return An array containing the mean of every RGB component in
 	 * the following order:
-	 * <ul><li>[0] = Red
-	 * <li>[1] = Green
-	 * <li>[2] = Blue
+	 * <ul><li>[0] = Y
+	 * <li>[1] = U
+	 * <li>[2] = V
 	 * </ul>
 	 * 
 	 * @param meanOf4x4Blocks	Precalculated 4x4 mean colors.
 	 * @param pos				Position of the child block within the root MacroBlock.
 	 * @param size				Size of the child block.
 	 */
-	private int[] calculateMeanOfBlock(int[][] meanOf4x4Blocks, Point pos, int size) {
-		double sumR = 0;
-		double sumG = 0;
-		double sumB = 0;
+	private double[] calculateMeanOfBlock(double[][][] meanOf4x4Blocks, Point pos, int size) {
+		double sumY = 0;
+		double sumU = 0;
+		double sumV = 0;
 		int actualSize = size / 4;
 		int length = actualSize * actualSize;
 		int actualPosX = pos.x / 4;
@@ -217,20 +217,17 @@ public class QuadtreeTask {
 			
 			for (int y = 0; y < actualSize; y++) {
 				int posY = y + actualPosY;
-				int argb = meanOf4x4Blocks[posX][posY];
-				double r = (argb >> 16) & 0xFF;
-				double g = (argb >> 8) & 0xFF;
-				double b = argb & 0xFF;
-				sumR += r;
-				sumG += g;
-				sumB += b;
+				double[] yuv = meanOf4x4Blocks[posX][posY];
+				sumY += yuv[ColorManager.Y_INDEX];
+				sumU += yuv[ColorManager.U_INDEX];
+				sumV += yuv[ColorManager.V_INDEX];
 			}
 		}
 
-		sumR /= length;
-		sumG /= length;
-		sumB /= length;
-		return new int[] {(int)MathUtils.round(sumR), (int)MathUtils.round(sumG), (int)MathUtils.round(sumB)};
+		sumY /= length;
+		sumU /= length;
+		sumV /= length;
+		return new double[] {(int)MathUtils.round(sumY), (int)MathUtils.round(sumU), (int)MathUtils.round(sumV)};
 	}
 
 	/**
@@ -240,36 +237,36 @@ public class QuadtreeTask {
 	 * @return The standard deviation of red, green and blue combined.
 	 * 
 	 * @param mean	Mean color of the MacroBlock.
-	 * @param argbs	RGB color array of the root MacroBlock.
+	 * @param yuvs	YUV color array of the root MacroBlock.
 	 * @param pos	Position of the child block within the root MacroBlock.
 	 * @param size	Size of the child block.
 	 */
-	private double computeStandardDeviation(int[] mean, int[][][] argbs, Point pos, int size) {
-		double resR = 0;
-		double resG = 0;
-		double resB = 0;
+	private double computeStandardDeviation(double[] mean, double[][][] yuvs, Point pos, int size) {
+		double resY = 0;
+		double resU = 0;
+		double resV = 0;
 		double length = size * size;
-		int meanR = mean[0];
-		int meanG = mean[1];
-		int meanB = mean[2];
+		double meanY = mean[ColorManager.Y_INDEX];
+		double meanU = mean[ColorManager.U_INDEX];
+		double meanV = mean[ColorManager.V_INDEX];
 		
 		for (int x = 0; x < size; x++) {
 			int posX = x + pos.x;
 			
 			for (int y = 0; y < size; y++) {
 				int posY = y + pos.y;
-				int r = argbs[posX][posY][0] - meanR;
-				int g = argbs[posX][posY][1] - meanG;
-				int b = argbs[posX][posY][2] - meanB;
-				resR += r * r;
-				resG += g * g;
-				resB += b * b;
+				double deltaY = yuvs[posX][posY][ColorManager.Y_INDEX] - meanY;
+				double deltaU = yuvs[posX][posY][ColorManager.U_INDEX] - meanU;
+				double deltaV = yuvs[posX][posY][ColorManager.V_INDEX] - meanV;
+				resY += deltaY * deltaY;
+				resU += deltaU * deltaU;
+				resV += deltaV * deltaV;
 			}
 		}
 		
-		resR = Math.sqrt(resR / length);
-		resG = Math.sqrt(resG / length);
-		resB = Math.sqrt(resB / length);
-		return (resR + resG + resB);
+		resY = Math.sqrt((resY * ColorManager.Y_WEIGHT) / length);
+		resU = Math.sqrt((resU * ColorManager.U_WEIGHT) / length);
+		resV = Math.sqrt((resV * ColorManager.V_WEIGHT) / length);
+		return (resY + resU + resV);
 	}
 }

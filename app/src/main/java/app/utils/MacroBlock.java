@@ -100,7 +100,7 @@ public class MacroBlock implements Discardable {
 	 * <p>Mean color based on the subdivision of
 	 * the MacroBlock.</p>
 	 */
-	private int[] meanColor = ColorManager.NULL_COLOR;
+	private double[] meanColor = ColorManager.NULL_COLOR;
 	
 	/**
 	 * <p>Defines the total MSE (= Mean Square Error) from the
@@ -115,7 +115,7 @@ public class MacroBlock implements Discardable {
 	private int reference = 0;
 	
 	public MacroBlock(MacroBlock block) {
-		this.positionX = block.getPositonX();
+		this.positionX = block.getPositionX();
 		this.positionY = block.getPositionY();
 		this.positionRelativeToParentX = block.getPositionRelativeToParentX();
 		this.positionRelativeToParentY = block.getPositionRelativeToParentY();
@@ -471,6 +471,11 @@ public class MacroBlock implements Discardable {
 				this.nodes[index++] = b;
 			}
 		}
+		
+		//All color components are referenced by the children.
+		this.Y = null;
+		this.U = null;
+		this.V = null;
 	}
 	
 	/**
@@ -502,7 +507,7 @@ public class MacroBlock implements Discardable {
 	 * 
 	 * @return The x position of the MacroBlock.
 	 */
-	public int getPositonX() {
+	public int getPositionX() {
 		return this.positionX;
 	}
 	
@@ -535,7 +540,7 @@ public class MacroBlock implements Discardable {
 	 * <p>Get the mean color of the MacroBlock.</p>
 	 * @return Mean color of the MacroBlock
 	 */
-	public int[] getMeanColor() {
+	public double[] getMeanColor() {
 		if (!this.isColorSet) {
 			throw new IllegalStateException("The MacroBlock is ready, but no data was set!");
 		}
@@ -548,7 +553,7 @@ public class MacroBlock implements Discardable {
 	 * 
 	 * @param meanColor	mean color of the MacroBlock
 	 */
-	public void setMeanColor(final int[] meanColor) {
+	public void setMeanColor(final double[] meanColor) {
 		this.meanColor = meanColor;
 	}
 	

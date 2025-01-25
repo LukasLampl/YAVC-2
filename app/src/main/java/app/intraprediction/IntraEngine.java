@@ -1,309 +1,343 @@
 package app.intraprediction;
 
-import java.awt.Point;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
+import app.rendering.ColorManager;
+import app.utils.ArrayUtils;
+import app.utils.LoadDistributor;
 import app.utils.MacroBlock;
+import app.utils.MathUtils;
 import app.utils.PixelRaster;
 
-public class IntraEngine {
-	private int biasLeft = 0;
-	private int biasRight = 0;
-	private PixelRaster curFrame = null;
-	private ArrayList<MacroBlock> leaveList = null;
-	private double errorThreshold[] = new double[3];
+public class IntraEngine extends IntraPipeline {
 
-	public IntraEngine() {
-		this.biasLeft = 0;
-		this.biasRight = 0;
+	interface CostFunction {
+		double calcCost(final double[][][] origin, final MacroBlock block);
+
+		boolean bestError(final double currentError, final double currentBestError);
 	}
-	
-	class MacroBlockPrediction extends MacroBlock {
-		HashMap <Integer,double[]> errorMap = new HashMap<Integer,double[]>();
-		HashMap <Integer,ArrayList<MacroBlock>> neighbourMap = new HashMap<Integer,ArrayList<MacroBlock>>();
-		HashMap <Integer,MacroBlock> predictionMap = new HashMap<Integer,MacroBlock>();
 
-		MacroBlockPrediction(final MacroBlock leaf) {
-			super(leaf);
-			for (int orientation = -2 ; orientation <= 2 ; orientation++) {
-				this.predictionMap.put(orientation, leaf.clone());
-				this.neighbourMap.put(orientation, new ArrayList<MacroBlock>());
-				this.errorMap.put(orientation, new double[3]);
+	class MSECost implements CostFunction {
+
+		@Override
+		public double calcCost(double[][][] origin, MacroBlock block) {
+			double[][][] b = block.getColors();
+			double sumY = 0, sumU = 0, sumV = 0;
+			for (int x = 0; x < block.getSize(); x++) {
+				for (int y = 0; y < block.getSize(); y++) {
+					double delta = (b[ColorManager.Y_INDEX][x][y] - origin[ColorManager.Y_INDEX][x][y]);
+					sumY += delta * delta;
+				}
 			}
+			for (int x = 0; x < block.getSize() / 2; x++) {
+				for (int y = 0; y < block.getSize() / 2; y++) {
+					double delta = (b[ColorManager.U_INDEX][x][y] - origin[ColorManager.U_INDEX][x][y]);
+					sumU += delta * delta;
+					delta = (b[ColorManager.V_INDEX][x][y] - origin[ColorManager.V_INDEX][x][y]);
+					sumV += delta * delta;
+				}
+			}
+
+			return (sumY + sumU + sumV)
+					/ ((block.getSize() * block.getSize() + 2 * ((block.getSize() / 2)
+							* (block.getSize() / 2))))
+					/ 3;
+		}
+
+		@Override
+		public boolean bestError(double currentError, double currentBestError) {
+			return (currentError < currentBestError);
 		}
 	}
-	
-	public void setBias(final int biasLeft, final int biasRight) {
-		this.biasLeft = biasLeft;
-		this.biasRight = biasRight;
+
+	class SSIMCost implements CostFunction {
+
+		@Override
+		public double calcCost(double[][][] origin, MacroBlock block) {
+			double SSIM_Y = getSSIMOfChannel(origin[ColorManager.Y_INDEX], block.getColors()[ColorManager.Y_INDEX]);
+			double SSIM_U = getSSIMOfChannel(origin[ColorManager.U_INDEX], block.getColors()[ColorManager.U_INDEX]);
+			double SSIM_V = getSSIMOfChannel(origin[ColorManager.V_INDEX], block.getColors()[ColorManager.V_INDEX]);
+			return (SSIM_Y + SSIM_U + SSIM_V) / 3;
+		}
+
+		private static double getSSIMOfChannel(double[][] ch1, double[][] ch2) {
+			double ch1_mean = getArrayMean(ch1);
+			double ch2_mean = getArrayMean(ch2);
+			double arr1Variance = getArrayVariance(ch1, ch1_mean);
+			double arr2Variance = getArrayVariance(ch2, ch2_mean);
+			double covariance = getArrayCovariance(ch1, ch2, ch1_mean, ch2_mean);
+			double dynamicCircumference = Math.pow(2, 8) - 1; // 3 Byte per pixel
+			double k1 = 0.01;
+			double k2 = 0.03;
+			double c1 = Math.pow(k1 * dynamicCircumference, 2);
+			double c2 = Math.pow(k2 * dynamicCircumference, 2);
+
+			return ((2 * ch1_mean * ch2_mean + c1) * (2 * covariance + c2))
+					/ ((Math.pow(ch1_mean, 2) + Math.pow(ch2_mean, 2) + c1) * (arr1Variance + arr2Variance + c2));
+		}
+
+		private static double getArrayCovariance(double[][] arr1, double[][] arr2, double mean1, double mean2) {
+			final int size = arr1.length * arr1[0].length;
+			double covariance = 0;
+
+			for (int x = 0; x < arr1.length; x++) {
+				for (int y = 0; y < arr1[0].length; y++) {
+					double deltaY1 = arr1[x][y] - mean1;
+					double deltaY2 = arr2[x][y] - mean2;
+					covariance += deltaY1 * deltaY2;
+				}
+			}
+
+			return covariance / (double) size;
+		}
+
+		private static double getArrayVariance(double[][] arr, double mean) {
+			final int size = arr.length * arr[0].length;
+			double variance = 0;
+
+			for (int x = 0; x < arr.length; x++) {
+				for (int y = 0; y < arr[0].length; y++) {
+					double delta = arr[x][y] - mean;
+					variance += delta * delta;
+				}
+			}
+
+			return variance / (double) size;
+		}
+
+		private static double getArrayMean(double[][] arr) {
+			double mean = 0;
+			int totalPixels = arr.length * arr[0].length;
+
+			for (int x = 0; x < arr.length; x++) {
+				for (int y = 0; y < arr[0].length; y++) {
+					mean += arr[x][y];
+				}
+			}
+
+			return mean / (double) totalPixels;
+		}
+
+		@Override
+		public boolean bestError(double currentError, double currentBestError) {
+			if (currentError < 0) {
+				return false;
+			}
+
+			final double deltaCBE = MathUtils.abs(1.0 - currentBestError);
+			final double deltaCE = MathUtils.abs(1.0 - currentError);
+			return deltaCE < deltaCBE;
+		}
 	}
-	
-	private void dump(final String s, final MacroBlock p) {
-		System.out.println(s + " " + p.getPosition().x + "/" + p.getPosition().y + " Size:" + p.getSize());		
+
+	class PSNRCost implements CostFunction {
+		private MSECost mseCost = new IntraEngine().new MSECost();
+
+		@Override
+		public double calcCost(double[][][] origin, MacroBlock block) {
+			final double MSE = this.mseCost.calcCost(origin, block);
+			double PSNR = 20 * Math.log10(Math.pow(255, 3)) - 10 * Math.log10(MSE);
+			return PSNR;
+		}
+
+		@Override
+		public boolean bestError(double currentError, double currentBestError) {
+			return currentError < currentBestError;
+		}
 	}
-	
-	private void dump(final int orientation, final double[] error) {
-		System.out.println("(%d) [%e %e %e]".formatted(orientation, error[0], error[1], error[2]));
+
+	class SAECost implements CostFunction {
+
+		@Override
+		public double calcCost(double[][][] origin, MacroBlock block) {
+			double sumErr = 0;
+			final double[][][] data = block.getColors();
+
+			for (int x = 0; x < block.getSize(); x++) {
+				for (int y = 0; y < block.getSize(); y++) {
+					double delta = MathUtils.abs(data[ColorManager.Y_INDEX][x][y] - origin[ColorManager.Y_INDEX][x][y]);
+					sumErr += delta;
+				}
+			}
+
+			for (int x = 0; x < block.getSize() / 2; x++) {
+				for (int y = 0; y < block.getSize() / 2; y++) {
+					double deltaU = MathUtils
+							.abs(data[ColorManager.U_INDEX][x][y] - origin[ColorManager.U_INDEX][x][y]);
+					double deltaV = MathUtils
+							.abs(data[ColorManager.V_INDEX][x][y] - origin[ColorManager.V_INDEX][x][y]);
+					sumErr += deltaU + deltaV;
+				}
+			}
+
+			return sumErr;
+		}
+
+		@Override
+		public boolean bestError(double currentError, double currentBestError) {
+			return currentError < currentBestError;
+		}
+
 	}
+
+	class MAECost implements CostFunction {
+
+		@Override
+		public double calcCost(double[][][] origin, MacroBlock block) {
+			double sumErr = 0;
+			final double[][][] data = block.getColors();
+
+			for (int x = 0; x < block.getSize(); x++) {
+				for (int y = 0; y < block.getSize(); y++) {
+					double delta = MathUtils.abs(data[ColorManager.Y_INDEX][x][y] - origin[ColorManager.Y_INDEX][x][y]);
+					sumErr += delta;
+				}
+			}
+
+			for (int x = 0; x < block.getSize() / 2; x++) {
+				for (int y = 0; y < block.getSize() / 2; y++) {
+					double deltaU = MathUtils
+							.abs(data[ColorManager.U_INDEX][x][y] - origin[ColorManager.U_INDEX][x][y]);
+					double deltaV = MathUtils
+							.abs(data[ColorManager.V_INDEX][x][y] - origin[ColorManager.V_INDEX][x][y]);
+					sumErr += deltaU + deltaV;
+				}
+			}
+
+			return sumErr / (block.getSize() * block.getSize() + (2 * block.getSize() / 2 * block.getSize() / 2));
+		}
+
+		@Override
+		public boolean bestError(double currentError, double currentBestError) {
+			return currentError < currentBestError;
+		}
+
+	}
+
+	static MSECost costFnc = new IntraEngine().new MSECost();
 	
-	public List<MacroBlock> computeIntraPrediction(final List<MacroBlock> leaveNodes, final PixelRaster curFrame, final double[] errorThreshold) {
-		this.curFrame = curFrame;
-		this.errorThreshold[0] = errorThreshold[0];
-		this.errorThreshold[1] = errorThreshold[1];
-		this.errorThreshold[2] = errorThreshold[2];
-		this.leaveList = new ArrayList<MacroBlock>(leaveNodes.size());
-		this.leaveList.addAll(leaveNodes);
-		
-		for (MacroBlock leaf : leaveList) {
-			if (leaf.getPosition().x == 0 || leaf.getPosition().y == 0) {
-				continue;
+	public IntraEngine() {
+	}
+
+	public LoadDistributor<IntraPredictionBlock> computeIntraPrediction(final List<MacroBlock> predictionList, final PixelRaster curFrame) {
+		LoadDistributor<IntraPredictionBlock> predictedBlocks = new LoadDistributor<IntraPredictionBlock>();
+		predictionList.forEach(p -> {
+			IntraPredictionBlock obj = computeIntraPredictionBlock(p, curFrame, costFnc);
+			
+			if (obj == null) {
+				return;
 			}
 			
-			computeIntraPredictionBlocks(leaf);
+			predictedBlocks.setObj(obj);
+		});
+		predictedBlocks.compute(predictionList.size());
+		return predictedBlocks;
+	}
+
+	private IntraPredictionBlock computeIntraPredictionBlock(final MacroBlock predictionBlock, final PixelRaster curFrame,
+			final CostFunction cost) {
+		if (predictionBlock.getPositionX() == 0 || predictionBlock.getPositionY() == 0
+				|| predictionBlock.getPositionX() + predictionBlock.getSize() >= curFrame.getWidth()
+				|| predictionBlock.getPositionY() + predictionBlock.getSize() >= curFrame.getHeight()) {
+			return null;
+		}
+
+		int bestAngle = -1;
+		double[][][] copy = ArrayUtils.get3DArray(predictionBlock.getSize(), true);
+		double[][][] temp = ArrayUtils.get3DArray(predictionBlock.getSize(), true);
+		double[][][] data = predictionBlock.getColors();
+		ArrayUtils.copy2DArray(data[ColorManager.Y_INDEX], 0, 0, copy[ColorManager.Y_INDEX], 0, 0,
+				predictionBlock.getSize(), predictionBlock.getSize());
+		ArrayUtils.copy2DArray(data[ColorManager.U_INDEX], 0, 0, copy[ColorManager.U_INDEX], 0, 0,
+				predictionBlock.getSize() / 2,
+				predictionBlock.getSize() / 2);
+		ArrayUtils.copy2DArray(data[ColorManager.V_INDEX], 0, 0, copy[ColorManager.V_INDEX], 0, 0,
+				predictionBlock.getSize() / 2,
+				predictionBlock.getSize() / 2);
+
+		double error = Double.MAX_VALUE;
+		double [][][] AYUV = computeAverageIntraPredictionBlock(predictionBlock);
+		double err = cost.calcCost(copy, predictionBlock);
+		if (cost.bestError(err, error)) {
+			error = err;
+			data = predictionBlock.getColors();
+			ArrayUtils.copy2DArray(data[ColorManager.Y_INDEX], 0, 0, temp[ColorManager.Y_INDEX], 0, 0, predictionBlock.getSize(), predictionBlock.getSize());
+			ArrayUtils.copy2DArray(data[ColorManager.U_INDEX], 0, 0, temp[ColorManager.U_INDEX], 0, 0, predictionBlock.getSize() / 2, predictionBlock.getSize() / 2);
+			ArrayUtils.copy2DArray(data[ColorManager.V_INDEX], 0, 0, temp[ColorManager.V_INDEX], 0, 0, predictionBlock.getSize() / 2, predictionBlock.getSize() / 2);
+		}
+		for (int angle = 0; angle <= 180; angle += 5) {
+			double[][][] borderPixels = getPixels(angle, predictionBlock.getSize(), curFrame, predictionBlock.getPositionX(), predictionBlock.getPositionY());
+			super.computeAngularIntraPredictionBlock(predictionBlock, borderPixels[YUV_VERTICAL_INDEX],
+					borderPixels[YUV_HORIZONTAL_INDEX], angle, curFrame.getDimension());
+			err = cost.calcCost(copy, predictionBlock);
+			if (cost.bestError(err, error)) {
+				error = err;
+				data = predictionBlock.getColors();
+				ArrayUtils.copy2DArray(data[ColorManager.Y_INDEX], 0, 0, temp[ColorManager.Y_INDEX], 0, 0,
+						predictionBlock.getSize(), predictionBlock.getSize());
+				ArrayUtils.copy2DArray(data[ColorManager.U_INDEX], 0, 0, temp[ColorManager.U_INDEX], 0, 0,
+						predictionBlock.getSize() / 2,
+						predictionBlock.getSize() / 2);
+				ArrayUtils.copy2DArray(data[ColorManager.V_INDEX], 0, 0, temp[ColorManager.V_INDEX], 0, 0,
+						predictionBlock.getSize() / 2,
+						predictionBlock.getSize() / 2);
+				bestAngle = angle;
+				AYUV = borderPixels;
+			}
+		}
+		predictionBlock.setColorComponents(temp);
+		return computeDelta(predictionBlock, bestAngle, AYUV, temp, copy);
+	}
+	
+	private double[][][] getPixels(final int angle, final int size, final PixelRaster curFrame, final int posX, final int posY) {
+		double[][][] borderPixels = new double[2][size][];
+		double YUVver[];
+		double YUVhor[];
+		
+		for (int i = 0; i < size; i++) {
+			if (angle > 0 && angle < 90) {
+				YUVver = curFrame.getYUV(posX + i, posY - 1);
+				YUVhor = curFrame.getYUV(posX - 1, posY + i);
+				borderPixels[YUV_HORIZONTAL_INDEX][i] = YUVhor;
+				borderPixels[YUV_VERTICAL_INDEX][i] = YUVver;
+			} else {
+				YUVver = curFrame.getYUV(posX - (size - i), posY - 1);
+				YUVhor = curFrame.getYUV(posX + size, posY + i);
+				borderPixels[YUV_VERTICAL_INDEX][size - i - 1] = YUVver;
+				borderPixels[YUV_HORIZONTAL_INDEX][i] = YUVhor;
+			}
 		}
 		
-		return leaveList;
+		return borderPixels;
 	}
 	
-	private void computeIntraPredictionBlocks(final MacroBlock leaf)
-	{
-//		System.out.println("--------------------------");
-//		dump("Calculate:", leaf);
-		MacroBlockPrediction pred = new MacroBlockPrediction(leaf);
-		ArrayList<MacroBlock> neigh0 = new ArrayList<MacroBlock>();
-		for (MacroBlock b : this.leaveList) {
-			Point k = b.getPosition();
-			int ks = b.getSize();
-			Point e = pred.getPosition();
-			int es = pred.getSize();
-			int orientation = 9999;
-			if (k.y + ks == e.y && ((k.x <= e.x && k.x + ks >= e.x + es) || (k.x >= e.x && k.x + ks <= e.x + es))) {
-				//dump(">>>", b);
-				orientation = 1;
-				neigh0.add(b);
-			}
-			else if (k.x + ks == e.x && ((k.y <= e.y && k.y + ks >= e.y + es) || (k.y >= e.y && k.y + ks <= e.y + es))) {
-				//dump("<<<", b);
-				orientation = -1;
-				neigh0.add(b);
-			}
-			else if (k.x + ks == e.x && k.y + ks == e.y) {
-				//dump("^^^", b);
-				orientation = 0;
-			}
-			else if (this.biasRight > 0 && k.y + ks == e.y && k.x == e.x + es) {
-				//dump(">==", b);
-				orientation = 2;
-			}
-			else if (this.biasLeft > 0 && k.x + ks == e.x && k.y == e.y + es) {
-				//dump("<==", b);
-				orientation = -2;
-			}
-			if (orientation != 9999) {
-				ArrayList<MacroBlock> neighbours = pred.neighbourMap.get(orientation);		
-				neighbours.add(b.clone());
-				pred.neighbourMap.put(orientation, neighbours);
+	private IntraPredictionBlock computeDelta(final MacroBlock predictionBlock, final float angle, final double[][][] ayuv, final double[][][] predicted, final double[][][] origin) {
+		IntraPredictionBlock intra = new IntraPredictionBlock();
+		intra.setSize(predictionBlock.getSize());
+		intra.setPosX(predictionBlock.getPositionX());
+		intra.setPosY(predictionBlock.getPositionY());
+		intra.setAngle((int) angle);
+		intra.setHorizontal(ayuv[YUV_HORIZONTAL_INDEX]);
+		intra.setVertical(ayuv[YUV_VERTICAL_INDEX]);
+		intra.setAppendedBlock(predictionBlock);
+		
+		final int halfSize = predictionBlock.getSize() / 2;
+		final double[][][] deltas = ArrayUtils.get3DArray(predictionBlock.getSize(), true);
+		
+		for (int x = 0; x < predictionBlock.getSize(); x++) {
+			for (int y = 0; y < predictionBlock.getSize(); y++) {
+				deltas[ColorManager.Y_INDEX][x][y] = origin[ColorManager.Y_INDEX][x][y] - predicted[ColorManager.Y_INDEX][x][y];
 			}
 		}
-		if (pred.neighbourMap.get(0).size() == 1) {
-			ArrayList<MacroBlock> neighbours = pred.neighbourMap.get(0);
-			for (MacroBlock n : neigh0) {
-				neighbours.add(n.clone());
-			}
-			pred.neighbourMap.put(0, neighbours);
-		}
-		intraPrediction(pred);
-		analyzeErrors(pred);
-	}
-	
-	private void intraPrediction(final MacroBlockPrediction pred) {	    
-		for (int orientation = -2 ; orientation <= 2 ; orientation++) {
-			ArrayList<MacroBlock> neighbourList = pred.neighbourMap.get(orientation);
-			if (neighbourList == null) {
-				continue;
-			}
-			double [] error = null;
-			MacroBlock p = pred.predictionMap.get(orientation);
-			switch (orientation) {
-				case 1:					
-					error = intraPredictionP1(p, neighbourList);
-					break;
-				case 2:
-					error = intraPredictionP2(p, neighbourList);
-					break;
-				case 0:
-					error = intraPrediction0(p,  neighbourList);
-					break;
-				case -1:
-					error = intraPredictionM1(p, neighbourList);
-					break;
-				case -2: 
-					error = intraPredictionM2(p ,neighbourList);
-					break;			
-			}
-			pred.errorMap.put(orientation, error);
-		}		
-	}
-	
-	private double[] intraPredictionP1(MacroBlock p, ArrayList<MacroBlock> list) {
-		for (MacroBlock l : list) {
-			int pos1 = 0, pos2 = 0;
-			int pos3 = 0, pos4 = 0;
-
-			int dl = p.getPosition().x - l.getPosition().x;
-			int ds = Math.min(l.getSize(), p.getSize()) - 1;
-
-			if (dl >= 0) {
-				pos1 = dl;
-				pos3 = 0;
-			} else if (dl < 0) {
-				pos1 = 0;
-				pos3 = -dl;
-			}
-			pos2 = pos1 + ds;
-			pos4 = pos3 + ds;
-
-			//System.out.println(
-			//		"(%d|%d (%d)) => (%d|%d (%d))   [%d-%d] => {%d-%d})".formatted(l.getPosition().x, l.getPosition().y,
-			//				l.getSize(), p.getPosition().x, p.getPosition().y, p.getSize(), pos1, pos2, pos3, pos4));
-
-			int y1 = l.getSize() - 1;
-			int y3 = 0;
-			int y4 = p.getSize() - 1;
-
-			for (int i = pos1; i <= pos2; i++) {
-				double[] d = l.getYUV(i, y1);
-				for (int j = pos3; j <= pos4; j++)
-					for (int k = y3; k <= y4; k++)
-						p.setYUV(j, k, d);
+		
+		for (int x = 0; x < halfSize; x++) {
+			for (int y = 0; y < halfSize; y++) {
+				deltas[ColorManager.U_INDEX][x][y] = origin[ColorManager.U_INDEX][x][y] - predicted[ColorManager.U_INDEX][x][y];
+				deltas[ColorManager.V_INDEX][x][y] = origin[ColorManager.V_INDEX][x][y] - predicted[ColorManager.V_INDEX][x][y];
 			}
 		}
-		double error[] = MSE(p, this.curFrame);
-		//dump(1, error);
-		return error;
-	}
-
-	private double [] intraPredictionP2(MacroBlock p, ArrayList<MacroBlock> list) {
-		return null;
-	}
-	
-	private double [] intraPrediction0(MacroBlock p, ArrayList<MacroBlock> list) {
-		//System.out.println("/// Size=%d".formatted(list.size()));
-		for (MacroBlock l : list) {
-			if (p.getPosition().x == l.getPosition().x + l.getSize() && p.getPosition().y == l.getPosition().y + l.getSize()) {
-			//	System.out.println("/// 0=0");
-				double[] d = l.getYUV(l.getSize() - 1, l.getSize() - 1);
-				for (int j = 0 ; j < p.getSize() ; j++)
-					p.setYUV(j, j, d);
-			}
-			else if (p.getPosition().x <= l.getPosition().x && p.getPosition().y == l.getPosition().y + l.getSize()) {
-			//	System.out.println("/// 0+1");				
-				for (int i = 0 ; i < Math.min(p.getSize(), l.getSize()) ; i++) {
-					double[] d = l.getYUV(i, l.getSize() - 1);
-					for (int j = l.getPosition().x - p.getPosition().x + 1 ; j < p.getSize() ; j++)
-						for (int k = 0; k < p.getSize() ; k++)
-							p.setYUV(j, k, d);
-				}	
-			}
-			else if (p.getPosition().y <= l.getPosition().y && p.getPosition().x == l.getPosition().x + l.getSize()) {
-			//	System.out.println("/// 0-1");				
-				for (int i = 0 ; i < Math.min(p.getSize(), l.getSize()) ; i++) {
-					double[] d = l.getYUV(l.getSize() - 1, i);
-					for (int j = 0 ; j < p.getSize() ; j++)
-						for (int k = l.getPosition().y - p.getPosition().y + 1; k < p.getSize() ; k++)
-							p.setYUV(j, k, d);
-				}
-			}
-		}
-		double error[] = MSE(p, this.curFrame);
-		//dump(0, error);
-		return error;
-	}
-	
-	private double[] intraPredictionM1(MacroBlock p, ArrayList<MacroBlock> list) {
-		for (MacroBlock l : list) {
-			int pos1 = 0, pos2 = 0;
-			int pos3 = 0, pos4 = 0;
-
-			int dl = p.getPosition().y - l.getPosition().y;
-			int ds = Math.min(l.getSize(), p.getSize()) - 1;
-
-			if (dl >= 0) {
-				pos1 = dl;
-				pos3 = 0;
-			} else if (dl < 0) {
-				pos1 = 0;
-				pos3 = -dl;
-			}
-			pos2 = pos1 + ds;
-			pos4 = pos3 + ds;
-
-			//System.out.println(
-			//		"(%d|%d (%d)) => (%d|%d (%d))   [%d-%d] => {%d-%d})".formatted(l.getPosition().x, l.getPosition().y,
-			//				l.getSize(), p.getPosition().x, p.getPosition().y, p.getSize(), pos1, pos2, pos3, pos4));
-
-			int x1 = l.getSize() - 1;
-			int x3 = 0;
-			int x4 = p.getSize() - 1;
-
-			for (int i = pos1; i <= pos2; i++) {
-				double[] d = l.getYUV(x1, i);
-				for (int j = pos3; j <= pos4; j++)
-					for (int k = x3; k <= x4; k++)
-						p.setYUV(k, j, d);
-			}
-		}
-		double error[] = MSE(p, this.curFrame);
-		//dump(-1, error);
-		return error;
-	}
-	
-	private double [] intraPredictionM2(MacroBlock p, ArrayList<MacroBlock> list) {
-		return null;
-	}
-	
-	private double [] MSE(final MacroBlock p, final PixelRaster curFrame) {
-		double errorY = 0.0, errorU = 0.0, errorV = 0.0;
-		double _1n2 = 1.0 / (p.getSize() * p.getSize());
-		for (int i = 0 ; i < p.getSize(); i++) {
-			for (int j = 0 ; j < p.getSize() ; j++) {
-				double[] curFrameYUV = curFrame.getYUV(i + p.getPosition().x, j + p.getPosition().y);
-				double[] curBlockYUV = p.getYUV(i, j);
-				double deltaY = curFrameYUV[0] - curBlockYUV[0];
-				double deltaU = curFrameYUV[1] - curBlockYUV[1];
-				double deltaV = curFrameYUV[2] - curBlockYUV[2];
-				errorY += deltaY * deltaY;
-				errorU += deltaU * deltaU;
-				errorV += deltaV * deltaV;
-			}
-		}
-		return new double[] { _1n2 * errorY, _1n2 * errorU, _1n2 * errorV };
-	}	
-	
-	private void analyzeErrors(final MacroBlockPrediction pred) {
-		double error[] = new double[] {Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE};
-		String[] msg = { "CurFrame", "CurFrame", "CurFrame" };
-		for (int orientation = -2 ; orientation <= 2 ; orientation++) {
-			if (pred.errorMap.get(orientation) != null) {
-				for (int y = 0 ; y < error.length ; y++) {
-					if (pred.errorMap.get(orientation)[y] <= errorThreshold[y] && pred.errorMap.get(orientation)[y] < error[y]) {
-						error[y] = pred.errorMap.get(orientation)[y];
-						msg[y] = "%e(%d)".formatted(error[y], orientation);
-						for (int i = 0 ; i < pred.getSize() ; i++) {
-							for (int j = 0 ; j < pred.getSize() ; j++) {
-								double d[] = pred.getYUV(i,j);
-								d[y] = pred.predictionMap.get(orientation).getYUV(i, j)[y];
-								pred.setYUV(i, j, d);
-							}
-						}
-					}
-				}
-			}
-		}
-//		System.out.println("*** Y:%s U:%s V:%s ***".formatted(msg[0], msg[1], msg[2]));
-		//double err[] = MSE(pred, this.curFrame);
-		//dump(9999, err);
+		
+		intra.setDelta(deltas);
+		return intra;
 	}
 }

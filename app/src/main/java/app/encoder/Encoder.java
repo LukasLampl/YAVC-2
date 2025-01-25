@@ -24,7 +24,6 @@ package app.encoder;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.List;
 
 import javax.imageio.ImageIO;
 
@@ -35,15 +34,16 @@ import app.interprediction.Vector;
 import app.interprediction.VectorEngine;
 import app.interprediction.VectorEngineResult;
 import app.intraprediction.IntraEngine;
+import app.intraprediction.IntraPredictionBlock;
 import app.io.ImagePreReader;
 import app.io.OutputStream;
-import app.io.QueueObject;
 import app.quadtree.QuadtreeEngine;
 import app.rendering.DifferenceEngine;
 import app.rendering.RenderEngine;
 import app.utils.LoadDistributor;
 import app.utils.MacroBlock;
 import app.utils.PixelRaster;
+import app.utils.PredictionDistributor;
 import app.utils.ReferenceFrameManager;
 
 /**
@@ -80,6 +80,8 @@ public class Encoder {
 	private static VectorEngine VECTOR_ENGINE = new VectorEngine();
 	
 	private IntraEngine INTRA_ENGINE = new IntraEngine();
+
+	private PredictionDistributor predictionDistributor = new PredictionDistributor();
 	
 	/**
 	 * The {@link app.utils.ReferenceFrameManager ReferenceFrameManager} used for
@@ -128,7 +130,7 @@ public class Encoder {
 				if (frame == null) {
 					System.out.println("Skip: " + i);
 					continue;
-				} else if (frame.notInvokedWithData == false) {
+				} else if (frame.notInvokedWithData == true) {
 					System.out.println("Skip: " + i);
 					continue;
 				}
@@ -153,26 +155,44 @@ public class Encoder {
 				
 //				BufferedImage[] part = RenderEngine.renderQuadtree(leaveNodes, curFrame.getDimension());
 				long start_difference = System.currentTimeMillis();
-				List<MacroBlock> differences = DIFFERENCE_ENGINE.computeDifferences(prevFrame, leaveNodeManager);
+//				List<MacroBlock> differences = DIFFERENCE_ENGINE.computeDifferences(prevFrame, leaveNodeManager);
 				long end_difference = System.currentTimeMillis();
-//				BufferedImage[] part = RenderEngine.renderQuadtree(leaveNodeManager.getRawData(), curFrame.getDimension());
+//				BufferedImage[] part = RenderEngine.renderQuadtree(leaveNodeManager.getRawData(), curFrame.getDimension(), curFrame);
+
+				PredictionDistributor.Result predictionTypes = this.predictionDistributor.estimateBlockPredictionType(leaveNodeManager, curFrame.getDimension());
 				
-				List<MacroBlock> intraBlocks =  INTRA_ENGINE.computeIntraPrediction(differences, curFrame, new double[] {2.0e+1, 0.8, 0.8});
-				BufferedImage[] intraComposit = RenderEngine.renderIntraPrediction(intraBlocks, curFrame.getDimension());
-				ImageIO.write(intraComposit[0], "png", new File(ArgumentProcessor.outputFile.getParent() + "/IP_" + i + ".png"));
-				ImageIO.write(intraComposit[1], "png", new File(ArgumentProcessor.outputFile.getParent() + "/IPO_" + i + ".png"));
+				long start_intra = System.currentTimeMillis();
+				LoadDistributor<IntraPredictionBlock> intraPredictedBlocks = INTRA_ENGINE.computeIntraPrediction(predictionTypes.getIntraPredictables(), curFrame);
+				long end_intra = System.currentTimeMillis();
+			//	BufferedImage intraComposit = RenderEngine.renderIntraPrediction(intraBlocks, curFrame.getDimension());
+			//	ImageIO.write(intraComposit, "png", new File(ArgumentProcessor.outputFile.getParent() + "/IP_" + i + ".png"));
+//				BufferedImage r = RenderEngine.renderDifferences(leaveNodeManager.getRawData(), curFrame.getDimension());
+//				BufferedImage[] d = RenderEngine.renderIntraPredictionDeltas(intraPredictedBlocks, curFrame.getDimension());
+//				ImageIO.write(r, "png", new File(ArgumentProcessor.outputFile.getParent() + "/INTRA_" + i + ".png"));
+//				ImageIO.write(d[0], "png", new File(ArgumentProcessor.outputFile.getParent() + "/INTRA_DELTAS_" + i + ".png"));
+//				ImageIO.write(d[1], "png", new File(ArgumentProcessor.outputFile.getParent() + "/INTRA_RECONSTRUCTED_" + i + ".png"));
+				
+//				BufferedImage devIntra = RenderEngine.renderDeviation(predictionTypes.getIntraPredictables(), true, curFrame.getDimension());
+//				BufferedImage devInter = RenderEngine.renderDeviation(predictionTypes.getInterPredictables(), false, curFrame.getDimension());
+//				ImageIO.write(devIntra, "png", new File(ArgumentProcessor.outputFile.getParent() + "/DEV_INTRA_" + i + ".png"));
+//				ImageIO.write(devInter, "png", new File(ArgumentProcessor.outputFile.getParent() + "/DEV_INTER_" + i + ".png"));
+				
+				LoadDistributor<IntraPredictionBlock> intraBlocks =  INTRA_ENGINE.computeIntraPrediction(predictionTypes.getIntraPredictables(), curFrame);
+//				BufferedImage[] intraComposit = RenderEngine.renderIntraPrediction(intraBlocks.getRawData(), curFrame.getDimension());
+//				ImageIO.write(intraComposit[0], "png", new File(ArgumentProcessor.outputFile.getParent() + "/IP_" + i + ".png"));
+//				ImageIO.write(intraComposit[1], "png", new File(ArgumentProcessor.outputFile.getParent() + "/IPO_" + i + ".png"));
 				
 				
 				long start_vector_movement = System.currentTimeMillis();
-				VectorEngineResult vectorEngineResult = VECTOR_ENGINE.computeMovementVectors(differences, this.referenceManager);
+				VectorEngineResult vectorEngineResult = VECTOR_ENGINE.computeMovementVectors(predictionTypes.getInterPredictables(), this.referenceManager);
 				LoadDistributor<Vector> movementVectors = vectorEngineResult.getVectors();
 				LoadDistributor<MacroBlock> differenceManager = vectorEngineResult.getRestBlocks();
 				long end_vector_movement = System.currentTimeMillis();
 				
-//				BufferedImage vectors = RenderEngine.renderVectors(movementVectors, curFrame.getDimension());
+//				BufferedImage vectors = RenderEngine.renderVectors(movementVectors.getRawData(), curFrame.getDimension());
 				long start_render = System.currentTimeMillis();
-				PixelRaster composite = RenderEngine.renderComposit(movementVectors, this.referenceManager, differenceManager, false);
-				outStream.addObjectToOutputQueue(new QueueObject(movementVectors, differenceManager));
+				PixelRaster composite = RenderEngine.renderComposit(movementVectors, this.referenceManager, differenceManager, intraPredictedBlocks, false);
+//				outStream.addObjectToOutputQueue(new QueueObject(movementVectors, differenceManager));
 				long end_render = System.currentTimeMillis();
 				
 				long start_deblock = System.currentTimeMillis();
@@ -181,7 +201,8 @@ public class Encoder {
 				
 //				ImageIO.write(part[0], "png", new File(ArgumentProcessor.outputFile.getParent() + "/MB_" + i + ".png"));
 //				ImageIO.write(part[1], "png", new File(ArgumentProcessor.outputFile.getParent() + "/MBA_" + i + ".png"));
-//				ImageIO.write(vectors, "png", new File(output.getParent() + "/V_" + i + ".png"));
+//				ImageIO.write(part[2], "png", new File(ArgumentProcessor.outputFile.getParent() + "/MBAV_" + i + ".png"));
+//				ImageIO.write(vectors, "png", new File(ArgumentProcessor.outputFile.getParent() + "/V_" + i + ".png"));
 				ImageIO.write(composite.toBufferedImage(), "png", new File(ArgumentProcessor.outputFile.getParent() + "/VR_" + i + ".png"));
 				
 				long end = System.currentTimeMillis();
@@ -193,12 +214,13 @@ public class Encoder {
 				long vectorTime = (end_vector_movement - start_vector_movement);
 				long renderTime = (end_render - start_render);
 				long deblockTime = (end_deblock - start_deblock);
+				long intraTime = (end_intra - start_intra);
 				sumOfMilliSeconds += time;
-				printStatistics(time, sumOfMilliSeconds, i, movementVectors, differenceManager, imgReadTime, quadtreeConstructionTime, leaveNodesTime, differenceTime, vectorTime, renderTime, deblockTime);
+				printStatistics(time, sumOfMilliSeconds, i, movementVectors, differenceManager, imgReadTime, quadtreeConstructionTime, leaveNodesTime, differenceTime, intraTime, vectorTime, renderTime, deblockTime);
 				
 				leaveNodeManager.discard();
-				movementVectors.discard();
-				differenceManager.discard();
+//				movementVectors.discard();
+//				differenceManager.discard();
 				
 				this.referenceManager.add(composite.copy());
 				prevFrame = composite;
@@ -217,7 +239,7 @@ public class Encoder {
 	private static int TOTAL_MSE_ADDITION_COUNT = 0;
 	
 	private void printStatistics(long time, long fullTime, int index, LoadDistributor<Vector> vecs, LoadDistributor<MacroBlock> diffs,
-			long imgReadTime, long quadtreeConstructionTime, long leaveNodeTime, long differenceTime, long vectorTime, long renderTime, long deblockTime) {
+			long imgReadTime, long quadtreeConstructionTime, long leaveNodeTime, long differenceTime, long intraTime, long vectorTime, long renderTime, long deblockTime) {
 		long startOutput = System.currentTimeMillis();
 //		System.out.println("");
 //		System.out.println("Frame " + index + ":");
@@ -227,6 +249,7 @@ public class Encoder {
 		System.out.println("   > Leave node time: " + leaveNodeTime + "ms");
 		System.out.println("   > Difference analysis time: " + differenceTime + "ms");
 		System.out.println("   > Vector calculation time: " + vectorTime + "ms");
+		System.out.println("   > Intraprediction time: " + intraTime + "ms");
 		System.out.println("   > Rendering time of frame (with coding errors): " + renderTime + "ms");
 		System.out.println("   > Deblocking filter time: " + deblockTime + "ms");
 		System.out.println("   > Sum (process only, no output): " + (quadtreeConstructionTime + leaveNodeTime + differenceTime + vectorTime + renderTime + deblockTime) + "ms");

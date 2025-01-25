@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package app.utils;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Point;
@@ -89,10 +90,10 @@ public class PixelRaster implements Discardable {
 	/**
 	 * Flag for whether the data fields were invoked or not.
 	 */
-	public boolean invokedWithData = false;
+	public boolean notInvokedWithData = false;
 	
 	public PixelRaster() {
-		this.invokedWithData = true;
+		this.notInvokedWithData = true;
 	}
 	
 	/**
@@ -777,7 +778,7 @@ public class PixelRaster implements Discardable {
 		this.Y = null;
 		this.U = null;
 		this.V = null;
-		this.invokedWithData = false;
+		this.notInvokedWithData = false;
 		lock();
 	}
 }

@@ -3,7 +3,7 @@
 /////////////////////////////////////////////////////////////
 /*
 The YAVC video / frame compressor compresses frames.
-Copyright (C) 2024  Lukas Nian En Lampl
+Copyright (C) 2025  Lukas Nian En Lampl, Hans Lampl
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@ package app;
  */
 
 public class config {
-	public static final int MAX_REFERENCES = 4;
+	public static final int MAX_REFERENCES = 7;
 	public static final int MAX_PRE_READ_IMAGES = 2;
 
 	public static final int[][] QUANTIZATION_MATRIX_8x8_Luma = {
