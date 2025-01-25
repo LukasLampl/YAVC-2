@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 
-package app.interprediction;
+package app.engines.prediction.interprediction;
 
 import java.awt.Dimension;
 import java.awt.Point;

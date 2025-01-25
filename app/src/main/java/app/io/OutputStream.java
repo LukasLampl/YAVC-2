@@ -32,7 +32,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import app.interprediction.Vector;
+import app.engines.prediction.interprediction.Vector;
 import app.utils.MacroBlock;
 import app.utils.PixelRaster;
 

@@ -32,10 +32,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import app.interprediction.Vector;
-import app.intraprediction.IntraDecoder;
-import app.intraprediction.IntraPredictionBlock;
-import app.quadtree.QuadtreeEngine;
+import app.engines.prediction.interprediction.Vector;
+import app.engines.prediction.intraprediction.IntraDecoder;
+import app.engines.prediction.intraprediction.IntraPredictionBlock;
+import app.engines.quadtree.QuadtreeEngine;
 import app.utils.LoadDistributor;
 import app.utils.MacroBlock;
 import app.utils.PixelRaster;

@@ -23,7 +23,7 @@ package app.io;
 
 import java.util.ArrayList;
 
-import app.interprediction.Vector;
+import app.engines.prediction.interprediction.Vector;
 import app.utils.Discardable;
 import app.utils.LoadDistributor;
 import app.utils.MacroBlock;

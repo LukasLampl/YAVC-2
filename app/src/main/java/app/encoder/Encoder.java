@@ -27,22 +27,22 @@ import java.util.ArrayList;
 import javax.imageio.ImageIO;
 
 import app.ArgumentProcessor;
-import app.dct.DCTEngine;
+import app.engines.dct.DCTEngine;
+import app.engines.prediction.PredictionDistributor;
+import app.engines.prediction.interprediction.Vector;
+import app.engines.prediction.interprediction.VectorEngine;
+import app.engines.prediction.interprediction.VectorEngineResult;
+import app.engines.prediction.intraprediction.IntraEngine;
+import app.engines.prediction.intraprediction.IntraPredictionBlock;
+import app.engines.quadtree.QuadtreeEngine;
 import app.filter.Deblocker;
-import app.interprediction.Vector;
-import app.interprediction.VectorEngine;
-import app.interprediction.VectorEngineResult;
-import app.intraprediction.IntraEngine;
-import app.intraprediction.IntraPredictionBlock;
 import app.io.ImagePreReader;
 import app.io.OutputStream;
-import app.quadtree.QuadtreeEngine;
 import app.rendering.DifferenceEngine;
 import app.rendering.RenderEngine;
 import app.utils.LoadDistributor;
 import app.utils.MacroBlock;
 import app.utils.PixelRaster;
-import app.utils.PredictionDistributor;
 import app.utils.ReferenceFrameManager;
 
 /**
@@ -55,13 +55,13 @@ import app.utils.ReferenceFrameManager;
  */
 public class Encoder {
 	/**
-	 * The {@link app.dct.DCTEngine DCTEngine} used in the encoding process,
+	 * The {@link app.engines.dct.DCTEngine DCTEngine} used in the encoding process,
 	 * with precalculated values and tables.
 	 */
 	public DCTEngine DCT_ENGINE = null;
 	
 	/**
-	 * The {@link app.quadtree.QuadtreeEngine QuadtreeEngine} used for the whole
+	 * The {@link app.engines.quadtree.QuadtreeEngine QuadtreeEngine} used for the whole
 	 * encoding process.
 	 */
 	private static QuadtreeEngine QUADTREE_ENGINE = new QuadtreeEngine();
@@ -73,7 +73,7 @@ public class Encoder {
 	private static DifferenceEngine DIFFERENCE_ENGINE = new DifferenceEngine();
 	
 	/**
-	 * The {@link app.interprediction.VectorEngine VectorEngine} used for the whole
+	 * The {@link app.engines.prediction.interprediction.VectorEngine VectorEngine} used for the whole
 	 * encoding process.
 	 */
 	private static VectorEngine VECTOR_ENGINE = new VectorEngine();

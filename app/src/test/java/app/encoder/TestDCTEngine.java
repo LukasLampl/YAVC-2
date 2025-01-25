@@ -7,7 +7,7 @@ import java.util.Random;
 
 import org.junit.jupiter.api.Test;
 
-import app.dct.DCTEngine;
+import app.engines.dct.DCTEngine;
 import app.rendering.ColorManager;
 import app.utils.ArrayUtils;
 

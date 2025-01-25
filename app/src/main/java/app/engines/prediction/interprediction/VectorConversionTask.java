@@ -19,12 +19,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package app.interprediction;
+package app.engines.prediction.interprediction;
 
 import java.util.List;
 import java.util.concurrent.RecursiveAction;
 
-import app.dct.DCTConstants;
+import app.engines.dct.DCTConstants;
 import app.io.Protocol;
 import app.utils.ArrayUtils;
 import app.utils.ListManager;

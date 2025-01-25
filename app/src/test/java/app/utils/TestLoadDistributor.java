@@ -9,7 +9,7 @@ import java.util.Random;
 
 import org.junit.jupiter.api.Test;
 
-import app.interprediction.Vector;
+import app.engines.prediction.interprediction.Vector;
 
 public class TestLoadDistributor {
 	private Random random = new Random();

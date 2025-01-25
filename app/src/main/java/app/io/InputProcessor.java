@@ -25,9 +25,9 @@ import java.awt.Dimension;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
+import app.engines.prediction.interprediction.Vector;
 import app.exceptions.CorruptedFileException;
 import app.filter.Deblocker;
-import app.interprediction.Vector;
 import app.rendering.RenderEngine;
 import app.utils.ListManager;
 import app.utils.LoadDistributor;

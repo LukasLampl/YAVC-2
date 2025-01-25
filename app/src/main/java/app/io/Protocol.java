@@ -27,10 +27,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import app.ArgumentProcessor;
-import app.dct.DCTConstants;
+import app.engines.dct.DCTConstants;
+import app.engines.prediction.interprediction.Vector;
+import app.engines.prediction.interprediction.VectorConverterPool;
 import app.exceptions.CorruptedFileException;
-import app.interprediction.Vector;
-import app.interprediction.VectorConverterPool;
 import app.rendering.ColorManager;
 import app.utils.ListManager;
 import app.utils.MacroBlock;

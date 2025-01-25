@@ -13,13 +13,13 @@ import javax.imageio.ImageIO;
 
 import org.junit.jupiter.api.Test;
 
+import app.engines.prediction.interprediction.Vector;
+import app.engines.prediction.interprediction.VectorEngine;
+import app.engines.prediction.interprediction.VectorEngineResult;
+import app.engines.quadtree.QuadtreeEngine;
 import app.exceptions.CorruptedFileException;
-import app.interprediction.Vector;
-import app.interprediction.VectorEngine;
-import app.interprediction.VectorEngineResult;
 import app.io.InputProcessor;
 import app.io.Protocol;
-import app.quadtree.QuadtreeEngine;
 import app.utils.ListManager;
 import app.utils.LoadDistributor;
 import app.utils.MacroBlock;

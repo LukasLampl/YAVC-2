@@ -22,8 +22,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 package app.decoder;
 
 import app.ArgumentProcessor;
+import app.engines.prediction.interprediction.Vector;
 import app.exceptions.CorruptedFileException;
-import app.interprediction.Vector;
 import app.io.ImageWriter;
 import app.io.InputProcessor;
 import app.io.InputStream;

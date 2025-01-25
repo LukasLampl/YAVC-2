@@ -25,8 +25,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import app.interprediction.Vector;
-import app.quadtree.QuadtreeEngine;
+import app.engines.prediction.interprediction.Vector;
+import app.engines.quadtree.QuadtreeEngine;
 
 /**
  * The class {@code LoadDistributor<T>} provides basic functionalities for
@@ -116,7 +116,7 @@ public class LoadDistributor<T> implements Discardable {
 	
 	/**
 	 * <p>Sets one given object into the {@link #undistributedList} by it's size,
-	 * originated from {@link app.quadtree.QuadtreeEngine#getIndexBySize(int)}.</p>
+	 * originated from {@link app.engines.quadtree.QuadtreeEngine#getIndexBySize(int)}.</p>
 	 * 
 	 * <p><b>Note:</b><br>
 	 * An update using {@link #compute(int)} is absolutely necessary, else no objects

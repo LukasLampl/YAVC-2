@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package app.intraprediction;
+package app.engines.prediction.intraprediction;
 
 import java.awt.Dimension;
 

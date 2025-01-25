@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package app.interprediction;
+package app.engines.prediction.interprediction;
 
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
@@ -31,7 +31,7 @@ import app.utils.ReferenceFrameManager;
 /**
  * <p>The class {@code VectorEngine} is the main distributor class
  * for calculation/predicting motion in a frame using the
- * {@link app.interprediction.VectorPredictionTask VectorPredictionTask}.
+ * {@link app.engines.prediction.interprediction.VectorPredictionTask VectorPredictionTask}.
  * </p>
  * 
  * <p><b>Performance warning:</b><br> Even though this process is

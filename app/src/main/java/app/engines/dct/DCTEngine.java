@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package app.dct;
+package app.engines.dct;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -260,7 +260,7 @@ public class DCTEngine {
 	
 	/**
 	 * <p>Computes the DCT Coefficients of the absolute color difference
-	 * received by a vector {@link app.interprediction.Vector Vector} First the
+	 * received by a vector {@link app.engines.prediction.interprediction.Vector Vector} First the
 	 * coefficients are calculated and then they're quantified.</p>
 	 * 
 	 * <p><b>IMPORTANT:</b><br> This function only calculates the DCT coefficients
@@ -315,7 +315,7 @@ public class DCTEngine {
 	
 	/**
 	 * <p>Computes the IDCT Coefficients of the DCT-II coefficients
-	 * received by the converted AbsoluteColorDifference {@link app.interprediction.Vector Vector}.
+	 * received by the converted AbsoluteColorDifference {@link app.engines.prediction.interprediction.Vector Vector}.
 	 * First the coefficients are dequantizized and then further processed.</p>
 	 * 
 	 * @return Reconstructed absolute color difference array.

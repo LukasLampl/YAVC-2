@@ -19,11 +19,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package app.interprediction;
+package app.engines.prediction.interprediction;
 
 import java.awt.Point;
 
-import app.dct.DCTEngine;
+import app.engines.dct.DCTEngine;
 import app.rendering.ColorManager;
 import app.utils.ArrayUtils;
 import app.utils.Discardable;

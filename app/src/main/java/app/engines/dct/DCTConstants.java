@@ -19,15 +19,32 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package app.intraprediction;
+package app.engines.dct;
 
-import java.awt.Dimension;
-
-import app.utils.MacroBlock;
-
-public class IntraDecoder extends IntraPipeline {
-	public void computeAngularIntraPredictionBlock(MacroBlock predictionBlock, final double[][] verticalYUV,
-			final double[][] horizontalYUV, final float angle, final Dimension dim) {
-		super.computeAngularIntraPredictionBlock(predictionBlock, verticalYUV, horizontalYUV, angle, dim);;
-	}
+/**
+ * The {@code DCTConstants} class is a collection of all
+ * constatns used for the DCT-II operations performed by the
+ * {@link app.engines.dct.DCTEngine DCTEngine}.
+ * 
+ * @author Lukas Lampl
+ * @since 1.4.4 [Optimized prototype]
+ */
+public class DCTConstants {
+	/**
+	 * Specifies the index at which to expect the Y-Component in
+	 * a DCT-II or IDCT coefficient matrix that is 3 dimensional.
+	 */
+	public static final int Y_COEFFS_INDEX = 0;
+	
+	/**
+	 * Specifies the index at which to expect the U-Component in
+	 * a DCT-II or IDCT coefficient matrix that is 3 dimensional.
+	 */
+	public static final int U_COEFFS_INDEX = 1;
+	
+	/**
+	 * Specifies the index at which to expect the V-Component in
+	 * a DCT-II or IDCT coefficient matrix that is 3 dimensional.
+	 */
+	public static final int V_COEFFS_INDEX = 2;
 }

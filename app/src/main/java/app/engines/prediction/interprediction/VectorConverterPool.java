@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package app.interprediction;
+package app.engines.prediction.interprediction;
 
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
@@ -30,7 +30,7 @@ import app.utils.ListManager;
  * The {@code VectorConverterPool} class is a parent class
  * for processing raw byte data into vectors.
  * 
- * @see app.interprediction.VectorConversionTask
+ * @see app.engines.prediction.interprediction.VectorConversionTask
  * @author Lukas Lampl
  * @since 1.2.5 [Optimized prototype]
  */
@@ -78,7 +78,7 @@ public class VectorConverterPool {
 	/**
 	 * Starts the conversion of the raw data to vectors.
 	 * 
-	 * @see app.interprediction.Vector
+	 * @see app.engines.prediction.interprediction.Vector
 	 */
 	public void run() {
 		VectorConversionTask task = new VectorConversionTask(0, this.indexes.size(), this.indexes, this.data, this.vectorManager);

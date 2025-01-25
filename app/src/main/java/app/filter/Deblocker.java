@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 
 import app.ArgumentProcessor;
 import app.config;
-import app.interprediction.Vector;
+import app.engines.prediction.interprediction.Vector;
 import app.utils.LoadDistributor;
 import app.utils.MathUtils;
 import app.utils.PixelRaster;
