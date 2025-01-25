@@ -28,12 +28,12 @@ import java.util.LinkedList;
 import app.engines.prediction.interprediction.Vector;
 import app.exceptions.CorruptedFileException;
 import app.filter.Deblocker;
+import app.managers.ListManager;
+import app.managers.LoadDistributor;
+import app.managers.ReferenceFrameManager;
 import app.rendering.RenderEngine;
-import app.utils.ListManager;
-import app.utils.LoadDistributor;
 import app.utils.MacroBlock;
 import app.utils.PixelRaster;
-import app.utils.ReferenceFrameManager;
 
 /**
  * The {@code InputProcessor} class processes byte based input from

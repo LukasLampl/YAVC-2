@@ -33,6 +33,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
+import app.managers.Discardable;
+import app.managers.ReferenceFrameManager;
 import app.rendering.ColorManager;
 
 /**

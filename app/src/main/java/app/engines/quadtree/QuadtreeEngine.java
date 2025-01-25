@@ -30,8 +30,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import app.managers.LoadDistributor;
 import app.rendering.ColorManager;
-import app.utils.LoadDistributor;
 import app.utils.MacroBlock;
 import app.utils.PixelRaster;
 

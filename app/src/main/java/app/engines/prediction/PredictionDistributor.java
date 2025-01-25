@@ -25,8 +25,8 @@ import java.awt.Dimension;
 import java.util.ArrayList;
 import java.util.List;
 
+import app.managers.LoadDistributor;
 import app.rendering.ColorManager;
-import app.utils.LoadDistributor;
 import app.utils.MacroBlock;
 
 public class PredictionDistributor {

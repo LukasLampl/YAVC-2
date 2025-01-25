@@ -21,7 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package app.engines.prediction.interprediction;
 
-import app.utils.LoadDistributor;
+import app.managers.LoadDistributor;
 import app.utils.MacroBlock;
 
 /**

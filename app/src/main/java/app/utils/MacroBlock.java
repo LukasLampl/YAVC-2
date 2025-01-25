@@ -24,6 +24,7 @@ package app.utils;
 import java.awt.Dimension;
 import java.awt.Point;
 
+import app.managers.Discardable;
 import app.rendering.ColorManager;
 
 /**

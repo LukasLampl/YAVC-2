@@ -24,7 +24,7 @@ package app.engines.prediction.interprediction;
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 
-import app.utils.ListManager;
+import app.managers.ListManager;
 
 /**
  * The {@code VectorConverterPool} class is a parent class

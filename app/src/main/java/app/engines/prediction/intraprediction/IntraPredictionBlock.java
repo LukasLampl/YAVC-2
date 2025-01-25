@@ -23,7 +23,7 @@ package app.engines.prediction.intraprediction;
 
 import java.awt.Point;
 
-import app.utils.Discardable;
+import app.managers.Discardable;
 import app.utils.MacroBlock;
 
 public class IntraPredictionBlock implements Discardable {

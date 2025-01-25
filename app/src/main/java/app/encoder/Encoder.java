@@ -38,12 +38,12 @@ import app.engines.quadtree.QuadtreeEngine;
 import app.filter.Deblocker;
 import app.io.ImagePreReader;
 import app.io.OutputStream;
+import app.managers.LoadDistributor;
+import app.managers.ReferenceFrameManager;
 import app.rendering.DifferenceEngine;
 import app.rendering.RenderEngine;
-import app.utils.LoadDistributor;
 import app.utils.MacroBlock;
 import app.utils.PixelRaster;
-import app.utils.ReferenceFrameManager;
 
 /**
  * The {@code Encoder} class is responsible for encoding given frames into
@@ -83,7 +83,7 @@ public class Encoder {
 	private PredictionDistributor predictionDistributor = new PredictionDistributor();
 	
 	/**
-	 * The {@link app.utils.ReferenceFrameManager ReferenceFrameManager} used for
+	 * The {@link app.managers.ReferenceFrameManager ReferenceFrameManager} used for
 	 * managing all reference frames.
 	 */
 	private ReferenceFrameManager referenceManager = new ReferenceFrameManager();

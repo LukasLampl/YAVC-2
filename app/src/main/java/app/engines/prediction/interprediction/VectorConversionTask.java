@@ -26,8 +26,8 @@ import java.util.concurrent.RecursiveAction;
 
 import app.engines.dct.DCTConstants;
 import app.io.Protocol;
+import app.managers.ListManager;
 import app.utils.ArrayUtils;
-import app.utils.ListManager;
 
 /**
  * The {@code VectorConversionTask} class is a Recursive splitting

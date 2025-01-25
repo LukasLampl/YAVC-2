@@ -31,8 +31,8 @@ import app.engines.dct.DCTConstants;
 import app.engines.prediction.interprediction.Vector;
 import app.engines.prediction.interprediction.VectorConverterPool;
 import app.exceptions.CorruptedFileException;
+import app.managers.ListManager;
 import app.rendering.ColorManager;
-import app.utils.ListManager;
 import app.utils.MacroBlock;
 import app.utils.PixelRaster;
 
@@ -592,7 +592,7 @@ public class Protocol {
 	 * @param singleThread			Flag for whether the decoding should be single threaded or not.
 	 * @throws CorruptedFileException	When the vector size is not equal to the coded length.
 	 * 
-	 * @see app.utils.ListManager
+	 * @see app.managers.ListManager
 	 */
 	public static void getVectors(final byte[] data, final ListManager<Vector> vectorListManager, final boolean singleThread) throws CorruptedFileException {
 		if (data.length <= 1) {

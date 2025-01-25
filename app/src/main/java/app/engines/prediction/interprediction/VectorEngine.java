@@ -24,9 +24,9 @@ package app.engines.prediction.interprediction;
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 
-import app.utils.LoadDistributor;
+import app.managers.LoadDistributor;
+import app.managers.ReferenceFrameManager;
 import app.utils.MacroBlock;
-import app.utils.ReferenceFrameManager;
 
 /**
  * <p>The class {@code VectorEngine} is the main distributor class

@@ -24,8 +24,8 @@ package app.io;
 import java.util.ArrayList;
 
 import app.engines.prediction.interprediction.Vector;
-import app.utils.Discardable;
-import app.utils.LoadDistributor;
+import app.managers.Discardable;
+import app.managers.LoadDistributor;
 import app.utils.MacroBlock;
 
 /**

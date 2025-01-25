@@ -19,12 +19,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package app.utils;
+package app.managers;
 
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import app.config;
+import app.utils.PixelRaster;
 
 /**
  * <p>The class {@code ReferenceFrameManager} provides functionalities

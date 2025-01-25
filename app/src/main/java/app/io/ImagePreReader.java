@@ -30,8 +30,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import javax.imageio.ImageIO;
 
 import app.config;
+import app.managers.ReferenceFrameManager;
 import app.utils.PixelRaster;
-import app.utils.ReferenceFrameManager;
 
 /**
  * The {@code ImagePreReader} reads in images asynchronously from the rest
@@ -106,7 +106,7 @@ public class ImagePreReader {
 	 * Runs the ImagePreReader asynchronously. It tries to get a file/image and
 	 * convert it to a PixelRaster and put it into the queue. If possible the
 	 * PixelRaster if not a new instance, but an already discarded one from a
-	 * {@link app.utils.ReferenceFrameManager ReferenceFrameManager}.
+	 * {@link app.managers.ReferenceFrameManager ReferenceFrameManager}.
 	 */
 	private void run() {
 		Thread task = new Thread(() -> {

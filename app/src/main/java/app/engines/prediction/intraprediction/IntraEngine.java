@@ -23,9 +23,9 @@ package app.engines.prediction.intraprediction;
 
 import java.util.List;
 
+import app.managers.LoadDistributor;
 import app.rendering.ColorManager;
 import app.utils.ArrayUtils;
-import app.utils.LoadDistributor;
 import app.utils.MacroBlock;
 import app.utils.MathUtils;
 import app.utils.PixelRaster;

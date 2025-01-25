@@ -20,11 +20,11 @@ import app.engines.quadtree.QuadtreeEngine;
 import app.exceptions.CorruptedFileException;
 import app.io.InputProcessor;
 import app.io.Protocol;
-import app.utils.ListManager;
-import app.utils.LoadDistributor;
+import app.managers.ListManager;
+import app.managers.LoadDistributor;
+import app.managers.ReferenceFrameManager;
 import app.utils.MacroBlock;
 import app.utils.PixelRaster;
-import app.utils.ReferenceFrameManager;
 
 public class TestDecoder {
 	private static final double DELTA = 0.005;

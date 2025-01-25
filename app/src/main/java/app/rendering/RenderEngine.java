@@ -36,10 +36,10 @@ import app.engines.prediction.interprediction.Vector;
 import app.engines.prediction.intraprediction.IntraDecoder;
 import app.engines.prediction.intraprediction.IntraPredictionBlock;
 import app.engines.quadtree.QuadtreeEngine;
-import app.utils.LoadDistributor;
+import app.managers.LoadDistributor;
+import app.managers.ReferenceFrameManager;
 import app.utils.MacroBlock;
 import app.utils.PixelRaster;
-import app.utils.ReferenceFrameManager;
 
 /**
  * The {@code RenderEngine} is one of the main parts and is responsible

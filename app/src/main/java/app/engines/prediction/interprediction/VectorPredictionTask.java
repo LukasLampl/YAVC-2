@@ -28,12 +28,12 @@ import java.util.List;
 import java.util.concurrent.RecursiveAction;
 
 import app.config;
+import app.managers.LoadDistributor;
+import app.managers.ReferenceFrameManager;
 import app.rendering.ColorManager;
 import app.utils.ArrayUtils;
-import app.utils.LoadDistributor;
 import app.utils.MacroBlock;
 import app.utils.PixelRaster;
-import app.utils.ReferenceFrameManager;
 
 /**
  * <p>The class {@code VectorPredictionTask} contains all functions

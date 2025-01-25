@@ -24,9 +24,9 @@ package app.engines.prediction.interprediction;
 import java.awt.Point;
 
 import app.engines.dct.DCTEngine;
+import app.managers.Discardable;
 import app.rendering.ColorManager;
 import app.utils.ArrayUtils;
-import app.utils.Discardable;
 import app.utils.MacroBlock;
 
 /**

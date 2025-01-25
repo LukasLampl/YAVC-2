@@ -27,10 +27,10 @@ import app.exceptions.CorruptedFileException;
 import app.io.ImageWriter;
 import app.io.InputProcessor;
 import app.io.InputStream;
+import app.managers.ListManager;
+import app.managers.ReferenceFrameManager;
 import app.rendering.VideoPlayer;
-import app.utils.ListManager;
 import app.utils.PixelRaster;
-import app.utils.ReferenceFrameManager;
 
 /**
  * The {@code Decoder} class is responsible for decoding a given file
@@ -42,7 +42,7 @@ import app.utils.ReferenceFrameManager;
  */
 public class Decoder {
 	/**
-	 * A {@link app.utils.ReferenceFrameManager ReferenceFrameManager} that manages
+	 * A {@link app.managers.ReferenceFrameManager ReferenceFrameManager} that manages
 	 * all reference frames for the decoder.
 	 */
 	private ReferenceFrameManager referenceManager = new ReferenceFrameManager();
