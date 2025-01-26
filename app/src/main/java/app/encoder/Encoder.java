@@ -120,6 +120,8 @@ public class Encoder {
 			outStream.activate();
 			
 			for (int i = 0; i < files; i++) {
+				if (i == 15) break;
+				
 				System.out.println("");
 				System.out.println("Frame " + i + ":");
 				long start = System.currentTimeMillis();
@@ -164,10 +166,10 @@ public class Encoder {
 				long start_intra = System.currentTimeMillis();
 				LoadDistributor<IntraPredictionBlock> intraPredictedBlocks = INTRA_ENGINE.computeIntraPrediction(predictionTypes.getIntraPredictables(), curFrame);
 				long end_intra = System.currentTimeMillis();
-				BufferedImage[] d = RenderEngine.renderIntraPredictionDeltas(intraPredictedBlocks, curFrame.getDimension());
-				ImageIO.write(d[0], "png", new File(ArgumentProcessor.outputFile.getParent() + "/INTRA_DELTAS_" + i + ".png"));
-				ImageIO.write(d[1], "png", new File(ArgumentProcessor.outputFile.getParent() + "/INTRA_RECONSTRUCTED_" + i + ".png"));
-				
+//				BufferedImage[] d = RenderEngine.renderIntraPredictionDeltas(intraPredictedBlocks, curFrame.getDimension());
+//				ImageIO.write(d[0], "png", new File(ArgumentProcessor.outputFile.getParent() + "/INTRA_DELTAS_" + i + ".png"));
+//				ImageIO.write(d[1], "png", new File(ArgumentProcessor.outputFile.getParent() + "/INTRA_RECONSTRUCTED_" + i + ".png"));
+//				
 //				BufferedImage devIntra = RenderEngine.renderDeviation(predictionTypes.getIntraPredictables(), true, curFrame.getDimension());
 //				BufferedImage devInter = RenderEngine.renderDeviation(predictionTypes.getInterPredictables(), false, curFrame.getDimension());
 //				ImageIO.write(devIntra, "png", new File(ArgumentProcessor.outputFile.getParent() + "/DEV_INTRA_" + i + ".png"));
@@ -176,9 +178,9 @@ public class Encoder {
 				long start_vector_movement = System.currentTimeMillis();
 				LoadDistributor<Vector> movementVectors = VECTOR_ENGINE.computeMovementVectors(predictionTypes.getInterPredictables(), this.referenceManager);
 				long end_vector_movement = System.currentTimeMillis();
-				
-				BufferedImage distribution = RenderEngine.renderPredictionDistribution(intraPredictedBlocks.getRawData(), movementVectors.getRawData(), curFrame.getDimension());
-				ImageIO.write(distribution, "png", new File(ArgumentProcessor.outputFile.getParent() + "/PRED_DIST_" + i + ".png"));
+//				
+//				BufferedImage distribution = RenderEngine.renderPredictionDistribution(intraPredictedBlocks.getRawData(), movementVectors.getRawData(), curFrame.getDimension());
+//				ImageIO.write(distribution, "png", new File(ArgumentProcessor.outputFile.getParent() + "/PRED_DIST_" + i + ".png"));
 				
 //				BufferedImage vectors = RenderEngine.renderVectors(movementVectors.getRawData(), curFrame.getDimension());
 				long start_render = System.currentTimeMillis();
@@ -194,7 +196,7 @@ public class Encoder {
 //				ImageIO.write(part[1], "png", new File(ArgumentProcessor.outputFile.getParent() + "/MBA_" + i + ".png"));
 //				ImageIO.write(part[2], "png", new File(ArgumentProcessor.outputFile.getParent() + "/MBAV_" + i + ".png"));
 //				ImageIO.write(vectors, "png", new File(ArgumentProcessor.outputFile.getParent() + "/V_" + i + ".png"));
-				ImageIO.write(composite.toBufferedImage(), "png", new File(ArgumentProcessor.outputFile.getParent() + "/VR_" + i + ".png"));
+//				ImageIO.write(composite.toBufferedImage(), "png", new File(ArgumentProcessor.outputFile.getParent() + "/VR_" + i + ".png"));
 				
 				long end = System.currentTimeMillis();
 				long time = end - start;

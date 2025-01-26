@@ -188,10 +188,8 @@ public class IntraPredictionTask extends RecursiveAction {
 	}
 	
 	private IntraPredictionBlock computeDelta(final MacroBlock predictionBlock, final int angle, final double[][][] ayuv, final double[][][] predicted, final double[][][] origin) {
-		IntraPredictionBlock intra = new IntraPredictionBlock();
-		intra.setSize(predictionBlock.getSize());
-		intra.setPosX(predictionBlock.getPositionX());
-		intra.setPosY(predictionBlock.getPositionY());
+		IntraPredictionBlock intra = new IntraPredictionBlock(predictionBlock.getPositionX(),
+				predictionBlock.getPositionY(), predictionBlock.getSize());
 		intra.setAngle(angle);
 		intra.setHorizontal(ayuv[IntraPipeline.YUV_HORIZONTAL_INDEX]);
 		intra.setVertical(ayuv[IntraPipeline.YUV_VERTICAL_INDEX]);

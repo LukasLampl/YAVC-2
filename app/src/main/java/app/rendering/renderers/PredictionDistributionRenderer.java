@@ -28,7 +28,7 @@ public class PredictionDistributionRenderer {
 		g2d.setColor(INTRA_COLOR);
 		
 		for (IntraPredictionBlock b : intraBlocks) {
-			g2d.fillRect(b.getPosX(), b.getPosY(), b.getSize(), b.getSize());
+			g2d.fillRect(b.getPositionX(), b.getPositionY(), b.getSize(), b.getSize());
 		}
 		
 		g2d.dispose();

@@ -27,7 +27,7 @@ import app.utils.MacroBlock;
 
 public class IntraDecoder {
 	public static void computeAngularIntraPredictionBlock(MacroBlock predictionBlock, final double[][] verticalYUV,
-			final double[][] horizontalYUV, final float angle, final Dimension dim) {
-		IntraPipeline.computeAngularIntraPredictionBlock(predictionBlock, verticalYUV, horizontalYUV, angle, dim);;
+			final double[][] horizontalYUV, final int angle, final Dimension dim) {
+		IntraPipeline.computeAngularIntraPredictionBlock(predictionBlock, verticalYUV, horizontalYUV, angle, dim);
 	}
 }

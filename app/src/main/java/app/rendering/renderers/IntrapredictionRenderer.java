@@ -43,10 +43,10 @@ public class IntrapredictionRenderer {
 				final double[][][] deltas = b.getIDCTCoefficientsDelta(false);
 				
 				for (int x = 0; x < b.getSize(); x++) {
-					final int imgX = x + b.getPosX();
+					final int imgX = x + b.getPositionX();
 					
 					for (int y = 0; y < b.getSize(); y++) {
-						final int imgY = y + b.getPosY();
+						final int imgY = y + b.getPositionY();
 						final double Y = deltas[ColorManager.Y_INDEX][x][y];
 						final double U = deltas[ColorManager.U_INDEX][x / 2][y / 2];
 						final double V = deltas[ColorManager.V_INDEX][x / 2][y  / 2];
@@ -66,10 +66,10 @@ public class IntrapredictionRenderer {
 				final double[][][] color = m.getColors();
 				
 				for (int x = 0; x < b.getSize(); x++) {
-					final int imgX = x + b.getPosX();
+					final int imgX = x + b.getPositionX();
 					
 					for (int y = 0; y < b.getSize(); y++) {
-						final int imgY = y + b.getPosY();
+						final int imgY = y + b.getPositionY();
 						
 						final double Y = color[ColorManager.Y_INDEX][x][y] + deltas[ColorManager.Y_INDEX][x][y];
 						final double U = color[ColorManager.U_INDEX][x / 2][y / 2] + deltas[ColorManager.U_INDEX][x / 2][y / 2];

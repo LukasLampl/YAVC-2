@@ -1,12 +1,16 @@
 package app.utils;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.awt.Color;
 
 import org.junit.jupiter.api.Test;
 
 import app.io.Protocol;
 import app.io.ProtocolBase;
+import app.rendering.ColorManager;
 
 public class TestProtocol {
 	@Test
@@ -80,6 +84,47 @@ public class TestProtocol {
 			byte b_c = ProtocolBase.getDCTCoeffByte(coeff);
 			double convertedByte = ProtocolBase.getDCTCoeff(b_c);
 			assertEquals(coeff, convertedByte);
+		}
+	}
+	
+	@Test
+	public void test_border_color_bytes_001() {
+		double[][] vertical = {
+				ColorManager.convertRGBToYUV(Color.RED),
+				ColorManager.convertRGBToYUV(Color.BLUE),
+				ColorManager.convertRGBToYUV(Color.GREEN),
+				ColorManager.convertRGBToYUV(Color.YELLOW),
+				ColorManager.convertRGBToYUV(Color.MAGENTA)
+		};
+		
+		double[][] horizontal = {
+				ColorManager.convertRGBToYUV(Color.MAGENTA),
+				ColorManager.convertRGBToYUV(Color.YELLOW),
+				ColorManager.convertRGBToYUV(Color.GREEN),
+				ColorManager.convertRGBToYUV(Color.BLUE),
+				ColorManager.convertRGBToYUV(Color.RED)
+		};
+		
+		final int blockSize = 5; // Because of 5 colors
+		byte[] data = Protocol.getBorderColorBytes(vertical, horizontal, blockSize);
+		double[][][] decoded = Protocol.getBorderColors(data, blockSize, 0);
+
+		assertArrayEquals(vertical, decoded[1]);
+		assertArrayEquals(horizontal, decoded[0]);
+	}
+	
+	@Test
+	public void test_size_and_angle_001() {
+		int[] sizes = {4, 16, 64, 128, 128, 64, 64, 4, 4, 8, 16, 4};
+		int[] angles = {0, 5, 45, 65, 90, 125, 90, 35, 145, 75, 80, 100};
+		
+		for (int i = 0; i < sizes.length; i++) {
+			final int size = sizes[i];
+			final int angle = angles[i];
+			final byte[] data = Protocol.getSizeAndAngleByte(size, angle);
+			final int[] sizeAndAngle = Protocol.getSizeAndAngle(data[0], data[1]);
+			assertEquals(size, sizeAndAngle[0]);
+			assertEquals(angle, sizeAndAngle[1]);
 		}
 	}
 }

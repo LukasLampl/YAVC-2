@@ -147,16 +147,15 @@ public class InputProcessor {
 		vecManager.setAllAndCompute(vectorListManager.getList());
 		intraBlocks.setAllAndCompute(intraBlockManager.getList());
 		long end_load_dist = System.currentTimeMillis();
+		
 		long start_render = System.currentTimeMillis();
-		if (vectorListManager.getList() != null) {
-			render = RenderEngine.renderComposit(vecManager, refs, null, true);
-			deblocker.deblock(vecManager, render);
-		}
+		render = RenderEngine.renderComposit(vecManager, refs, intraBlocks, true);
+		deblocker.deblock(vecManager, render);
 		long end_render = System.currentTimeMillis();
 
 		System.out.println("   > Copy time: " + (end_copy - start_copy) + "ms");
 		System.out.println("   > Convert to vector time: " + (end_get_vecs - start_get_vecs) + "ms");
-		System.out.println("   > Convert raw-block time: " + (end_raw_block - start_raw_block) + "ms");
+		System.out.println("   > Convert intra blocks time: " + (end_raw_block - start_raw_block) + "ms");
 		System.out.println("   > Load distribution time: " + (end_load_dist - start_load_dist) + "ms");
 		System.out.println("   > Full rendering time: " + (end_render - start_render) + "ms");
 		return render;

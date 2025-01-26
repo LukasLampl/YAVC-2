@@ -23,6 +23,7 @@ package app.io;
 
 import app.ArgumentProcessor;
 import app.engines.dct.DCTConstants;
+import app.utils.ArrayUtils;
 
 public abstract class ProtocolBase {
 	/**
@@ -167,6 +168,126 @@ public abstract class ProtocolBase {
 		}
 		
 		return new byte[][] {YBytes, UBytes, VBytes};
+	}
+	
+	/**
+	 * Gets an 3D double array that represent the DCT-II coefficients.
+	 * 
+	 * <p><b>Note:</b><br>
+	 * The function gets one when the {@code size = 4}. When the {@code size > 4} the
+	 * function iterates multiple times until the size is fully read in. The partial reading
+	 * in is defined by the Protocol, which says that a n-sized block has 3 data channels for
+	 * the 3 color channels, each composes of 8x8 (or subsampled 4x4) datablocks that are
+	 * aligned in a row. In other terms:<br><br>
+	 * 
+	 * If I had an 16x16 sized DCT-II block data the Protocol will split it into these arrays:<br>
+	 * - Y[16 * 16]<br>
+	 * - U[8 * 8]<br>
+	 * - V[8 * 8]<br><br>
+	 * 
+	 * After that It'll split the 16x16 block into 8x8 subblocks, for performance reasons in the DCT-II
+	 * conversion process. Now we have 4 8x8 blocks each containing a 8x8 Y-Channel, 4x4 U-Channel and
+	 * 4x4 V-Channel.<br><br>
+	 * 
+	 * This data is then filled in the previously mentioned arrays by firstly taking the first block,
+	 * writing it's data into the given array (Y-Channel in Y-array, U-Channel in U-array and so on).
+	 * After the first has finished the second block is read in, but now the offset of the previous
+	 * data is used to offset the writer to the end of the previous block data, which in other words
+	 * mean, the second, third and fourth block are starting all at a offset of 64 from each other or
+	 * 16 for the subsampled channels.<br><br>
+	 * 
+	 * To convert it back it just has to be read with the same algorithm.
+	 * </p>
+	 * 
+	 * @param data			The raw data containing the DCT-II coefficients.
+	 * @param startPos		The position from where to start getting the DCT-II coefficients.
+	 * @param size			The size of the object.
+	 * @return The converted vector color difference.
+	 */
+	public static double[][][] getDeltaCoefficientsFromDatastream(final byte[] data,
+			final int startPos, final int size) {
+		double[][][] DCTCoeffGroups = ArrayUtils.get3DArray(size, true);
+		final int YLength = size * size;
+		final int halfSize = size / 2;
+		final int UVLength = halfSize * halfSize;
+		
+		final int YStart = startPos;
+		final int UStart = YStart + YLength;
+		final int VStart = UStart + UVLength;
+		
+		if (size == 4) {
+			writeDCTCoeffsOutOfByteStream(data, 4, DCTCoeffGroups, YStart, UStart, VStart, 0, 0);
+		} else {
+			for (int u = 0, subSU = 0, x = 0, y = 0; u < YLength; u += 64, subSU += 16, x += 8) {
+				if (x >= size) {
+					y += 8;
+					x = 0;
+				}
+				
+				final int actualYStart = YStart + u;
+				final int actualUStart = UStart + subSU;
+				final int actualVStart = VStart + subSU;
+				writeDCTCoeffsOutOfByteStream(data, 8, DCTCoeffGroups, actualYStart, actualUStart, actualVStart, x, y);
+			}
+		}
+		
+		return DCTCoeffGroups;
+	}
+	
+	/**
+	 * Gets the DCT-II coefficients out of the raw data stream and writes them into the given array.
+	 * 
+	 * @param data						The raw data from which to get the DCT-II coefficients.
+	 * @param size						Size of the object.
+	 * @param arrayToWriteInto			Array to write the coefficients into.
+	 * @param YStart					Start of the Y channel data.
+	 * @param UStart					Start of the U channel data.
+	 * @param VStart					Start of the V channel data.
+	 * @param offsetX					The offset to the x in which to write the data.
+	 * @param offsetY					The offset to the y in which to write the data.
+	 */
+	private static void writeDCTCoeffsOutOfByteStream(final byte[] data, final int size,
+			double[][][] arrayToWriteInto, final int YStart, final int UStart, final int VStart,
+			final int offsetX, final int offsetY) {
+		final int YLength = size * size;
+		final int halfSize = size / 2;
+		final int UVLength = halfSize * halfSize;
+		final int lengthTillMatrixBreak = size;
+		final int halfLengthTillMatrixBreak = halfSize;
+		final int halfOffsetX = offsetX / 2;
+		final int halfOffsetY = offsetY  / 2;
+		int x = 0;
+		int y = 0;
+		
+		double[][] YChannel = arrayToWriteInto[DCTConstants.Y_COEFFS_INDEX];
+		double[][] UChannel = arrayToWriteInto[DCTConstants.U_COEFFS_INDEX];
+		double[][] VChannel = arrayToWriteInto[DCTConstants.V_COEFFS_INDEX];
+				
+		for (int n = 0; n < YLength; n++, y++) {
+			if (y >= lengthTillMatrixBreak) {
+				x++;
+				y = 0;
+			}
+			
+			final int actualX = x + offsetX;
+			final int actualY = y + offsetY;
+			YChannel[actualX][actualY] = ProtocolBase.getDCTCoeff(data[YStart + n]);
+		}
+
+		x = 0;
+		y = 0;
+		
+		for (int n = 0; n < UVLength; n++, y++) {
+			if (y >= halfLengthTillMatrixBreak) {
+				x++;
+				y = 0;
+			}
+			
+			final int actualX = halfOffsetX + x;
+			final int actualY = halfOffsetY + y;
+			UChannel[actualX][actualY] = ProtocolBase.getDCTCoeff(data[UStart + n]);
+			VChannel[actualX][actualY] = ProtocolBase.getDCTCoeff(data[VStart + n]);
+		}
 	}
 	
 	/**

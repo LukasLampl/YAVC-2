@@ -19,22 +19,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package app.engines.prediction.interprediction;
+package app.engines.prediction.intraprediction;
 
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 
 import app.managers.ListManager;
 
-/**
- * The {@code VectorConverterPool} class is a parent class
- * for processing raw byte data into vectors.
- * 
- * @see app.engines.prediction.interprediction.VectorConversionTask
- * @author Lukas Lampl
- * @since 1.2.5 [Optimized prototype]
- */
-public class VectorConverterPool {
+public class IntraConverterPool {
 	/**
 	 * The pool that will be used for processing.
 	 */
@@ -53,7 +45,7 @@ public class VectorConverterPool {
 	/**
 	 * A vector manager to which the results should be written to.
 	 */
-	private ListManager<Vector> vectorManager = null;
+	private ListManager<IntraPredictionBlock> intraBlockManager = null;
 	
 	/**
 	 * Flag for whether the vector conversion should be single threaded or not.
@@ -67,12 +59,12 @@ public class VectorConverterPool {
 	 * @param data			The raw data containing the vectors.
 	 * @param vectorManager	A vector manager in which to write the results to.
 	 */
-	public VectorConverterPool(List<Integer> indexes, byte[] data,
-			ListManager<Vector> vectorManager, boolean singleThreaded) {
+	public IntraConverterPool(List<Integer> indexes, byte[] data,
+			ListManager<IntraPredictionBlock> intraBlockManager, boolean singleThreaded) {
 		this.pool = ForkJoinPool.commonPool();
 		this.indexes = indexes;
 		this.data = data;
-		this.vectorManager = vectorManager;
+		this.intraBlockManager = intraBlockManager;
 		this.singleThreadedExcution = singleThreaded;
 	}
 	
@@ -82,8 +74,8 @@ public class VectorConverterPool {
 	 * @see app.engines.prediction.interprediction.Vector
 	 */
 	public void run() {
-		VectorConversionTask task = new VectorConversionTask(0, this.indexes.size(),
-				this.indexes, this.data, this.vectorManager);
+		IntraConversionTask task = new IntraConversionTask(0, this.indexes.size(),
+				this.indexes, this.data, this.intraBlockManager);
 		
 		if (this.singleThreadedExcution) {
 			task.setSingleThreaded();

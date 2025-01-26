@@ -42,6 +42,12 @@ public class IntraPredictionBlock implements Discardable {
 	private double vertical[][] = null;
 	private double dctDelta[][][] = null;
 
+	public IntraPredictionBlock(final int posX, final int posY, final int size) {
+		this.posX = posX;
+		this.posY = posY;
+		this.size = size;
+	}
+	
 	public int getSize() {
 		return this.size;
 	}
@@ -50,19 +56,19 @@ public class IntraPredictionBlock implements Discardable {
 		this.size = size;
 	}
 	
-	public int getPosX() {
+	public int getPositionX() {
 		return this.posX;
 	}
 	
-	public void setPosX(int posX) {
+	public void setPositionX(int posX) {
 		this.posX = posX;
 	}
 	
-	public int getPosY() {
+	public int getPositionY() {
 		return this.posY;
 	}
 	
-	public void setPosY(int posY) {
+	public void setPositionY(int posY) {
 		this.posY = posY;
 	}
 	
@@ -126,6 +132,10 @@ public class IntraPredictionBlock implements Discardable {
 		this.dctDelta = DCT_ENGINE.computeDCTOfVectorColorDifference(YUVDifference, this.size, true);
 	}
 	
+	public void setDeltaCoeffcients(double[][][] YUVCoefficients) {
+		this.dctDelta = YUVCoefficients;
+	}
+	
 	public void setAppendedBlock(MacroBlock block) {
 		this.appendedBlock = block;
 	}
@@ -136,6 +146,11 @@ public class IntraPredictionBlock implements Discardable {
 	
 	public Point getPosition() {
 		return new Point(this.posX, this.posY);
+	}
+	
+	public void setPosition(final int x, final int y) {
+		this.posX = x;
+		this.posY = y;
 	}
 
 	@Override

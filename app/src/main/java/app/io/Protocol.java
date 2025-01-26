@@ -27,6 +27,7 @@ import java.util.List;
 
 import app.engines.prediction.interprediction.Vector;
 import app.engines.prediction.interprediction.VectorConverterPool;
+import app.engines.prediction.intraprediction.IntraConverterPool;
 import app.engines.prediction.intraprediction.IntraPipeline;
 import app.engines.prediction.intraprediction.IntraPredictionBlock;
 import app.engines.quadtree.QuadtreeBase;
@@ -62,7 +63,7 @@ public class Protocol {
 	/**
 	 * Length of the intra block header in bytes.
 	 */
-	public static final int INTRA_BLOCK_HEADER_LENGTH = 5;
+	public static final int INTRA_BLOCK_HEADER_LENGTH = 6;
 	
 	/**
 	 * The length of the intra blocks checksum.
@@ -456,6 +457,7 @@ public class Protocol {
 			final int halfBlockSize = blockSize / 2;
 			size += Protocol.INTRA_BLOCK_HEADER_LENGTH;
 			size += (blockSize * blockSize) + 2 * (halfBlockSize * halfBlockSize);
+			size += ((blockSize + blockSize) * 3); // Pixels at border
 		}
 		
 		return size;
@@ -464,17 +466,20 @@ public class Protocol {
 	private static final int writeSingleIntraPredictionBlockInByteArray(final IntraPredictionBlock block,
 			final int startIndex, final byte[] data) {
 		int index = startIndex;
-		final byte[] posX = ProtocolBase.getPositionBytes(block.getPosX());
-		final byte[] posY = ProtocolBase.getPositionBytes(block.getPosY());
-		final byte sizeAndAngle = Protocol.getSizeAndAngleByte(block.getSize(), block.getAngle());
+		final byte[] posX = ProtocolBase.getPositionBytes(block.getPositionX());
+		final byte[] posY = ProtocolBase.getPositionBytes(block.getPositionY());
+		final byte[] sizeAndAngle = Protocol.getSizeAndAngleByte(block.getSize(), block.getAngle());
 		final byte[][] differences = ProtocolBase.getDeltaMatrixBytes(block.getDCTCoefficientsOfDelta(), block.getSize());
+		final byte[] borderColors = Protocol.getBorderColorBytes(block.getHorizontal(), block.getVertical(), block.getSize());
 		
 		writeBytesToByteArray(posX, data, index);
 		index += posX.length;
 		writeBytesToByteArray(posY, data, index);
 		index += posY.length;
-		data[index] = sizeAndAngle;
-		index += 1;
+		writeBytesToByteArray(sizeAndAngle, data, index);
+		index += sizeAndAngle.length;
+		writeBytesToByteArray(borderColors, data, index);
+		index += borderColors.length;
 		
 		for (int n = 0; n < differences.length; n++) {
 			writeBytesToByteArray(differences[n], data, index);
@@ -484,21 +489,65 @@ public class Protocol {
 		return index - startIndex;
 	}
 	
-	private static byte getSizeAndAngleByte(final int size, final int angle) {
-		byte b = 0x00;
-		b |= (IntraPipeline.getIndexByAngle(angle) & 0xFF) << 4;
-		b |= QuadtreeBase.getIndexBySize(size);
-		return b;
+	public static byte[] getBorderColorBytes(final double[][] verticalYUV,
+			final double[][] horizontalYUV, final int blockSize) {
+		final int size = 2 * blockSize * 3;
+		byte[] data = new byte[size];
+		int offset_h = 0;
+		int offset_v = blockSize * ColorManager.CHANNELS;
+		int[] rgb_h = new int[3];
+		int[] rgb_v = new int[3];
+		
+		for (int i = 0; i < blockSize; i++, offset_h += 3, offset_v += 3) {
+			rgb_h = ColorManager.convertYUVToRGB_intARR(horizontalYUV[i], rgb_h);
+			rgb_v = ColorManager.convertYUVToRGB_intARR(verticalYUV[i], rgb_v);
+			data[offset_h] = (byte)(rgb_h[ColorManager.R_INDEX] & 0xFF);
+			data[offset_h + 1] = (byte)(rgb_h[ColorManager.G_INDEX] & 0xFF);
+			data[offset_h + 2] = (byte)(rgb_h[ColorManager.B_INDEX] & 0xFF);
+			data[offset_v] = (byte)(rgb_v[ColorManager.R_INDEX] & 0xFF);
+			data[offset_v + 1] = (byte)(rgb_v[ColorManager.G_INDEX] & 0xFF);
+			data[offset_v + 2] = (byte)(rgb_v[ColorManager.B_INDEX] & 0xFF);
+		}
+
+		return data;
 	}
 	
-	private static int[] getSizeAndAngle(final byte data) {
-		int size = QuadtreeBase.getSizeByIndex((data >> 4) & 0xFF);
-		int angle = IntraPipeline.getAngleByIndex(data & 0xFF);
+	public static double[][][] getBorderColors(final byte[] data, final int blockSize, final int dataOffset) {
+		double[][] vertical = new double[blockSize][ColorManager.CHANNELS];
+		double[][] horizontal = new double[blockSize][ColorManager.CHANNELS];
+		int offset_h = dataOffset;
+		int offset_v = dataOffset + (blockSize * ColorManager.CHANNELS);
+		
+		for (int i = 0; i < blockSize; i++, offset_h += 3, offset_v += 3) {
+			int r_v = data[offset_h];
+			int g_v = data[offset_h + 1];
+			int b_v = data[offset_h + 2];
+			int r_h = data[offset_v];
+			int g_h = data[offset_v + 1];
+			int b_h = data[offset_v + 2];
+			int rgb_h = 0xFF000000 | ((r_h & 0xFF) << 16) | ((g_h & 0xFF) << 8) | (b_h & 0xFF);
+			int rgb_v = 0xFF000000 | ((r_v & 0xFF) << 16) | ((g_v & 0xFF) << 8) | (b_v & 0xFF);
+			vertical[i] = ColorManager.convertRGBToYUV(rgb_v);
+			horizontal[i] = ColorManager.convertRGBToYUV(rgb_h);
+		}
+		
+		return new double[][][] {vertical, horizontal};
+	}
+	
+	public static byte[] getSizeAndAngleByte(final int size, final int angle) {
+		byte angleByte = (byte)(IntraPipeline.getIndexByAngle(angle) & 0xFF);
+		byte sizeByte = (byte)(QuadtreeBase.getIndexBySize(size) & 0xFF);
+		return new byte[] {sizeByte, angleByte};
+	}
+	
+	public static int[] getSizeAndAngle(final byte sizeByte, final byte angleByte) {
+		int angle = IntraPipeline.getAngleByIndex(angleByte);
+		int size = QuadtreeBase.getSizeByIndex(sizeByte);
 		return new int[] {size, angle};
 	}
 	
 	public static void getIntraBlocks(final byte[] data, final ListManager<IntraPredictionBlock> intraBlockManager,
-			final boolean singleThread) {
+			final boolean singleThread) throws CorruptedFileException {
 		if (data.length <= 1) {
 			return;
 		}
@@ -508,7 +557,12 @@ public class Protocol {
 		ArrayList<Integer> indexesOfIntraBlocks = new ArrayList<Integer>();
 		precalculateIntraBlockIndexes(data, indexesOfIntraBlocks);
 		
+		IntraConverterPool pool = new IntraConverterPool(indexesOfIntraBlocks, data, intraBlockManager, singleThread);
+		pool.run();
 		
+		if (intraBlockManager.getList().size() != estimatedLength) {
+			throw new CorruptedFileException("The amount of the read-in intra blocks appear to be unequal to the written inrta blocks.");
+		}
 	}
 	
 	/**
@@ -522,11 +576,13 @@ public class Protocol {
 		
 		while (i < data.length) {
 			indexesOfIntraBlocks.add(i);
-			final int[] sizeAndAngle = Protocol.getSizeAndAngle(data[i + 5]);
+			final int[] sizeAndAngle = Protocol.getSizeAndAngle(data[i + 4], data[i + 5]);
 			final int size = sizeAndAngle[0];
 			//Length of the vector diffs
 			//Original formula: (size * size) + 2 * ((size / 2) * (size / 2)) + Protocol.INTRA_BLOCK_HEADER_LENGTH
-			i += ((size * size) + 2 * ((size * size) / 4)) + Protocol.INTRA_BLOCK_HEADER_LENGTH;
+			i += ((size * size) + 2 * ((size * size) / 4))
+					+ Protocol.INTRA_BLOCK_HEADER_LENGTH
+					+ ((size + size) * 3);
 		}
 	}
 	

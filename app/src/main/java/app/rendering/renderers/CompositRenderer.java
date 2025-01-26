@@ -40,7 +40,7 @@ import app.utils.PixelRaster;
 
 public class CompositRenderer {
 	public static PixelRaster renderComposit(LoadDistributor<Vector> vecs, ReferenceFrameManager refs, LoadDistributor<IntraPredictionBlock> intraBlocks,
-			boolean allowModToAbsDiff) {
+			boolean allowModifications) {
 		long sRT = System.currentTimeMillis();
 		PixelRaster render = refs.getLastFrame().copy();
 		Dimension dim = refs.getLastFrame().getDimension();
@@ -51,7 +51,7 @@ public class CompositRenderer {
 			if (vecs != null) {
 				if (vecs.hasDistributed()) {
 					for (final List<Vector> vecList : vecs.getIterable()) {
-						Runnable task = createVectorRenderTask(vecList, refs, render, dim, allowModToAbsDiff);
+						Runnable task = createVectorRenderTask(vecList, refs, render, dim, allowModifications);
 						executor.submit(task);
 					}
 				}
@@ -60,7 +60,7 @@ public class CompositRenderer {
 			if (intraBlocks != null) {
 				if (intraBlocks.hasDistributed()) {
 					for (final List<IntraPredictionBlock> intraBlockList : intraBlocks.getIterable()) {
-						Runnable task = createIntrapredictionBlockRenderTask(intraBlockList, dim, render);
+						Runnable task = createIntrapredictionBlockRenderTask(intraBlockList, dim, render, allowModifications);
 						executor.submit(task);
 					}
 				}
@@ -80,14 +80,14 @@ public class CompositRenderer {
 	}
 	
 	private static Runnable createIntrapredictionBlockRenderTask(List<IntraPredictionBlock> blockList, Dimension dim,
-			PixelRaster render) {
+			PixelRaster render, boolean allowModifications) {
 		Runnable task = () -> {
 			for (IntraPredictionBlock block : blockList) {
-				MacroBlock b = new MacroBlock(block.getPosX(), block.getPosY(), block.getSize(), true);
+				MacroBlock b = new MacroBlock(block.getPositionX(), block.getPositionY(), block.getSize(), true);
 				final int size = b.getSize();
 				final Point pos = b.getPosition();
 				IntraDecoder.computeAngularIntraPredictionBlock(b, block.getVertical(), block.getHorizontal(), block.getAngle(), dim);
-				double[][][] deltas = block.getIDCTCoefficientsDelta(false);
+				double[][][] deltas = block.getIDCTCoefficientsDelta(allowModifications);
 				
 				for (int x = 0; x < size; x++) {
 					if (pos.x + x < 0 || pos.x + x >= dim.width) continue;
