@@ -31,7 +31,6 @@ import app.engines.dct.DCTEngine;
 import app.engines.prediction.PredictionDistributor;
 import app.engines.prediction.interprediction.Vector;
 import app.engines.prediction.interprediction.VectorEngine;
-import app.engines.prediction.interprediction.VectorEngineResult;
 import app.engines.prediction.intraprediction.IntraEngine;
 import app.engines.prediction.intraprediction.IntraPredictionBlock;
 import app.engines.quadtree.QuadtreeEngine;
@@ -183,14 +182,12 @@ public class Encoder {
 				
 				
 				long start_vector_movement = System.currentTimeMillis();
-				VectorEngineResult vectorEngineResult = VECTOR_ENGINE.computeMovementVectors(predictionTypes.getInterPredictables(), this.referenceManager);
-				LoadDistributor<Vector> movementVectors = vectorEngineResult.getVectors();
-				LoadDistributor<MacroBlock> differenceManager = vectorEngineResult.getRestBlocks();
+				LoadDistributor<Vector> movementVectors = VECTOR_ENGINE.computeMovementVectors(predictionTypes.getInterPredictables(), this.referenceManager);
 				long end_vector_movement = System.currentTimeMillis();
 				
 //				BufferedImage vectors = RenderEngine.renderVectors(movementVectors.getRawData(), curFrame.getDimension());
 				long start_render = System.currentTimeMillis();
-				PixelRaster composite = RenderEngine.renderComposit(movementVectors, this.referenceManager, differenceManager, intraPredictedBlocks, false);
+				PixelRaster composite = RenderEngine.renderComposit(movementVectors, this.referenceManager, intraPredictedBlocks, false);
 //				outStream.addObjectToOutputQueue(new QueueObject(movementVectors, differenceManager));
 				long end_render = System.currentTimeMillis();
 				
@@ -215,7 +212,7 @@ public class Encoder {
 				long deblockTime = (end_deblock - start_deblock);
 				long intraTime = (end_intra - start_intra);
 				sumOfMilliSeconds += time;
-				printStatistics(time, sumOfMilliSeconds, i, movementVectors, differenceManager, imgReadTime, quadtreeConstructionTime, leaveNodesTime, differenceTime, intraTime, vectorTime, renderTime, deblockTime);
+				printStatistics(time, sumOfMilliSeconds, i, movementVectors, intraBlocks, imgReadTime, quadtreeConstructionTime, leaveNodesTime, differenceTime, intraTime, vectorTime, renderTime, deblockTime);
 				
 				leaveNodeManager.discard();
 //				movementVectors.discard();
@@ -237,7 +234,7 @@ public class Encoder {
 	private static double TOTAL_MSE = 0;
 	private static int TOTAL_MSE_ADDITION_COUNT = 0;
 	
-	private void printStatistics(long time, long fullTime, int index, LoadDistributor<Vector> vecs, LoadDistributor<MacroBlock> diffs,
+	private void printStatistics(long time, long fullTime, int index, LoadDistributor<Vector> vecs, LoadDistributor<IntraPredictionBlock> intra,
 			long imgReadTime, long quadtreeConstructionTime, long leaveNodeTime, long differenceTime, long intraTime, long vectorTime, long renderTime, long deblockTime) {
 		long startOutput = System.currentTimeMillis();
 //		System.out.println("");
@@ -260,8 +257,8 @@ public class Encoder {
 			System.out.println("- Vectors: " + vecs.getNumberOfObjects() + " | Covered area: " + vecs.getNumberOfData() + "px | Avg. MSE: " + averageMSE);
 		}
 		
-		if (diffs != null) {
-			System.out.println("- Non-Coded blocks: " + diffs.getNumberOfObjects() + " | Covered area: " + diffs.getNumberOfData() + "px");
+		if (intra != null) {
+			System.out.println("- Intra-Coded blocks: " + intra.getNumberOfObjects() + " | Covered area: " + intra.getNumberOfData() + "px");
 		}
 		
 		System.out.println("- Total Avg. MSE of inter prediction: " + (TOTAL_MSE / TOTAL_MSE_ADDITION_COUNT));
