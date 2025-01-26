@@ -76,7 +76,7 @@ public class InputStream {
 	 * @return An byte array with the length of the frame part lengths.
 	 */
 	public byte[] getNumberOfIndexes() {
-		byte[] data = new byte[Protocol.SIZE_LENGTH];
+		byte[] data = new byte[ProtocolBase.SIZE_LENGTH];
 		readIn(data);
 		return data;
 	}
@@ -88,7 +88,7 @@ public class InputStream {
 	 * @return An byte array with the individual lengths.
 	 */
 	public byte[] getIndexes(int length) {
-		byte[] data = new byte[length * Protocol.SIZE_LENGTH];
+		byte[] data = new byte[length * ProtocolBase.SIZE_LENGTH];
 		readIn(data);
 		return data;
 	}

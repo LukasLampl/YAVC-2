@@ -1,0 +1,291 @@
+/////////////////////////////////////////////////////////////
+///////////////////////    LICENSE    ///////////////////////
+/////////////////////////////////////////////////////////////
+/*
+The YAVC video / frame compressor compresses frames.
+Copyright (C) 2025  Lukas Nian En Lampl, Hans Lampl
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+package app.io;
+
+import app.ArgumentProcessor;
+import app.engines.dct.DCTConstants;
+
+public abstract class ProtocolBase {
+	/**
+	 * The size of an integer in bytes.
+	 */
+	public static final int SIZE_OF_INT = 4;
+	
+	/**
+	 * The length of a size in bytes.
+	 */
+	public static final int SIZE_LENGTH = 3;
+	
+	/**
+	 * Get the DCT coefficient in form of a byte.
+	 * 
+	 * @param coeff	The coefficient to convert.
+	 * @return The byte representative of the coefficient.
+	 */
+	public static byte getDCTCoeffByte(final double coeff) {
+		byte result = (byte)((int)Math.abs(coeff) & 0x7F);
+		
+		if (coeff < 0) {
+			result |= (1 << 7);
+		}
+		
+		return (byte)(result & 0xFF);
+	}
+	
+	/**
+	 * Get the DCT coefficient from a DCT coefficient byte.
+	 * 
+	 * @param coeff	The byte to convert back to the DCT coefficient.
+	 * @return The converted coefficient.
+	 */
+	public static final double getDCTCoeff(final byte coeff) {
+		int result = coeff & 0x7F;
+		return (coeff & 0x80) != 0 ? -result : result;
+	}
+	
+	/**
+	 * Get the given position (single coordinate) in byte representation.
+	 * 
+	 * @param pos	The Position coordinate to convert.
+	 * @return A byte array containing the position information.
+	 * 
+	 * @throws IllegalArgumentException	When the coordinate is below 0 or above 65536.
+	 */
+	public static byte[] getPositionBytes(final int pos) {
+		if (pos > 65536) {
+			throw new IllegalArgumentException("Position of vector exceeds maximum limit of 65536");
+		} else if (pos < 0) {
+			throw new IllegalArgumentException("Position of vector is smaller than 0 (out of frame)");
+		}
+		
+		return new byte[] {(byte)((pos >> 8) & 0xFF), (byte)(pos & 0xFF)};
+	}
+	
+	/**
+	 * Converts the given bytes to the integer form of the position.
+	 * 
+	 * @param c1	Upper byte.
+	 * @param c2	Lower byte.
+	 * @return The reconstructed integer.
+	 * 
+	 * @see #getPositionBytes(int)
+	 */
+	public static int getPosition(final byte c1, final byte c2) {
+		int res = (c1 & 0xFF) << 8 | (c2 & 0xFF);
+		return res;
+	}
+	
+	/**
+	 * Converts a subsampled delta matrix to a byte matrix which can be then encoded.
+	 * 
+	 * <p><b>Process:</b><br>
+	 * Since using a DCT on {@code n} sized blocks where {@code n > 8} is time consuming, a block that
+	 * is bigger than 8x8 will be split.<br><br>
+	 * 
+	 * First a 4x4 and 8x8 block will be normally written with its 3 channels, first in a {@code n * n} long
+	 * Y-channel then two {@code 2 * (size * size / 4)} channels.<br><br>
+	 * 
+	 * But if a block exceeds 8x8 it'll be spit into 8x8 blocks that are individually processed further.
+	 * This means if we had a 16x16 block it'll be split into 4 8x8 blocks. Those will be written from
+	 * Top-Left to Bottom-Right in each channel individually.<br><br>
+	 * 
+	 * If you want to perceive data, you'll have to get all 3 channels, then the offset of the Y-Channel,
+	 * the U-Channel and the V-Channel. After that the Y-Component in the Y-Channel is as long as
+	 * the block length ({@code n * n}). Now to get the U-Component you'll need to offset to the U start,
+	 * which can be achieved by calculating {@code UStart = YStart + YLength}. The U and V components are
+	 * approximately {@code (n / 2) * (n / 2)} or {@code (n * n) / 4} long. REMEMBER the layout is from Top-Left
+	 * to Bottom-Right.
+	 * </p>
+	 * 
+	 * @param deltaMatrix	The matrix with all deltas to get bytes from.
+	 * @param size			The size of the matrix.
+	 * @return A matrix representation of the absolute color difference.
+	 * 
+	 * @throws IllegalArgumentException	When a coefficient is > 127 or < -127 and {@code autoAdjust} is off.
+	 */
+	public static byte[][] getDeltaMatrixBytes(double[][][] deltaMatrix, final int size) {
+		final int halfSize = size / 2;
+		final int frac = size == 4 ? 4 : 8;
+		final int halfFrac = frac / 2;
+		final int groups = size == 4 ? 1 : (size * size) / 64;
+		final byte[] YBytes = new byte[size * size];
+		final byte[] UBytes = new byte[halfSize * halfSize];
+		final byte[] VBytes = new byte[halfSize * halfSize];
+		
+		int YIndex = 0;
+		int UIndex = 0;
+		int VIndex = 0;
+		
+		for (int n = 0, xToAdd = 0, halfXToAdd = 0, yToAdd = 0, halfYToAdd = 0; n < groups; n++, xToAdd += 8, halfXToAdd += 4) {
+			if (xToAdd >= size) {
+				xToAdd = 0;
+				halfXToAdd = 0;
+				yToAdd += 8;
+				halfYToAdd += 4;
+			}
+			
+			for (int x = 0; x < frac; x++) {
+				final int actualX = xToAdd + x;
+				
+				for (int y = 0; y < frac; y++) {
+					final int actualY = yToAdd + y;
+					double value = deltaMatrix[DCTConstants.Y_COEFFS_INDEX][actualX][actualY];
+					YBytes[YIndex++] = getDCTCoeffByte(getAdjustedDCTCoefficient(value));
+				}
+			}
+			
+			for (int x = 0; x < halfFrac; x++) {
+				final int actualX = halfXToAdd + x;
+				
+				for (int y = 0; y < halfFrac; y++) {
+					final int actualY = halfYToAdd + y;
+					double valueU = deltaMatrix[DCTConstants.U_COEFFS_INDEX][actualX][actualY];
+					double valueV = deltaMatrix[DCTConstants.V_COEFFS_INDEX][actualX][actualY];
+					UBytes[UIndex++] = getDCTCoeffByte(getAdjustedDCTCoefficient(valueU));
+					VBytes[VIndex++] = getDCTCoeffByte(getAdjustedDCTCoefficient(valueV));
+				}
+			}
+		}
+		
+		return new byte[][] {YBytes, UBytes, VBytes};
+	}
+	
+	/**
+	 * Adjusts an DCT coefficient if it's out of bounds, but only when
+	 * {@link app.ArgumentProcessor#autoAdjust ArgumentProcessor.autoAdjust} is on.
+	 * 
+	 * @param coeff	The coefficient to adjust when possible.
+	 * @return The adjusted coefficient.
+	 */
+	private static double getAdjustedDCTCoefficient(double coeff) {
+		if (coeff > 127 || coeff < -127) {
+			double adjustedValue = ArgumentProcessor.autoAdjust ? coeff < -127 ? -127 : 127 : Double.NaN;
+			String autoAdjust = ArgumentProcessor.autoAdjust ? "on" : "off";
+			String msg = "The DCT-Coefficient must lie between -127 and 127."
+					+ "You might need to adjust the quantization values. (Automatic adjust: "
+					+ autoAdjust + "; from: " + coeff + "; to: " + adjustedValue + ")";
+
+			if (ArgumentProcessor.autoAdjust) {
+				System.err.println(msg);
+				return adjustedValue;
+			} else {
+				throw new IllegalArgumentException(msg);
+			}
+		}
+		
+		return coeff;
+	}
+	
+	/**
+	 * Converts an integer to a 4 byte long byte array.
+	 * 
+	 * @param integer	The integer to convert.
+	 * @return A byte array containing all information for reconstructing the integer.
+	 */
+	public static byte[] getIntBytes(final int integer) {
+		byte[] arr = new byte[4];
+		arr[0] = (byte)((integer >> 24) & 0xFF);
+		arr[1] = (byte)((integer >> 16) & 0xFF);
+		arr[2] = (byte)((integer >> 8) & 0xFF);
+		arr[3] = (byte)(integer & 0xFF);
+		return arr;
+	}
+	
+	/**
+	 * Reconstructs a byte array back to an integer.
+	 * 
+	 * @param data	The bytes to reconstruct the integer.
+	 * @return The reconstructed integer.
+	 * 
+	 * @see #getIntBytes(int)
+	 */
+	public static int getIntFromBytes(final byte[] data) {
+		int num = 0;
+		num |= (data[0] & 0xFF) << 24;
+		num |= (data[1] & 0xFF) << 16;
+		num |= (data[2] & 0xFF) << 8;
+		num |= data[3] & 0xFF;
+		return num;
+	}
+	
+	/**
+	 * Converts a size into bytes.
+	 * 
+	 * <p><b>Note:</b><br>
+	 * The size is considered to be <u>3 bytes</u> long.
+	 * </p>
+	 * 
+	 * @param size	The size to convert.
+	 * @return Byte array with the size.
+	 */
+	public static byte[] getSizeBytes(final int size) {
+		byte[] arr = new byte[3];
+		arr[0] = (byte)((size >> 16) & 0xFF);
+		arr[1] = (byte)((size >> 8) & 0xFF);
+		arr[2] = (byte)(size & 0xFF);
+		return arr;
+	}
+	
+	/**
+	 * Converts a byte array that represents a size back to a size.
+	 * 
+	 * @param data	The byte array to convert.
+	 * @return The converted size.
+	 * @see #getSizeBytes(int)
+	 */
+	public static int getSizeFromBytes(final byte[] data) {
+		int num = 0;
+		num |= (data[0] & 0xFF) << 16;
+		num |= (data[1] & 0xFF) << 8;
+		num |= data[2] & 0xFF;
+		return num;
+	}
+	
+	/**
+	 * Splits an array into even chunks with the given size per chunk.
+	 * 
+	 * @param data			The array to split.
+	 * @param sizeOfChunk	The size of each chunk.
+	 * @return A 2D byte array with all split chunks.
+	 */
+	public static byte[][] splitArrayEvenly(final byte[] data, final int sizeOfChunk) {
+		final int estimatedLen = data.length / sizeOfChunk;
+		final byte[][] arr = new byte[estimatedLen][];
+		int index = 0;
+		
+		for (int i = 0; i < data.length; i += sizeOfChunk) {
+			byte[] subArr = new byte[sizeOfChunk];
+			
+			for (int n = 0; n < sizeOfChunk; n++) {
+				if (i + n >= data.length) {
+					continue;
+				}
+				
+				subArr[n] = data[i + n];
+			}
+			
+			arr[index++] = subArr;
+		}
+		
+		return arr;
+	}
+}

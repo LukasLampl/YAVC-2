@@ -343,7 +343,7 @@ public class Vector implements Discardable {
 	 */
 	private double[][][] cloneAbsoluteColorDifference() {
 		double[][][] ref = this.absoluteColorDifferenceDCTCoefficients;
-		double[][][] clone = ArrayUtils.get3DArray(size, true);
+		double[][][] clone = ArrayUtils.get3DArray(this.size, true);
 		
 		for (int i = 0; i < ColorManager.CHANNELS; i++) {
 			ArrayUtils.copy2DArray(ref[i], 0, 0, clone[i], 0, 0, this.size, this.size);

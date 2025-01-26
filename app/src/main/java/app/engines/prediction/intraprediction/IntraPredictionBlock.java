@@ -23,10 +23,15 @@ package app.engines.prediction.intraprediction;
 
 import java.awt.Point;
 
+import app.Main;
+import app.engines.dct.DCTEngine;
 import app.managers.Discardable;
+import app.rendering.ColorManager;
+import app.utils.ArrayUtils;
 import app.utils.MacroBlock;
 
 public class IntraPredictionBlock implements Discardable {
+	private static DCTEngine DCT_ENGINE = Main.DCT_ENGINE;
 	private MacroBlock appendedBlock = null;
 	
 	private int size = 0;
@@ -85,14 +90,40 @@ public class IntraPredictionBlock implements Discardable {
 		this.vertical = vertical;
 	}
 	
-	public double[][][] getDelta() {
-//		return DCT_ENGINE.computeIDCTOfVectorColorDifference(this.dctDelta, this.size, true);
+	public double[][][] getIDCTCoefficientsDelta(boolean allowModificationToOriginalData) {
+		if (allowModificationToOriginalData) {
+			return DCT_ENGINE.computeIDCTOfVectorColorDifference(this.dctDelta, this.size, true);
+		}
+		
+		double[][][] clone = cloneDCTDeltaValues();
+		return DCT_ENGINE.computeIDCTOfVectorColorDifference(clone, this.size, true);
+	}
+	
+	/**
+	 * Clones the {@link #absoluteColorDifferenceDCTCoefficients} array.
+	 * This function should be used for getting the IDCT values, since the
+	 * original array is referenced and might get quantified by mistake
+	 * if not cloned.
+	 * 
+	 * @return Cloned array with all the data.
+	 */
+	private double[][][] cloneDCTDeltaValues() {
+		double[][][] ref = this.dctDelta;
+		double[][][] clone = ArrayUtils.get3DArray(this.size, true);
+		
+		for (int i = 0; i < ColorManager.CHANNELS; i++) {
+			ArrayUtils.copy2DArray(ref[i], 0, 0, clone[i], 0, 0, this.size, this.size);
+		}
+		
+		return clone;
+	}
+	
+	public double[][][] getDCTCoefficientsOfDelta() {
 		return this.dctDelta;
 	}
 	
-	public void setDelta(double[][][] delta) {
-//		this.dctDelta = DCT_ENGINE.computeDCTOfVectorColorDifference(delta, this.size, true);
-		this.dctDelta = delta;
+	public void setDelta(double[][][] YUVDifference) {
+		this.dctDelta = DCT_ENGINE.computeDCTOfVectorColorDifference(YUVDifference, this.size, true);
 	}
 	
 	public void setAppendedBlock(MacroBlock block) {

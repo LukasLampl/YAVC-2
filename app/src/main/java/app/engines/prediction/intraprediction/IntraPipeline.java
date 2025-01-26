@@ -30,11 +30,16 @@ public abstract class IntraPipeline {
 	protected final static int YUV_HORIZONTAL_INDEX = 0;
 	protected final static int YUV_VERTICAL_INDEX = 1;
 	
-	protected void computeAngularIntraPredictionBlock(MacroBlock predictionBlock, final double[][] verticalYUV,
+	private final static int OFFSET_COMPENSATION = 100000;
+	
+	public final static int ANGLE_STEP = 5;
+	public final static int MIN_ANGLE = 0;
+	public final static int MAX_ANGLE = 180;
+	public final static int NUM_OF_ANGLES = (MAX_ANGLE - MIN_ANGLE) / ANGLE_STEP;
+	
+	protected static void computeAngularIntraPredictionBlock(MacroBlock predictionBlock, final double[][] verticalYUV,
 			final double[][] horizontalYUV, final float angle, final Dimension dim) {
-		if (predictionBlock.getPositionX() <= 0 || predictionBlock.getPositionY() <= 0
-				|| predictionBlock.getPositionX() + predictionBlock.getSize() >= dim.width
-				|| predictionBlock.getPositionY() + predictionBlock.getSize() >= dim.height) {
+		if (isEdgeBlock(predictionBlock, dim)) {
 			return;
 		}
 		if (angle == 0 || MathUtils.abs(angle) == 180) {
@@ -67,7 +72,13 @@ public abstract class IntraPipeline {
 		}
 	}
 	
-	private void computeVerticalIntraPredictionBlock(MacroBlock predictionBlock, final double[][] verticalYUV) {
+	public static boolean isEdgeBlock(final MacroBlock block, final Dimension dim) {
+		return block.getPositionX() <= 0 || block.getPositionY() <= 0
+				|| block.getPositionX() + block.getSize() >= dim.width
+				|| block.getPositionY() + block.getSize() >= dim.height;
+	}
+	
+	protected static void computeVerticalIntraPredictionBlock(MacroBlock predictionBlock, final double[][] verticalYUV) {
 		if (predictionBlock.getPositionY() <= 0) {
 			throw new IllegalArgumentException("Cannot intrapredict border blocks.");
 		}
@@ -79,7 +90,7 @@ public abstract class IntraPipeline {
 		}
 	}
 
-	private void computeHorizontalIntraPredictionBlock(MacroBlock predictionBlock, final double[][] horizontalYUV) {
+	protected static void computeHorizontalIntraPredictionBlock(MacroBlock predictionBlock, final double[][] horizontalYUV) {
 		if (predictionBlock.getPositionX() <= 0) {
 			throw new IllegalArgumentException("Cannot intrapredict border blocks.");
 		}
@@ -91,7 +102,7 @@ public abstract class IntraPipeline {
 		}
 	}
 	
-	protected double[][][] computeAverageIntraPredictionBlock(MacroBlock predictionBlock) {
+	protected static double[][][] computeAverageIntraPredictionBlock(MacroBlock predictionBlock) {
 		double[] YUV = predictionBlock.getMeanColor();
 		double [][][] AYUV = new double[2][predictionBlock.getSize()][];
 		for (int y = 0; y < predictionBlock.getSize(); y++) {
@@ -104,9 +115,9 @@ public abstract class IntraPipeline {
 		return AYUV;
 	}
 	
-	protected void bresenham(final int x, final int y, final int t, final double m, final MacroBlock block, final double[] YUV) {
+	protected static void bresenham(final int x, final int y, final int t, final double m, final MacroBlock block, final double[] YUV) {
 		int x1 = x;
-		int x2 = x + 100000;
+		int x2 = x + OFFSET_COMPENSATION;
 		int y1 = y;
 		int y2 = MathUtils.round(m * x2) + y;
 		int dx = (int) MathUtils.abs(x2 - x1);
@@ -117,14 +128,13 @@ public abstract class IntraPipeline {
 		int e2;
 		for (int i = 0; i < block.getSize(); i++) {
 			if (x1 < 0 || x1 >= block.getSize() || y1 < 0 || y1 >= block.getSize()) {
-				break;			
+				break;
 			}
 			block.setYUV(x1, y1, YUV);
 			e2 = err + err;
 			if (e2 > dy) {
 				err += dy;
 				x1 += sx;
-
 			}
 			if (e2 < dx) {
 				err += dx;
@@ -133,9 +143,9 @@ public abstract class IntraPipeline {
 		}
 	}
 
-	protected void bresenhamR(final int x, final int y, final int t, final double m, final MacroBlock block, final double[] YUV) {
+	protected static void bresenhamR(final int x, final int y, final int t, final double m, final MacroBlock block, final double[] YUV) {
 		int x1 = x;
-		int x2 = x - 100000;
+		int x2 = x - OFFSET_COMPENSATION;
 		int y1 = y; 
 		int y2 = MathUtils.round(m * x2) + t;
 		int dx = (int) MathUtils.abs(x2 - x1);
@@ -146,19 +156,26 @@ public abstract class IntraPipeline {
 		int e2;
 		for (int i = 0; i < block.getSize(); i++) {
 			if (x1 < 0 || x1 >= block.getSize() || y1 < 0 || y1 >= block.getSize()) {
-				break;			
+				break;
 			}
 			block.setYUV(x1, y1, YUV);
 			e2 = err + err;
 			if (e2 > dy) {
 				err += dy;
 				x1 += sx;
-
 			}
 			if (e2 < dx) {
 				err += dx;
 				y1 += sy;
 			}
 		}
+	}
+	
+	public static int getIndexByAngle(final int angle) {
+		return angle / ANGLE_STEP;
+	}
+	
+	public static int getAngleByIndex(final int index) {
+		return index * ANGLE_STEP;
 	}
 }

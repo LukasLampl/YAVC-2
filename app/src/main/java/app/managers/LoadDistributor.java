@@ -26,7 +26,7 @@ import java.util.Collections;
 import java.util.List;
 
 import app.engines.prediction.interprediction.Vector;
-import app.engines.quadtree.QuadtreeEngine;
+import app.engines.quadtree.QuadtreeBase;
 import app.utils.MacroBlock;
 
 /**
@@ -106,7 +106,7 @@ public class LoadDistributor<T> implements Discardable {
 		this.evenlyDistributedObjects = Collections.synchronizedList(new ArrayList<List<T>>());
 		this.rawItems = Collections.synchronizedList(new ArrayList<T>());
 		
-		for (int i = 0; i < QuadtreeEngine.NUMBER_OF_SIZES; i++) {
+		for (int i = 0; i < QuadtreeBase.NUMBER_OF_SIZES; i++) {
 			this.undistributedList.add(Collections.synchronizedList(new ArrayList<T>()));
 		}
 		
@@ -133,9 +133,9 @@ public class LoadDistributor<T> implements Discardable {
 		int estimatedIndex = 0;
 		
 		if (obj instanceof MacroBlock) {
-			estimatedIndex = QuadtreeEngine.getIndexBySize(((MacroBlock)obj).getSize());
+			estimatedIndex = QuadtreeBase.getIndexBySize(((MacroBlock)obj).getSize());
 		} else if (obj instanceof Vector) {
-			estimatedIndex = QuadtreeEngine.getIndexBySize(((Vector)obj).getSize());
+			estimatedIndex = QuadtreeBase.getIndexBySize(((Vector)obj).getSize());
 		}
 		
 		List<T> target = this.undistributedList.get(estimatedIndex);

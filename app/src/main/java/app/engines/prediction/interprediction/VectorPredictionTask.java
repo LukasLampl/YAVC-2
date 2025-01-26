@@ -134,8 +134,6 @@ public class VectorPredictionTask extends RecursiveAction {
 	private void process() {
 		int maxSize = this.referenceManager.size();
 		MacroBlock[] canidates = new MacroBlock[maxSize];
-		Vector[] vecs = new Vector[this.end - this.start];
-		int vectorIndex = 0;
 		
 		for (int i = this.start; i < this.end; i++) {
 			try {
@@ -149,18 +147,13 @@ public class VectorPredictionTask extends RecursiveAction {
 				
 				MacroBlock best = evaluateBestGuess(canidates);
 				Vector vec = constructMovementVector(this.referenceManager, best, block);
-				vecs[vectorIndex++] = vec;
+				
+				if (vec != null) {
+					this.vectorManager.setObj(vec);
+				}
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-		}
-		
-		for (Vector vec : vecs) {
-			if (vec == null) {
-				continue;
-			}
-
-			this.vectorManager.setObj(vec);
 		}
 	}
 	

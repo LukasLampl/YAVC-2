@@ -120,8 +120,4 @@ public class RenderEngine {
 			Dimension dim) {
 		return IntrapredictionRenderer.renderIntraPredictionDeltas(intraPredictedBlocks, dim);
 	}
-	
-	public static BufferedImage renderIntraPrediction(List<MacroBlock> intraBlocks, Dimension dim) {
-		return IntrapredictionRenderer.renderIntraPrediction(intraBlocks, dim);
-	}
 }

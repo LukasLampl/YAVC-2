@@ -24,9 +24,9 @@ package app.io;
 import java.util.ArrayList;
 
 import app.engines.prediction.interprediction.Vector;
+import app.engines.prediction.intraprediction.IntraPredictionBlock;
 import app.managers.Discardable;
 import app.managers.LoadDistributor;
-import app.utils.MacroBlock;
 
 /**
  * A container object for vectors and non-coded blocks that should be
@@ -42,9 +42,9 @@ public class QueueObject implements Discardable {
 	private ArrayList<Vector> vectors = new ArrayList<Vector>();
 	
 	/**
-	 * The non-coded blocks to write.
+	 * The intra blocks to write.
 	 */
-	private ArrayList<MacroBlock> differences = new ArrayList<MacroBlock>();
+	private ArrayList<IntraPredictionBlock> intraBlocks = new ArrayList<IntraPredictionBlock>();
 	
 	/**
 	 * Creates an QueueObject container with the given vectors and non-coded blocks
@@ -53,9 +53,9 @@ public class QueueObject implements Discardable {
 	 * @param vecManager	Vectors to write.
 	 * @param diffManager	Non-coded blocks to write.
 	 */
-	public QueueObject(LoadDistributor<Vector> vecManager, LoadDistributor<MacroBlock> diffManager) {
+	public QueueObject(LoadDistributor<Vector> vecManager, LoadDistributor<IntraPredictionBlock> intraBlocks) {
 		this.vectors.addAll(vecManager.getRawData());
-		this.differences.addAll(diffManager.getRawData());
+		this.intraBlocks.addAll(intraBlocks.getRawData());
 	}
 	
 	/**
@@ -68,17 +68,17 @@ public class QueueObject implements Discardable {
 	}
 	
 	/**
-	 * Gets the non-coded blocks to write.
+	 * Gets the intra blocks to write.
 	 * 
-	 * @return The non-coded blocks to write.
+	 * @return The intra blocks to write.
 	 */
-	public ArrayList<MacroBlock> getDifferences() {
-		return this.differences;
+	public ArrayList<IntraPredictionBlock> getIntraBlocks() {
+		return this.intraBlocks;
 	}
 	
 	@Override
 	public void discard() {
 		this.vectors.clear();
-		this.differences.clear();
+		this.intraBlocks.clear();
 	}
 }

@@ -22,17 +22,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 package app.io;
 
 import java.awt.Dimension;
-import java.util.ArrayList;
 import java.util.LinkedList;
 
 import app.engines.prediction.interprediction.Vector;
+import app.engines.prediction.intraprediction.IntraPredictionBlock;
 import app.exceptions.CorruptedFileException;
 import app.filter.Deblocker;
 import app.managers.ListManager;
 import app.managers.LoadDistributor;
 import app.managers.ReferenceFrameManager;
 import app.rendering.RenderEngine;
-import app.utils.MacroBlock;
 import app.utils.PixelRaster;
 
 /**
@@ -80,7 +79,7 @@ public class InputProcessor {
 	 * @return Number of frame parts.
 	 */
 	public int initFrameReader(byte[] stream) {
-		return Protocol.getSizeFromBytes(stream);
+		return ProtocolBase.getSizeFromBytes(stream);
 	}
 	
 	/**
@@ -129,7 +128,9 @@ public class InputProcessor {
 	 * @throws CorruptedFileException	When either the decoded vector size or non-coded
 	 * block size is unequal to the coded size.
 	 */
-	public PixelRaster processFrame(byte[] content, byte[] rawBlocks, ReferenceFrameManager refs, ListManager<Vector> vectorListManager) throws CorruptedFileException {
+	public PixelRaster processFrame(byte[] content, byte[] intraBlocksContent, ReferenceFrameManager refs,
+			ListManager<Vector> vectorListManager,
+			ListManager<IntraPredictionBlock> intraBlockManager) throws CorruptedFileException {
 		long start_copy = System.currentTimeMillis();
 		PixelRaster render = refs.getLastFrame().copy();
 		long end_copy = System.currentTimeMillis();
@@ -138,13 +139,13 @@ public class InputProcessor {
 		getVectors(content, vectorListManager, false);
 		long end_get_vecs = System.currentTimeMillis();
 		long start_raw_block = System.currentTimeMillis();
-		ArrayList<MacroBlock> blocks = getRawBlocks(rawBlocks);
+		getIntraPreditionBlocks(intraBlocksContent, intraBlockManager, false);
 		long end_raw_block = System.currentTimeMillis();
 		long start_load_dist = System.currentTimeMillis();
 		LoadDistributor<Vector> vecManager = new LoadDistributor<Vector>();
-		LoadDistributor<MacroBlock> blockManager = new LoadDistributor<MacroBlock>();
+		LoadDistributor<IntraPredictionBlock> intraBlocks = new LoadDistributor<IntraPredictionBlock>();
 		vecManager.setAllAndCompute(vectorListManager.getList());
-		blockManager.setAllAndCompute(blocks);
+		intraBlocks.setAllAndCompute(intraBlockManager.getList());
 		long end_load_dist = System.currentTimeMillis();
 		long start_render = System.currentTimeMillis();
 		if (vectorListManager.getList() != null) {
@@ -168,8 +169,8 @@ public class InputProcessor {
 	 * @return An ArrayList with all non-coded blocks.
 	 * @throws CorruptedFileException	When the decoded non-coded blocks size does not match with the coded size.
 	 */
-	private ArrayList<MacroBlock> getRawBlocks(byte[] rawBlocks) throws CorruptedFileException {
-		return Protocol.getRawBlocks(rawBlocks);
+	private void getIntraPreditionBlocks(byte[] rawBlocksPart, ListManager<IntraPredictionBlock> intraBlockListManager, boolean singleThread) throws CorruptedFileException {
+		Protocol.getIntraBlocks(rawBlocksPart, intraBlockListManager, singleThread);
 	}
 	
 	/**

@@ -97,6 +97,10 @@ public class VectorEngine {
 		this.totalPixelsProcessed = 0;
 		this.TOTAL_MSE = 0;
 		
+		for (final MacroBlock b : differences) {
+			this.totalPixelsProcessed += b.getSquaredSize();
+		}
+		
 		LoadDistributor<Vector> vecManager = new LoadDistributor<Vector>();
 		ForkJoinPool executor = ForkJoinPool.commonPool();
 		executor.invoke(new VectorPredictionTask(vecManager, differences, refs, 0, differences.size()));

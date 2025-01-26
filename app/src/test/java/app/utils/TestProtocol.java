@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Test;
 
 import app.io.Protocol;
+import app.io.ProtocolBase;
 
 public class TestProtocol {
 	@Test
@@ -13,8 +14,8 @@ public class TestProtocol {
 		int[] positions = {0, 4, 8, 12, 16, 28, 32, 75, 4096, 65000, 733};
 		
 		for (int pos : positions) {
-			byte[] posBytes = Protocol.getPositionBytes(pos);
-			int reversePos = Protocol.getPosition(posBytes[0], posBytes[1]);
+			byte[] posBytes = ProtocolBase.getPositionBytes(pos);
+			int reversePos = ProtocolBase.getPosition(posBytes[0], posBytes[1]);
 			assertEquals(pos, reversePos);
 		}
 	}
@@ -24,7 +25,7 @@ public class TestProtocol {
 		int[] positions = {-1, -345, 65537, 634897345};
 		
 		for (int pos : positions) {
-			assertThrows(IllegalArgumentException.class, () -> Protocol.getPositionBytes(pos));
+			assertThrows(IllegalArgumentException.class, () -> ProtocolBase.getPositionBytes(pos));
 		}
 	}
 	
@@ -76,8 +77,8 @@ public class TestProtocol {
 		double[] coeffs = {-51.0, 0, 37.0, -127.0, 127.0, 58.0, 65.0, 87.0, -32.0, -1.0, 1.0};
 		
 		for (double coeff : coeffs) {
-			byte b_c = Protocol.getDCTCoeffByte(coeff);
-			double convertedByte = Protocol.getDCTCoeff(b_c);
+			byte b_c = ProtocolBase.getDCTCoeffByte(coeff);
+			double convertedByte = ProtocolBase.getDCTCoeff(b_c);
 			assertEquals(coeff, convertedByte);
 		}
 	}

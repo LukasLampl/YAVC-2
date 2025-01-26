@@ -61,50 +61,10 @@ import app.utils.PixelRaster;
 
 public class QuadtreeEngine {
 	/**
-	 * The start size and maximum size of a Quadtree MacroBlock.
-	 */
-	private final int MAX_SIZE = 128;
-	
-	/**
 	 * The error threshold, at which MacroBlocks stop splitting.
 	 */
 	private final double ERROR_THRESHOLD = 20.0;
 	
-	/**
-	 * Total amount of sizes.
-	 * 4x4, 8x8, 16x16, 32x32, 64x64 and 128x128
-	 */
-	public static final int NUMBER_OF_SIZES = 6;
-	
-	/**
-	 * Index at which to expect 4x4 blocks.
-	 */
-	public static final int INDEX_4x4 = 0;
-	
-	/**
-	 * Index at which to expect 8x8 blocks.
-	 */
-	public static final int INDEX_8x8 = 1;
-	
-	/**
-	 * Index at which to expect 16x16 blocks.
-	 */
-	public static final int INDEX_16x16 = 2;
-	
-	/**
-	 * Index at which to expect 32x32 blocks.
-	 */
-	public static final int INDEX_32x32 = 3;
-	
-	/**
-	 * Index at which to expect 64x64 blocks.
-	 */
-	public static final int INDEX_64x64 = 4;
-	
-	/**
-	 * Index at which to expect 128x128 blocks.
-	 */
-	public static final int INDEX_128x128 = 5;
 	
 	/**
 	 * Entry point of the quadtree construction.
@@ -143,8 +103,8 @@ public class QuadtreeEngine {
 			ArrayList<Future<MacroBlock>> futureRoots = new ArrayList<Future<MacroBlock>>();
 			ExecutorService executor = Executors.newFixedThreadPool(threads);
 			
-			for (int x = 0; x < width; x += this.MAX_SIZE) {
-				for (int y = 0; y < height; y += this.MAX_SIZE) {
+			for (int x = 0; x < width; x += QuadtreeBase.MAX_SIZE) {
+				for (int y = 0; y < height; y += QuadtreeBase.MAX_SIZE) {
 					Callable<MacroBlock> task = createQuadtreeConstructionTask(new Point(x, y), currentFrame, this.ERROR_THRESHOLD);
 					futureRoots.add(executor.submit(task));
 				}
@@ -182,7 +142,7 @@ public class QuadtreeEngine {
 	 */
 	private Callable<MacroBlock> createQuadtreeConstructionTask(final Point pos, final PixelRaster frame, final double errorThreshold) {
 		Callable<MacroBlock> task = () -> {
-			MacroBlock origin = new MacroBlock(pos.x, pos.y, this.MAX_SIZE, false);
+			MacroBlock origin = new MacroBlock(pos.x, pos.y, QuadtreeBase.MAX_SIZE, false);
 			double[][][] comps = frame.getPixelBlock(new Point(pos.x, pos.y), origin.getSize(), null);
 			origin.setColorComponents(comps[ColorManager.Y_INDEX], comps[ColorManager.U_INDEX], comps[ColorManager.V_INDEX]);
 			
@@ -248,32 +208,6 @@ public class QuadtreeEngine {
 		}
 		
 		return loadManager;
-	}
-	
-	/**
-	 * Get the index in an array with all MacroBlock sizes represented based
-	 * on the given size.
-	 * 
-	 * @param size	The size to convert to an index.
-	 * @return The index.
-	 */
-	public static int getIndexBySize(int size) {
-		switch (size) {
-		case 128:
-			return INDEX_128x128;
-		case 64:
-			return INDEX_64x64;
-		case 32:
-			return INDEX_32x32;
-		case 16:
-			return INDEX_16x16;
-		case 8:
-			return INDEX_8x8;
-		case 4:
-			return INDEX_4x4;
-		default:
-			throw new IllegalArgumentException("The size " + size + " is currently no supported.");
-		}
 	}
 
 	/**

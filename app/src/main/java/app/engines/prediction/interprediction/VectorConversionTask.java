@@ -26,6 +26,7 @@ import java.util.concurrent.RecursiveAction;
 
 import app.engines.dct.DCTConstants;
 import app.io.Protocol;
+import app.io.ProtocolBase;
 import app.managers.ListManager;
 import app.utils.ArrayUtils;
 
@@ -172,8 +173,8 @@ public class VectorConversionTask extends RecursiveAction {
 	public void execute() {
 		for (int i = this.start; i < this.end; i++) {
 			final int index = indexes.get(i).intValue();
-			final int posX = Protocol.getPosition(this.data[index], this.data[index + 1]);
-			final int posY = Protocol.getPosition(this.data[index + 2], this.data[index + 3]);
+			final int posX = ProtocolBase.getPosition(this.data[index], this.data[index + 1]);
+			final int posY = ProtocolBase.getPosition(this.data[index + 2], this.data[index + 3]);
 			final int spanX = Protocol.getVectorSpanInt(this.data[index + 4]);
 			final int spanY = Protocol.getVectorSpanInt(this.data[index + 5]);
 			final int[] refAndSize = Protocol.getReferenceAndSizeInt(this.data[index + 6]);
@@ -298,7 +299,7 @@ public class VectorConversionTask extends RecursiveAction {
 			
 			final int actualX = x + offsetX;
 			final int actualY = y + offsetY;
-			YChannel[actualX][actualY] = Protocol.getDCTCoeff(vectorPart[YStart + n]);
+			YChannel[actualX][actualY] = ProtocolBase.getDCTCoeff(vectorPart[YStart + n]);
 		}
 
 		x = 0;
@@ -312,8 +313,8 @@ public class VectorConversionTask extends RecursiveAction {
 			
 			final int actualX = halfOffsetX + x;
 			final int actualY = halfOffsetY + y;
-			UChannel[actualX][actualY] = Protocol.getDCTCoeff(vectorPart[UStart + n]);
-			VChannel[actualX][actualY] = Protocol.getDCTCoeff(vectorPart[VStart + n]);
+			UChannel[actualX][actualY] = ProtocolBase.getDCTCoeff(vectorPart[UStart + n]);
+			VChannel[actualX][actualY] = ProtocolBase.getDCTCoeff(vectorPart[VStart + n]);
 		}
 	}
 }

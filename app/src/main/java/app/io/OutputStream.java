@@ -33,7 +33,7 @@ import java.util.ArrayList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import app.engines.prediction.interprediction.Vector;
-import app.utils.MacroBlock;
+import app.engines.prediction.intraprediction.IntraPredictionBlock;
 import app.utils.PixelRaster;
 
 /**
@@ -130,14 +130,14 @@ public class OutputStream {
 	}
 	
 	/**
-	 * Writes a list of non-coded blocks to the given file.
+	 * Writes a list of intra blocks to the given file.
 	 * 
-	 * @param file		File in which to write.
-	 * @param blocks	Non-coded blocks to write.
+	 * @param file			File in which to write.
+	 * @param intraBlocks	Intra blocks to write.
 	 */
-	private void writeRawBlocks(File file, ArrayList<MacroBlock> blocks) {
+	private void writeIntraBlock(File file, ArrayList<IntraPredictionBlock> intraBlocks) {
 		try {
-			byte[] data = Protocol.getRawBlockBytes(blocks);
+			byte[] data = Protocol.getIntraBlockBytes(intraBlocks, true);
 			Files.write(Path.of(file.getAbsolutePath()), data, StandardOpenOption.APPEND);
 			this.lengthOfEachPart.add(data.length);
 		} catch (IOException e) {
@@ -200,7 +200,7 @@ public class OutputStream {
 					try {
 						QueueObject obj = this.queue.poll();
 						writeVectors(this.TEMP_OUTPUT_FILE, obj.getVectors());
-						writeRawBlocks(this.TEMP_OUTPUT_FILE, obj.getDifferences());
+						writeIntraBlock(this.TEMP_OUTPUT_FILE, obj.getIntraBlocks());
 						obj.discard();
 					} catch (Exception e) {
 						e.printStackTrace();

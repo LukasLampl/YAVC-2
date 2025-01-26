@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 import app.engines.prediction.interprediction.Vector;
 import app.engines.prediction.intraprediction.IntraDecoder;
 import app.engines.prediction.intraprediction.IntraPredictionBlock;
-import app.engines.quadtree.QuadtreeEngine;
+import app.engines.quadtree.QuadtreeBase;
 import app.managers.LoadDistributor;
 import app.managers.ReferenceFrameManager;
 import app.rendering.ColorManager;
@@ -39,8 +39,6 @@ import app.utils.MacroBlock;
 import app.utils.PixelRaster;
 
 public class CompositRenderer {
-	private static IntraDecoder intraDecoder = new IntraDecoder();
-	
 	public static PixelRaster renderComposit(LoadDistributor<Vector> vecs, ReferenceFrameManager refs, LoadDistributor<IntraPredictionBlock> intraBlocks,
 			boolean allowModToAbsDiff) {
 		long sRT = System.currentTimeMillis();
@@ -88,8 +86,8 @@ public class CompositRenderer {
 				MacroBlock b = new MacroBlock(block.getPosX(), block.getPosY(), block.getSize(), true);
 				final int size = b.getSize();
 				final Point pos = b.getPosition();
-				intraDecoder.computeAngularIntraPredictionBlock(b, block.getVertical(), block.getHorizontal(), block.getAngle(), dim);
-				double[][][] deltas = block.getDelta();
+				IntraDecoder.computeAngularIntraPredictionBlock(b, block.getVertical(), block.getHorizontal(), block.getAngle(), dim);
+				double[][][] deltas = block.getIDCTCoefficientsDelta(false);
 				
 				for (int x = 0; x < size; x++) {
 					if (pos.x + x < 0 || pos.x + x >= dim.width) continue;
@@ -122,7 +120,7 @@ public class CompositRenderer {
 	 */
 	private static Runnable createVectorRenderTask(List<Vector> vecList, ReferenceFrameManager refs, PixelRaster render, Dimension dim, boolean allowModToAbsDiff) {
 		Runnable task = () -> {
-			double[][][][] pixelBlockCache = new double[QuadtreeEngine.NUMBER_OF_SIZES][][][];
+			double[][][][] pixelBlockCache = new double[QuadtreeBase.NUMBER_OF_SIZES][][][];
 			long iT = 0;
 			long pBT = 0;
 			long iDT = 0;
@@ -137,7 +135,7 @@ public class CompositRenderer {
 				final int endY = pos.y + v.getSpanY();
 				final int size = v.getSize();
 				try {
-				final double[][][] selectedCache = pixelBlockCache[QuadtreeEngine.getIndexBySize(size)];
+				final double[][][] selectedCache = pixelBlockCache[QuadtreeBase.getIndexBySize(size)];
 				iT += (System.currentTimeMillis() - sIT);
 				long sPBT = System.currentTimeMillis();
 				final double[][][] block = referencedFrame.getPixelBlock(pos, size, selectedCache);

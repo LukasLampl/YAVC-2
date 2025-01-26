@@ -23,6 +23,7 @@ package app.decoder;
 
 import app.ArgumentProcessor;
 import app.engines.prediction.interprediction.Vector;
+import app.engines.prediction.intraprediction.IntraPredictionBlock;
 import app.exceptions.CorruptedFileException;
 import app.io.ImageWriter;
 import app.io.InputProcessor;
@@ -56,6 +57,7 @@ public class Decoder {
 	public void decode() {
 		VideoPlayer player = ArgumentProcessor.playback ? new VideoPlayer() : null;
 		ListManager<Vector> vectorListManager = new ListManager<Vector>();
+		ListManager<IntraPredictionBlock> intraBlockManager = new ListManager<IntraPredictionBlock>();
 		ImageWriter imageWriter = new ImageWriter(ArgumentProcessor.outputFile);
 		InputStream inputStream = new InputStream(ArgumentProcessor.inputFile);
 		InputProcessor processor = new InputProcessor();
@@ -77,14 +79,14 @@ public class Decoder {
 				System.out.println("FRAME: " + i + " (" + this.referenceManager.size() + ")");
 				long start_len_grab = System.currentTimeMillis();
 				int lengthOfVectors = processor.getNextLength();
-				int lengthOfRawBlocks = processor.getNextLength();
+				int lengthOfIntraBlocks = processor.getNextLength();
 				long end_len_grab = System.currentTimeMillis();
 				long start_data_grab = System.currentTimeMillis();
 				byte[] vectors = inputStream.getChunk(lengthOfVectors);
-				byte[] rawBlocks = inputStream.getChunk(lengthOfRawBlocks);
+				byte[] intraBlocks = inputStream.getChunk(lengthOfIntraBlocks);
 				long end_data_grab = System.currentTimeMillis();
 				long start_render = System.currentTimeMillis();
-				PixelRaster result = processor.processFrame(vectors, rawBlocks, this.referenceManager, vectorListManager);
+				PixelRaster result = processor.processFrame(vectors, intraBlocks, this.referenceManager, vectorListManager, intraBlockManager);
 				long end_render = System.currentTimeMillis();
 				
 				long start_write = System.currentTimeMillis();
@@ -104,6 +106,7 @@ public class Decoder {
 				}
 				
 				vectorListManager.switchList();
+				intraBlockManager.switchList();
 			}
 		} catch (CorruptedFileException e) {
 			e.printStackTrace();
