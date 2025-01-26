@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package app.encoder;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
 
@@ -184,6 +185,9 @@ public class Encoder {
 				long start_vector_movement = System.currentTimeMillis();
 				LoadDistributor<Vector> movementVectors = VECTOR_ENGINE.computeMovementVectors(predictionTypes.getInterPredictables(), this.referenceManager);
 				long end_vector_movement = System.currentTimeMillis();
+				
+				BufferedImage distribution = RenderEngine.renderPredictionDistribution(intraBlocks.getRawData(), movementVectors.getRawData(), curFrame.getDimension());
+				ImageIO.write(distribution, "png", new File(ArgumentProcessor.outputFile.getParent() + "/PRED_DIST_" + i + ".png"));
 				
 //				BufferedImage vectors = RenderEngine.renderVectors(movementVectors.getRawData(), curFrame.getDimension());
 				long start_render = System.currentTimeMillis();

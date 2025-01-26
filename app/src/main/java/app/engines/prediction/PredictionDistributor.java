@@ -28,9 +28,10 @@ import java.util.List;
 import app.managers.LoadDistributor;
 import app.rendering.ColorManager;
 import app.utils.MacroBlock;
+import app.utils.MathUtils;
 
 public class PredictionDistributor {
-	private final static double TRIGGER_VALUE = 42;
+	private final static double TRIGGER_VALUE = Math.pow(Math.E, -1.125);
 	
 	public static class Result {
 		private final List<MacroBlock> inter;
@@ -53,18 +54,19 @@ public class PredictionDistributor {
 	public PredictionDistributor.Result estimateBlockPredictionType(LoadDistributor<MacroBlock> macroblocks, Dimension dim) {
 		List<MacroBlock> interpredictables = new ArrayList<MacroBlock>();
 		List<MacroBlock> intrapredictables = new ArrayList<MacroBlock>();
+		double totalDeviation = 0;
 		
 		for (List<MacroBlock> blockList : macroblocks.getIterable()) {
 			for (MacroBlock block : blockList) {
-				if (block.getPositionX() == 0 || block.getPositionY() == 0
-					|| block.getPositionX() + block.getSize() >= dim.width
-					|| block.getPositionY() + block.getSize() >= dim.height) {
+				if (isEdgeBlock(block, dim)) {
 					interpredictables.add(block);
 					continue;
 				}
 				
-				double deviation = calculateDeviation(block.getSize(), block.getColors(), block.getMeanColor());
-				System.out.println("Deviation: " + deviation);
+				double deviation = calculateDeviation(block.getSize(), block.getColors()[ColorManager.Y_INDEX],
+						block.getMeanColor()[ColorManager.Y_INDEX]);
+				totalDeviation += deviation;
+				
 				if (deviation > TRIGGER_VALUE) {
 					interpredictables.add(block);
 				} else {
@@ -73,6 +75,7 @@ public class PredictionDistributor {
 			}
 		}
 		
+		System.out.println("Avg Dev: " + (totalDeviation / ((double)macroblocks.getRawData().size())));
 		System.out.println(String.format("Intra:  %.2f%% | Inter: %.2f%%",
 				((double)intrapredictables.size() / (double)macroblocks.getRawData().size() * 100),
 				((double)interpredictables.size() / (double)macroblocks.getRawData().size() * 100)));
@@ -80,34 +83,25 @@ public class PredictionDistributor {
 		return new PredictionDistributor.Result(interpredictables, intrapredictables);
 	}
 	
-	private double calculateDeviation(final int size, final double[][][] color, final double[] meanColor) {
-		final double mean_Y = meanColor[ColorManager.Y_INDEX];
-		final double mean_U = meanColor[ColorManager.U_INDEX];
-		final double mean_V = meanColor[ColorManager.V_INDEX];
-		final int halfSize = size / 2;
-		double max = Double.MIN_VALUE;
+	private boolean isEdgeBlock(final MacroBlock block, final Dimension dim) {
+		return block.getPositionX() == 0 || block.getPositionY() == 0
+				|| block.getPositionX() + block.getSize() >= dim.width
+				|| block.getPositionY() + block.getSize() >= dim.height;
+	}
+	
+	private double calculateDeviation(final int size, final double[][] Ycolor, final double meanYColor) {
 		double deviation = 0;
+		double max = Double.MIN_VALUE;
 		
 		for (int x = 0; x < size; x++) {
 			for (int y = 0; y < size; y++) {
-				double delta = color[ColorManager.Y_INDEX][x][y] - mean_Y;
+				double delta = Ycolor[x][y] - meanYColor;
 				deviation += delta * delta;
-//				max = max < delta ? delta : max;
+				max = MathUtils.max(max, MathUtils.abs(delta));
 			}
 		}
 		
-		for (int x = 0; x < halfSize; x++) {
-			for (int y = 0; y < halfSize; y++) {
-				double deltaU = color[ColorManager.U_INDEX][x][y] - mean_U;
-				double deltaV = color[ColorManager.V_INDEX][x][y] - mean_V;
-				deviation += deltaU * deltaU;
-				deviation += deltaV * deltaV;
-//				max = max < deltaU ? deltaU : max;
-//				max = max < deltaV ? deltaV : max;
-			}
-		}
-		
-		deviation = Math.sqrt(deviation / (size * size));// / (max * max);
+		deviation = Math.sqrt(deviation / (size * size)) / (max + 1e-10);
 		return deviation;
 	}
 }

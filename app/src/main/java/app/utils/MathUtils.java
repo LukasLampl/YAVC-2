@@ -51,4 +51,19 @@ public class MathUtils {
 	public static int round(final double value) {
 		return value >= 0.0 ? (int)(value + 0.5) : (int)(value - 0.5);
 	}
+	
+	/**
+	 * Gets the maximum number of the given two numbers.
+	 * 
+	 * @param a	The first number to compare.
+	 * @param b	The second number to compare.
+	 * @return
+	 * <ul>
+	 * <li>{@code a} - When {@code a} > {@code b}.
+	 * <li>{@code b} - When {@code a} < {@code b}. 
+	 * </ul>
+	 */
+	public static double max(final double a, final double b) {
+		return a < b ? b : a;
+	}
 }

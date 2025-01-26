@@ -15,7 +15,6 @@ import org.junit.jupiter.api.Test;
 
 import app.engines.prediction.interprediction.Vector;
 import app.engines.prediction.interprediction.VectorEngine;
-import app.engines.prediction.interprediction.VectorEngineResult;
 import app.engines.quadtree.QuadtreeEngine;
 import app.exceptions.CorruptedFileException;
 import app.io.InputProcessor;
@@ -66,8 +65,7 @@ public class TestDecoder {
 				ArrayList<MacroBlock> quadtreeRoots = qE.constructQuadtree(frame);
 				LoadDistributor<MacroBlock> leaveNodeManager = qE.getLeaveNodes(quadtreeRoots);
 				leaveNodeManager.compute(frame.getWidth() * frame.getHeight());
-				VectorEngineResult vectorEngineResult = vE.computeMovementVectors(leaveNodeManager.getRawData(), refMan);
-				LoadDistributor<Vector> movementVectors = vectorEngineResult.getVectors();
+				LoadDistributor<Vector> movementVectors = vE.computeMovementVectors(leaveNodeManager.getRawData(), refMan);
 				List<Vector> originalVectors = movementVectors.getRawData();
 				byte[] vectorData = Protocol.getVectorBytes(originalVectors, false);
 				ListManager<Vector> vectorListManager = new ListManager<Vector>();
@@ -133,8 +131,7 @@ public class TestDecoder {
 				list.add(new MacroBlock(0, 0, 4, frame.getPixelBlock(new Point(0, 0), 4, null)));
 				LoadDistributor<MacroBlock> leaveNodeManager = qE.getLeaveNodes(list);
 				leaveNodeManager.compute(frame.getWidth() * frame.getHeight());
-				VectorEngineResult vectorEngineResult = vE.computeMovementVectors(leaveNodeManager.getRawData(), refMan);
-				LoadDistributor<Vector> movementVectors = vectorEngineResult.getVectors();
+				LoadDistributor<Vector> movementVectors = vE.computeMovementVectors(leaveNodeManager.getRawData(), refMan);
 				List<Vector> originalVectors = movementVectors.getRawData();
 				byte[] vectorData = Protocol.getVectorBytes(originalVectors, false);
 				ListManager<Vector> vectorListManager = new ListManager<Vector>();

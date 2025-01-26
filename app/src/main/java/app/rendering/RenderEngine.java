@@ -31,6 +31,7 @@ import app.managers.LoadDistributor;
 import app.managers.ReferenceFrameManager;
 import app.rendering.renderers.CompositRenderer;
 import app.rendering.renderers.IntrapredictionRenderer;
+import app.rendering.renderers.PredictionDistributionRenderer;
 import app.rendering.renderers.QuadtreeRenderer;
 import app.rendering.renderers.VectorRenderer;
 import app.utils.MacroBlock;
@@ -108,6 +109,11 @@ public class RenderEngine {
 	 */
 	public static BufferedImage renderVectors(List<Vector> vecs, Dimension dim) {
 		return VectorRenderer.renderVectors(vecs, dim);
+	}
+	
+	public static BufferedImage renderPredictionDistribution(List<IntraPredictionBlock> intraBlocks,
+			List<Vector> movementVectors, Dimension dim) {
+		return PredictionDistributionRenderer.renderPredictionDistribution(intraBlocks, movementVectors, dim);
 	}
 	
 	public static BufferedImage[] renderIntraPredictionDeltas(LoadDistributor<IntraPredictionBlock> intraPredictedBlocks,
