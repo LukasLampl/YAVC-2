@@ -21,11 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package app.encoder;
 
-import java.awt.image.BufferedImage;
-import java.io.File;
 import java.util.ArrayList;
-
-import javax.imageio.ImageIO;
 
 import app.ArgumentProcessor;
 import app.engines.dct.DCTEngine;

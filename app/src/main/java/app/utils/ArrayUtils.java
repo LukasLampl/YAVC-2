@@ -28,6 +28,28 @@ import app.rendering.ColorManager;
  * for manipulating data in arrays.
  */
 public class ArrayUtils {
+	public static void copy3DArray(final double[][][] src, final int srcX, final int srcY,
+			final int srcZ, final double[][][] dest, final int destX, final int destY,
+			final int destZ, final int copyWidth, final int copyHeight, int copyDepth,
+			final boolean subsampled) {
+		if (destZ + copyDepth > dest[0].length) {
+			copyDepth = dest[0].length - destZ;
+		}
+		
+		int subSWidth = copyWidth >> 1;
+		int subSHeight = copyHeight >> 1;
+		
+		for (int z = 0; z < copyDepth; z++) {
+			if (z != 0 && subsampled) {
+				copy2DArray(src[z + srcZ], srcX, srcY, dest[z + destZ], destX,
+						destY, subSWidth, subSHeight);
+			} else {
+				copy2DArray(src[z + srcZ], srcX, srcY, dest[z + destZ], destX,
+						destY, copyWidth, copyHeight);
+			}
+		}
+	}
+	
 	/**
 	 * Copies a given array ({@code src}) to a second array ({@code dest}).
 	 * 
@@ -84,7 +106,7 @@ public class ArrayUtils {
 	 * @return The created array.
 	 */
 	public static double[][][] get3DArray(final int size, final boolean subsampled) {
-		final int channelSize = subsampled ? size / 2 : size;
+		final int channelSize = subsampled ? size >> 1 : size;
 		double[][][] arr = new double[ColorManager.CHANNELS][][];
 		arr[0] = new double[size][size];
 		arr[1] = new double[channelSize][channelSize];

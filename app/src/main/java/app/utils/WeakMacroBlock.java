@@ -243,7 +243,7 @@ public class WeakMacroBlock implements Discardable {
 		this.isSubdivided = true;
 		this.nodes = new WeakMacroBlock[4];
 		int index = 0;
-		final int fraction = this.size / 2;
+		final int fraction = this.size >> 1;
 		int outlyers = 0;
 		
 		for (int x = 0; x < this.size; x += fraction) {

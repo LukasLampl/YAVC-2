@@ -119,27 +119,17 @@ public class IntraPredictionTask extends RecursiveAction {
 
 		final CostFunction cost = new MSECost();
 		int bestAngle = -1;
-		double[][][] copy = ArrayUtils.get3DArray(predictionBlock.getSize(), true);
+		double[][][] copy = predictionBlock.clone().getColors();
 		double[][][] temp = ArrayUtils.get3DArray(predictionBlock.getSize(), true);
-		double[][][] data = predictionBlock.getColors();
-		ArrayUtils.copy2DArray(data[ColorManager.Y_INDEX], 0, 0, copy[ColorManager.Y_INDEX], 0, 0,
-				predictionBlock.getSize(), predictionBlock.getSize());
-		ArrayUtils.copy2DArray(data[ColorManager.U_INDEX], 0, 0, copy[ColorManager.U_INDEX], 0, 0,
-				predictionBlock.getSize() / 2,
-				predictionBlock.getSize() / 2);
-		ArrayUtils.copy2DArray(data[ColorManager.V_INDEX], 0, 0, copy[ColorManager.V_INDEX], 0, 0,
-				predictionBlock.getSize() / 2,
-				predictionBlock.getSize() / 2);
 
 		double error = Double.MAX_VALUE;
 		double [][][] AYUV = IntraPipeline.computeAverageIntraPredictionBlock(predictionBlock);
 		double err = cost.calcCost(copy, predictionBlock);
 		if (cost.betterError(err, error)) {
 			error = err;
-			data = predictionBlock.getColors();
-			ArrayUtils.copy2DArray(data[ColorManager.Y_INDEX], 0, 0, temp[ColorManager.Y_INDEX], 0, 0, predictionBlock.getSize(), predictionBlock.getSize());
-			ArrayUtils.copy2DArray(data[ColorManager.U_INDEX], 0, 0, temp[ColorManager.U_INDEX], 0, 0, predictionBlock.getSize() / 2, predictionBlock.getSize() / 2);
-			ArrayUtils.copy2DArray(data[ColorManager.V_INDEX], 0, 0, temp[ColorManager.V_INDEX], 0, 0, predictionBlock.getSize() / 2, predictionBlock.getSize() / 2);
+			ArrayUtils.copy3DArray(predictionBlock.getColors(), 0, 0, 0,
+					temp, 0, 0, 0, predictionBlock.getSize(),
+					predictionBlock.getSize(), ColorManager.CHANNELS, true);
 		}
 		for (int angle = IntraPipeline.MIN_ANGLE; angle <= IntraPipeline.MAX_ANGLE; angle += IntraPipeline.ANGLE_STEP) {
 			double[][][] borderPixels = getPixels(angle, predictionBlock.getSize(), curFrame, predictionBlock.getPositionX(), predictionBlock.getPositionY());
@@ -148,15 +138,9 @@ public class IntraPredictionTask extends RecursiveAction {
 			err = cost.calcCost(copy, predictionBlock);
 			if (cost.betterError(err, error)) {
 				error = err;
-				data = predictionBlock.getColors();
-				ArrayUtils.copy2DArray(data[ColorManager.Y_INDEX], 0, 0, temp[ColorManager.Y_INDEX], 0, 0,
-						predictionBlock.getSize(), predictionBlock.getSize());
-				ArrayUtils.copy2DArray(data[ColorManager.U_INDEX], 0, 0, temp[ColorManager.U_INDEX], 0, 0,
-						predictionBlock.getSize() / 2,
-						predictionBlock.getSize() / 2);
-				ArrayUtils.copy2DArray(data[ColorManager.V_INDEX], 0, 0, temp[ColorManager.V_INDEX], 0, 0,
-						predictionBlock.getSize() / 2,
-						predictionBlock.getSize() / 2);
+				ArrayUtils.copy3DArray(predictionBlock.getColors(), 0, 0, 0,
+						temp, 0, 0, 0, predictionBlock.getSize(),
+						predictionBlock.getSize(), ColorManager.CHANNELS, true);
 				bestAngle = angle;
 				AYUV = borderPixels;
 			}
@@ -195,19 +179,34 @@ public class IntraPredictionTask extends RecursiveAction {
 		intra.setVertical(ayuv[IntraPipeline.YUV_VERTICAL_INDEX]);
 		intra.setAppendedBlock(predictionBlock);
 		
+		final int size = predictionBlock.getSize();
 		final int halfSize = predictionBlock.getSize() / 2;
-		final double[][][] deltas = ArrayUtils.get3DArray(predictionBlock.getSize(), true);
+		final double[][][] deltas = ArrayUtils.get3DArray(size, true);
+		final double[][] origin_Y = origin[ColorManager.Y_INDEX];
+		final double[][] origin_U = origin[ColorManager.U_INDEX];
+		final double[][] origin_V = origin[ColorManager.V_INDEX];
+		final double[][] pred_Y = predicted[ColorManager.Y_INDEX];
+		final double[][] pred_U = predicted[ColorManager.U_INDEX];
+		final double[][] pred_V = predicted[ColorManager.V_INDEX];
 		
-		for (int x = 0; x < predictionBlock.getSize(); x++) {
-			for (int y = 0; y < predictionBlock.getSize(); y++) {
-				deltas[ColorManager.Y_INDEX][x][y] = origin[ColorManager.Y_INDEX][x][y] - predicted[ColorManager.Y_INDEX][x][y];
+		for (int x = 0; x < size; x++) {
+			final double[] origin_Y_row = origin_Y[x];
+			final double[] pred_Y_row = pred_Y[x];
+			
+			for (int y = 0; y < size; y++) {
+				deltas[ColorManager.Y_INDEX][x][y] = origin_Y_row[y] - pred_Y_row[y];
 			}
 		}
 		
 		for (int x = 0; x < halfSize; x++) {
+			final double[] origin_U_row = origin_U[x];
+			final double[] origin_V_row = origin_V[x];
+			final double[] pred_U_row = pred_U[x];
+			final double[] pred_V_row = pred_V[x];
+			
 			for (int y = 0; y < halfSize; y++) {
-				deltas[ColorManager.U_INDEX][x][y] = origin[ColorManager.U_INDEX][x][y] - predicted[ColorManager.U_INDEX][x][y];
-				deltas[ColorManager.V_INDEX][x][y] = origin[ColorManager.V_INDEX][x][y] - predicted[ColorManager.V_INDEX][x][y];
+				deltas[ColorManager.U_INDEX][x][y] = origin_U_row[y] - pred_U_row[y];
+				deltas[ColorManager.V_INDEX][x][y] = origin_V_row[y] - pred_V_row[y];
 			}
 		}
 		

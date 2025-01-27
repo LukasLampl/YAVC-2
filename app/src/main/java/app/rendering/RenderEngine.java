@@ -29,11 +29,11 @@ import app.engines.prediction.interprediction.Vector;
 import app.engines.prediction.intraprediction.IntraPredictionBlock;
 import app.managers.LoadDistributor;
 import app.managers.ReferenceFrameManager;
-import app.rendering.renderers.CompositRenderer;
 import app.rendering.renderers.IntrapredictionRenderer;
 import app.rendering.renderers.PredictionDistributionRenderer;
 import app.rendering.renderers.QuadtreeRenderer;
 import app.rendering.renderers.VectorRenderer;
+import app.rendering.renderers.composit.CompositRenderer;
 import app.utils.MacroBlock;
 import app.utils.PixelRaster;
 

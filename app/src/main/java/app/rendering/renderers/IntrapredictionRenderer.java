@@ -48,8 +48,8 @@ public class IntrapredictionRenderer {
 					for (int y = 0; y < b.getSize(); y++) {
 						final int imgY = y + b.getPositionY();
 						final double Y = deltas[ColorManager.Y_INDEX][x][y];
-						final double U = deltas[ColorManager.U_INDEX][x / 2][y / 2];
-						final double V = deltas[ColorManager.V_INDEX][x / 2][y  / 2];
+						final double U = deltas[ColorManager.U_INDEX][x >> 1][y >> 1];
+						final double V = deltas[ColorManager.V_INDEX][x >> 1][y  >> 1];
 						render.setRGB(imgX, imgY, ColorManager.convertYUVToRGB(new double[] {Y, U, V}));
 					}
 				}
@@ -72,8 +72,8 @@ public class IntrapredictionRenderer {
 						final int imgY = y + b.getPositionY();
 						
 						final double Y = color[ColorManager.Y_INDEX][x][y] + deltas[ColorManager.Y_INDEX][x][y];
-						final double U = color[ColorManager.U_INDEX][x / 2][y / 2] + deltas[ColorManager.U_INDEX][x / 2][y / 2];
-						final double V = color[ColorManager.V_INDEX][x / 2][y / 2] + deltas[ColorManager.V_INDEX][x / 2][y / 2];
+						final double U = color[ColorManager.U_INDEX][x >> 1][y >> 1] + deltas[ColorManager.U_INDEX][x >> 1][y >> 1];
+						final double V = color[ColorManager.V_INDEX][x >> 1][y >> 1] + deltas[ColorManager.V_INDEX][x >> 1][y >> 1];
 						
 						render2.setRGB(imgX, imgY, ColorManager.convertYUVToRGB(new double[] {Y, U, V}));
 					}

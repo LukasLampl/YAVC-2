@@ -326,7 +326,7 @@ public class Protocol {
 			final int size = refAndSize[1];
 			//Length of the vector diffs
 			//Original formula: (size * size) + 2 * ((size / 2) * (size / 2)) + Protocol.VECTOR_HEADER_LENGTH
-			i += ((size * size) + 2 * ((size * size) / 4)) + Protocol.VECTOR_HEADER_LENGTH;
+			i += ((size * size) + 2 * ((size * size) >> 2)) + Protocol.VECTOR_HEADER_LENGTH;
 		}
 	}
 	
@@ -454,7 +454,7 @@ public class Protocol {
 		
 		for (final IntraPredictionBlock block : intraBlocks) {
 			final int blockSize = block.getSize();
-			final int halfBlockSize = blockSize / 2;
+			final int halfBlockSize = blockSize >> 1;
 			size += Protocol.INTRA_BLOCK_HEADER_LENGTH;
 			size += (blockSize * blockSize) + 2 * (halfBlockSize * halfBlockSize);
 			size += ((blockSize + blockSize) * 3); // Pixels at border

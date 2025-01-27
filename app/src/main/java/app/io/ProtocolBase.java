@@ -124,9 +124,9 @@ public abstract class ProtocolBase {
 	 * @throws IllegalArgumentException	When a coefficient is > 127 or < -127 and {@code autoAdjust} is off.
 	 */
 	public static byte[][] getDeltaMatrixBytes(double[][][] deltaMatrix, final int size) {
-		final int halfSize = size / 2;
+		final int halfSize = size >> 1;
 		final int frac = size == 4 ? 4 : 8;
-		final int halfFrac = frac / 2;
+		final int halfFrac = frac >> 1;
 		final int groups = size == 4 ? 1 : (size * size) / 64;
 		final byte[] YBytes = new byte[size * size];
 		final byte[] UBytes = new byte[halfSize * halfSize];
@@ -208,7 +208,7 @@ public abstract class ProtocolBase {
 			final int startPos, final int size) {
 		double[][][] DCTCoeffGroups = ArrayUtils.get3DArray(size, true);
 		final int YLength = size * size;
-		final int halfSize = size / 2;
+		final int halfSize = size >> 1;
 		final int UVLength = halfSize * halfSize;
 		
 		final int YStart = startPos;
@@ -250,12 +250,12 @@ public abstract class ProtocolBase {
 			double[][][] arrayToWriteInto, final int YStart, final int UStart, final int VStart,
 			final int offsetX, final int offsetY) {
 		final int YLength = size * size;
-		final int halfSize = size / 2;
+		final int halfSize = size >> 1;
 		final int UVLength = halfSize * halfSize;
 		final int lengthTillMatrixBreak = size;
 		final int halfLengthTillMatrixBreak = halfSize;
-		final int halfOffsetX = offsetX / 2;
-		final int halfOffsetY = offsetY  / 2;
+		final int halfOffsetX = offsetX >> 1;
+		final int halfOffsetY = offsetY  >> 1;
 		int x = 0;
 		int y = 0;
 		

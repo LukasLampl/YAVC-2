@@ -124,8 +124,10 @@ public class QuadtreeTask {
 	 * RGB array.
 	 */
 	private MeanStructure calculate4x4Means(MacroBlock block) {
-		double[][][] meanYuvs = new double[block.getSize() / 4][block.getSize() / 4][];
-		double[][][] yuvs = new double[block.getSize()][block.getSize()][];
+		final int size = block.getSize();
+		final int quaterSize = size >> 2;
+		double[][][] meanYuvs = new double[quaterSize][quaterSize][];
+		double[][][] yuvs = new double[size][size][];
 		final int fraction = 64;
 		ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 		
@@ -180,8 +182,8 @@ public class QuadtreeTask {
 						}
 					}
 					
-					double[] meanColor = new double[] {sumY / 16, sumU / 16, sumV / 16};
-					meanYuvs[(startX + u) / 4][(startY + v) / 4] = meanColor;
+					double[] meanColor = new double[] {sumY >> 4, sumU >> 4, sumV >> 4};
+					meanYuvs[(startX + u) >> 2][(startY + v) >> 2] = meanColor;
 				}
 			}
 		};
@@ -207,10 +209,10 @@ public class QuadtreeTask {
 		double sumY = 0;
 		double sumU = 0;
 		double sumV = 0;
-		int actualSize = size / 4;
+		int actualSize = size >> 2;
 		int length = actualSize * actualSize;
-		int actualPosX = pos.x / 4;
-		int actualPosY = pos.y / 4;
+		int actualPosX = pos.x >> 2;
+		int actualPosY = pos.y >> 2;
 		
 		for (int x = 0; x < actualSize; x++) {
 			int posX = x + actualPosX;

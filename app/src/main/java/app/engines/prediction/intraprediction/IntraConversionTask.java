@@ -118,7 +118,7 @@ public class IntraConversionTask extends RecursiveAction {
 	
 	/**
 	 * Calculates the current workload of the RecursiveTask
-	 * by adding the sizes of the vectors and returning it.
+	 * by adding the sizes of the intra blocks and returning it.
 	 * 
 	 * <p><b>Note:</b><br>
 	 * Since the task gets indexes the length of an object is
@@ -145,9 +145,9 @@ public class IntraConversionTask extends RecursiveAction {
 	
 	/**
 	 * Executes the given task by working the indexes from the given start
-	 * and end down. The function essentially creates the vectors based on the
-	 * {@link #data} and {@link #indexes}, in the end it adds the vectors to
-	 * the {@link #vectorManager}
+	 * and end down. The function essentially creates the intra block based on the
+	 * {@link #data} and {@link #indexes}, in the end it adds the intra block to
+	 * the {@link #intraBlocksManager}
 	 */
 	public void execute() {
 		for (int i = this.start; i < this.end; i++) {

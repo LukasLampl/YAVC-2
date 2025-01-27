@@ -56,8 +56,8 @@ public class MacroBlock implements Discardable {
 	/**
 	 * <p>Position of the MacroBlock, originated from the PixelRaster.</p>
 	 */
-	private int positionX = 0;
-	private int positionY = 0;
+	protected int positionX = 0;
+	protected int positionY = 0;
 	
 	private int positionRelativeToParentX = 0;
 	private int positionRelativeToParentY = 0;
@@ -65,7 +65,7 @@ public class MacroBlock implements Discardable {
 	/**
 	 * <p>Size of the MacroBlock.</p>
 	 */
-	private int size = 0;
+	protected int size = 0;
 	
 	/**
 	 * <p>Squared size of the MacroBlock.</p>
@@ -150,7 +150,7 @@ public class MacroBlock implements Discardable {
 		this.squared_size = size * size;
 		
 		if (initColor) {
-			final int halfSize = size / 2;
+			final int halfSize = size >> 1;
 			this.Y = new double[size][size];
 			this.U = new double[halfSize][halfSize];
 			this.V = new double[halfSize][halfSize];
@@ -264,7 +264,8 @@ public class MacroBlock implements Discardable {
 			throw new NullPointerException("MacroBlock can't have a NULL Chroma-V channel");
 		} else if (colors[ColorManager.Y_INDEX].length != this.size) {
 			throw new IllegalArgumentException("The given luminance size is not equal to the MacroBlock size!");
-		} else if (colors[ColorManager.U_INDEX].length != this.size / 2 || colors[ColorManager.V_INDEX].length != this.size / 2) {
+		} else if (colors[ColorManager.U_INDEX].length != this.size >> 1
+				|| colors[ColorManager.V_INDEX].length != this.size >> 1) {
 			throw new IllegalArgumentException("The given chrominance size is not equal to the MacroBlock size!");
 		}
 		
@@ -301,7 +302,7 @@ public class MacroBlock implements Discardable {
 			throw new NullPointerException("MacroBlock can't have a NULL Chroma-V channel");
 		} else if (Y.length != this.size) {
 			throw new IllegalArgumentException("The given luminance size is not equal to the MacroBlock size!");
-		} else if (U.length != this.size / 2 || V.length != this.size / 2) {
+		} else if (U.length != this.size >> 1 || V.length != this.size >> 1) {
 			throw new IllegalArgumentException("The given chrominance size is not equal to the MacroBlock size!");
 		}
 		
@@ -348,8 +349,8 @@ public class MacroBlock implements Discardable {
 			throw new IllegalStateException("The MacroBlock is ready, but no data was set!");
 		}
 		
-		final int subSX = x / 2;
-		final int subSY = y / 2;
+		final int subSX = x >> 1;
+		final int subSY = y >> 1;
 		return new double[] {this.Y[x][y], this.U[subSX][subSY], this.V[subSX][subSY]};
 	}
 	
@@ -385,8 +386,8 @@ public class MacroBlock implements Discardable {
 			throw new IllegalStateException("The MacroBlock is ready, but no data was set!");
 		}
 		
-		final int subSX = x / 2;
-		final int subSY = y / 2;
+		final int subSX = x >> 1;
+		final int subSY = y >> 1;
 		cache[ColorManager.Y_INDEX] = this.Y[x][y];
 		cache[ColorManager.U_INDEX] = this.U[subSX][subSY];
 		cache[ColorManager.V_INDEX] = this.V[subSX][subSY];
@@ -408,8 +409,8 @@ public class MacroBlock implements Discardable {
 			throw new ArrayIndexOutOfBoundsException("(Y) " + y + " is out of bounds (" + this.size + ")");
 		}
 		
-		final int subSX = x / 2;
-		final int subSY = y / 2;
+		final int subSX = x >> 1;
+		final int subSY = y >> 1;
 		this.Y[x][y] = YUV[ColorManager.Y_INDEX];
 		this.U[subSX][subSY] = YUV[ColorManager.U_INDEX];
 		this.V[subSX][subSY] = YUV[ColorManager.V_INDEX];
@@ -451,7 +452,7 @@ public class MacroBlock implements Discardable {
 		this.isSubdivided = true;
 		this.nodes = new MacroBlock[4];
 		int index = 0;
-		final int fraction = this.size / 2;
+		final int fraction = this.size >> 1;
 		int outlyers = 0;
 		
 		for (int x = 0; x < this.size; x += fraction) {
@@ -660,9 +661,9 @@ public class MacroBlock implements Discardable {
 			throw new IllegalStateException("The MacroBlock is ready, but no data was set!");
 		}
 		
-		final int halfSize = size / 2;
-		final int halfPosX = posX / 2;
-		final int halfPosY = posY / 2;
+		final int halfSize = size >> 1;
+		final int halfPosX = posX >> 1;
+		final int halfPosY = posY >> 1;
 		double[][][] res = cache == null ? ArrayUtils.get3DArray(size, true)
 				: cache[ColorManager.Y_INDEX].length < size ? ArrayUtils.get3DArray(size, true) : cache;
 		ArrayUtils.copy2DArray(this.Y, posX, posY, res[ColorManager.Y_INDEX], 0, 0, size, size);
@@ -712,7 +713,7 @@ public class MacroBlock implements Discardable {
 		this.size = size;
 		
 		if (initColors) {
-			final int halfSize = size / 2;
+			final int halfSize = size >> 1;
 			this.Y = new double[size][size];
 			this.U = new double[halfSize][halfSize];
 			this.V = new double[halfSize][halfSize];
@@ -739,7 +740,7 @@ public class MacroBlock implements Discardable {
 	
 	@Override
 	public MacroBlock clone() {
-		final int halfSize = this.size / 2;
+		final int halfSize = this.size >> 1;
 		double[][] YClone = new double[this.size][this.size];
 		double[][] UClone = new double[halfSize][halfSize];
 		double[][] VClone = new double[halfSize][halfSize];
