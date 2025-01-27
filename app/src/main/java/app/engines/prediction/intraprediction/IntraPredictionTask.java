@@ -29,8 +29,8 @@ import app.engines.prediction.intraprediction.cost.MSECost;
 import app.managers.LoadDistributor;
 import app.rendering.ColorManager;
 import app.utils.ArrayUtils;
-import app.utils.MacroBlock;
 import app.utils.PixelRaster;
+import app.utils.components.MacroBlock;
 
 public class IntraPredictionTask extends RecursiveAction {
 	private static final long serialVersionUID = 2018983631713349516L;
@@ -95,7 +95,7 @@ public class IntraPredictionTask extends RecursiveAction {
 		int load = 0;
 
 		for (int i = this.start; i < this.end; i++) {
-			load += this.blocksToConvert.get(i).getSquaredSize();
+			load += this.blocksToConvert.get(i).getArea();
 		}
 
 		return load;
@@ -173,8 +173,7 @@ public class IntraPredictionTask extends RecursiveAction {
 	
 	private IntraPredictionBlock computeDelta(final MacroBlock predictionBlock, final int angle, final double[][][] ayuv, final double[][][] predicted, final double[][][] origin) {
 		IntraPredictionBlock intra = new IntraPredictionBlock(predictionBlock.getPositionX(),
-				predictionBlock.getPositionY(), predictionBlock.getSize());
-		intra.setAngle(angle);
+				predictionBlock.getPositionY(), angle, predictionBlock.getSize());
 		intra.setHorizontal(ayuv[IntraPipeline.YUV_HORIZONTAL_INDEX]);
 		intra.setVertical(ayuv[IntraPipeline.YUV_VERTICAL_INDEX]);
 		intra.setAppendedBlock(predictionBlock);

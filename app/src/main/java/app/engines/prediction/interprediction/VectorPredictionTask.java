@@ -32,8 +32,8 @@ import app.managers.LoadDistributor;
 import app.managers.ReferenceFrameManager;
 import app.rendering.ColorManager;
 import app.utils.ArrayUtils;
-import app.utils.MacroBlock;
 import app.utils.PixelRaster;
+import app.utils.components.MacroBlock;
 
 /**
  * <p>The class {@code VectorPredictionTask} contains all functions
@@ -122,7 +122,7 @@ public class VectorPredictionTask extends RecursiveAction {
 		int load = 0;
 		
 		for (int i = this.start; i < this.end; i++) {
-			load += this.blocksToConvert.get(i).getSquaredSize();
+			load += this.blocksToConvert.get(i).getArea();
 		}
 		
 		return load;
@@ -290,7 +290,7 @@ public class VectorPredictionTask extends RecursiveAction {
 					lowestMSE = MSE;
 					initPos.setLocation(p.x, p.y);
 					mostEqualBlock.setColorComponents(cache);
-					mostEqualBlock.moveBlock(p.x, p.y);
+					mostEqualBlock.move(p.x, p.y);
 				}
 			}
 			
@@ -316,7 +316,7 @@ public class VectorPredictionTask extends RecursiveAction {
 			if (MSE < lowestMSE) {
 				lowestMSE = MSE;
 				mostEqualBlock.setColorComponents(cache);
-				mostEqualBlock.moveBlock(p.x, p.y);
+				mostEqualBlock.move(p.x, p.y);
 			}
 		}
 		
@@ -446,7 +446,7 @@ public class VectorPredictionTask extends RecursiveAction {
 				
 				if (MSE < lowestMSE) {
 					lowestMSE = MSE;
-					mostEqualBlock.moveBlock(x, y);
+					mostEqualBlock.move(x, y);
 					mostEqualBlock.setColorComponents(cache);
 				}
 			}

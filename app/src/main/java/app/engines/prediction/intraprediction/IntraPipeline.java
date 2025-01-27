@@ -23,8 +23,8 @@ package app.engines.prediction.intraprediction;
 
 import java.awt.Dimension;
 
-import app.utils.MacroBlock;
 import app.utils.MathUtils;
+import app.utils.components.MacroBlock;
 
 public abstract class IntraPipeline {
 	protected final static int YUV_HORIZONTAL_INDEX = 0;

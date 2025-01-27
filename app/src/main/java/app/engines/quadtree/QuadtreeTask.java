@@ -28,9 +28,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import app.rendering.ColorManager;
-import app.utils.MacroBlock;
 import app.utils.MathUtils;
 import app.utils.MeanStructure;
+import app.utils.components.MacroBlock;
 
 /**
  * The {@code QuadtreeTask} is responsible for subdividing individual MacroBlocks

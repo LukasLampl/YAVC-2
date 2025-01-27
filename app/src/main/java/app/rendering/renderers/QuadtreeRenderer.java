@@ -29,8 +29,8 @@ import java.awt.image.BufferedImage;
 import java.util.List;
 
 import app.rendering.ColorManager;
-import app.utils.MacroBlock;
 import app.utils.PixelRaster;
+import app.utils.components.MacroBlock;
 
 public class QuadtreeRenderer {
 	/**

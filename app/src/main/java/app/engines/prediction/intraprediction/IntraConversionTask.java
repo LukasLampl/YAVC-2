@@ -24,6 +24,7 @@ package app.engines.prediction.intraprediction;
 import java.util.List;
 import java.util.concurrent.RecursiveAction;
 
+import app.Main;
 import app.io.Protocol;
 import app.io.ProtocolBase;
 import app.managers.ListManager;
@@ -162,15 +163,16 @@ public class IntraConversionTask extends RecursiveAction {
 			IntraPredictionBlock intraBlock = this.intraBlocksManager.getCachedObj();
 			
 			if (intraBlock == null) {
-				intraBlock = new IntraPredictionBlock(posX, posY, size);
+				intraBlock = new IntraPredictionBlock(posX, posY, angle, size);
 			} else {
 				intraBlock.setSize(size);
-				intraBlock.setPosition(posX, posY);
+				intraBlock.move(posX, posY);
 			}
 			
 			double[][][] diffs = ProtocolBase.getDeltaCoefficientsFromDatastream(this.data,
 					index + Protocol.INTRA_BLOCK_HEADER_LENGTH + borderOffset, size);
-			intraBlock.setDeltaCoeffcients(diffs);
+			double[][][] yuvDelta = Main.DCT_ENGINE.computeIDCTOfVectorColorDifference(diffs, size, true);
+			intraBlock.setYUVDelta(yuvDelta);
 			intraBlock.setAngle(angle);
 			intraBlock.setVertical(borderColors[0]);
 			intraBlock.setHorizontal(borderColors[1]);

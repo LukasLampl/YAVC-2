@@ -30,8 +30,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import app.managers.LoadDistributor;
-import app.utils.MacroBlock;
 import app.utils.PixelRaster;
+import app.utils.components.MacroBlock;
 
 /**
  * The {@code DifferenceEngine} filters out MacroBlocks that resemble old ones.
@@ -80,7 +80,7 @@ public class DifferenceEngine {
 					
 					for (MacroBlock block : blockList) {
 						int size = block.getSize();
-						int squaredSize = block.getSquaredSize();
+						int squaredSize = block.getArea();
 						double[][][] refCols = prevFrame.getPixelBlock(block.getPosition(), size, null);
 						double[][][] curCols = block.getColors();
 						

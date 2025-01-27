@@ -1,8 +1,8 @@
 package app.engines.prediction.intraprediction.cost;
 
 import app.rendering.ColorManager;
-import app.utils.MacroBlock;
 import app.utils.MathUtils;
+import app.utils.components.MacroBlock;
 
 public class SSIMCost implements CostFunction {
 	@Override

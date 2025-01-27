@@ -107,7 +107,6 @@ public class VideoPlayer {
 			Graphics2D g2d = (Graphics2D)g;
 			g2d.scale(ratioW, ratioW);
 			g2d.drawImage(this.frameToDisplay.toBufferedImage(), 0, 0, null);
-			g2d.dispose();
 		}
 	}
 }

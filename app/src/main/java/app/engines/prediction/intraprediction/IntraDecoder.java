@@ -23,7 +23,7 @@ package app.engines.prediction.intraprediction;
 
 import java.awt.Dimension;
 
-import app.utils.MacroBlock;
+import app.utils.components.MacroBlock;
 
 public class IntraDecoder {
 	public static void computeAngularIntraPredictionBlock(MacroBlock predictionBlock, final double[][] verticalYUV,

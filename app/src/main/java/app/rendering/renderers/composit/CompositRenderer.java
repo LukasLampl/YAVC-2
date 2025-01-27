@@ -26,7 +26,6 @@ import java.awt.Point;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 
 import app.engines.prediction.interprediction.Vector;
@@ -36,11 +35,11 @@ import app.managers.LoadDistributor;
 import app.managers.ReferenceFrameManager;
 import app.rendering.ColorManager;
 import app.utils.PixelRaster;
-import app.utils.StaticMacroBlock;
+import app.utils.components.StaticMacroBlock;
 
 public class CompositRenderer {
 	public static PixelRaster renderComposit(LoadDistributor<Vector> vecs, ReferenceFrameManager refs, LoadDistributor<IntraPredictionBlock> intraBlocks,
-			boolean allowModifications) {
+			boolean allowModifications, boolean encoding) {
 		long sRT = System.currentTimeMillis();
 		PixelRaster render = refs.getLastFrame().copy();
 		Dimension dim = refs.getLastFrame().getDimension();
@@ -51,7 +50,8 @@ public class CompositRenderer {
 			if (vecs != null) {
 				if (vecs.hasDistributed()) {
 					for (final List<Vector> vecList : vecs.getIterable()) {
-						Runnable task = createVectorRenderTask(vecList, refs, render, dim, allowModifications);
+						Runnable task = createVectorRenderTask(vecList, refs, render,
+								dim, allowModifications, encoding);
 						executor.submit(task);
 					}
 				}
@@ -60,7 +60,8 @@ public class CompositRenderer {
 			if (intraBlocks != null) {
 				if (intraBlocks.hasDistributed()) {
 					for (final List<IntraPredictionBlock> intraBlockList : intraBlocks.getIterable()) {
-						Runnable task = createIntrapredictionBlockRenderTask(intraBlockList, dim, render, allowModifications);
+						Runnable task = createIntrapredictionBlockRenderTask(intraBlockList,
+								dim, render, allowModifications, encoding);
 						executor.submit(task);
 					}
 				}
@@ -80,9 +81,10 @@ public class CompositRenderer {
 	}
 	
 	private static Runnable createIntrapredictionBlockRenderTask(List<IntraPredictionBlock> blockList, Dimension dim,
-			PixelRaster render, boolean allowModifications) {
+			PixelRaster render, boolean allowModifications, boolean encoding) {
 		Runnable task = () -> {
 			final StaticMacroBlock tempBlock = new StaticMacroBlock(0, 0, 0, true);
+			final double[] YUVCache = new double[ColorManager.CHANNELS];
 			
 			for (IntraPredictionBlock block : blockList) {
 				final int size = block.getSize();
@@ -90,7 +92,7 @@ public class CompositRenderer {
 				tempBlock.setPosition(pos.x, pos.y);
 				tempBlock.mockSize(size);
 				IntraDecoder.computeAngularIntraPredictionBlock(tempBlock, block.getVertical(), block.getHorizontal(), block.getAngle(), dim);
-				final double[][][] deltas = block.getIDCTCoefficientsDelta(allowModifications);
+				final double[][][] deltas = encoding ? block.getIDCTCoefficientsDelta(allowModifications) : block.getYUVDelta();
 				final double[][] delta_Y = deltas[ColorManager.Y_INDEX];
 				final double[][] delta_U = deltas[ColorManager.U_INDEX];
 				final double[][] delta_V = deltas[ColorManager.V_INDEX];
@@ -109,7 +111,7 @@ public class CompositRenderer {
 						if (actualPosY < 0 || actualPosY >= dim.height) continue;
 						
 						final int halfY = y >> 1;
-						final double[] YUV = tempBlock.getYUV(x, y);
+						final double[] YUV = tempBlock.getYUV(x, y, YUVCache);
 						YUV[ColorManager.Y_INDEX] += delta_Y_row[y];
 						YUV[ColorManager.U_INDEX] += delta_U_row[halfY];
 						YUV[ColorManager.V_INDEX] += delta_V_row[halfY];
@@ -129,12 +131,14 @@ public class CompositRenderer {
 	 * @param refs				All reference frames used by the vectors.
 	 * @param render			The PixelRaster in which to write.
 	 * @param dim				Dimension of the PixelRaster.
-	 * @param allowModToAbsDiff	Flag for whether the vector absolute color difference data can be modified or not.
+	 * @param allowModifications	Flag for whether the vector absolute color difference data can be modified or not.
 	 * @return A runnable task, which renders all given vectors onto the given frame.
 	 */
-	private static Runnable createVectorRenderTask(List<Vector> vecList, ReferenceFrameManager refs, PixelRaster render, Dimension dim, boolean allowModToAbsDiff) {
+	private static Runnable createVectorRenderTask(List<Vector> vecList, ReferenceFrameManager refs,
+			PixelRaster render, Dimension dim, boolean allowModifications, boolean encoding) {
 		Runnable task = () -> {
 			final StaticMacroBlock tempBlock = new StaticMacroBlock(0, 0, 0, true);
+			final double[] YUVCache = new double[ColorManager.CHANNELS];
 			
 			for (final Vector v : vecList) {
 				final PixelRaster referencedFrame = v.getReference() == -1 ? null : refs.getByReference(v.getReference());
@@ -144,7 +148,7 @@ public class CompositRenderer {
 				final int size = v.getSize();
 				
 				tempBlock.setColorComponents(referencedFrame.getPixelBlock(pos, size, tempBlock.getColors()));
-				double[][][] deltas = v.getIDCTCoefficientsOfAbsoluteColorDifference(allowModToAbsDiff);
+				double[][][] deltas = encoding ? v.getIDCTCoefficientsOfAbsoluteColorDifference(allowModifications) : v.getYUVDelta();
 				final double[][] delta_Y = deltas[ColorManager.Y_INDEX];
 				final double[][] delta_U = deltas[ColorManager.U_INDEX];
 				final double[][] delta_V = deltas[ColorManager.V_INDEX];
@@ -167,7 +171,7 @@ public class CompositRenderer {
 								|| posY < 0 || posY > dim.height) continue;
 						
 						final int halfY = y >> 1;
-						final double[] YUV = tempBlock.getYUV(x, y);
+						final double[] YUV = tempBlock.getYUV(x, y, YUVCache);
 						YUV[ColorManager.Y_INDEX] += delta_Y_row[y];
 						YUV[ColorManager.U_INDEX] += delta_U_row[halfY];
 						YUV[ColorManager.V_INDEX] += delta_V_row[halfY];

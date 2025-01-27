@@ -28,7 +28,7 @@ import java.util.List;
 import app.engines.prediction.intraprediction.IntraPredictionBlock;
 import app.managers.LoadDistributor;
 import app.rendering.ColorManager;
-import app.utils.MacroBlock;
+import app.utils.components.MacroBlock;
 
 public class IntrapredictionRenderer {
 	public static BufferedImage[] renderIntraPredictionDeltas(LoadDistributor<IntraPredictionBlock> intraPredictedBlocks,

@@ -27,7 +27,8 @@ import java.util.List;
 
 import app.engines.prediction.interprediction.Vector;
 import app.engines.quadtree.QuadtreeBase;
-import app.utils.MacroBlock;
+import app.utils.components.Component2D;
+import app.utils.components.MacroBlock;
 
 /**
  * The class {@code LoadDistributor<T>} provides basic functionalities for
@@ -166,10 +167,8 @@ public class LoadDistributor<T> implements Discardable {
 		for (final T obj : l) {
 			setObj(obj);
 			
-			if (obj instanceof Vector) {
-				totalSize += ((Vector)obj).getSquaredSize();
-			} else if (obj instanceof MacroBlock) {
-				totalSize += ((MacroBlock)obj).getSquaredSize();
+			if (obj instanceof Component2D) {
+				totalSize += ((Component2D)obj).getArea();
 			}
 		}
 		
@@ -217,10 +216,8 @@ public class LoadDistributor<T> implements Discardable {
 					throw new IllegalStateException("Can't have null in the distributor.");
 				}
 				
-				if (obj instanceof MacroBlock) {
-					currentLoad += ((MacroBlock)obj).getSquaredSize();
-				} else if (obj instanceof Vector) {
-					currentLoad += ((Vector)obj).getSquaredSize();
+				if (obj instanceof Component2D) {
+					currentLoad += ((Component2D)obj).getArea();
 				} else {
 					currentLoad++;
 				}

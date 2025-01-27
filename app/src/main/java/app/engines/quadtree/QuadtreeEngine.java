@@ -32,8 +32,8 @@ import java.util.concurrent.TimeUnit;
 
 import app.managers.LoadDistributor;
 import app.rendering.ColorManager;
-import app.utils.MacroBlock;
 import app.utils.PixelRaster;
+import app.utils.components.MacroBlock;
 
 /**
  * <p>
@@ -52,7 +52,7 @@ import app.utils.PixelRaster;
  * Time: O(n)
  * </p>
  * 
- * @see app.utils.MacroBlock
+ * @see app.utils.components.MacroBlock
  * @see app.utils.PixelRaster
  * 
  * @author Lukas Lampl
@@ -80,7 +80,7 @@ public class QuadtreeEngine {
 	 * preserving quality. If not or the size is to big, the block gets
 	 * split. For further details on the splitting section
 	 * 
-	 * @see app.utils.MacroBlock#subdivide(Dimension)
+	 * @see app.utils.components.MacroBlock#subdivide(Dimension)
 	 * 
 	 * @return All QuadtreeRoots
 	 * 

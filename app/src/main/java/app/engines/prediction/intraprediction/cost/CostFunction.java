@@ -1,6 +1,6 @@
 package app.engines.prediction.intraprediction.cost;
 
-import app.utils.MacroBlock;
+import app.utils.components.MacroBlock;
 
 public interface CostFunction {
 	double calcCost(final double[][][] origin, final MacroBlock block);

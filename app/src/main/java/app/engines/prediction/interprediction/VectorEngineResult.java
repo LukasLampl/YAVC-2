@@ -22,7 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 package app.engines.prediction.interprediction;
 
 import app.managers.LoadDistributor;
-import app.utils.MacroBlock;
+import app.utils.components.MacroBlock;
 
 /**
  * The {@code VectorEngineResult} class is a wrapper class to group

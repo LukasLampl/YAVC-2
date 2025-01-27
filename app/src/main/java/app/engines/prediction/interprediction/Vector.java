@@ -21,13 +21,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package app.engines.prediction.interprediction;
 
-import java.awt.Point;
-
 import app.engines.dct.DCTEngine;
-import app.managers.Discardable;
 import app.rendering.ColorManager;
 import app.utils.ArrayUtils;
-import app.utils.MacroBlock;
+import app.utils.components.Component2D;
+import app.utils.components.MacroBlock;
 
 /**
  * <p>The class {@code Vector} is a container structure for storing
@@ -46,37 +44,21 @@ import app.utils.MacroBlock;
  * due to the recalculation of all DCT-II coefficients.</p>
  * 
  * @author Lukas Lampl
- * @since 1.1.0
+ * @since 1.1.1
  */
 
 
-public class Vector implements Discardable {
+public class Vector extends Component2D {
 	/**
 	 * Provides a DCTEngine with pre-calculated cosine table.
 	 */
 	private static DCTEngine DCT_ENGINE = app.Main.DCT_ENGINE;
 	
 	/**
-	 * The starting point of the vector.
-	 */
-	private int startingPointX = 0;
-	private int startingPointY = 0;
-	
-	/**
 	 * The individual spans of the vector, measured in pixels.
 	 */
 	private int spanX = 0;
 	private int spanY = 0;
-	
-	/**
-	 * The size of the reference block.
-	 */
-	private int size = 0;
-	
-	/**
-	 * The squared size of the vector.
-	 */
-	private int squaredSize = 0;
 	
 	/**
 	 * The reference frame, from which the block is referred to.
@@ -91,14 +73,18 @@ public class Vector implements Discardable {
 	private MacroBlock mostEqualBlock = null;
 	
 	/**
-	 * AbsoluteColorDifferenceDCTCoefficients is an 3D array containing
+	 * yuvDeltaDCTCoefficients is an 3D array containing
 	 * the absolute color difference in form of 4x4 or 8x8 DCT matrices.
 	 * The invokedDCTOfDifferences is set the true, if the absolute difference was invoked,
 	 * else it's false.
-	 * 
-	 * @see app.io.Protocol#getVectorAbsoluteColorDifferenceBytes(double[][][], int)
 	 */
-	private double[][][] absoluteColorDifferenceDCTCoefficients = null;
+	private double[][][] yuvDeltaDCTCoefficients = null;
+	
+	/**
+	 * Holds the delta values of the vector compared to the reference block in decoded form.
+	 * This is only used in the decoder.
+	 */
+	private double[][][] yuvDelta = null;
 	
 	/**
 	 * Flag for whether the absolute color difference has been invoked or not.
@@ -116,14 +102,7 @@ public class Vector implements Discardable {
 	 * @throws IllegalArgumentException	If the area of the reference is 0 or negative.
 	 */
 	public Vector(final int x, final int y, final int size) {
-		if (size <= 0) {
-			throw new IllegalArgumentException("Vector can't have a 0 or negative area of reference");
-		}
-		
-		this.startingPointX = x;
-		this.startingPointY = y;
-		this.size = size;
-		this.squaredSize = size * size;
+		super(x, y, size);
 	}
 	
 	/**
@@ -192,37 +171,6 @@ public class Vector implements Discardable {
 	}
 	
 	/**
-	 * Sets the size of the mostEqualBlock as well as
-	 * the size of the appendedBlock.
-	 * 
-	 * @param size	Size of the appendedBlock.
-	 */
-	public void setSize(final int size) {
-		this.size = size;
-		this.squaredSize = size * size;
-	}
-	
-	/**
-	 * Get the position of the vector.
-	 * 
-	 * @return Position of the vector.
-	 */
-	public Point getPosition() {
-		return new Point(this.startingPointX, this.startingPointY);
-	}
-	
-	/**
-	 * Sets the starting point of the vector.
-	 * 
-	 * @param x		X coordinate of the vectors starting point.
-	 * @param y		Y coordinate of the vectors starting point.
-	 */
-	public void setPosition(final int x, final int y) {
-		this.startingPointX = x;
-		this.startingPointY = y;
-	}
-	
-	/**
 	 * Get the x span of the vector.
 	 * 
 	 * @return Span x of the vector.
@@ -238,24 +186,6 @@ public class Vector implements Discardable {
 	 */
 	public int getSpanY() {
 		return this.spanY;
-	}
-	
-	/**
-	 * Get the size of the vector reference.
-	 * 
-	 * @return Size of the vector reference.
-	 */
-	public int getSize() {
-		return this.size;
-	}
-	
-	/**
-	 * Get the squared size of the vector reference.
-	 * 
-	 * @return The squared size of the vector reference.
-	 */
-	public int getSquaredSize() {
-		return this.squaredSize;
 	}
 	
 	/**
@@ -280,7 +210,7 @@ public class Vector implements Discardable {
 			throw new NullPointerException("Can't use NULL as difference");
 		}
 		
-		this.absoluteColorDifferenceDCTCoefficients = diffs;
+		this.yuvDeltaDCTCoefficients = diffs;
 		this.invokedDCTOfDifferences = true;
 	}
 	
@@ -293,8 +223,18 @@ public class Vector implements Discardable {
 	 * @see app.io.Protocol#getVectorAbsoluteColorDifferenceBytes(double[][][], int)
 	 */
 	public void setAbsoluteDifferences(final double[][][] YUVDifference) {
-		this.absoluteColorDifferenceDCTCoefficients = DCT_ENGINE.computeDCTOfVectorColorDifference(YUVDifference, this.size, true);
+		this.yuvDeltaDCTCoefficients = DCT_ENGINE.computeDCTOfVectorColorDifference(YUVDifference, this.size, true);
 		this.invokedDCTOfDifferences = true;
+	}
+	
+	/**
+	 * Sets the delta components in YUV format that must be applied to the predicted block to
+	 * get the original block.
+	 * 
+	 * @param YUVDelta	The YUV formatted delta.
+	 */
+	public void setYUVDelta(final double[][][] YUVDelta) {
+		this.yuvDelta = YUVDelta;
 	}
 	
 	/**
@@ -305,7 +245,7 @@ public class Vector implements Discardable {
 	 * @see app.io.Protocol#getVectorAbsoluteColorDifferenceBytes(double[][][], int)
 	 */
 	public double[][][] getDCTCoefficientsOfAbsoluteColorDifference() {
-		return this.absoluteColorDifferenceDCTCoefficients;
+		return this.yuvDeltaDCTCoefficients;
 	}
 	
 	/**
@@ -326,11 +266,21 @@ public class Vector implements Discardable {
 		}
 		
 		if (allowModificationToOriginalData) {
-			return DCT_ENGINE.computeIDCTOfVectorColorDifference(this.absoluteColorDifferenceDCTCoefficients, this.size, true);
+			return DCT_ENGINE.computeIDCTOfVectorColorDifference(this.yuvDeltaDCTCoefficients, this.size, true);
 		}
 		
 		double[][][] clone = cloneAbsoluteColorDifference();
 		return DCT_ENGINE.computeIDCTOfVectorColorDifference(clone, this.size, true);
+	}
+	
+	/**
+	 * Gets the YUV delta that must be applied to the predicted block in order to
+	 * get the original back.
+	 * 
+	 * @return The delta values in YUV format.
+	 */
+	public double[][][] getYUVDelta() {
+		return this.yuvDelta;
 	}
 	
 	/**
@@ -342,7 +292,7 @@ public class Vector implements Discardable {
 	 * @return Cloned array with all the data.
 	 */
 	private double[][][] cloneAbsoluteColorDifference() {
-		double[][][] ref = this.absoluteColorDifferenceDCTCoefficients;
+		double[][][] ref = this.yuvDeltaDCTCoefficients;
 		double[][][] clone = ArrayUtils.get3DArray(this.size, true);
 		
 		for (int i = 0; i < ColorManager.CHANNELS; i++) {
@@ -376,11 +326,7 @@ public class Vector implements Discardable {
 	 * Resets the data inside the vector to the standard values, in order
 	 * to reuse the vector.
 	 */
-	public void reset(final int x, final int y, final int size, boolean forceClear) {
-		this.startingPointX = x;
-		this.startingPointY = y;
-		this.size = size;
-		this.squaredSize = this.size * this.size;
+	public void reset(boolean forceClear) {
 		this.spanX = 0;
 		this.spanY = 0;
 		this.reference = 0;
@@ -388,20 +334,21 @@ public class Vector implements Discardable {
 		this.mostEqualBlock = null;
 		this.invokedDCTOfDifferences = false;
 		
-		if (this.absoluteColorDifferenceDCTCoefficients != null || forceClear) {
-			this.absoluteColorDifferenceDCTCoefficients = null;
+		if (this.yuvDeltaDCTCoefficients != null || forceClear) {
+			this.yuvDeltaDCTCoefficients = null;
 		}
 	}
 	
 	@Override
 	public void discard() {
-		reset(0, 0, 0, true);
+		super.discard();
+		reset(true);
 	}
 	
 	@Override
 	public int hashCode() {
 		int res = 0;
-		res |= ((this.startingPointX & 0xFFFF) ^ (this.startingPointY & 0xFFFF)) << 16;
+		res |= ((this.positionX & 0xFFFF) ^ (this.positionY & 0xFFFF)) << 16;
 		res |= (this.reference & 0xFF) ^ (this.spanX & 0xFF) ^ (this.spanY & 0xFF) << 8;
 		res |= (this.size & 0xFF);
 		return res;

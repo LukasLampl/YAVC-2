@@ -25,8 +25,8 @@ import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 
 import app.managers.LoadDistributor;
-import app.utils.MacroBlock;
 import app.utils.PixelRaster;
+import app.utils.components.MacroBlock;
 
 public class IntraEngine extends IntraPipeline {
 	/**
@@ -39,7 +39,7 @@ public class IntraEngine extends IntraPipeline {
 		this.totalPixelsProcessed = 0;
 		
 		for (final MacroBlock b : predictionList) {
-			this.totalPixelsProcessed += b.getSquaredSize();
+			this.totalPixelsProcessed += b.getArea();
 		}
 		
 		LoadDistributor<IntraPredictionBlock> predictedBlocks = new LoadDistributor<IntraPredictionBlock>();

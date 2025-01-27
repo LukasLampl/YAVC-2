@@ -1,7 +1,7 @@
 package app.engines.prediction.intraprediction.cost;
 
 import app.rendering.ColorManager;
-import app.utils.MacroBlock;
+import app.utils.components.MacroBlock;
 
 public class MSECost implements CostFunction {
 	@Override

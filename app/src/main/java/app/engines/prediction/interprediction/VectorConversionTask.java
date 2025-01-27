@@ -24,6 +24,7 @@ package app.engines.prediction.interprediction;
 import java.util.List;
 import java.util.concurrent.RecursiveAction;
 
+import app.Main;
 import app.io.Protocol;
 import app.io.ProtocolBase;
 import app.managers.ListManager;
@@ -124,13 +125,13 @@ public class VectorConversionTask extends RecursiveAction {
 	 */
 	@Override
 	protected void compute() {
-		int totalWorkload = getWorkloadOfThread();
+		final int totalWorkload = getWorkloadOfThread();
 		
 		if (totalWorkload > MAX_WORK && !this.executeOnSingleThread) {
-			int middle = (this.start + this.end) / 2;
-			VectorConversionTask tl = new VectorConversionTask(this.start, middle,
+			final int middle = (this.start + this.end) / 2;
+			final VectorConversionTask tl = new VectorConversionTask(this.start, middle,
 					this.indexes, this.data, this.vectorManager);
-			VectorConversionTask tr = new VectorConversionTask(middle, this.end,
+			final VectorConversionTask tr = new VectorConversionTask(middle, this.end,
 					this.indexes, this.data, this.vectorManager);
 			invokeAll(tl, tr);
 		} else {
@@ -155,11 +156,11 @@ public class VectorConversionTask extends RecursiveAction {
 		
 		for (int i = this.start; i < this.end; i++) {
 			if (i == 0) {
-				totalWorkload += indexes.get(i);
+				totalWorkload = this.indexes.get(i);
 				continue;
 			}
 			
-			totalWorkload += (indexes.get(i) - indexes.get(i - 1));
+			totalWorkload += (this.indexes.get(i) - this.indexes.get(i - 1));
 		}
 		
 		return totalWorkload;
@@ -187,12 +188,13 @@ public class VectorConversionTask extends RecursiveAction {
 				vec = new Vector(posX, posY, size);
 			} else {
 				vec.setSize(size);
-				vec.setPosition(posX, posY);
+				vec.move(posX, posY);
 			}
 			
 			double[][][] diffs = ProtocolBase.getDeltaCoefficientsFromDatastream(this.data,
 					index + Protocol.VECTOR_HEADER_LENGTH, size);
-			vec.setAbsolutedifferenceDCTCoefficients(diffs);
+			double[][][] yuvDelta = Main.DCT_ENGINE.computeIDCTOfVectorColorDifference(diffs, size, true);
+			vec.setYUVDelta(yuvDelta);
 			vec.setSpanX(spanX);
 			vec.setSpanY(spanY);
 			vec.setReference(ref);

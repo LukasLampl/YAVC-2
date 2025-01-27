@@ -19,13 +19,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package app.utils;
+package app.utils.components;
 
 import java.awt.Dimension;
 import java.awt.Point;
 
-import app.managers.Discardable;
 import app.rendering.ColorManager;
+import app.utils.ArrayUtils;
 
 /**
  * <p>The class {@code MacroBlock} is the main transform unit
@@ -37,7 +37,7 @@ import app.rendering.ColorManager;
  * @since 1.0.0
  */
 
-public class MacroBlock implements Discardable {
+public class MacroBlock extends Component2D {
 	/**
 	 * <p>The Y values of the MacroBlock.</p>
 	 */
@@ -53,24 +53,8 @@ public class MacroBlock implements Discardable {
 	 */
 	private double[][] V = null;
 	
-	/**
-	 * <p>Position of the MacroBlock, originated from the PixelRaster.</p>
-	 */
-	protected int positionX = 0;
-	protected int positionY = 0;
-	
 	private int positionRelativeToParentX = 0;
 	private int positionRelativeToParentY = 0;
-	
-	/**
-	 * <p>Size of the MacroBlock.</p>
-	 */
-	protected int size = 0;
-	
-	/**
-	 * <p>Squared size of the MacroBlock.</p>
-	 */
-	private int squared_size = 0;
 	
 	/**
 	 * <p>Sets a flag, whether it is subdivided into 4 more blocks or not.</p>
@@ -116,11 +100,9 @@ public class MacroBlock implements Discardable {
 	private int reference = 0;
 	
 	public MacroBlock(MacroBlock block) {
-		this.positionX = block.getPositionX();
-		this.positionY = block.getPositionY();
+		super(block.getPositionX(), block.getPositionY(), block.getSize());
 		this.positionRelativeToParentX = block.getPositionRelativeToParentX();
 		this.positionRelativeToParentY = block.getPositionRelativeToParentY();
-		this.size = block.getSize();
 		double[][][] col = block.getColors();
 		this.Y = col[0];
 		this.U = col[1];
@@ -140,14 +122,7 @@ public class MacroBlock implements Discardable {
 	 * @throws IllegalArgumentException	If the size is below 0
 	 */
 	public MacroBlock(final int x, final int y, final int size, final boolean initColor) {
-		if (size < 0 || size > 65535) {
-			throw new IllegalArgumentException("The size of " + size + " is not supported!");
-		}
-		
-		this.positionX = x;
-		this.positionY = y;
-		this.size = size;
-		this.squared_size = size * size;
+		super(x, y, size);
 		
 		if (initColor) {
 			final int halfSize = size >> 1;
@@ -179,20 +154,16 @@ public class MacroBlock implements Discardable {
 	 * @throws IllegalArgumentException	If the size is below 0
 	 */
 	public MacroBlock(final int x, final int y, final int size, final double[][] Y, final double[][] U, final double[][] V) {
-		if (size < 0 || size > 65535) {
-			throw new IllegalArgumentException("The size of " + size + " is not supported!");
-		} else if (Y == null) {
+		super(x, y, size);
+		
+		if (Y == null) {
 			throw new NullPointerException("MacroBlock can't have a NULL Luma-Y channel");
 		} else if (U == null) {
 			throw new NullPointerException("MacroBlock can't have a NULL Chroma-U channel");
 		} else if (V == null) {
 			throw new NullPointerException("MacroBlock can't have a NULL Chroma-V channel");
 		}
-		
-		this.positionX = x;
-		this.positionY = y;
-		this.size = size;
-		this.squared_size = size * size;
+
 		this.Y = Y;
 		this.U = U;
 		this.V = V;
@@ -224,20 +195,16 @@ public class MacroBlock implements Discardable {
 	 * @throws IllegalArgumentException	If the size is below 0
 	 */
 	public MacroBlock(final int x, final int y, final int size, final double[][][] colors) {
-		if (size < 0 || size > 65535) {
-			throw new IllegalArgumentException("The size of " + size + " is not supported!");
-		} else if (colors[ColorManager.Y_INDEX] == null) {
+		super(x, y, size);
+		
+		if (colors[ColorManager.Y_INDEX] == null) {
 			throw new NullPointerException("MacroBlock can't have a NULL Luma-Y channel");
 		} else if (colors[ColorManager.U_INDEX] == null) {
 			throw new NullPointerException("MacroBlock can't have a NULL Chroma-U channel");
 		} else if (colors[ColorManager.V_INDEX] == null) {
 			throw new NullPointerException("MacroBlock can't have a NULL Chroma-V channel");
 		}
-		
-		this.positionX = x;
-		this.positionY = y;
-		this.size = size;
-		this.squared_size = size * size;
+
 		this.Y = colors[ColorManager.Y_INDEX];
 		this.U = colors[ColorManager.U_INDEX];
 		this.V = colors[ColorManager.V_INDEX];
@@ -270,8 +237,7 @@ public class MacroBlock implements Discardable {
 		}
 		
 		if (this.size == 0) {
-			this.size = colors[ColorManager.Y_INDEX].length;
-			this.squared_size = this.size * this.size;
+			super.setSize(colors[ColorManager.Y_INDEX].length);
 		}
 		
 		this.Y = colors[ColorManager.Y_INDEX];
@@ -307,8 +273,7 @@ public class MacroBlock implements Discardable {
 		}
 		
 		if (this.size == 0) {
-			this.size = Y.length;
-			this.squared_size = this.size * this.size;
+			super.setSize(Y.length);
 		}
 		
 		this.Y = Y;
@@ -416,14 +381,29 @@ public class MacroBlock implements Discardable {
 		this.V[subSX][subSY] = YUV[ColorManager.V_INDEX];
 	}
 	
+	/**
+	 * Gets the position relative to the parent in form of a {@code Point}.
+	 * 
+	 * @return The position relative to its parent.
+	 */
 	public Point getPositionRelativeToParent() {
 		return new Point(this.positionRelativeToParentX, this.positionRelativeToParentY);
 	}
 	
+	/**
+	 * Gets the position relative to its parent to the x direction.
+	 * 
+	 * @return The x position relative to its parent.
+	 */
 	public int getPositionRelativeToParentX() {
 		return this.positionRelativeToParentX;
 	}
 	
+	/**
+	 * Gets the position relative to its parent to the y direction.
+	 * 
+	 * @return The y position relative to its parent.
+	 */
 	public int getPositionRelativeToParentY() {
 		return this.positionRelativeToParentY;
 	}
@@ -494,48 +474,6 @@ public class MacroBlock implements Discardable {
 	 */
 	public boolean isSubdivided() {
 		return this.isSubdivided;
-	}
-	
-	/**
-	 * <p>Get the position of the MacroBlock.</p>
-	 * @return Position of the MacroBlock
-	 */
-	public Point getPosition() {
-		return new Point(this.positionX, this.positionY);
-	}
-	
-	/**
-	 * Get the x position of the MacroBlock.
-	 * 
-	 * @return The x position of the MacroBlock.
-	 */
-	public int getPositionX() {
-		return this.positionX;
-	}
-	
-	/**
-	 * Get the y position of the MacroBlock.
-	 * 
-	 * @return The y position of the MacroBlock.
-	 */
-	public int getPositionY() {
-		return this.positionY;
-	}
-	
-	/**
-	 * <p>Get the size of the MacroBlock.</p>
-	 * @return Size of the MacroBlock
-	 */
-	public int getSize() {
-		return this.size;
-	}
-	
-	/**
-	 * <p>Get the squared size of the MacroBlock.</p>
-	 * @return Squared size of the MacroBlock
-	 */
-	public int getSquaredSize() {
-		return this.squared_size;
 	}
 	
 	/**
@@ -694,23 +632,9 @@ public class MacroBlock implements Discardable {
 		return this.isConvertedToVector;
 	}
 	
-	/**
-	 * Repositions the MacroBlocks position.
-	 * 
-	 * @param x	X position of the MacroBlock.
-	 * @param y	Y position of the MacroBlock.
-	 */
-	public void moveBlock(final int x, final int y) {
-		this.positionX = x;
-		this.positionY = y;
-	}
-	
-	public void reset(final int x, final int y, final int size, final boolean initColors) {
-		this.positionX = x;
-		this.positionY = y;
+	public void reset(final boolean initColors) {
 		this.positionRelativeToParentX = 0;
 		this.positionRelativeToParentY = 0;
-		this.size = size;
 		
 		if (initColors) {
 			final int halfSize = size >> 1;
@@ -728,14 +652,14 @@ public class MacroBlock implements Discardable {
 		this.isSubdivided = false;
 		this.meanColor = ColorManager.NULL_COLOR;
 		this.MSE = 0;
-		this.squared_size = size * size;
 		this.reference = 0;
 		this.isColorSet = false;
 	}
 	
 	@Override
 	public void discard() {
-		reset(0, 0, 0, false);
+		super.discard();
+		reset(false);
 	}
 	
 	@Override

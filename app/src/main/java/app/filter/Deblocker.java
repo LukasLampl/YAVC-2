@@ -44,7 +44,7 @@ import app.utils.PixelRaster;
  * @since 1.2.1
  * 
  * @see app.utils.PixelRaster
- * @see app.utils.MacroBlock
+ * @see app.utils.components.MacroBlock
  */
 
 public class Deblocker {

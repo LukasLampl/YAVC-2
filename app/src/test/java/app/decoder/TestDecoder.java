@@ -22,8 +22,8 @@ import app.io.Protocol;
 import app.managers.ListManager;
 import app.managers.LoadDistributor;
 import app.managers.ReferenceFrameManager;
-import app.utils.MacroBlock;
 import app.utils.PixelRaster;
+import app.utils.components.MacroBlock;
 
 public class TestDecoder {
 	private static final double DELTA = 0.005;

@@ -39,8 +39,8 @@ import app.managers.LoadDistributor;
 import app.managers.ReferenceFrameManager;
 import app.rendering.DifferenceEngine;
 import app.rendering.RenderEngine;
-import app.utils.MacroBlock;
 import app.utils.PixelRaster;
+import app.utils.components.MacroBlock;
 
 /**
  * The {@code Encoder} class is responsible for encoding given frames into
@@ -180,7 +180,7 @@ public class Encoder {
 				
 //				BufferedImage vectors = RenderEngine.renderVectors(movementVectors.getRawData(), curFrame.getDimension());
 				long start_render = System.currentTimeMillis();
-				PixelRaster composite = RenderEngine.renderComposit(movementVectors, this.referenceManager, intraPredictedBlocks, false);
+				PixelRaster composite = RenderEngine.renderComposit(movementVectors, this.referenceManager, intraPredictedBlocks, false, true);
 				outStream.addObjectToOutputQueue(new QueueObject(movementVectors, intraPredictedBlocks));
 				long end_render = System.currentTimeMillis();
 				

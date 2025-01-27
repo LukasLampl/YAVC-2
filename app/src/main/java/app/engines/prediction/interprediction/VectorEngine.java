@@ -26,7 +26,7 @@ import java.util.concurrent.ForkJoinPool;
 
 import app.managers.LoadDistributor;
 import app.managers.ReferenceFrameManager;
-import app.utils.MacroBlock;
+import app.utils.components.MacroBlock;
 
 /**
  * <p>The class {@code VectorEngine} is the main distributor class
@@ -98,7 +98,7 @@ public class VectorEngine {
 		this.TOTAL_MSE = 0;
 		
 		for (final MacroBlock b : differences) {
-			this.totalPixelsProcessed += b.getSquaredSize();
+			this.totalPixelsProcessed += b.getArea();
 		}
 		
 		LoadDistributor<Vector> vecManager = new LoadDistributor<Vector>();

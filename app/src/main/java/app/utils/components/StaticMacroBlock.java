@@ -1,4 +1,4 @@
-package app.utils;
+package app.utils.components;
 
 import app.engines.quadtree.QuadtreeBase;
 
