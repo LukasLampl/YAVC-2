@@ -193,8 +193,8 @@ public class VectorConversionTask extends RecursiveAction {
 			
 			double[][][] diffs = ProtocolBase.getDeltaCoefficientsFromDatastream(this.data,
 					index + Protocol.VECTOR_HEADER_LENGTH, size);
-			double[][][] yuvDelta = Main.DCT_ENGINE.computeIDCTOfVectorColorDifference(diffs, size, true);
-			vec.setYUVDelta(yuvDelta);
+			Main.DCT_ENGINE.computeIDCTOfDeltas(diffs, size, true);
+			vec.setYUVDelta(diffs, false);
 			vec.setSpanX(spanX);
 			vec.setSpanY(spanY);
 			vec.setReference(ref);

@@ -23,6 +23,7 @@ package app.io;
 
 import app.ArgumentProcessor;
 import app.engines.dct.DCTConstants;
+import app.exceptions.DCTCoefficientOutOfBoundsException;
 import app.utils.ArrayUtils;
 
 public abstract class ProtocolBase {
@@ -59,7 +60,7 @@ public abstract class ProtocolBase {
 	 * @return The converted coefficient.
 	 */
 	public static final double getDCTCoeff(final byte coeff) {
-		int result = coeff & 0x7F;
+		double result = coeff & 0x7F;
 		return (coeff & 0x80) != 0 ? -result : result;
 	}
 	
@@ -121,9 +122,11 @@ public abstract class ProtocolBase {
 	 * @param size			The size of the matrix.
 	 * @return A matrix representation of the absolute color difference.
 	 * 
+	 * @throws DCTCoefficientOutOfBoundsException When a DCT coefficient is out of bounds from -127 to 127.
+	 * 
 	 * @throws IllegalArgumentException	When a coefficient is > 127 or < -127 and {@code autoAdjust} is off.
 	 */
-	public static byte[][] getDeltaMatrixBytes(double[][][] deltaMatrix, final int size) {
+	public static byte[][] getDeltaMatrixBytes(double[][][] deltaMatrix, final int size) throws DCTCoefficientOutOfBoundsException {
 		final int halfSize = size >> 1;
 		final int frac = size == 4 ? 4 : 8;
 		final int halfFrac = frac >> 1;
@@ -296,8 +299,10 @@ public abstract class ProtocolBase {
 	 * 
 	 * @param coeff	The coefficient to adjust when possible.
 	 * @return The adjusted coefficient.
+	 * 
+	 * @throws DCTCoefficientOutOfBoundsException When the DCT coefficient is out of bounds from -127 to 127.
 	 */
-	private static double getAdjustedDCTCoefficient(double coeff) {
+	private static double getAdjustedDCTCoefficient(double coeff) throws DCTCoefficientOutOfBoundsException {
 		if (coeff > 127 || coeff < -127) {
 			double adjustedValue = ArgumentProcessor.autoAdjust ? coeff < -127 ? -127 : 127 : Double.NaN;
 			String autoAdjust = ArgumentProcessor.autoAdjust ? "on" : "off";
@@ -309,7 +314,7 @@ public abstract class ProtocolBase {
 				System.err.println(msg);
 				return adjustedValue;
 			} else {
-				throw new IllegalArgumentException(msg);
+				throw new DCTCoefficientOutOfBoundsException(msg);
 			}
 		}
 		

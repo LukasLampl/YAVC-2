@@ -211,7 +211,7 @@ public class VectorPredictionTask extends RecursiveAction {
 			vec.setReference(bestMatch.getReference());
 			vec.setSpanX(blockToBeSearched.getPosition().x - bestMatch.getPosition().x);
 			vec.setSpanY(blockToBeSearched.getPosition().y - bestMatch.getPosition().y);
-			vec.setAbsoluteDifferences(absoluteColorDifference);
+			vec.setYUVDelta(absoluteColorDifference, true);
 		}
 		
 		return vec;

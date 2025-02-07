@@ -86,8 +86,8 @@ public class TestDecoder {
 					assertEquals(originalVec.getSpanX(), decodedVec.getSpanX());
 					assertEquals(originalVec.getSpanY(), decodedVec.getSpanY());
 					
-					double[][][] originalDiffs = originalVec.getDCTCoefficientsOfAbsoluteColorDifference();
-					double[][][] decodedDiffs = decodedVec.getDCTCoefficientsOfAbsoluteColorDifference();
+					double[][][] originalDiffs = originalVec.getYUVDelta();
+					double[][][] decodedDiffs = decodedVec.getYUVDelta();
 					assertEquals(originalDiffs.length, decodedDiffs.length);
 					assertEquals(originalDiffs[0].length, decodedDiffs[0].length);
 					
@@ -152,8 +152,8 @@ public class TestDecoder {
 					assertEquals(originalVec.getSpanX(), decodedVec.getSpanX());
 					assertEquals(originalVec.getSpanY(), decodedVec.getSpanY());
 					
-					double[][][] originalDiffs = originalVec.getDCTCoefficientsOfAbsoluteColorDifference();
-					double[][][] decodedDiffs = decodedVec.getDCTCoefficientsOfAbsoluteColorDifference();
+					double[][][] originalDiffs = originalVec.getYUVDelta();
+					double[][][] decodedDiffs = decodedVec.getYUVDelta();
 					assertEquals(originalDiffs.length, decodedDiffs.length);
 					assertEquals(originalDiffs[0].length, decodedDiffs[0].length);
 					

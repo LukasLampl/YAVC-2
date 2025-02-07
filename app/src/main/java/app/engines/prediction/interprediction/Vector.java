@@ -22,8 +22,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 package app.engines.prediction.interprediction;
 
 import app.engines.dct.DCTEngine;
-import app.rendering.ColorManager;
-import app.utils.ArrayUtils;
 import app.utils.components.Component2D;
 import app.utils.components.MacroBlock;
 
@@ -46,8 +44,6 @@ import app.utils.components.MacroBlock;
  * @author Lukas Lampl
  * @since 1.1.1
  */
-
-
 public class Vector extends Component2D {
 	/**
 	 * Provides a DCTEngine with pre-calculated cosine table.
@@ -73,23 +69,17 @@ public class Vector extends Component2D {
 	private MacroBlock mostEqualBlock = null;
 	
 	/**
-	 * yuvDeltaDCTCoefficients is an 3D array containing
-	 * the absolute color difference in form of 4x4 or 8x8 DCT matrices.
-	 * The invokedDCTOfDifferences is set the true, if the absolute difference was invoked,
-	 * else it's false.
-	 */
-	private double[][][] yuvDeltaDCTCoefficients = null;
-	
-	/**
-	 * Holds the delta values of the vector compared to the reference block in decoded form.
-	 * This is only used in the decoder.
+	 * Holds the delta values of the vector compared to the reference block.
+	 * This can be used by the encoder as well as the decoder.
+	 * Both will holds the data in different forms, eg. the encoder in DCT coeffs,
+	 * while the decoder in actual YUV values.
 	 */
 	private double[][][] yuvDelta = null;
 	
 	/**
-	 * Flag for whether the absolute color difference has been invoked or not.
+	 * Flag for whether the delta YUV has been invoked or not.
 	 */
-	private boolean invokedDCTOfDifferences = false;
+	private boolean invokedYUVDelta = false;
 	
 	/**
 	 * <p>Initializes the vector for further processing.</p>
@@ -196,110 +186,43 @@ public class Vector extends Component2D {
 	public int getReference() {
 		return this.reference;
 	}
-	
+
 	/**
-	 * Sets the absolute color difference DCT coefficients of the vector,
-	 * thus enabling the ability to reconstruct the "original" colors.
+	 * Sets the YUV delta of the vector. If it is a coding unit (encoded) the
+	 * DCT coefficients are calculated, else the raw values are stored.
 	 * 
-	 * @param diffs	The prepared array to set.
-	 * 
-	 * @see app.io.Protocol#getVectorAbsoluteColorDifferenceBytes(double[][][], int)
+	 * @param YUVDelta	The delta values.
+	 * @param encoding	Whether it is a coding unit or not. (Encoding process)
 	 */
-	public void setAbsolutedifferenceDCTCoefficients(final double[][][] diffs) {
-		if (diffs == null) {
-			throw new NullPointerException("Can't use NULL as difference");
+	public void setYUVDelta(final double[][][] YUVDelta, final boolean encoding) {
+		if (encoding) {
+			this.yuvDelta = DCT_ENGINE.computeDCTOfDeltas(YUVDelta, this.size, true);
+			this.invokedYUVDelta = true;
+		} else {
+			this.yuvDelta = YUVDelta;
 		}
-		
-		this.yuvDeltaDCTCoefficients = diffs;
-		this.invokedDCTOfDifferences = true;
 	}
 	
 	/**
-	 * Sets the absolute color difference DCT coefficients of the vector,
-	 * thus enabling the ability to reconstruct the "original" colors.
+	 * Returns the IDCT (original YUV) or the delta YUV.
 	 * 
-	 * @param YUVDifference	The prepared array to set.
-	 * 
-	 * @see app.io.Protocol#getVectorAbsoluteColorDifferenceBytes(double[][][], int)
+	 * @return The converted YUV.
 	 */
-	public void setAbsoluteDifferences(final double[][][] YUVDifference) {
-		this.yuvDeltaDCTCoefficients = DCT_ENGINE.computeDCTOfVectorColorDifference(YUVDifference, this.size, true);
-		this.invokedDCTOfDifferences = true;
-	}
-	
-	/**
-	 * Sets the delta components in YUV format that must be applied to the predicted block to
-	 * get the original block.
-	 * 
-	 * @param YUVDelta	The YUV formatted delta.
-	 */
-	public void setYUVDelta(final double[][][] YUVDelta) {
-		this.yuvDelta = YUVDelta;
-	}
-	
-	/**
-	 * Get the matrix with all DCT coefficients of color differences.
-	 * 
-	 * @return Matrix with the DCT coefficients of the color difference.
-	 * 
-	 * @see app.io.Protocol#getVectorAbsoluteColorDifferenceBytes(double[][][], int)
-	 */
-	public double[][][] getDCTCoefficientsOfAbsoluteColorDifference() {
-		return this.yuvDeltaDCTCoefficients;
-	}
-	
-	/**
-	 * This function uses the invoked DCT coefficients
-	 * of the absolute color difference to reconstruct the absolute
-	 * color difference by using the IDCT.
-	 * 
-	 * @param allowModificationToOriginalData	Flag for whether the
-	 * original data will be copied before processing or not.
-	 * 
-	 * @return Reconstructed YUV color difference.
-	 * 
-	 * @throws NullPointerException	If no DCT-Coefficients were invoked.
-	 */
-	public double[][][] getIDCTCoefficientsOfAbsoluteColorDifference(boolean allowModificationToOriginalData) {
-		if (this.invokedDCTOfDifferences == false) {
+	public double[][][] getIDCTOfDeltas() {
+		if (this.invokedYUVDelta == false) {
 			throw new NullPointerException("No absolute difference were invoked, NULL DCT-Coefficients to process");
 		}
 		
-		if (allowModificationToOriginalData) {
-			return DCT_ENGINE.computeIDCTOfVectorColorDifference(this.yuvDeltaDCTCoefficients, this.size, true);
-		}
-		
-		double[][][] clone = cloneAbsoluteColorDifference();
-		return DCT_ENGINE.computeIDCTOfVectorColorDifference(clone, this.size, true);
+		return DCT_ENGINE.computeIDCTOfDeltas(this.yuvDelta, this.size, true);
 	}
 	
 	/**
-	 * Gets the YUV delta that must be applied to the predicted block in order to
-	 * get the original back.
+	 * Gets the YUV delta that was passed to the vector.
 	 * 
-	 * @return The delta values in YUV format.
+	 * @return The delta values.
 	 */
 	public double[][][] getYUVDelta() {
 		return this.yuvDelta;
-	}
-	
-	/**
-	 * Clones the {@link #absoluteColorDifferenceDCTCoefficients} array.
-	 * This function should be used for getting the IDCT values, since the
-	 * original array is referenced and might get quantified by mistake
-	 * if not cloned.
-	 * 
-	 * @return Cloned array with all the data.
-	 */
-	private double[][][] cloneAbsoluteColorDifference() {
-		double[][][] ref = this.yuvDeltaDCTCoefficients;
-		double[][][] clone = ArrayUtils.get3DArray(this.size, true);
-		
-		for (int i = 0; i < ColorManager.CHANNELS; i++) {
-			ArrayUtils.copy2DArray(ref[i], 0, 0, clone[i], 0, 0, this.size, this.size);
-		}
-		
-		return clone;
 	}
 	
 	/**
@@ -332,10 +255,10 @@ public class Vector extends Component2D {
 		this.reference = 0;
 		this.appendedBlock = null;
 		this.mostEqualBlock = null;
-		this.invokedDCTOfDifferences = false;
+		this.invokedYUVDelta = false;
 		
-		if (this.yuvDeltaDCTCoefficients != null || forceClear) {
-			this.yuvDeltaDCTCoefficients = null;
+		if (this.yuvDelta != null || forceClear) {
+			this.yuvDelta = null;
 		}
 	}
 	

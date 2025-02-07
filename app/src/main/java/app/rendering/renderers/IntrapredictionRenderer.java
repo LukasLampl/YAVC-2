@@ -40,7 +40,7 @@ public class IntrapredictionRenderer {
 			for (IntraPredictionBlock b : blockList) {
 				if (b == null) continue;
 				
-				final double[][][] deltas = b.getIDCTCoefficientsDelta(false);
+				final double[][][] deltas = b.getIDCTYUVDelta();
 				
 				for (int x = 0; x < b.getSize(); x++) {
 					final int imgX = x + b.getPositionX();
@@ -62,7 +62,7 @@ public class IntrapredictionRenderer {
 				
 				final MacroBlock m = b.getAppendedBlock();
 				
-				final double[][][] deltas = b.getIDCTCoefficientsDelta(false);
+				final double[][][] deltas = b.getIDCTYUVDelta();
 				final double[][][] color = m.getColors();
 				
 				for (int x = 0; x < b.getSize(); x++) {

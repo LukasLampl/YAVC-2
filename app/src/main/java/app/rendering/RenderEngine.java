@@ -54,13 +54,12 @@ public class RenderEngine {
 	 * @param vecs					The vector to use for the composit.
 	 * @param refs					The reference frames used by the vectors.
 	 * @param differenceManager		All non-coded MacroBlocks.
-	 * @param allowModToAbsDiff		Flag for whether modifications can be made to any delta values or not.
 	 * @param encoding				Whether the rendering happens while encoding or decoding.
 	 * @return A composit PixelRaster with all vectors, non-coded blocks and reference used.
 	 */
 	public static PixelRaster renderComposit(LoadDistributor<Vector> vecs, ReferenceFrameManager refs, LoadDistributor<IntraPredictionBlock> intraBlocks,
-			boolean allowModToAbsDiff, boolean encoding) {
-		return CompositRenderer.renderComposit(vecs, refs, intraBlocks, allowModToAbsDiff, encoding);
+			boolean encoding) {
+		return CompositRenderer.renderComposit(vecs, refs, intraBlocks, encoding);
 	}
 	
 	

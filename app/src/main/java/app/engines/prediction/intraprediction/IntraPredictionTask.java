@@ -209,7 +209,7 @@ public class IntraPredictionTask extends RecursiveAction {
 			}
 		}
 		
-		intra.setDelta(deltas);
+		intra.setYUVDelta(deltas, true);
 		return intra;
 	}
 }

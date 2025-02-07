@@ -171,8 +171,9 @@ public class IntraConversionTask extends RecursiveAction {
 			
 			double[][][] diffs = ProtocolBase.getDeltaCoefficientsFromDatastream(this.data,
 					index + Protocol.INTRA_BLOCK_HEADER_LENGTH + borderOffset, size);
-			double[][][] yuvDelta = Main.DCT_ENGINE.computeIDCTOfVectorColorDifference(diffs, size, true);
-			intraBlock.setYUVDelta(yuvDelta);
+			Main.DCT_ENGINE.computeIDCTOfDeltas(diffs, size, true);
+			double[][][] yuvDelta = diffs;
+			intraBlock.setYUVDelta(yuvDelta, false);
 			intraBlock.setAngle(angle);
 			intraBlock.setVertical(borderColors[0]);
 			intraBlock.setHorizontal(borderColors[1]);

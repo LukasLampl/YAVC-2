@@ -21,7 +21,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package app.encoder;
 
+import java.io.File;
 import java.util.ArrayList;
+
+import javax.imageio.ImageIO;
 
 import app.ArgumentProcessor;
 import app.engines.dct.DCTEngine;
@@ -174,13 +177,14 @@ public class Encoder {
 				long start_vector_movement = System.currentTimeMillis();
 				LoadDistributor<Vector> movementVectors = VECTOR_ENGINE.computeMovementVectors(predictionTypes.getInterPredictables(), this.referenceManager);
 				long end_vector_movement = System.currentTimeMillis();
-//				
+				
 //				BufferedImage distribution = RenderEngine.renderPredictionDistribution(intraPredictedBlocks.getRawData(), movementVectors.getRawData(), curFrame.getDimension());
 //				ImageIO.write(distribution, "png", new File(ArgumentProcessor.outputFile.getParent() + "/PRED_DIST_" + i + ".png"));
 				
 //				BufferedImage vectors = RenderEngine.renderVectors(movementVectors.getRawData(), curFrame.getDimension());
 				long start_render = System.currentTimeMillis();
-				PixelRaster composite = RenderEngine.renderComposit(movementVectors, this.referenceManager, intraPredictedBlocks, false, true);
+				PixelRaster composite = RenderEngine.renderComposit(movementVectors, this.referenceManager, intraPredictedBlocks, true);
+				
 				outStream.addObjectToOutputQueue(new QueueObject(movementVectors, intraPredictedBlocks));
 				long end_render = System.currentTimeMillis();
 				
@@ -188,11 +192,11 @@ public class Encoder {
 				deblocker.deblock(movementVectors, composite);
 				long end_deblock = System.currentTimeMillis();
 				
+				ImageIO.write(composite.toBufferedImage(), "png", new File(ArgumentProcessor.outputFile.getParent() + "/VR_" + i + ".png"));
 //				ImageIO.write(part[0], "png", new File(ArgumentProcessor.outputFile.getParent() + "/MB_" + i + ".png"));
 //				ImageIO.write(part[1], "png", new File(ArgumentProcessor.outputFile.getParent() + "/MBA_" + i + ".png"));
 //				ImageIO.write(part[2], "png", new File(ArgumentProcessor.outputFile.getParent() + "/MBAV_" + i + ".png"));
 //				ImageIO.write(vectors, "png", new File(ArgumentProcessor.outputFile.getParent() + "/V_" + i + ".png"));
-//				ImageIO.write(composite.toBufferedImage(), "png", new File(ArgumentProcessor.outputFile.getParent() + "/VR_" + i + ".png"));
 				
 				long end = System.currentTimeMillis();
 				long time = end - start;

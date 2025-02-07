@@ -23,8 +23,6 @@ package app.engines.prediction.intraprediction;
 
 import app.Main;
 import app.engines.dct.DCTEngine;
-import app.rendering.ColorManager;
-import app.utils.ArrayUtils;
 import app.utils.components.Component2D;
 import app.utils.components.MacroBlock;
 
@@ -62,12 +60,10 @@ public class IntraPredictionBlock extends Component2D {
 	private double vertical[][] = null;
 	
 	/**
-	 * Holds all deltas in form of DCT coefficients.
-	 */
-	private double dctDelta[][][] = null;
-	
-	/**
-	 * Holds all deltas in form of YUV colors.
+	 * Holds the delta values of the IntraPredictionBlock.
+	 * This can be used by the encoder as well as the decoder.
+	 * Both will holds the data in different forms, eg. the encoder in DCT coeffs,
+	 * while the decoder in actual YUV values.
 	 */
 	private double yuvDelta[][][] = null;
 
@@ -128,81 +124,35 @@ public class IntraPredictionBlock extends Component2D {
 	/**
 	 * Gets the IDCT coefficients (YUV deltas) of the color deltas.
 	 * 
-	 * @param allowModificationToOriginalData	Whether modifications to the data can be made.
 	 * @return The converted deltas in YUV format.
 	 */
-	public double[][][] getIDCTCoefficientsDelta(boolean allowModificationToOriginalData) {
-		if (allowModificationToOriginalData) {
-			return DCT_ENGINE.computeIDCTOfVectorColorDifference(this.dctDelta, this.size, true);
-		}
-		
-		double[][][] clone = cloneDCTDeltaValues();
-		return DCT_ENGINE.computeIDCTOfVectorColorDifference(clone, this.size, true);
+	public double[][][] getIDCTYUVDelta() {
+		return DCT_ENGINE.computeIDCTOfDeltas(this.yuvDelta, this.size, true);
 	}
 	
 	/**
-	 * Gets the YUV delta that must be applied to the predicted block in order to
-	 * get the original back.
+	 * Gets the YUV delta that was applied to the block.
 	 * 
-	 * @return The delta values in YUV format.
+	 * @return The delta values.
 	 */
 	public double[][][] getYUVDelta() {
 		return this.yuvDelta;
 	}
 	
 	/**
-	 * Clones the {@link #absoluteColorDifferenceDCTCoefficients} array.
-	 * This function should be used for getting the IDCT values, since the
-	 * original array is referenced and might get quantified by mistake
-	 * if not cloned.
-	 * 
-	 * @return Cloned array with all the data.
-	 */
-	private double[][][] cloneDCTDeltaValues() {
-		double[][][] ref = this.dctDelta;
-		double[][][] clone = ArrayUtils.get3DArray(this.size, true);
-		
-		for (int i = 0; i < ColorManager.CHANNELS; i++) {
-			ArrayUtils.copy2DArray(ref[i], 0, 0, clone[i], 0, 0, this.size, this.size);
-		}
-		
-		return clone;
-	}
-	
-	/**
-	 * Get the raw DCT coefficients of the delta values.
-	 * 
-	 * @return The raw DCT coefficients of the delta values.
-	 */
-	public double[][][] getDCTCoefficientsOfDelta() {
-		return this.dctDelta;
-	}
-	
-	/**
-	 * Sets the YUV deltas and converts the directly into DCT representation.
-	 * 
-	 * @param YUVDifference	The deltas of the {@code IntraPredictionBlock}.
-	 */
-	public void setDelta(double[][][] YUVDifference) {
-		this.dctDelta = DCT_ENGINE.computeDCTOfVectorColorDifference(YUVDifference, this.size, true);
-	}
-	
-	/**
-	 * Sets DCT coefficient deltas to the {@code IntraPredictionBlock}.
-	 * 
-	 * @param YUVCoefficients	The DCT coefficients to set.
-	 */
-	public void setDeltaCoefficients(double[][][] YUVCoefficients) {
-		this.dctDelta = YUVCoefficients;
-	}
-	
-	/**
 	 * Sets the delta values of the {@code IntraPredictionBlock} with YUV values.
+	 * If the block is a coding unit (encoding process) the deltas will be converted
+	 * to DCT coeffs.
 	 * 
 	 * @param YUVDelta	The YUV delta values.
+	 * @param encoding	Whether the block is a coding unit or not. (Encoding process)
 	 */
-	public void setYUVDelta(double[][][] YUVDelta) {
-		this.yuvDelta = YUVDelta;
+	public void setYUVDelta(double[][][] YUVDelta, boolean encoding) {
+		if (encoding) {
+			this.yuvDelta = DCT_ENGINE.computeDCTOfDeltas(YUVDelta, this.size, true);
+		} else {
+			this.yuvDelta = YUVDelta;
+		}
 	}
 	
 	/**
@@ -230,6 +180,6 @@ public class IntraPredictionBlock extends Component2D {
 		this.angle = 0;
 		this.horizontal = null;
 		this.vertical = null;
-		this.dctDelta = null;
+		this.yuvDelta = null;
 	}
 }

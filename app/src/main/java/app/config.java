@@ -41,7 +41,7 @@ public class config {
 		{18, 22, 37, 56, 68, 109, 103, 77},
 		{24, 35, 55, 64, 81, 104, 113, 92},
 		{49, 64, 78, 87, 103, 121, 120, 101},
-		{72, 92, 95, 98, 112, 100, 103, 99}
+		{72, 92, 95, 98, 112, 100, 103, 120}
 	};
 
 	public static final int[][] QUANTIZATION_MATRIX_4x4_Luma = {
@@ -52,10 +52,10 @@ public class config {
 	};
 	
 	public static final int[][] QUANTIZATION_MATRIX_4x4_Chroma = {
-		{14, 16, 20, 44},
-		{16, 18, 23, 46},
-		{27, 25, 39, 48},
-		{44, 44, 48, 48}
+		{14, 12, 24, 32},
+		{10, 14, 25, 34},
+		{16, 23, 24, 43},
+		{21, 24, 26, 48}
 	};
 	
 	public static final int[][] QUANTIZATION_MATRIX_2x2_Chroma = {

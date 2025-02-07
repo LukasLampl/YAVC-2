@@ -32,6 +32,7 @@ import app.engines.prediction.intraprediction.IntraPipeline;
 import app.engines.prediction.intraprediction.IntraPredictionBlock;
 import app.engines.quadtree.QuadtreeBase;
 import app.exceptions.CorruptedFileException;
+import app.exceptions.DCTCoefficientOutOfBoundsException;
 import app.managers.ListManager;
 import app.rendering.ColorManager;
 import app.utils.MathUtils;
@@ -262,7 +263,14 @@ public class Protocol {
 		final byte[] posY = ProtocolBase.getPositionBytes(v.getPosition().y);
 		final byte[] span = Protocol.getVectorSpanBytes(v.getSpanX(), v.getSpanY());
 		final byte refAndSize = Protocol.getReferenceAndSizeByte(v.getReference(), v.getSize());
-		final byte[][] differences = ProtocolBase.getDeltaMatrixBytes(v.getDCTCoefficientsOfAbsoluteColorDifference(), v.getSize());
+		byte[][] differences = null;
+		
+		try {
+			differences = ProtocolBase.getDeltaMatrixBytes(v.getYUVDelta(), v.getSize());
+		} catch (DCTCoefficientOutOfBoundsException e) {
+			System.out.println("Size: " + v.getSize());
+			e.printStackTrace();
+		}
 		
 		writeBytesToByteArray(posX, data, index);
 		index += posX.length;
@@ -469,8 +477,15 @@ public class Protocol {
 		final byte[] posX = ProtocolBase.getPositionBytes(block.getPositionX());
 		final byte[] posY = ProtocolBase.getPositionBytes(block.getPositionY());
 		final byte[] sizeAndAngle = Protocol.getSizeAndAngleByte(block.getSize(), block.getAngle());
-		final byte[][] differences = ProtocolBase.getDeltaMatrixBytes(block.getDCTCoefficientsOfDelta(), block.getSize());
 		final byte[] borderColors = Protocol.getBorderColorBytes(block.getHorizontal(), block.getVertical(), block.getSize());
+		
+		byte[][] differences = null;
+		
+		try {
+			differences = ProtocolBase.getDeltaMatrixBytes(block.getYUVDelta(), block.getSize());
+		} catch (DCTCoefficientOutOfBoundsException e) {
+			e.printStackTrace();
+		}
 		
 		writeBytesToByteArray(posX, data, index);
 		index += posX.length;
