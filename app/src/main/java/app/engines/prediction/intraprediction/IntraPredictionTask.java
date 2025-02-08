@@ -118,7 +118,7 @@ public class IntraPredictionTask extends RecursiveAction {
 		}
 
 		final CostFunction cost = new MSECost();
-		int bestAngle = -1;
+		int bestAngle = IntraPipeline.MIN_ANGLE - IntraPipeline.ANGLE_STEP;
 		double[][][] copy = predictionBlock.clone().getColors();
 		double[][][] temp = ArrayUtils.get3DArray(predictionBlock.getSize(), true);
 

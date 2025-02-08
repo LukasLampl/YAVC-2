@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.awt.Color;
+import java.util.Arrays;
 
 import org.junit.jupiter.api.Test;
 
@@ -98,19 +99,49 @@ public class TestProtocol {
 		};
 		
 		double[][] horizontal = {
-				ColorManager.convertRGBToYUV(Color.MAGENTA),
-				ColorManager.convertRGBToYUV(Color.YELLOW),
-				ColorManager.convertRGBToYUV(Color.GREEN),
-				ColorManager.convertRGBToYUV(Color.BLUE),
-				ColorManager.convertRGBToYUV(Color.RED)
+				ColorManager.convertRGBToYUV(Color.BLACK),
+				ColorManager.convertRGBToYUV(Color.PINK),
+				ColorManager.convertRGBToYUV(Color.ORANGE),
+				ColorManager.convertRGBToYUV(Color.CYAN),
+				ColorManager.convertRGBToYUV(Color.GRAY)
 		};
 		
 		final int blockSize = 5; // Because of 5 colors
 		byte[] data = Protocol.getBorderColorBytes(vertical, horizontal, blockSize);
 		double[][][] decoded = Protocol.getBorderColors(data, blockSize, 0);
 
-		assertArrayEquals(vertical, decoded[1]);
-		assertArrayEquals(horizontal, decoded[0]);
+		assertArrayEquals(vertical, decoded[0]);
+		assertArrayEquals(horizontal, decoded[1]);
+	}
+	
+	@Test
+	public void test_border_color_bytes_002() {
+		int[] sizes = {4, 8, 16, 32, 64, 128};
+		
+		for (final int size : sizes) {
+			for (int i = 0; i < 256; i++) {
+				double[][] vertical = generateRandomArray(size, 255);
+				double[][] horizontal = generateRandomArray(size, 255);
+				
+				byte[] data = Protocol.getBorderColorBytes(vertical, horizontal, size);
+				double[][][] decoded = Protocol.getBorderColors(data, size, 0);
+				assertArrayEquals(vertical, decoded[0]);
+				assertArrayEquals(horizontal, decoded[1]);
+			}
+		}
+	}
+	
+	private double[][] generateRandomArray(final int size, final double scale) {
+		double[][] arr = new double[size][ColorManager.CHANNELS];
+		
+		for (int i = 0; i < size; i++) {
+			int r = MathUtils.round(Math.random() * scale);
+			int g = MathUtils.round(Math.random() * scale);
+			int b = MathUtils.round(Math.random() * scale);
+			arr[i] = ColorManager.convertRGBToYUV(new Color(r, b, g));
+		}
+		
+		return arr;
 	}
 	
 	@Test

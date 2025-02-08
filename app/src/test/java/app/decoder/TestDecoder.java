@@ -15,6 +15,8 @@ import org.junit.jupiter.api.Test;
 
 import app.engines.prediction.interprediction.Vector;
 import app.engines.prediction.interprediction.VectorEngine;
+import app.engines.prediction.intraprediction.IntraEngine;
+import app.engines.prediction.intraprediction.IntraPredictionBlock;
 import app.engines.quadtree.QuadtreeEngine;
 import app.exceptions.CorruptedFileException;
 import app.io.InputProcessor;
@@ -22,11 +24,14 @@ import app.io.Protocol;
 import app.managers.ListManager;
 import app.managers.LoadDistributor;
 import app.managers.ReferenceFrameManager;
+import app.rendering.ColorManager;
+import app.utils.ArrayUtils;
 import app.utils.PixelRaster;
 import app.utils.components.MacroBlock;
 
 public class TestDecoder {
 	private static final double DELTA = 0.005;
+	private static final double YUV_CONVERTING_DELTA = 0.5;
 	private BufferedImage[] TEST_FRAMES = new BufferedImage[4];
 	
 	public TestDecoder() {
@@ -171,6 +176,83 @@ public class TestDecoder {
 			executor.run();
 		} catch (CorruptedFileException e) {
 			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * Test the decoder for correct vectors when first converted to bytes and back.
+	 * Basically an encoding and decoding process without rendering.
+	 */
+	@Test
+	public void testIntrablockTranslation001() {
+		if (this.TEST_FRAMES[0] == null
+			|| this.TEST_FRAMES[1] == null
+			|| this.TEST_FRAMES[2] == null
+			|| this.TEST_FRAMES[3] == null) {
+			throw new IllegalStateException("No valid input!");
+		}
+		
+		class IntrablockTranslationTester extends InputProcessor {
+			public void run() throws CorruptedFileException {
+				ReferenceFrameManager refMan = new ReferenceFrameManager();
+				refMan.add(new PixelRaster(TEST_FRAMES[0]));
+				refMan.add(new PixelRaster(TEST_FRAMES[1]));
+				refMan.add(new PixelRaster(TEST_FRAMES[2]));
+				PixelRaster frame = new PixelRaster(TEST_FRAMES[3]);
+				QuadtreeEngine qE = new QuadtreeEngine();
+				IntraEngine iE = new IntraEngine();
+				
+				ArrayList<MacroBlock> quadtreeRoots = qE.constructQuadtree(frame);
+				LoadDistributor<MacroBlock> leaveNodeManager = qE.getLeaveNodes(quadtreeRoots);
+				leaveNodeManager.compute(frame.getWidth() * frame.getHeight());
+				LoadDistributor<IntraPredictionBlock> intraBlocks = iE.computeIntraPrediction(leaveNodeManager.getRawData(), frame);
+				List<IntraPredictionBlock> originalBlocks = intraBlocks.getRawData();
+				byte[] intraData = Protocol.getIntraBlockBytes(originalBlocks, false);
+				ListManager<IntraPredictionBlock> intraBlockManager = new ListManager<IntraPredictionBlock>();
+				super.getIntraPreditionBlocks(intraData, intraBlockManager, true);
+				List<IntraPredictionBlock> decodedBlocks = intraBlockManager.getList();
+				assertEquals(originalBlocks.size(), decodedBlocks.size());
+				
+				for (int i = 0; i < originalBlocks.size(); i++) {
+					if (i % 100 == 0) {
+						System.out.println("Intrablocks checked: " + i + "/" + originalBlocks.size());
+					}
+					
+					IntraPredictionBlock originalBlock = originalBlocks.get(i);
+					IntraPredictionBlock decodedBlock = decodedBlocks.get(i);
+					System.out.println("Size: " + originalBlock.getSize());
+					assertEquals(originalBlock.getPositionX(), decodedBlock.getPositionX());
+					assertEquals(originalBlock.getPositionY(), decodedBlock.getPositionY());
+					assertEquals(originalBlock.getSize(), decodedBlock.getSize());
+					assertEquals(originalBlock.getAngle(), decodedBlock.getAngle());
+					check2DArray(originalBlock.getVertical(), decodedBlock.getVertical());
+					check2DArray(originalBlock.getHorizontal(), decodedBlock.getHorizontal());
+					
+					double[][][] originalDiffs = originalBlock.getYUVDelta();
+					double[][][] decodedDiffs = decodedBlock.getYUVDelta();
+					assertEquals(originalDiffs.length, decodedDiffs.length);
+					assertEquals(originalDiffs[0].length, decodedDiffs[0].length);
+					
+					for (int n = 0; n < originalDiffs.length; n++) {
+						for (int j = 0; j < originalDiffs[n].length; j++) {
+							assertArrayEquals(originalDiffs[n][j], decodedDiffs[n][j], DELTA);
+						}
+					}
+				}
+			}
+		}
+		
+		IntrablockTranslationTester executor = new IntrablockTranslationTester();
+		try {
+			executor.run();
+		} catch (CorruptedFileException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void check2DArray(final double[][] expected, final double[][] actual) {
+		for (int i = 0; i < expected.length; i++) {
+			assertArrayEquals(expected[i], actual[i], YUV_CONVERTING_DELTA);
 		}
 	}
 }

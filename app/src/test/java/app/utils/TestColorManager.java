@@ -1,84 +1,51 @@
 package app.utils;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.awt.Color;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
 import app.rendering.ColorManager;
 
 public class TestColorManager {
-	private final Color colorsToTest[] = {
-		new Color(255, 0, 0),      // Red
-		new Color(0, 255, 0),      // Green
-		new Color(0, 0, 255),      // Blue
-		new Color(255, 255, 0),    // Yellow
-		new Color(255, 0, 255),    // Magenta
-		new Color(0, 255, 255),    // Cyan
-		new Color(128, 0, 0),      // Maroon
-		new Color(0, 128, 0),      // Dark Green
-		new Color(0, 0, 128),      // Navy Blue
-		new Color(128, 128, 0),    // Olive
-		new Color(128, 0, 128),    // Purple
-		new Color(0, 128, 128),    // Teal
-		new Color(192, 192, 192),  // Silver
-		new Color(128, 128, 128),  // Gray
-		new Color(255, 165, 0),    // Orange
-		new Color(255, 192, 203),  // Pink
-		new Color(255, 215, 0),    // Gold
-		new Color(75, 0, 130),     // Indigo
-		new Color(173, 216, 230),  // Light Blue
-		new Color(144, 238, 144),  // Light Green
-		new Color(245, 222, 179),  // Wheat
-		new Color(255, 69, 0),     // Red-Orange
-		new Color(60, 179, 113),   // Medium Sea Green
-		new Color(139, 69, 19),    // Saddle Brown
-		new Color(250, 128, 114),  // Salmon
-		new Color(123, 104, 238),  // Medium Slate Blue
-		new Color(255, 99, 71),    // Tomato
-		new Color(0, 255, 127),    // Spring Green
-		new Color(70, 130, 180),   // Steel Blue
-		new Color(233, 150, 122),  // Dark Salmon
-		new Color(176, 224, 230),  // Powder Blue
-		new Color(238, 130, 238),  // Violet
-		new Color(0, 206, 209),    // Dark Turquoise
-		new Color(244, 164, 96),   // Sandy Brown
-		new Color(199, 21, 133),   // Medium Violet Red
-		new Color(255, 228, 181),  // Moccasin
-		new Color(32, 178, 170),   // Light Sea Green
-		new Color(218, 112, 214),  // Orchid
-		new Color(210, 105, 30),   // Chocolate
-		new Color(220, 20, 60),    // Crimson
-		new Color(255, 218, 185),  // Peach Puff
-		new Color(64, 224, 208),   // Turquoise
-		new Color(221, 160, 221),  // Plum
-		new Color(176, 196, 222),  // Light Steel Blue
-		new Color(245, 245, 220),  // Beige
-		new Color(119, 136, 153),  // Light Slate Gray
-		new Color(255, 235, 205),  // Blanched Almond
-		new Color(153, 50, 204),   // Dark Orchid
-		new Color(102, 205, 170),  // Medium Aquamarine
-		new Color(255, 160, 122)   // Light Salmon
-	};
+	private static int INCREMENT = 1;
+	private final static List<Color> colorsToTest = new ArrayList<Color>();
+	
+	static {
+		for (int r = 0; r <= 0xFF; r += INCREMENT) {
+			for (int g = 0; g <= 0xFF; g += INCREMENT) {
+				for (int b = 0; b <= 0xFF; b += INCREMENT) {
+					colorsToTest.add(new Color(r, g, b));
+				}
+			}
+		}
+		
+		System.out.println("Initialized " + colorsToTest.size() + " color to test.");
+		System.out.println(String.format(" > Equivalent of %.2f%% of the total RGB space.",
+				((((double)colorsToTest.size()) / (double)(Math.pow(256, 3))) * 100)));
+	}
 	
 	@Test
 	public void testConvertRGBToYUV_001() {
-		for (Color color : this.colorsToTest) {
+		for (Color color : colorsToTest) {
 			double[] YUV = ColorManager.convertRGBToYUV(color);
 			int rgb = ColorManager.convertYUVToRGB(YUV);
-			int colorRGB = (0xFF000000 | ((color.getRed() & 0xFF) << 16) | ((color.getGreen() & 0xFF) << 8) | (color.getBlue() & 0xFF));
+			int colorRGB = getRGBOfColor(color);
 			assertEquals(colorRGB, rgb);
 		}
 	}
 	
 	@Test
 	public void testConvertRGBToYUV_002() {
-		int[] colors = new int[this.colorsToTest.length];
+		int[] colors = new int[colorsToTest.size()];
 		
-		for (int i = 0; i < this.colorsToTest.length; i++) {
-			Color color = this.colorsToTest[i];
-			colors[i] = (0xFF000000 | ((color.getRed() & 0xFF) << 16) | ((color.getGreen() & 0xFF) << 8) | (color.getBlue() & 0xFF));
+		for (int i = 0; i < colorsToTest.size(); i++) {
+			Color color = colorsToTest.get(i);
+			colors[i] = getRGBOfColor(color);
 		}
 		
 		for (int color : colors) {
@@ -90,7 +57,7 @@ public class TestColorManager {
 	
 	@Test
 	public void testConvertYUVToRGB_intARR_001() {
-		for (Color color : this.colorsToTest) {
+		for (Color color : colorsToTest) {
 			double[] YUV = ColorManager.convertRGBToYUV(color);
 			int[] rgb = ColorManager.convertYUVToRGB_intARR(YUV, null);
 			assertEquals(color.getRed(), rgb[0]);
@@ -103,12 +70,63 @@ public class TestColorManager {
 	public void testConvertYUVToRGB_intARR_002() {
 		int[] cache = new int[3];
 		
-		for (Color color : this.colorsToTest) {
+		for (Color color : colorsToTest) {
 			double[] YUV = ColorManager.convertRGBToYUV(color);
 			ColorManager.convertYUVToRGB_intARR(YUV, cache);
 			assertEquals(color.getRed(), cache[0]);
 			assertEquals(color.getGreen(), cache[1]);
 			assertEquals(color.getBlue(), cache[2]);
 		}
+	}
+	
+	@Test
+	public void testConversion_001() {
+		int[] cache = new int[3];
+		
+		for (Color color : colorsToTest) {
+			double[] YUV = ColorManager.convertRGBToYUV(color);
+			ColorManager.convertYUVToRGB_intARR(YUV, cache);
+			int rgb = getRGBOfColor(cache);
+			double[] convertedYUV = ColorManager.convertRGBToYUV(rgb);
+			assertArrayEquals(YUV, convertedYUV);
+		}
+	}
+	
+	@Test
+	public void testConversion_002() {
+		int[] cache = new int[3];
+		int counter = 0;
+		int percent_5 = MathUtils.round(colorsToTest.size() * 0.05);
+		
+		for (Color color : colorsToTest) {
+			if (counter % percent_5 == 0) {
+				System.out.println(String.format("Conversion 2 status: %.2f%% checked.",
+						((double)counter / (double)colorsToTest.size()) * 100));
+			}
+			
+			double[] YUV = ColorManager.convertRGBToYUV(color);
+			double[] convertedYUV = YUV;
+			
+			for (int i = 0; i < 120; i++) {
+				ColorManager.convertYUVToRGB_intARR(convertedYUV, cache);
+				int rgb = getRGBOfColor(cache);
+				convertedYUV = ColorManager.convertRGBToYUV(rgb);
+			}
+			
+			assertArrayEquals(YUV, convertedYUV);
+			counter++;
+		}
+	}
+	
+	private int getRGBOfColor(int[] color) {
+		return 0xFF000000 | ((color[ColorManager.R_INDEX] & 0xFF) << 16)
+				| ((color[ColorManager.G_INDEX] & 0xFF) << 8)
+				| (color[ColorManager.B_INDEX] & 0xFF);
+	}
+	
+	private int getRGBOfColor(Color color) {
+		return 0xFF000000 | ((color.getRed() & 0xFF) << 16)
+				| ((color.getGreen() & 0xFF) << 8)
+				| (color.getBlue() & 0xFF);
 	}
 }

@@ -168,7 +168,7 @@ public class InputProcessor {
 	 * @return An ArrayList with all non-coded blocks.
 	 * @throws CorruptedFileException	When the decoded non-coded blocks size does not match with the coded size.
 	 */
-	private void getIntraPreditionBlocks(byte[] rawBlocksPart, ListManager<IntraPredictionBlock> intraBlockListManager, boolean singleThread) throws CorruptedFileException {
+	protected void getIntraPreditionBlocks(byte[] rawBlocksPart, ListManager<IntraPredictionBlock> intraBlockListManager, boolean singleThread) throws CorruptedFileException {
 		Protocol.getIntraBlocks(rawBlocksPart, intraBlockListManager, singleThread);
 	}
 	

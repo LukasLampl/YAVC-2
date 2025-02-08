@@ -182,4 +182,13 @@ public class IntraPredictionBlock extends Component2D {
 		this.vertical = null;
 		this.yuvDelta = null;
 	}
+	
+	@Override
+	public String toString() {
+		return this.getClass().getSimpleName()
+				+ "[Position: x=" + this.positionX + ", y=" + this.positionY + "; "
+				+ "Size: " + this.size + "; "
+				+ "Angle: " + this.angle
+				+ "]";
+	}
 }

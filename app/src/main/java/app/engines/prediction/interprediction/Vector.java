@@ -276,4 +276,14 @@ public class Vector extends Component2D {
 		res |= (this.size & 0xFF);
 		return res;
 	}
+	
+	@Override
+	public String toString() {
+		return this.getClass().getSimpleName()
+				+ "[Position: x=" + this.positionX + ", y=" + this.positionY + "; "
+				+ "Size: " + this.size + "; "
+				+ "Span: x=" + this.spanX + ", y=" + this.spanY + "; "
+				+ "Reference: " + this.reference
+				+ "]";
+	}
 }

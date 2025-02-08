@@ -121,10 +121,7 @@ public class ColorManager {
 		final int r = color.getRed();
 		final int g = color.getGreen();
 		final int b = color.getBlue();
-		final double Y = 0.299 * r + 0.587 * g + 0.114 * b;
-		final double U = 128 - 0.168736 * r - 0.331264 * g + 0.5 * b;
-		final double V = 128 + 0.5 * r - 0.418688 * g - 0.081312 * b;
-		return new double[] {Y, U, V};
+		return convertRGBToYUV(r, g, b);
 	}
 	
 	/**
@@ -148,6 +145,32 @@ public class ColorManager {
 		final int r = (color >> 16) & 0xFF;
 		final int g = (color >> 8) & 0xFF;
 		final int b = color & 0xFF;
+		return convertRGBToYUV(r, g, b);
+	}
+	
+	/**
+	 * <p>Convert a RGB color to YUV using the
+	 * Rec. 601 (ITU-T T.871) conversion. 
+	 * If a color component is bigger than 8 bits, it'll get
+	 * cut off by masking.</p>
+	 * 
+	 * @return <p>Returns a double[], that contains the
+	 * Y, U and V component at the following indexes:
+	 * </p>
+	 * <ul><li>double[0] = Y
+	 * <li>double[1] = U
+	 * <li>double[2] = V
+	 * </ul>
+	 * 
+	 * @param red	The red compound of the color.
+	 * @param green	The green compound of the color.
+	 * @param blue	The blue compound of the color.
+	 * converted to an YUV color.
+	 */
+	public static double[] convertRGBToYUV(final int red, final int green, final int blue) {
+		final int r = red & 0xFF;
+		final int g = green & 0xFF;
+		final int b = blue & 0xFF;
 		final double Y = 0.299 * r + 0.587 * g + 0.114 * b;
 		final double U = 128 - 0.168736 * r - 0.331264 * g + 0.5 * b;
 		final double V = 128 + 0.5 * r - 0.418688 * g - 0.081312 * b;

@@ -465,7 +465,7 @@ public class Protocol {
 			final int halfBlockSize = blockSize >> 1;
 			size += Protocol.INTRA_BLOCK_HEADER_LENGTH;
 			size += (blockSize * blockSize) + 2 * (halfBlockSize * halfBlockSize);
-			size += ((blockSize + blockSize) * 3); // Pixels at border
+			size += ((blockSize + blockSize) * ColorManager.CHANNELS); // Pixels at border
 		}
 		
 		return size;
@@ -477,7 +477,7 @@ public class Protocol {
 		final byte[] posX = ProtocolBase.getPositionBytes(block.getPositionX());
 		final byte[] posY = ProtocolBase.getPositionBytes(block.getPositionY());
 		final byte[] sizeAndAngle = Protocol.getSizeAndAngleByte(block.getSize(), block.getAngle());
-		final byte[] borderColors = Protocol.getBorderColorBytes(block.getHorizontal(), block.getVertical(), block.getSize());
+		final byte[] borderColors = Protocol.getBorderColorBytes(block.getVertical(), block.getHorizontal(), block.getSize());
 		
 		byte[][] differences = null;
 		
@@ -506,7 +506,7 @@ public class Protocol {
 	
 	public static byte[] getBorderColorBytes(final double[][] verticalYUV,
 			final double[][] horizontalYUV, final int blockSize) {
-		final int size = 2 * blockSize * 3;
+		final int size = 2 * (blockSize * ColorManager.CHANNELS);
 		byte[] data = new byte[size];
 		int offset_h = 0;
 		int offset_v = blockSize * ColorManager.CHANNELS;
@@ -516,9 +516,11 @@ public class Protocol {
 		for (int i = 0; i < blockSize; i++, offset_h += 3, offset_v += 3) {
 			rgb_h = ColorManager.convertYUVToRGB_intARR(horizontalYUV[i], rgb_h);
 			rgb_v = ColorManager.convertYUVToRGB_intARR(verticalYUV[i], rgb_v);
+			
 			data[offset_h] = (byte)(rgb_h[ColorManager.R_INDEX] & 0xFF);
 			data[offset_h + 1] = (byte)(rgb_h[ColorManager.G_INDEX] & 0xFF);
 			data[offset_h + 2] = (byte)(rgb_h[ColorManager.B_INDEX] & 0xFF);
+			
 			data[offset_v] = (byte)(rgb_v[ColorManager.R_INDEX] & 0xFF);
 			data[offset_v + 1] = (byte)(rgb_v[ColorManager.G_INDEX] & 0xFF);
 			data[offset_v + 2] = (byte)(rgb_v[ColorManager.B_INDEX] & 0xFF);
@@ -534,16 +536,16 @@ public class Protocol {
 		int offset_v = dataOffset + (blockSize * ColorManager.CHANNELS);
 		
 		for (int i = 0; i < blockSize; i++, offset_h += 3, offset_v += 3) {
-			int r_v = data[offset_h];
-			int g_v = data[offset_h + 1];
-			int b_v = data[offset_h + 2];
-			int r_h = data[offset_v];
-			int g_h = data[offset_v + 1];
-			int b_h = data[offset_v + 2];
-			int rgb_h = 0xFF000000 | ((r_h & 0xFF) << 16) | ((g_h & 0xFF) << 8) | (b_h & 0xFF);
-			int rgb_v = 0xFF000000 | ((r_v & 0xFF) << 16) | ((g_v & 0xFF) << 8) | (b_v & 0xFF);
-			vertical[i] = ColorManager.convertRGBToYUV(rgb_v);
-			horizontal[i] = ColorManager.convertRGBToYUV(rgb_h);
+			byte r_h = data[offset_h];
+			byte g_h = data[offset_h + 1];
+			byte b_h = data[offset_h + 2];
+			
+			byte r_v = data[offset_v];
+			byte g_v = data[offset_v + 1];
+			byte b_v = data[offset_v + 2];
+			
+			vertical[i] = ColorManager.convertRGBToYUV(r_v, g_v, b_v);
+			horizontal[i] = ColorManager.convertRGBToYUV(r_h, g_h, b_h);
 		}
 		
 		return new double[][][] {vertical, horizontal};
