@@ -119,8 +119,6 @@ public class Encoder {
 			outStream.activate();
 			
 			for (int i = 0; i < files; i++) {
-				if (i == 15) break;
-				
 				System.out.println("");
 				System.out.println("Frame " + i + ":");
 				long start = System.currentTimeMillis();
@@ -192,7 +190,7 @@ public class Encoder {
 				deblocker.deblock(movementVectors, composite);
 				long end_deblock = System.currentTimeMillis();
 				
-				ImageIO.write(composite.toBufferedImage(), "png", new File(ArgumentProcessor.outputFile.getParent() + "/VR_" + i + ".png"));
+//				ImageIO.write(composite.toBufferedImage(), "png", new File(ArgumentProcessor.outputFile.getParent() + "/VR_" + i + ".png"));
 //				ImageIO.write(part[0], "png", new File(ArgumentProcessor.outputFile.getParent() + "/MB_" + i + ".png"));
 //				ImageIO.write(part[1], "png", new File(ArgumentProcessor.outputFile.getParent() + "/MBA_" + i + ".png"));
 //				ImageIO.write(part[2], "png", new File(ArgumentProcessor.outputFile.getParent() + "/MBAV_" + i + ".png"));
