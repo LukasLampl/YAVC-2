@@ -21,11 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package app.engines.prediction.intraprediction;
 
-import app.Main;
-import app.engines.dct.DCTEngine;
-import app.utils.Mode;
 import app.utils.components.Component2D;
-import app.utils.components.MacroBlock;
 
 /**
  * The {@code IntraPredictionBlock} is a representative of the {@link app.utils.components.MacroBlock MacroBlock}
@@ -34,17 +30,7 @@ import app.utils.components.MacroBlock;
  * @author Hans Lampl
  * @version 1.1.0
  */
-public class IntraPredictionBlock extends Component2D {
-	/**
-	 * The DCT-Engine of the app.
-	 */
-	private static DCTEngine DCT_ENGINE = Main.DCT_ENGINE;
-	
-	/**
-	 * Holds the appended MacroBlock, from which the {@code IntraPredictionBlock} was predicted.
-	 */
-	private MacroBlock appendedBlock = null;
-	
+public abstract class IntraPredictionBlock extends Component2D {
 	/**
 	 * The prediction angle used.
 	 */
@@ -59,14 +45,6 @@ public class IntraPredictionBlock extends Component2D {
 	 * Holds all vertical border pixels used for intra prediction.
 	 */
 	private double vertical[][] = null;
-	
-	/**
-	 * Holds the delta values of the IntraPredictionBlock.
-	 * This can be used by the encoder as well as the decoder.
-	 * Both will holds the data in different forms, eg. the encoder in DCT coeffs,
-	 * while the decoder in actual YUV values.
-	 */
-	private double yuvDelta[][][] = null;
 
 	/**
 	 * Creates a new {@code IntraPredictionBlock} at the given position, angle and size.
@@ -92,6 +70,11 @@ public class IntraPredictionBlock extends Component2D {
 		return this.angle;
 	}
 	
+	/**
+	 * Sets the angle of the intra prediction.
+	 * 
+	 * @param angle	The used angle for intra prediction.
+	 */
 	public void setAngle(final int angle) {
 		this.angle = angle;
 	}
@@ -105,6 +88,11 @@ public class IntraPredictionBlock extends Component2D {
 		return this.horizontal;
 	}
 	
+	/**
+	 * Sets the horizontal border pixels used for extrapolating.
+	 * 
+	 * @param horizontal	The horizontal border pixels.
+	 */
 	public void setHorizontal(final double[][] horizontal) {
 		this.horizontal = horizontal;
 	}
@@ -118,61 +106,13 @@ public class IntraPredictionBlock extends Component2D {
 		return this.vertical;
 	}
 	
+	/**
+	 * Sets the vertical border pixels used for extrapolating.
+	 * 
+	 * @param vertical	The vertical border pixels.
+	 */
 	public void setVertical(final double[][] vertical) {
 		this.vertical = vertical;
-	}
-	
-	/**
-	 * Gets the IDCT coefficients (YUV deltas) of the color deltas.
-	 * 
-	 * @return The converted deltas in YUV format.
-	 */
-	public double[][][] getIDCTYUVDelta() {
-		return DCT_ENGINE.computeIDCTOfDeltas(this.yuvDelta, this.size, true);
-	}
-	
-	/**
-	 * Gets the YUV delta that was applied to the block.
-	 * 
-	 * @return The delta values.
-	 */
-	public double[][][] getYUVDelta() {
-		return this.yuvDelta;
-	}
-	
-	/**
-	 * Sets the delta values of the {@code IntraPredictionBlock} with YUV values.
-	 * If the block is a coding unit (encoding process) the deltas will be converted
-	 * to DCT coeffs.
-	 * 
-	 * @param YUVDelta	The YUV delta values.
-	 * @param mode		Mode with which the function was called.
-	 */
-	public void setYUVDelta(final double[][][] YUVDelta, final Mode mode) {
-		if (mode == Mode.ENCODE) {
-			this.yuvDelta = DCT_ENGINE.computeDCTOfDeltas(YUVDelta, this.size, true);
-		} else {
-			this.yuvDelta = YUVDelta;
-		}
-	}
-	
-	/**
-	 * Sets the appended block used in intra prediction as a reference.
-	 * 
-	 * @param block	The used reference {@code MacroBlock}.
-	 */
-	public void setAppendedBlock(MacroBlock block) {
-		this.appendedBlock = block;
-	}
-	
-	/**
-	 * Gets the appended {@code MacroBlock} that was used as reference
-	 * for the intra predicted block.
-	 * 
-	 * @return The appended {@code MacroBlock}.
-	 */
-	public MacroBlock getAppendedBlock() {
-		return this.appendedBlock;
 	}
 	
 	@Override
@@ -181,7 +121,6 @@ public class IntraPredictionBlock extends Component2D {
 		this.angle = 0;
 		this.horizontal = null;
 		this.vertical = null;
-		this.yuvDelta = null;
 	}
 	
 	@Override

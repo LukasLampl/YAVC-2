@@ -34,7 +34,7 @@ public class IntraEngine extends IntraPipeline {
 	 */
 	private int totalPixelsProcessed = 0;
 
-	public LoadDistributor<IntraPredictionBlock> computeIntraPrediction(final List<MacroBlock> predictionList,
+	public LoadDistributor<EncodingIntraPredictionBlock> computeIntraPrediction(final List<MacroBlock> predictionList,
 			final PixelRaster curFrame) {
 		this.totalPixelsProcessed = 0;
 		
@@ -42,7 +42,7 @@ public class IntraEngine extends IntraPipeline {
 			this.totalPixelsProcessed += b.getArea();
 		}
 		
-		LoadDistributor<IntraPredictionBlock> predictedBlocks = new LoadDistributor<IntraPredictionBlock>();
+		LoadDistributor<EncodingIntraPredictionBlock> predictedBlocks = new LoadDistributor<EncodingIntraPredictionBlock>();
 		ForkJoinPool executor = ForkJoinPool.commonPool();
 		executor.invoke(new IntraPredictionTask(predictedBlocks, predictionList, 0, predictionList.size(), curFrame));
 		executor.shutdown();

@@ -16,8 +16,9 @@ import org.junit.jupiter.api.Test;
 import app.engines.prediction.interprediction.DecodingVector;
 import app.engines.prediction.interprediction.EncodingVector;
 import app.engines.prediction.interprediction.VectorEngine;
+import app.engines.prediction.intraprediction.DecodingIntraPredictionBlock;
+import app.engines.prediction.intraprediction.EncodingIntraPredictionBlock;
 import app.engines.prediction.intraprediction.IntraEngine;
-import app.engines.prediction.intraprediction.IntraPredictionBlock;
 import app.engines.quadtree.QuadtreeEngine;
 import app.exceptions.CorruptedFileException;
 import app.io.InputProcessor;
@@ -204,12 +205,12 @@ public class TestDecoder {
 				ArrayList<MacroBlock> quadtreeRoots = qE.constructQuadtree(frame);
 				LoadDistributor<MacroBlock> leaveNodeManager = qE.getLeaveNodes(quadtreeRoots);
 				leaveNodeManager.compute(frame.getWidth() * frame.getHeight());
-				LoadDistributor<IntraPredictionBlock> intraBlocks = iE.computeIntraPrediction(leaveNodeManager.getRawData(), frame);
-				List<IntraPredictionBlock> originalBlocks = intraBlocks.getRawData();
+				LoadDistributor<EncodingIntraPredictionBlock> intraBlocks = iE.computeIntraPrediction(leaveNodeManager.getRawData(), frame);
+				List<EncodingIntraPredictionBlock> originalBlocks = intraBlocks.getRawData();
 				byte[] intraData = Protocol.getIntraBlockBytes(originalBlocks, false);
-				ListManager<IntraPredictionBlock> intraBlockManager = new ListManager<IntraPredictionBlock>();
+				ListManager<DecodingIntraPredictionBlock> intraBlockManager = new ListManager<DecodingIntraPredictionBlock>();
 				super.getIntraPreditionBlocks(intraData, intraBlockManager, true);
-				List<IntraPredictionBlock> decodedBlocks = intraBlockManager.getList();
+				List<DecodingIntraPredictionBlock> decodedBlocks = intraBlockManager.getList();
 				assertEquals(originalBlocks.size(), decodedBlocks.size());
 				
 				for (int i = 0; i < originalBlocks.size(); i++) {
@@ -217,8 +218,8 @@ public class TestDecoder {
 						System.out.println("Intrablocks checked: " + i + "/" + originalBlocks.size());
 					}
 					
-					IntraPredictionBlock originalBlock = originalBlocks.get(i);
-					IntraPredictionBlock decodedBlock = decodedBlocks.get(i);
+					EncodingIntraPredictionBlock originalBlock = originalBlocks.get(i);
+					DecodingIntraPredictionBlock decodedBlock = decodedBlocks.get(i);
 					System.out.println("Size: " + originalBlock.getSize());
 					assertEquals(originalBlock.getPositionX(), decodedBlock.getPositionX());
 					assertEquals(originalBlock.getPositionY(), decodedBlock.getPositionY());
@@ -227,8 +228,8 @@ public class TestDecoder {
 					check2DArray(originalBlock.getVertical(), decodedBlock.getVertical());
 					check2DArray(originalBlock.getHorizontal(), decodedBlock.getHorizontal());
 					
-					double[][][] originalDiffs = originalBlock.getYUVDelta();
-					double[][][] decodedDiffs = decodedBlock.getYUVDelta();
+					double[][][] originalDiffs = originalBlock.getYUVDeltas();
+					double[][][] decodedDiffs = decodedBlock.getYUVDeltas();
 					assertEquals(originalDiffs.length, decodedDiffs.length);
 					assertEquals(originalDiffs[0].length, decodedDiffs[0].length);
 					

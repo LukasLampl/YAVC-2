@@ -29,7 +29,6 @@ import app.io.Protocol;
 import app.io.ProtocolBase;
 import app.managers.ListManager;
 import app.rendering.ColorManager;
-import app.utils.Mode;
 
 public class IntraConversionTask extends RecursiveAction {
 	private static final long serialVersionUID = -9153076396071631916L;
@@ -63,7 +62,7 @@ public class IntraConversionTask extends RecursiveAction {
 	 * The vector manager in which to write all read in vector for
 	 * further processing.
 	 */
-	private ListManager<IntraPredictionBlock> intraBlocksManager = null;
+	private ListManager<DecodingIntraPredictionBlock> intraBlocksManager = null;
 	
 	/**
 	 * Flag for whether the vectors should be converted by a single thread or not.
@@ -82,7 +81,7 @@ public class IntraConversionTask extends RecursiveAction {
 	 * @param vectorManager	The vector manager in which to write the vectors into.
 	 */
 	public IntraConversionTask(int start, int end, List<Integer> indexes, byte[] data,
-			ListManager<IntraPredictionBlock> intraBlocksManager) {
+			ListManager<DecodingIntraPredictionBlock> intraBlocksManager) {
 		this.start = start;
 		this.end = end;
 		this.indexes = indexes;
@@ -161,10 +160,10 @@ public class IntraConversionTask extends RecursiveAction {
 			final int angle = sizeAndAngle[1];
 			final double[][][] borderColors = Protocol.getBorderColors(this.data, size, index + 6);
 			final int borderOffset = (size * 2) * ColorManager.CHANNELS;
-			IntraPredictionBlock intraBlock = this.intraBlocksManager.getCachedObj();
+			DecodingIntraPredictionBlock intraBlock = this.intraBlocksManager.getCachedObj();
 			
 			if (intraBlock == null) {
-				intraBlock = new IntraPredictionBlock(posX, posY, angle, size);
+				intraBlock = new DecodingIntraPredictionBlock(posX, posY, angle, size);
 			} else {
 				intraBlock.setSize(size);
 				intraBlock.move(posX, posY);
@@ -174,7 +173,7 @@ public class IntraConversionTask extends RecursiveAction {
 					index + Protocol.INTRA_BLOCK_HEADER_LENGTH + borderOffset, size);
 			diffs = Main.DCT_ENGINE.computeIDCTOfDeltas(diffs, size, true);
 			double[][][] yuvDelta = diffs;
-			intraBlock.setYUVDelta(yuvDelta, Mode.DECODE);
+			intraBlock.setYUVDelta(yuvDelta);
 			intraBlock.setAngle(angle);
 			intraBlock.setVertical(borderColors[0]);
 			intraBlock.setHorizontal(borderColors[1]);

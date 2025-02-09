@@ -33,7 +33,7 @@ import java.util.ArrayList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import app.engines.prediction.interprediction.EncodingVector;
-import app.engines.prediction.intraprediction.IntraPredictionBlock;
+import app.engines.prediction.intraprediction.EncodingIntraPredictionBlock;
 import app.utils.PixelRaster;
 
 /**
@@ -135,7 +135,7 @@ public class OutputStream {
 	 * @param file			File in which to write.
 	 * @param intraBlocks	Intra blocks to write.
 	 */
-	private void writeIntraBlock(File file, ArrayList<IntraPredictionBlock> intraBlocks) {
+	private void writeIntraBlock(File file, ArrayList<EncodingIntraPredictionBlock> intraBlocks) {
 		try {
 			byte[] data = Protocol.getIntraBlockBytes(intraBlocks, true);
 			Files.write(Path.of(file.getAbsolutePath()), data, StandardOpenOption.APPEND);

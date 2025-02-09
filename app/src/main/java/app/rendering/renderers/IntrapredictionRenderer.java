@@ -25,22 +25,22 @@ import java.awt.Dimension;
 import java.awt.image.BufferedImage;
 import java.util.List;
 
-import app.engines.prediction.intraprediction.IntraPredictionBlock;
+import app.engines.prediction.intraprediction.EncodingIntraPredictionBlock;
 import app.managers.LoadDistributor;
 import app.rendering.ColorManager;
 import app.utils.components.MacroBlock;
 
 public class IntrapredictionRenderer {
-	public static BufferedImage[] renderIntraPredictionDeltas(LoadDistributor<IntraPredictionBlock> intraPredictedBlocks,
+	public static BufferedImage[] renderIntraPredictionDeltas(LoadDistributor<EncodingIntraPredictionBlock> intraPredictedBlocks,
 			Dimension dim) {
 		BufferedImage render = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
 		BufferedImage render2 = new BufferedImage(dim.width, dim.height, BufferedImage.TYPE_INT_ARGB);
 		
-		for (List<IntraPredictionBlock> blockList : intraPredictedBlocks.getIterable()) {
-			for (IntraPredictionBlock b : blockList) {
+		for (List<EncodingIntraPredictionBlock> blockList : intraPredictedBlocks.getIterable()) {
+			for (final EncodingIntraPredictionBlock b : blockList) {
 				if (b == null) continue;
 				
-				final double[][][] deltas = b.getIDCTYUVDelta();
+				final double[][][] deltas = b.getYUVDeltas();
 				
 				for (int x = 0; x < b.getSize(); x++) {
 					final int imgX = x + b.getPositionX();
@@ -56,13 +56,13 @@ public class IntrapredictionRenderer {
 			}
 		}
 		
-		for (List<IntraPredictionBlock> blockList : intraPredictedBlocks.getIterable()) {
-			for (IntraPredictionBlock b : blockList) {
+		for (List<EncodingIntraPredictionBlock> blockList : intraPredictedBlocks.getIterable()) {
+			for (final EncodingIntraPredictionBlock b : blockList) {
 				if (b == null) continue;
 				
 				final MacroBlock m = b.getAppendedBlock();
 				
-				final double[][][] deltas = b.getIDCTYUVDelta();
+				final double[][][] deltas = b.getYUVDeltas();
 				final double[][][] color = m.getColors();
 				
 				for (int x = 0; x < b.getSize(); x++) {

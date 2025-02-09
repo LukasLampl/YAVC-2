@@ -24,7 +24,7 @@ package app.io;
 import java.util.ArrayList;
 
 import app.engines.prediction.interprediction.EncodingVector;
-import app.engines.prediction.intraprediction.IntraPredictionBlock;
+import app.engines.prediction.intraprediction.EncodingIntraPredictionBlock;
 import app.managers.Discardable;
 import app.managers.LoadDistributor;
 
@@ -44,7 +44,7 @@ public class QueueObject implements Discardable {
 	/**
 	 * The intra blocks to write.
 	 */
-	private ArrayList<IntraPredictionBlock> intraBlocks = new ArrayList<IntraPredictionBlock>();
+	private ArrayList<EncodingIntraPredictionBlock> intraBlocks = new ArrayList<EncodingIntraPredictionBlock>();
 	
 	/**
 	 * Creates an QueueObject container with the given vectors and non-coded blocks
@@ -53,7 +53,7 @@ public class QueueObject implements Discardable {
 	 * @param vecManager	Vectors to write.
 	 * @param diffManager	Non-coded blocks to write.
 	 */
-	public QueueObject(LoadDistributor<EncodingVector> vecManager, LoadDistributor<IntraPredictionBlock> intraBlocks) {
+	public QueueObject(LoadDistributor<EncodingVector> vecManager, LoadDistributor<EncodingIntraPredictionBlock> intraBlocks) {
 		this.vectors.addAll(vecManager.getRawData());
 		this.intraBlocks.addAll(intraBlocks.getRawData());
 	}
@@ -72,7 +72,7 @@ public class QueueObject implements Discardable {
 	 * 
 	 * @return The intra blocks to write.
 	 */
-	public ArrayList<IntraPredictionBlock> getIntraBlocks() {
+	public ArrayList<EncodingIntraPredictionBlock> getIntraBlocks() {
 		return this.intraBlocks;
 	}
 	

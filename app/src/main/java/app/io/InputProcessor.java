@@ -25,7 +25,7 @@ import java.awt.Dimension;
 import java.util.LinkedList;
 
 import app.engines.prediction.interprediction.DecodingVector;
-import app.engines.prediction.intraprediction.IntraPredictionBlock;
+import app.engines.prediction.intraprediction.DecodingIntraPredictionBlock;
 import app.exceptions.CorruptedFileException;
 import app.filter.Deblocker;
 import app.managers.ListManager;
@@ -131,7 +131,7 @@ public class InputProcessor {
 	 */
 	public PixelRaster processFrame(byte[] content, byte[] intraBlocksContent, ReferenceFrameManager refs,
 			ListManager<DecodingVector> vectorListManager,
-			ListManager<IntraPredictionBlock> intraBlockManager) throws CorruptedFileException {
+			ListManager<DecodingIntraPredictionBlock> intraBlockManager) throws CorruptedFileException {
 		long start_copy = System.currentTimeMillis();
 		PixelRaster render = refs.getLastFrame().copy();
 		long end_copy = System.currentTimeMillis();
@@ -144,7 +144,7 @@ public class InputProcessor {
 		long end_raw_block = System.currentTimeMillis();
 		long start_load_dist = System.currentTimeMillis();
 		LoadDistributor<DecodingVector> vecManager = new LoadDistributor<DecodingVector>();
-		LoadDistributor<IntraPredictionBlock> intraBlocks = new LoadDistributor<IntraPredictionBlock>();
+		LoadDistributor<DecodingIntraPredictionBlock> intraBlocks = new LoadDistributor<DecodingIntraPredictionBlock>();
 		vecManager.setAllAndCompute(vectorListManager.getList());
 		intraBlocks.setAllAndCompute(intraBlockManager.getList());
 		long end_load_dist = System.currentTimeMillis();
@@ -169,7 +169,7 @@ public class InputProcessor {
 	 * @return An ArrayList with all non-coded blocks.
 	 * @throws CorruptedFileException	When the decoded non-coded blocks size does not match with the coded size.
 	 */
-	protected void getIntraPreditionBlocks(byte[] rawBlocksPart, ListManager<IntraPredictionBlock> intraBlockListManager, boolean singleThread) throws CorruptedFileException {
+	protected void getIntraPreditionBlocks(byte[] rawBlocksPart, ListManager<DecodingIntraPredictionBlock> intraBlockListManager, boolean singleThread) throws CorruptedFileException {
 		Protocol.getIntraBlocks(rawBlocksPart, intraBlockListManager, singleThread);
 	}
 	

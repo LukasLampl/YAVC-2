@@ -29,9 +29,10 @@ import app.engines.prediction.interprediction.DecodingVector;
 import app.engines.prediction.interprediction.EncodingVector;
 import app.engines.prediction.interprediction.Vector;
 import app.engines.prediction.interprediction.VectorConverterPool;
+import app.engines.prediction.intraprediction.DecodingIntraPredictionBlock;
+import app.engines.prediction.intraprediction.EncodingIntraPredictionBlock;
 import app.engines.prediction.intraprediction.IntraConverterPool;
 import app.engines.prediction.intraprediction.IntraPipeline;
-import app.engines.prediction.intraprediction.IntraPredictionBlock;
 import app.engines.quadtree.QuadtreeBase;
 import app.exceptions.CorruptedFileException;
 import app.exceptions.DCTCoefficientOutOfBoundsException;
@@ -437,7 +438,7 @@ public class Protocol {
 	 * @param blocks	IntraPredictionBlocks to convert.
 	 * @return A byte representation of the IntraPredictionBlock list.
 	 */
-	public static byte[] getIntraBlockBytes(final List<IntraPredictionBlock> intraBlocks, boolean discard) {
+	public static byte[] getIntraBlockBytes(final List<EncodingIntraPredictionBlock> intraBlocks, boolean discard) {
 		if (intraBlocks == null) {
 			throw new NullPointerException("No vectors were passed for writing.");
 		}
@@ -448,7 +449,7 @@ public class Protocol {
 		writeBytesToByteArray(ProtocolBase.getSizeBytes(intraBlocks.size()), data, currentIndex);
 		currentIndex += Protocol.INTRA_BLOCK_SIZE_CHECK_LENGTH;
 		
-		for (final IntraPredictionBlock block : intraBlocks) {
+		for (final EncodingIntraPredictionBlock block : intraBlocks) {
 			currentIndex += writeSingleIntraPredictionBlockInByteArray(block, currentIndex, data);
 			
 			if (discard) {
@@ -459,10 +460,10 @@ public class Protocol {
 		return data;
 	}
 	
-	private static int getSizeOfIntraBlocks(List<IntraPredictionBlock> intraBlocks) {
+	private static int getSizeOfIntraBlocks(List<EncodingIntraPredictionBlock> intraBlocks) {
 		int size = Protocol.INTRA_BLOCK_SIZE_CHECK_LENGTH;
 		
-		for (final IntraPredictionBlock block : intraBlocks) {
+		for (final EncodingIntraPredictionBlock block : intraBlocks) {
 			final int blockSize = block.getSize();
 			final int halfBlockSize = blockSize >> 1;
 			size += Protocol.INTRA_BLOCK_HEADER_LENGTH;
@@ -473,7 +474,7 @@ public class Protocol {
 		return size;
 	}
 	
-	private static final int writeSingleIntraPredictionBlockInByteArray(final IntraPredictionBlock block,
+	private static final int writeSingleIntraPredictionBlockInByteArray(final EncodingIntraPredictionBlock block,
 			final int startIndex, final byte[] data) {
 		int index = startIndex;
 		final byte[] posX = ProtocolBase.getPositionBytes(block.getPositionX());
@@ -484,7 +485,7 @@ public class Protocol {
 		byte[][] differences = null;
 		
 		try {
-			differences = ProtocolBase.getDeltaMatrixBytes(block.getYUVDelta(), block.getSize());
+			differences = ProtocolBase.getDeltaMatrixBytes(block.getYUVDeltas(), block.getSize());
 		} catch (DCTCoefficientOutOfBoundsException e) {
 			e.printStackTrace();
 		}
@@ -565,7 +566,7 @@ public class Protocol {
 		return new int[] {size, angle};
 	}
 	
-	public static void getIntraBlocks(final byte[] data, final ListManager<IntraPredictionBlock> intraBlockManager,
+	public static void getIntraBlocks(final byte[] data, final ListManager<DecodingIntraPredictionBlock> intraBlockManager,
 			final boolean singleThread) throws CorruptedFileException {
 		if (data.length <= 1) {
 			return;

@@ -23,7 +23,7 @@ package app.decoder;
 
 import app.ArgumentProcessor;
 import app.engines.prediction.interprediction.DecodingVector;
-import app.engines.prediction.intraprediction.IntraPredictionBlock;
+import app.engines.prediction.intraprediction.DecodingIntraPredictionBlock;
 import app.exceptions.CorruptedFileException;
 import app.io.ImageWriter;
 import app.io.InputProcessor;
@@ -57,7 +57,7 @@ public class Decoder {
 	public void decode() {
 		VideoPlayer player = ArgumentProcessor.playback ? new VideoPlayer() : null;
 		ListManager<DecodingVector> vectorListManager = new ListManager<DecodingVector>();
-		ListManager<IntraPredictionBlock> intraBlockManager = new ListManager<IntraPredictionBlock>();
+		ListManager<DecodingIntraPredictionBlock> intraBlockManager = new ListManager<DecodingIntraPredictionBlock>();
 		ImageWriter imageWriter = new ImageWriter(ArgumentProcessor.outputFile);
 		InputStream inputStream = new InputStream(ArgumentProcessor.inputFile);
 		InputProcessor processor = new InputProcessor();

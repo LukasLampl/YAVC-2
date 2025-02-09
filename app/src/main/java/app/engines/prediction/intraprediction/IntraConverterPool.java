@@ -45,7 +45,7 @@ public class IntraConverterPool {
 	/**
 	 * A vector manager to which the results should be written to.
 	 */
-	private ListManager<IntraPredictionBlock> intraBlockManager = null;
+	private ListManager<DecodingIntraPredictionBlock> intraBlockManager = null;
 	
 	/**
 	 * Flag for whether the vector conversion should be single threaded or not.
@@ -60,7 +60,7 @@ public class IntraConverterPool {
 	 * @param vectorManager	A vector manager in which to write the results to.
 	 */
 	public IntraConverterPool(List<Integer> indexes, byte[] data,
-			ListManager<IntraPredictionBlock> intraBlockManager, boolean singleThreaded) {
+			ListManager<DecodingIntraPredictionBlock> intraBlockManager, boolean singleThreaded) {
 		this.pool = ForkJoinPool.commonPool();
 		this.indexes = indexes;
 		this.data = data;

@@ -29,7 +29,6 @@ import app.engines.prediction.intraprediction.cost.MSECost;
 import app.managers.LoadDistributor;
 import app.rendering.ColorManager;
 import app.utils.ArrayUtils;
-import app.utils.Mode;
 import app.utils.PixelRaster;
 import app.utils.components.MacroBlock;
 
@@ -54,7 +53,7 @@ public class IntraPredictionTask extends RecursiveAction {
 	/**
 	 * The vector manager in which to add the converted vectors.
 	 */
-	private LoadDistributor<IntraPredictionBlock> intraBlockManager = null;
+	private LoadDistributor<EncodingIntraPredictionBlock> intraBlockManager = null;
 	
 	private PixelRaster curFrame = null;
 
@@ -63,7 +62,7 @@ public class IntraPredictionTask extends RecursiveAction {
 	 */
 	private List<MacroBlock> blocksToConvert = null;
 
-	public IntraPredictionTask(LoadDistributor<IntraPredictionBlock> intraBlockManager,
+	public IntraPredictionTask(LoadDistributor<EncodingIntraPredictionBlock> intraBlockManager,
 			List<MacroBlock> blocksToConvert, final int start, final int end,
 			final PixelRaster curFrame) {
 		this.blocksToConvert = blocksToConvert;
@@ -105,7 +104,7 @@ public class IntraPredictionTask extends RecursiveAction {
 	private void process() {
 		for (int i = this.start; i < this.end; i++) {
 			final MacroBlock blockToPredict = this.blocksToConvert.get(i);
-			final IntraPredictionBlock predictedBlock = computeIntraPredictionBlock(blockToPredict, this.curFrame);
+			final EncodingIntraPredictionBlock predictedBlock = computeIntraPredictionBlock(blockToPredict, this.curFrame);
 			
 			if (predictedBlock != null) {
 				this.intraBlockManager.setObj(predictedBlock);
@@ -113,7 +112,7 @@ public class IntraPredictionTask extends RecursiveAction {
 		}
 	}
 	
-	private IntraPredictionBlock computeIntraPredictionBlock(final MacroBlock predictionBlock, final PixelRaster curFrame) {
+	private EncodingIntraPredictionBlock computeIntraPredictionBlock(final MacroBlock predictionBlock, final PixelRaster curFrame) {
 		if (IntraPipeline.isEdgeBlock(predictionBlock, curFrame.getDimension())) {
 			return null;
 		}
@@ -172,8 +171,8 @@ public class IntraPredictionTask extends RecursiveAction {
 		return borderPixels;
 	}
 	
-	private IntraPredictionBlock computeDelta(final MacroBlock predictionBlock, final int angle, final double[][][] ayuv, final double[][][] predicted, final double[][][] origin) {
-		IntraPredictionBlock intra = new IntraPredictionBlock(predictionBlock.getPositionX(),
+	private EncodingIntraPredictionBlock computeDelta(final MacroBlock predictionBlock, final int angle, final double[][][] ayuv, final double[][][] predicted, final double[][][] origin) {
+		EncodingIntraPredictionBlock intra = new EncodingIntraPredictionBlock(predictionBlock.getPositionX(),
 				predictionBlock.getPositionY(), angle, predictionBlock.getSize());
 		intra.setHorizontal(ayuv[IntraPipeline.YUV_HORIZONTAL_INDEX]);
 		intra.setVertical(ayuv[IntraPipeline.YUV_VERTICAL_INDEX]);
@@ -210,7 +209,7 @@ public class IntraPredictionTask extends RecursiveAction {
 			}
 		}
 		
-		intra.setYUVDelta(deltas, Mode.ENCODE);
+		intra.setYUVDelta(deltas);
 		return intra;
 	}
 }

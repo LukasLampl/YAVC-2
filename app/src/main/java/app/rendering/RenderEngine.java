@@ -26,6 +26,7 @@ import java.awt.image.BufferedImage;
 import java.util.List;
 
 import app.engines.prediction.interprediction.Vector;
+import app.engines.prediction.intraprediction.EncodingIntraPredictionBlock;
 import app.engines.prediction.intraprediction.IntraPredictionBlock;
 import app.managers.LoadDistributor;
 import app.managers.ReferenceFrameManager;
@@ -59,7 +60,7 @@ public class RenderEngine {
 	 * @return A composit PixelRaster with all vectors, non-coded blocks and reference used.
 	 */
 	public static PixelRaster renderComposit(LoadDistributor<? extends Vector> vecs, ReferenceFrameManager refs,
-			LoadDistributor<IntraPredictionBlock> intraBlocks,
+			LoadDistributor<? extends IntraPredictionBlock> intraBlocks,
 			final Mode mode) {
 		return CompositRenderer.renderComposit(vecs, refs, intraBlocks, mode);
 	}
@@ -118,7 +119,7 @@ public class RenderEngine {
 		return PredictionDistributionRenderer.renderPredictionDistribution(intraBlocks, movementVectors, dim);
 	}
 	
-	public static BufferedImage[] renderIntraPredictionDeltas(LoadDistributor<IntraPredictionBlock> intraPredictedBlocks,
+	public static BufferedImage[] renderIntraPredictionDeltas(LoadDistributor<EncodingIntraPredictionBlock> intraPredictedBlocks,
 			Dimension dim) {
 		return IntrapredictionRenderer.renderIntraPredictionDeltas(intraPredictedBlocks, dim);
 	}

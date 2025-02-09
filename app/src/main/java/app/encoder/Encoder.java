@@ -29,6 +29,7 @@ import app.engines.prediction.PredictionDistributor;
 import app.engines.prediction.interprediction.EncodingVector;
 import app.engines.prediction.interprediction.Vector;
 import app.engines.prediction.interprediction.VectorEngine;
+import app.engines.prediction.intraprediction.EncodingIntraPredictionBlock;
 import app.engines.prediction.intraprediction.IntraEngine;
 import app.engines.prediction.intraprediction.IntraPredictionBlock;
 import app.engines.quadtree.QuadtreeEngine;
@@ -160,7 +161,7 @@ public class Encoder {
 				PredictionDistributor.Result predictionTypes = this.predictionDistributor.estimateBlockPredictionType(leaveNodeManager, curFrame.getDimension());
 				
 				long start_intra = System.currentTimeMillis();
-				LoadDistributor<IntraPredictionBlock> intraPredictedBlocks = INTRA_ENGINE.computeIntraPrediction(predictionTypes.getIntraPredictables(), curFrame);
+				LoadDistributor<EncodingIntraPredictionBlock> intraPredictedBlocks = INTRA_ENGINE.computeIntraPrediction(predictionTypes.getIntraPredictables(), curFrame);
 				long end_intra = System.currentTimeMillis();
 //				BufferedImage[] d = RenderEngine.renderIntraPredictionDeltas(intraPredictedBlocks, curFrame.getDimension());
 //				ImageIO.write(d[0], "png", new File(ArgumentProcessor.outputFile.getParent() + "/INTRA_DELTAS_" + i + ".png"));
@@ -228,7 +229,7 @@ public class Encoder {
 	private static double TOTAL_MSE = 0;
 	private static int TOTAL_MSE_ADDITION_COUNT = 0;
 	
-	private void printStatistics(long time, long fullTime, int index, LoadDistributor<? extends Vector> vecs, LoadDistributor<IntraPredictionBlock> intra,
+	private void printStatistics(long time, long fullTime, int index, LoadDistributor<? extends Vector> vecs, LoadDistributor<? extends IntraPredictionBlock> intra,
 			long imgReadTime, long quadtreeConstructionTime, long leaveNodeTime, long differenceTime, long intraTime, long vectorTime, long renderTime, long deblockTime) {
 		long startOutput = System.currentTimeMillis();
 //		System.out.println("");

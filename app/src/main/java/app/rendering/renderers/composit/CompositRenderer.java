@@ -31,6 +31,8 @@ import java.util.concurrent.TimeUnit;
 import app.engines.prediction.interprediction.DecodingVector;
 import app.engines.prediction.interprediction.EncodingVector;
 import app.engines.prediction.interprediction.Vector;
+import app.engines.prediction.intraprediction.DecodingIntraPredictionBlock;
+import app.engines.prediction.intraprediction.EncodingIntraPredictionBlock;
 import app.engines.prediction.intraprediction.IntraDecoder;
 import app.engines.prediction.intraprediction.IntraPredictionBlock;
 import app.managers.LoadDistributor;
@@ -42,7 +44,7 @@ import app.utils.components.StaticMacroBlock;
 
 public class CompositRenderer {
 	public static PixelRaster renderComposit(LoadDistributor<? extends Vector> vecs, ReferenceFrameManager refs,
-			LoadDistributor<IntraPredictionBlock> intraBlocks,
+			LoadDistributor<? extends IntraPredictionBlock> intraBlocks,
 			final Mode mode) {
 		long sRT = System.currentTimeMillis();
 		PixelRaster render = refs.getLastFrame().copy();
@@ -63,7 +65,7 @@ public class CompositRenderer {
 			
 			if (intraBlocks != null) {
 				if (intraBlocks.hasDistributed()) {
-					for (final List<IntraPredictionBlock> intraBlockList : intraBlocks.getIterable()) {
+					for (final List<? extends IntraPredictionBlock> intraBlockList : intraBlocks.getIterable()) {
 						Runnable task = createIntrapredictionBlockRenderTask(intraBlockList,
 								dim, render, mode);
 						executor.submit(task);
@@ -84,19 +86,20 @@ public class CompositRenderer {
 		return render;
 	}
 	
-	private static Runnable createIntrapredictionBlockRenderTask(List<IntraPredictionBlock> blockList, Dimension dim,
+	private static Runnable createIntrapredictionBlockRenderTask(List<? extends IntraPredictionBlock> blockList, Dimension dim,
 			PixelRaster render, final Mode mode) {
 		Runnable task = () -> {
 			final StaticMacroBlock tempBlock = new StaticMacroBlock(0, 0, 0, true);
 			final double[] YUVCache = new double[ColorManager.CHANNELS];
 			
-			for (IntraPredictionBlock block : blockList) {
+			for (final IntraPredictionBlock block : blockList) {
 				final int size = block.getSize();
 				final Point pos = block.getPosition();
 				tempBlock.setPosition(pos.x, pos.y);
 				tempBlock.mockSize(size);
 				IntraDecoder.computeAngularIntraPredictionBlock(tempBlock, block.getVertical(), block.getHorizontal(), block.getAngle(), dim);
-				final double[][][] deltas = mode == Mode.ENCODE ? block.getIDCTYUVDelta() : block.getYUVDelta();
+				final double[][][] deltas = mode == Mode.ENCODE ? ((EncodingIntraPredictionBlock)block).getIDCTOfDeltas()
+																: ((DecodingIntraPredictionBlock)block).getYUVDeltas();
 				final double[][] delta_Y = deltas[ColorManager.Y_INDEX];
 				final double[][] delta_U = deltas[ColorManager.U_INDEX];
 				final double[][] delta_V = deltas[ColorManager.V_INDEX];
