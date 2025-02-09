@@ -422,8 +422,7 @@ public class Protocol {
 				byte r = data[index];
 				byte g = data[index + 1];
 				byte b = data[index + 2];
-				int rgb = (0xFF000000 | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF));
-				double[] YUV = ColorManager.convertRGBToYUV(rgb);
+				double[] YUV = ColorManager.convertRGBToYUV(r, g, b);
 				render.setYUV(x, y, YUV);
 				index += 3;
 			}

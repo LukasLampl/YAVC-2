@@ -48,6 +48,11 @@ import app.utils.MathUtils;
 
 public class ColorManager {
 	/**
+	 * The opaque mask.
+	 */
+	public static final int OPAQUE_MASK = 0xFF000000;
+	
+	/**
 	 * The index at which the Y component can be found in a 3D array.
 	 */
 	public static final int Y_INDEX = 0;
@@ -211,7 +216,7 @@ public class ColorManager {
 		final int red = range(MathUtils.round(Y + 1.402 * V), 0, 255);
 		final int green = range(MathUtils.round(Y - 0.344136 * U - 0.714136 * V), 0, 255);
 		final int blue = range(MathUtils.round(Y + 1.772 * U), 0, 255);
-		return (0xFF000000 | ((red & 0xFF) << 16) | ((green & 0xFF) << 8) | (blue & 0xFF));
+		return (OPAQUE_MASK | ((red & 0xFF) << 16) | ((green & 0xFF) << 8) | (blue & 0xFF));
 	}
 	
 	/**
@@ -245,6 +250,7 @@ public class ColorManager {
 			throw new IllegalArgumentException("RGB cache has length of " + rgbCache.length + "instead of 3");
 		}
 		
+		final int[] rgb = rgbCache == null ? new int[3] : rgbCache;
 		final double Y = YUV[Y_INDEX];
 		final double U = YUV[U_INDEX] - 128;
 		final double V = YUV[V_INDEX] - 128;
@@ -252,14 +258,10 @@ public class ColorManager {
 		final int green = range((int)Math.round(Y - 0.344136 * U - 0.714136 * V), 0, 255);
 		final int blue = range((int)Math.round(Y + 1.772 * U), 0, 255);
 		
-		if (rgbCache != null) {
-			rgbCache[R_INDEX] = red;
-			rgbCache[G_INDEX] = green;
-			rgbCache[B_INDEX] = blue;
-			return rgbCache;
-		}
-		
-		return new int[] {red, green, blue};
+		rgb[R_INDEX] = red;
+		rgb[G_INDEX] = green;
+		rgb[B_INDEX] = blue;
+		return rgb;
 	}
 
 	/**
@@ -272,7 +274,7 @@ public class ColorManager {
 	 * <li>If x is in between or equal to min or max, x is returned.
 	 * </ul>
 	 * 
-	 * @param x	Number to clamp
+	 * @param x		Number to clamp
 	 * @param min	Minimum value that x is allowed to reach
 	 * @param max	Maximum value that x is allowed to reach
 	 */

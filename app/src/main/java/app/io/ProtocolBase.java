@@ -258,7 +258,7 @@ public abstract class ProtocolBase {
 		final int lengthTillMatrixBreak = size;
 		final int halfLengthTillMatrixBreak = halfSize;
 		final int halfOffsetX = offsetX >> 1;
-		final int halfOffsetY = offsetY  >> 1;
+		final int halfOffsetY = offsetY >> 1;
 		int x = 0;
 		int y = 0;
 		
