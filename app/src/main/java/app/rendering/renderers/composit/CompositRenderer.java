@@ -28,6 +28,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import app.engines.prediction.interprediction.DecodingVector;
+import app.engines.prediction.interprediction.EncodingVector;
 import app.engines.prediction.interprediction.Vector;
 import app.engines.prediction.intraprediction.IntraDecoder;
 import app.engines.prediction.intraprediction.IntraPredictionBlock;
@@ -39,7 +41,8 @@ import app.utils.PixelRaster;
 import app.utils.components.StaticMacroBlock;
 
 public class CompositRenderer {
-	public static PixelRaster renderComposit(LoadDistributor<Vector> vecs, ReferenceFrameManager refs, LoadDistributor<IntraPredictionBlock> intraBlocks,
+	public static PixelRaster renderComposit(LoadDistributor<? extends Vector> vecs, ReferenceFrameManager refs,
+			LoadDistributor<IntraPredictionBlock> intraBlocks,
 			final Mode mode) {
 		long sRT = System.currentTimeMillis();
 		PixelRaster render = refs.getLastFrame().copy();
@@ -50,7 +53,7 @@ public class CompositRenderer {
 			long s_vrT = System.currentTimeMillis();
 			if (vecs != null) {
 				if (vecs.hasDistributed()) {
-					for (final List<Vector> vecList : vecs.getIterable()) {
+					for (final List<? extends Vector> vecList : vecs.getIterable()) {
 						Runnable task = createVectorRenderTask(vecList, refs, render,
 								dim, mode);
 						executor.submit(task);
@@ -135,7 +138,7 @@ public class CompositRenderer {
 	 * @param mode				Mode with which the function was called.
 	 * @return A runnable task, which renders all given vectors onto the given frame.
 	 */
-	private static Runnable createVectorRenderTask(List<Vector> vecList, ReferenceFrameManager refs,
+	private static Runnable createVectorRenderTask(List<? extends Vector> vecList, ReferenceFrameManager refs,
 			PixelRaster render, Dimension dim, final Mode mode) {
 		Runnable task = () -> {
 			final StaticMacroBlock tempBlock = new StaticMacroBlock(0, 0, 0, true);
@@ -148,7 +151,8 @@ public class CompositRenderer {
 				final int endY = pos.y + v.getSpanY();
 				final int size = v.getSize();
 				tempBlock.setColorComponents(referencedFrame.getPixelBlock(pos, size, tempBlock.getColors()));
-				double[][][] deltas =  mode == Mode.ENCODE ? v.getIDCTOfDeltas() : v.getYUVDelta();
+				double[][][] deltas =  mode == Mode.ENCODE ? ((EncodingVector)v).getIDCTOfDeltas()
+															: ((DecodingVector)v).getYUVDeltas();
 				final double[][] delta_Y = deltas[ColorManager.Y_INDEX];
 				final double[][] delta_U = deltas[ColorManager.U_INDEX];
 				final double[][] delta_V = deltas[ColorManager.V_INDEX];

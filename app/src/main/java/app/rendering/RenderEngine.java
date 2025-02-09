@@ -58,7 +58,8 @@ public class RenderEngine {
 	 * @param mode					Mode with which the function was called.
 	 * @return A composit PixelRaster with all vectors, non-coded blocks and reference used.
 	 */
-	public static PixelRaster renderComposit(LoadDistributor<Vector> vecs, ReferenceFrameManager refs, LoadDistributor<IntraPredictionBlock> intraBlocks,
+	public static PixelRaster renderComposit(LoadDistributor<? extends Vector> vecs, ReferenceFrameManager refs,
+			LoadDistributor<IntraPredictionBlock> intraBlocks,
 			final Mode mode) {
 		return CompositRenderer.renderComposit(vecs, refs, intraBlocks, mode);
 	}

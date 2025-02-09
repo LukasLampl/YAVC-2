@@ -28,7 +28,6 @@ import app.Main;
 import app.io.Protocol;
 import app.io.ProtocolBase;
 import app.managers.ListManager;
-import app.utils.Mode;
 
 /**
  * The {@code VectorConversionTask} class is a Recursive splitting
@@ -85,7 +84,7 @@ public class VectorConversionTask extends RecursiveAction {
 	 * The vector manager in which to write all read in vector for
 	 * further processing.
 	 */
-	private ListManager<Vector> vectorManager = null;
+	private ListManager<DecodingVector> vectorManager = null;
 	
 	/**
 	 * Flag for whether the vectors should be converted by a single thread or not.
@@ -104,7 +103,7 @@ public class VectorConversionTask extends RecursiveAction {
 	 * @param vectorManager	The vector manager in which to write the vectors into.
 	 */
 	public VectorConversionTask(int start, int end, List<Integer> indexes, byte[] data,
-			ListManager<Vector> vectorManager) {
+			ListManager<DecodingVector> vectorManager) {
 		this.start = start;
 		this.end = end;
 		this.indexes = indexes;
@@ -183,10 +182,10 @@ public class VectorConversionTask extends RecursiveAction {
 			final int[] refAndSize = Protocol.getReferenceAndSizeInt(this.data[index + 6]);
 			final int ref = refAndSize[0];
 			final int size = refAndSize[1];
-			Vector vec = this.vectorManager.getCachedObj();
+			DecodingVector vec = this.vectorManager.getCachedObj();
 			
 			if (vec == null) {
-				vec = new Vector(posX, posY, size);
+				vec = new DecodingVector(posX, posY, size);
 			} else {
 				vec.setSize(size);
 				vec.move(posX, posY);
@@ -195,7 +194,7 @@ public class VectorConversionTask extends RecursiveAction {
 			double[][][] diffs = ProtocolBase.getDeltaCoefficientsFromDatastream(this.data,
 					index + Protocol.VECTOR_HEADER_LENGTH, size);
 			diffs = Main.DCT_ENGINE.computeIDCTOfDeltas(diffs, size, true);
-			vec.setYUVDelta(diffs, Mode.DECODE);
+			vec.setYUVDelta(diffs);
 			vec.setSpanX(spanX);
 			vec.setSpanY(spanY);
 			vec.setReference(ref);

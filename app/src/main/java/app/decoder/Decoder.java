@@ -22,7 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 package app.decoder;
 
 import app.ArgumentProcessor;
-import app.engines.prediction.interprediction.Vector;
+import app.engines.prediction.interprediction.DecodingVector;
 import app.engines.prediction.intraprediction.IntraPredictionBlock;
 import app.exceptions.CorruptedFileException;
 import app.io.ImageWriter;
@@ -56,7 +56,7 @@ public class Decoder {
 	 */
 	public void decode() {
 		VideoPlayer player = ArgumentProcessor.playback ? new VideoPlayer() : null;
-		ListManager<Vector> vectorListManager = new ListManager<Vector>();
+		ListManager<DecodingVector> vectorListManager = new ListManager<DecodingVector>();
 		ListManager<IntraPredictionBlock> intraBlockManager = new ListManager<IntraPredictionBlock>();
 		ImageWriter imageWriter = new ImageWriter(ArgumentProcessor.outputFile);
 		InputStream inputStream = new InputStream(ArgumentProcessor.inputFile);

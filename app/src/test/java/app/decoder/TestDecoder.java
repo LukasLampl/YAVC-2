@@ -13,7 +13,8 @@ import javax.imageio.ImageIO;
 
 import org.junit.jupiter.api.Test;
 
-import app.engines.prediction.interprediction.Vector;
+import app.engines.prediction.interprediction.DecodingVector;
+import app.engines.prediction.interprediction.EncodingVector;
 import app.engines.prediction.interprediction.VectorEngine;
 import app.engines.prediction.intraprediction.IntraEngine;
 import app.engines.prediction.intraprediction.IntraPredictionBlock;
@@ -24,8 +25,6 @@ import app.io.Protocol;
 import app.managers.ListManager;
 import app.managers.LoadDistributor;
 import app.managers.ReferenceFrameManager;
-import app.rendering.ColorManager;
-import app.utils.ArrayUtils;
 import app.utils.PixelRaster;
 import app.utils.components.MacroBlock;
 
@@ -70,12 +69,12 @@ public class TestDecoder {
 				ArrayList<MacroBlock> quadtreeRoots = qE.constructQuadtree(frame);
 				LoadDistributor<MacroBlock> leaveNodeManager = qE.getLeaveNodes(quadtreeRoots);
 				leaveNodeManager.compute(frame.getWidth() * frame.getHeight());
-				LoadDistributor<Vector> movementVectors = vE.computeMovementVectors(leaveNodeManager.getRawData(), refMan);
-				List<Vector> originalVectors = movementVectors.getRawData();
+				LoadDistributor<EncodingVector> movementVectors = vE.computeMovementVectors(leaveNodeManager.getRawData(), refMan);
+				List<EncodingVector> originalVectors = movementVectors.getRawData();
 				byte[] vectorData = Protocol.getVectorBytes(originalVectors, false);
-				ListManager<Vector> vectorListManager = new ListManager<Vector>();
+				ListManager<DecodingVector> vectorListManager = new ListManager<DecodingVector>();
 				super.getVectors(vectorData, vectorListManager, true); //Single thread to keep the order of the original vectors
-				List<Vector> decodedVectors = vectorListManager.getList();
+				List<DecodingVector> decodedVectors = vectorListManager.getList();
 				assertEquals(originalVectors.size(), decodedVectors.size());
 				
 				for (int i = 0; i < originalVectors.size(); i++) {
@@ -83,8 +82,8 @@ public class TestDecoder {
 						System.out.println("Vectors checked: " + i + "/" + originalVectors.size());
 					}
 					
-					Vector originalVec = originalVectors.get(i);
-					Vector decodedVec = decodedVectors.get(i);
+					EncodingVector originalVec = originalVectors.get(i);
+					DecodingVector decodedVec = decodedVectors.get(i);
 					assertEquals(originalVec.getPosition().x, decodedVec.getPosition().x);
 					assertEquals(originalVec.getPosition().y, decodedVec.getPosition().y);
 					assertEquals(originalVec.getSize(), decodedVec.getSize());
@@ -92,7 +91,7 @@ public class TestDecoder {
 					assertEquals(originalVec.getSpanY(), decodedVec.getSpanY());
 					
 					double[][][] originalDiffs = originalVec.getYUVDelta();
-					double[][][] decodedDiffs = decodedVec.getYUVDelta();
+					double[][][] decodedDiffs = decodedVec.getYUVDeltas();
 					assertEquals(originalDiffs.length, decodedDiffs.length);
 					assertEquals(originalDiffs[0].length, decodedDiffs[0].length);
 					
@@ -136,12 +135,12 @@ public class TestDecoder {
 				list.add(new MacroBlock(0, 0, 4, frame.getPixelBlock(new Point(0, 0), 4, null)));
 				LoadDistributor<MacroBlock> leaveNodeManager = qE.getLeaveNodes(list);
 				leaveNodeManager.compute(frame.getWidth() * frame.getHeight());
-				LoadDistributor<Vector> movementVectors = vE.computeMovementVectors(leaveNodeManager.getRawData(), refMan);
-				List<Vector> originalVectors = movementVectors.getRawData();
+				LoadDistributor<EncodingVector> movementVectors = vE.computeMovementVectors(leaveNodeManager.getRawData(), refMan);
+				List<EncodingVector> originalVectors = movementVectors.getRawData();
 				byte[] vectorData = Protocol.getVectorBytes(originalVectors, false);
-				ListManager<Vector> vectorListManager = new ListManager<Vector>();
+				ListManager<DecodingVector> vectorListManager = new ListManager<DecodingVector>();
 				super.getVectors(vectorData, vectorListManager, true); //Single thread to keep the order of the original vectors
-				List<Vector> decodedVectors = vectorListManager.getList();
+				List<DecodingVector> decodedVectors = vectorListManager.getList();
 				assertEquals(originalVectors.size(), decodedVectors.size());
 				
 				for (int i = 0; i < originalVectors.size(); i++) {
@@ -149,8 +148,8 @@ public class TestDecoder {
 						System.out.println("Vectors checked: " + i + "/" + originalVectors.size());
 					}
 					
-					Vector originalVec = originalVectors.get(i);
-					Vector decodedVec = decodedVectors.get(i);
+					EncodingVector originalVec = originalVectors.get(i);
+					DecodingVector decodedVec = decodedVectors.get(i);
 					assertEquals(originalVec.getPosition().x, decodedVec.getPosition().x);
 					assertEquals(originalVec.getPosition().y, decodedVec.getPosition().y);
 					assertEquals(originalVec.getSize(), decodedVec.getSize());
@@ -158,7 +157,7 @@ public class TestDecoder {
 					assertEquals(originalVec.getSpanY(), decodedVec.getSpanY());
 					
 					double[][][] originalDiffs = originalVec.getYUVDelta();
-					double[][][] decodedDiffs = decodedVec.getYUVDelta();
+					double[][][] decodedDiffs = decodedVec.getYUVDeltas();
 					assertEquals(originalDiffs.length, decodedDiffs.length);
 					assertEquals(originalDiffs[0].length, decodedDiffs[0].length);
 					

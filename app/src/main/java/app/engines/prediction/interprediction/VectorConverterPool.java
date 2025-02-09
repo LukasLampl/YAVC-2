@@ -53,7 +53,7 @@ public class VectorConverterPool {
 	/**
 	 * A vector manager to which the results should be written to.
 	 */
-	private ListManager<Vector> vectorManager = null;
+	private ListManager<DecodingVector> vectorManager = null;
 	
 	/**
 	 * Flag for whether the vector conversion should be single threaded or not.
@@ -68,7 +68,7 @@ public class VectorConverterPool {
 	 * @param vectorManager	A vector manager in which to write the results to.
 	 */
 	public VectorConverterPool(List<Integer> indexes, byte[] data,
-			ListManager<Vector> vectorManager, boolean singleThreaded) {
+			ListManager<DecodingVector> vectorManager, boolean singleThreaded) {
 		this.pool = ForkJoinPool.commonPool();
 		this.indexes = indexes;
 		this.data = data;

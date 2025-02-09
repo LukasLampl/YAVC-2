@@ -24,7 +24,7 @@ package app.io;
 import java.awt.Dimension;
 import java.util.LinkedList;
 
-import app.engines.prediction.interprediction.Vector;
+import app.engines.prediction.interprediction.DecodingVector;
 import app.engines.prediction.intraprediction.IntraPredictionBlock;
 import app.exceptions.CorruptedFileException;
 import app.filter.Deblocker;
@@ -130,7 +130,7 @@ public class InputProcessor {
 	 * block size is unequal to the coded size.
 	 */
 	public PixelRaster processFrame(byte[] content, byte[] intraBlocksContent, ReferenceFrameManager refs,
-			ListManager<Vector> vectorListManager,
+			ListManager<DecodingVector> vectorListManager,
 			ListManager<IntraPredictionBlock> intraBlockManager) throws CorruptedFileException {
 		long start_copy = System.currentTimeMillis();
 		PixelRaster render = refs.getLastFrame().copy();
@@ -143,7 +143,7 @@ public class InputProcessor {
 		getIntraPreditionBlocks(intraBlocksContent, intraBlockManager, false);
 		long end_raw_block = System.currentTimeMillis();
 		long start_load_dist = System.currentTimeMillis();
-		LoadDistributor<Vector> vecManager = new LoadDistributor<Vector>();
+		LoadDistributor<DecodingVector> vecManager = new LoadDistributor<DecodingVector>();
 		LoadDistributor<IntraPredictionBlock> intraBlocks = new LoadDistributor<IntraPredictionBlock>();
 		vecManager.setAllAndCompute(vectorListManager.getList());
 		intraBlocks.setAllAndCompute(intraBlockManager.getList());
@@ -181,7 +181,7 @@ public class InputProcessor {
 	 * @param singleThread		Flag for whether the process should be single threaded (retains order).
 	 * @throws CorruptedFileException	When the decoded vector size is not equal to the coded size.
 	 */
-	protected void getVectors(byte[] vectorPart, ListManager<Vector> vectorListManager, boolean singleThread) throws CorruptedFileException {
+	protected void getVectors(byte[] vectorPart, ListManager<DecodingVector> vectorListManager, boolean singleThread) throws CorruptedFileException {
 		Protocol.getVectors(vectorPart, vectorListManager, singleThread);
 	}
 	

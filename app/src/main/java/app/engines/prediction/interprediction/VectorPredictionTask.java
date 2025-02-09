@@ -32,7 +32,6 @@ import app.managers.LoadDistributor;
 import app.managers.ReferenceFrameManager;
 import app.rendering.ColorManager;
 import app.utils.ArrayUtils;
-import app.utils.Mode;
 import app.utils.PixelRaster;
 import app.utils.components.MacroBlock;
 
@@ -70,7 +69,7 @@ public class VectorPredictionTask extends RecursiveAction {
 	/**
 	 * The vector manager in which to add the converted vectors.
 	 */
-	private LoadDistributor<Vector> vectorManager = null;
+	private LoadDistributor<EncodingVector> vectorManager = null;
 	
 	/**
 	 * A list that holds all MacroBlocks that should be converted to vectors.
@@ -91,7 +90,7 @@ public class VectorPredictionTask extends RecursiveAction {
 	 * @param start				Start index of the task relative to the {@code blocksToConvert} list.
 	 * @param end				End index of the task relative to the {@code blocksToConvert} list.
 	 */
-	public VectorPredictionTask(LoadDistributor<Vector> vectorManager, List<MacroBlock> blocksToConvert,
+	public VectorPredictionTask(LoadDistributor<EncodingVector> vectorManager, List<MacroBlock> blocksToConvert,
 			ReferenceFrameManager referenceManager, final int start, final int end) {
 		this.referenceManager = referenceManager;
 		this.blocksToConvert = blocksToConvert;
@@ -147,7 +146,7 @@ public class VectorPredictionTask extends RecursiveAction {
 				}
 				
 				MacroBlock best = evaluateBestGuess(canidates);
-				Vector vec = constructMovementVector(this.referenceManager, best, block);
+				EncodingVector vec = constructMovementVector(this.referenceManager, best, block);
 				
 				if (vec != null) {
 					this.vectorManager.setObj(vec);
@@ -192,11 +191,9 @@ public class VectorPredictionTask extends RecursiveAction {
 	 * @param refs				Reference frames.
 	 * @param bestMatch			Best matching MacroBlock.
 	 * @param blockToBeSearched	MacroBlock that was searched at the beginning.
-	 * 
-	 * @see T.Vector
 	 */
-	private Vector constructMovementVector(final ReferenceFrameManager refs, MacroBlock bestMatch, MacroBlock blockToBeSearched) {
-		Vector vec = null;
+	private EncodingVector constructMovementVector(final ReferenceFrameManager refs, MacroBlock bestMatch, MacroBlock blockToBeSearched) {
+		EncodingVector vec = null;
 		
 		if (bestMatch != null) {
 			int size = blockToBeSearched.getSize();
@@ -206,13 +203,13 @@ public class VectorPredictionTask extends RecursiveAction {
 			double[][][] col = referenceFrame.getPixelBlock(bestMatch.getPosition(), size, null);
 			double[][][] absoluteColorDifference = getAbsoluteDifferenceOfColors(blockToBeSearched.getColors(), col, size);
 			
-			vec = new Vector(bestMatch.getPositionX(), bestMatch.getPositionY(), size);
+			vec = new EncodingVector(bestMatch.getPositionX(), bestMatch.getPositionY(), size);
 			vec.setAppendedBlock(blockToBeSearched);
 			vec.setMostEqualBlock(bestMatch);
 			vec.setReference(bestMatch.getReference());
 			vec.setSpanX(blockToBeSearched.getPosition().x - bestMatch.getPosition().x);
 			vec.setSpanY(blockToBeSearched.getPosition().y - bestMatch.getPosition().y);
-			vec.setYUVDelta(absoluteColorDifference, Mode.ENCODE);
+			vec.setYUVDelta(absoluteColorDifference);
 		}
 		
 		return vec;

@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import app.ArgumentProcessor;
 import app.engines.dct.DCTEngine;
 import app.engines.prediction.PredictionDistributor;
+import app.engines.prediction.interprediction.EncodingVector;
 import app.engines.prediction.interprediction.Vector;
 import app.engines.prediction.interprediction.VectorEngine;
 import app.engines.prediction.intraprediction.IntraEngine;
@@ -171,7 +172,7 @@ public class Encoder {
 //				ImageIO.write(devInter, "png", new File(ArgumentProcessor.outputFile.getParent() + "/DEV_INTER_" + i + ".png"));
 
 				long start_vector_movement = System.currentTimeMillis();
-				LoadDistributor<Vector> movementVectors = VECTOR_ENGINE.computeMovementVectors(predictionTypes.getInterPredictables(), this.referenceManager);
+				LoadDistributor<EncodingVector> movementVectors = VECTOR_ENGINE.computeMovementVectors(predictionTypes.getInterPredictables(), this.referenceManager);
 				long end_vector_movement = System.currentTimeMillis();
 				
 //				BufferedImage distribution = RenderEngine.renderPredictionDistribution(intraPredictedBlocks.getRawData(), movementVectors.getRawData(), curFrame.getDimension());
@@ -227,7 +228,7 @@ public class Encoder {
 	private static double TOTAL_MSE = 0;
 	private static int TOTAL_MSE_ADDITION_COUNT = 0;
 	
-	private void printStatistics(long time, long fullTime, int index, LoadDistributor<Vector> vecs, LoadDistributor<IntraPredictionBlock> intra,
+	private void printStatistics(long time, long fullTime, int index, LoadDistributor<? extends Vector> vecs, LoadDistributor<IntraPredictionBlock> intra,
 			long imgReadTime, long quadtreeConstructionTime, long leaveNodeTime, long differenceTime, long intraTime, long vectorTime, long renderTime, long deblockTime) {
 		long startOutput = System.currentTimeMillis();
 //		System.out.println("");

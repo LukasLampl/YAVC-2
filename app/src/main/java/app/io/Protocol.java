@@ -25,6 +25,8 @@ import java.awt.Dimension;
 import java.util.ArrayList;
 import java.util.List;
 
+import app.engines.prediction.interprediction.DecodingVector;
+import app.engines.prediction.interprediction.EncodingVector;
 import app.engines.prediction.interprediction.Vector;
 import app.engines.prediction.interprediction.VectorConverterPool;
 import app.engines.prediction.intraprediction.IntraConverterPool;
@@ -172,10 +174,10 @@ public class Protocol {
 	 * @param vecs	The vectors to write.
 	 * @return An estimated size of the total length of all vectors, when they're converted to bytes.
 	 */
-	public static int calculateVectorSize(final List<Vector> vecs) {
+	public static int calculateVectorSize(final List<EncodingVector> vecs) {
 		int size = Protocol.VECTOR_SIZE_CHECK_LENGTH;
 		
-		for (Vector v : vecs) {
+		for (final Vector v : vecs) {
 			int refSize = v.getSize();
 			size += Protocol.VECTOR_HEADER_LENGTH;
 			size += (refSize * refSize) + 2 * ((refSize * refSize) / 4);
@@ -227,7 +229,7 @@ public class Protocol {
 	 * @param discard	Flag for whether the vectors should be discarded afterwards.
 	 * @return An byte array with all vectors.
 	 */
-	public static byte[] getVectorBytes(final List<Vector> vecs, final boolean discard) {
+	public static byte[] getVectorBytes(final List<EncodingVector> vecs, final boolean discard) {
 		if (vecs == null) {
 			throw new NullPointerException("No vectors were passed for writing.");
 		}
@@ -238,7 +240,7 @@ public class Protocol {
 		writeBytesToByteArray(ProtocolBase.getSizeBytes(vecs.size()), data, currentIndex);
 		currentIndex += Protocol.VECTOR_SIZE_CHECK_LENGTH;
 		
-		for (final Vector v : vecs) {
+		for (final EncodingVector v : vecs) {
 			currentIndex += writeSingleVectorToByteArray(v, currentIndex, data);
 			
 			if (discard) {
@@ -257,7 +259,7 @@ public class Protocol {
 	 * @param data			Byte array in which to write.
 	 * @return The length of the written vector in bytes.
 	 */
-	private static int writeSingleVectorToByteArray(final Vector v, final int startIndex, final byte[] data) {
+	private static int writeSingleVectorToByteArray(final EncodingVector v, final int startIndex, final byte[] data) {
 		int index = startIndex;
 		final byte[] posX = ProtocolBase.getPositionBytes(v.getPosition().x);
 		final byte[] posY = ProtocolBase.getPositionBytes(v.getPosition().y);
@@ -300,7 +302,7 @@ public class Protocol {
 	 * 
 	 * @see app.managers.ListManager
 	 */
-	public static void getVectors(final byte[] data, final ListManager<Vector> vectorListManager,
+	public static void getVectors(final byte[] data, final ListManager<DecodingVector> vectorListManager,
 			final boolean singleThread) throws CorruptedFileException {
 		if (data.length <= 1) {
 			return;

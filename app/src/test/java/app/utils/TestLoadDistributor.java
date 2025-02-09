@@ -9,6 +9,7 @@ import java.util.Random;
 
 import org.junit.jupiter.api.Test;
 
+import app.engines.prediction.interprediction.EncodingVector;
 import app.engines.prediction.interprediction.Vector;
 import app.managers.LoadDistributor;
 
@@ -33,7 +34,7 @@ public class TestLoadDistributor {
 	}
 	
 	private Vector generateVector() {
-		return new Vector(random.nextInt() + 1, random.nextInt() + 1, sizes[(int)(MathUtils.abs(random.nextInt()) % sizes.length)]);
+		return new EncodingVector(random.nextInt() + 1, random.nextInt() + 1, sizes[(int)(MathUtils.abs(random.nextInt()) % sizes.length)]);
 	}
 	
 	
@@ -44,7 +45,7 @@ public class TestLoadDistributor {
 		List<Vector> l = new ArrayList<Vector>();
 		
 		for (int i = 0; i < size; i++) {
-			l.add(new Vector(1, 1, sizeOfBlock));
+			l.add(new EncodingVector(1, 1, sizeOfBlock));
 		}
 		
 		LoadDistributor<Vector> dist = new LoadDistributor<Vector>(batches);

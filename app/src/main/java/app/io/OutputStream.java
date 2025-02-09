@@ -32,7 +32,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import app.engines.prediction.interprediction.Vector;
+import app.engines.prediction.interprediction.EncodingVector;
 import app.engines.prediction.intraprediction.IntraPredictionBlock;
 import app.utils.PixelRaster;
 
@@ -151,7 +151,7 @@ public class OutputStream {
 	 * @param file	File in which to write.
 	 * @param vecs	Vectors to write.
 	 */
-	private void writeVectors(File file, ArrayList<Vector> vecs) {
+	private void writeVectors(File file, ArrayList<EncodingVector> vecs) {
 		try {
 			byte[] data = Protocol.getVectorBytes(vecs, true);
 			Files.write(Path.of(file.getAbsolutePath()), data, StandardOpenOption.APPEND);

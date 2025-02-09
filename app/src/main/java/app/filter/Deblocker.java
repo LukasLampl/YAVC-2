@@ -83,7 +83,7 @@ public class Deblocker {
 	 * @param movementVecs	Vectors from the inter-prediction step.
 	 * @param composite		Frame that has the encoded vectors in it.
 	 */
-	public void deblock(LoadDistributor<Vector> movementVecs, PixelRaster composite) {
+	public void deblock(LoadDistributor<? extends Vector> movementVecs, PixelRaster composite) {
 		if (ArgumentProcessor.noDeblock) {
 			return;
 		}
@@ -95,8 +95,8 @@ public class Deblocker {
 		int threads = Runtime.getRuntime().availableProcessors();
 		ExecutorService executor = Executors.newFixedThreadPool(threads);
 		
-		for (final List<Vector> vecList : movementVecs.getIterable()) {
-			for (Vector vec : vecList) {
+		for (final List<? extends Vector> vecList : movementVecs.getIterable()) {
+			for (final Vector vec : vecList) {
 				Point vecPos = vec.getPosition();
 				Point blockPos = new Point(vecPos.x + vec.getSpanX(), vecPos.y + vec.getSpanY());
 				

@@ -89,7 +89,7 @@ public class VectorEngine {
 	 * 
 	 * @see T.Vector
 	 */
-	public LoadDistributor<Vector> computeMovementVectors(List<MacroBlock> differences, final ReferenceFrameManager refs) {
+	public LoadDistributor<EncodingVector> computeMovementVectors(List<MacroBlock> differences, final ReferenceFrameManager refs) {
 		if (refs == null || refs.size() == 0) {
 			throw new NullPointerException("No reference frame to refer to");
 		}
@@ -101,7 +101,7 @@ public class VectorEngine {
 			this.totalPixelsProcessed += b.getArea();
 		}
 		
-		LoadDistributor<Vector> vecManager = new LoadDistributor<Vector>();
+		LoadDistributor<EncodingVector> vecManager = new LoadDistributor<EncodingVector>();
 		ForkJoinPool executor = ForkJoinPool.commonPool();
 		executor.invoke(new VectorPredictionTask(vecManager, differences, refs, 0, differences.size()));
 		executor.shutdown();
