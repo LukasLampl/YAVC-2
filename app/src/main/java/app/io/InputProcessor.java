@@ -32,6 +32,7 @@ import app.managers.ListManager;
 import app.managers.LoadDistributor;
 import app.managers.ReferenceFrameManager;
 import app.rendering.RenderEngine;
+import app.utils.Mode;
 import app.utils.PixelRaster;
 
 /**
@@ -149,7 +150,7 @@ public class InputProcessor {
 		long end_load_dist = System.currentTimeMillis();
 		
 		long start_render = System.currentTimeMillis();
-		render = RenderEngine.renderComposit(vecManager, refs, intraBlocks, false);
+		render = RenderEngine.renderComposit(vecManager, refs, intraBlocks, Mode.DECODE);
 		deblocker.deblock(vecManager, render);
 		long end_render = System.currentTimeMillis();
 

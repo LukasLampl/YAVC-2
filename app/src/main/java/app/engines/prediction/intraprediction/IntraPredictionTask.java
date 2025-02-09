@@ -29,6 +29,7 @@ import app.engines.prediction.intraprediction.cost.MSECost;
 import app.managers.LoadDistributor;
 import app.rendering.ColorManager;
 import app.utils.ArrayUtils;
+import app.utils.Mode;
 import app.utils.PixelRaster;
 import app.utils.components.MacroBlock;
 
@@ -209,7 +210,7 @@ public class IntraPredictionTask extends RecursiveAction {
 			}
 		}
 		
-		intra.setYUVDelta(deltas, true);
+		intra.setYUVDelta(deltas, Mode.ENCODE);
 		return intra;
 	}
 }

@@ -23,6 +23,7 @@ package app.engines.prediction.intraprediction;
 
 import app.Main;
 import app.engines.dct.DCTEngine;
+import app.utils.Mode;
 import app.utils.components.Component2D;
 import app.utils.components.MacroBlock;
 
@@ -145,10 +146,10 @@ public class IntraPredictionBlock extends Component2D {
 	 * to DCT coeffs.
 	 * 
 	 * @param YUVDelta	The YUV delta values.
-	 * @param encoding	Whether the block is a coding unit or not. (Encoding process)
+	 * @param mode		Mode with which the function was called.
 	 */
-	public void setYUVDelta(double[][][] YUVDelta, boolean encoding) {
-		if (encoding) {
+	public void setYUVDelta(final double[][][] YUVDelta, final Mode mode) {
+		if (mode == Mode.ENCODE) {
 			this.yuvDelta = DCT_ENGINE.computeDCTOfDeltas(YUVDelta, this.size, true);
 		} else {
 			this.yuvDelta = YUVDelta;

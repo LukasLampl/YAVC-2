@@ -34,6 +34,7 @@ import app.rendering.renderers.PredictionDistributionRenderer;
 import app.rendering.renderers.QuadtreeRenderer;
 import app.rendering.renderers.VectorRenderer;
 import app.rendering.renderers.composit.CompositRenderer;
+import app.utils.Mode;
 import app.utils.PixelRaster;
 import app.utils.components.MacroBlock;
 
@@ -54,12 +55,12 @@ public class RenderEngine {
 	 * @param vecs					The vector to use for the composit.
 	 * @param refs					The reference frames used by the vectors.
 	 * @param differenceManager		All non-coded MacroBlocks.
-	 * @param encoding				Whether the rendering happens while encoding or decoding.
+	 * @param mode					Mode with which the function was called.
 	 * @return A composit PixelRaster with all vectors, non-coded blocks and reference used.
 	 */
 	public static PixelRaster renderComposit(LoadDistributor<Vector> vecs, ReferenceFrameManager refs, LoadDistributor<IntraPredictionBlock> intraBlocks,
-			boolean encoding) {
-		return CompositRenderer.renderComposit(vecs, refs, intraBlocks, encoding);
+			final Mode mode) {
+		return CompositRenderer.renderComposit(vecs, refs, intraBlocks, mode);
 	}
 	
 	

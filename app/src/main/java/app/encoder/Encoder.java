@@ -21,10 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package app.encoder;
 
-import java.io.File;
 import java.util.ArrayList;
-
-import javax.imageio.ImageIO;
 
 import app.ArgumentProcessor;
 import app.engines.dct.DCTEngine;
@@ -42,6 +39,7 @@ import app.managers.LoadDistributor;
 import app.managers.ReferenceFrameManager;
 import app.rendering.DifferenceEngine;
 import app.rendering.RenderEngine;
+import app.utils.Mode;
 import app.utils.PixelRaster;
 import app.utils.components.MacroBlock;
 
@@ -181,7 +179,7 @@ public class Encoder {
 				
 //				BufferedImage vectors = RenderEngine.renderVectors(movementVectors.getRawData(), curFrame.getDimension());
 				long start_render = System.currentTimeMillis();
-				PixelRaster composite = RenderEngine.renderComposit(movementVectors, this.referenceManager, intraPredictedBlocks, true);
+				PixelRaster composite = RenderEngine.renderComposit(movementVectors, this.referenceManager, intraPredictedBlocks, Mode.ENCODE);
 				
 				outStream.addObjectToOutputQueue(new QueueObject(movementVectors, intraPredictedBlocks));
 				long end_render = System.currentTimeMillis();

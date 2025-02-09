@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 package app.engines.prediction.interprediction;
 
 import app.engines.dct.DCTEngine;
+import app.utils.Mode;
 import app.utils.components.Component2D;
 import app.utils.components.MacroBlock;
 
@@ -192,10 +193,10 @@ public class Vector extends Component2D {
 	 * DCT coefficients are calculated, else the raw values are stored.
 	 * 
 	 * @param YUVDelta	The delta values.
-	 * @param encoding	Whether it is a coding unit or not. (Encoding process)
+	 * @param mode		Mode with which the function was called.
 	 */
-	public void setYUVDelta(final double[][][] YUVDelta, final boolean encoding) {
-		if (encoding) {
+	public void setYUVDelta(final double[][][] YUVDelta, final Mode mode) {
+		if (mode == Mode.ENCODE) {
 			this.yuvDelta = DCT_ENGINE.computeDCTOfDeltas(YUVDelta, this.size, true);
 			this.invokedYUVDelta = true;
 		} else {

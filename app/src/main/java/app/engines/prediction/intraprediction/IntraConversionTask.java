@@ -29,6 +29,7 @@ import app.io.Protocol;
 import app.io.ProtocolBase;
 import app.managers.ListManager;
 import app.rendering.ColorManager;
+import app.utils.Mode;
 
 public class IntraConversionTask extends RecursiveAction {
 	private static final long serialVersionUID = -9153076396071631916L;
@@ -173,7 +174,7 @@ public class IntraConversionTask extends RecursiveAction {
 					index + Protocol.INTRA_BLOCK_HEADER_LENGTH + borderOffset, size);
 			diffs = Main.DCT_ENGINE.computeIDCTOfDeltas(diffs, size, true);
 			double[][][] yuvDelta = diffs;
-			intraBlock.setYUVDelta(yuvDelta, false);
+			intraBlock.setYUVDelta(yuvDelta, Mode.DECODE);
 			intraBlock.setAngle(angle);
 			intraBlock.setVertical(borderColors[0]);
 			intraBlock.setHorizontal(borderColors[1]);

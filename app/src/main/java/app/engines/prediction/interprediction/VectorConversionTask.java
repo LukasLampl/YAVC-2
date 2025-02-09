@@ -28,6 +28,7 @@ import app.Main;
 import app.io.Protocol;
 import app.io.ProtocolBase;
 import app.managers.ListManager;
+import app.utils.Mode;
 
 /**
  * The {@code VectorConversionTask} class is a Recursive splitting
@@ -194,7 +195,7 @@ public class VectorConversionTask extends RecursiveAction {
 			double[][][] diffs = ProtocolBase.getDeltaCoefficientsFromDatastream(this.data,
 					index + Protocol.VECTOR_HEADER_LENGTH, size);
 			diffs = Main.DCT_ENGINE.computeIDCTOfDeltas(diffs, size, true);
-			vec.setYUVDelta(diffs, false);
+			vec.setYUVDelta(diffs, Mode.DECODE);
 			vec.setSpanX(spanX);
 			vec.setSpanY(spanY);
 			vec.setReference(ref);

@@ -45,22 +45,22 @@ public class config {
 	};
 
 	public static final int[][] QUANTIZATION_MATRIX_4x4_Luma = {
-		{14, 12, 24, 32},
-		{10, 14, 25, 34},
-		{16, 23, 24, 43},
-		{21, 24, 26, 48}
+		{14, 12, 16, 21},
+		{12, 14, 23, 26},
+		{16, 23, 24, 31},
+		{21, 26, 31, 35}
 	};
 	
 	public static final int[][] QUANTIZATION_MATRIX_4x4_Chroma = {
-		{14, 12, 24, 32},
-		{10, 14, 25, 34},
-		{16, 23, 24, 43},
-		{21, 24, 26, 48}
+		{14, 12, 16, 21},
+		{12, 14, 23, 26},
+		{16, 23, 24, 31},
+		{21, 26, 31, 35}
 	};
 	
 	public static final int[][] QUANTIZATION_MATRIX_2x2_Chroma = {
-		{10, 23},
-		{23, 48}
+		{10, 16},
+		{16, 21}
 	};
 
 	public static final int DEBLOCKER_ALPHAS[] = {

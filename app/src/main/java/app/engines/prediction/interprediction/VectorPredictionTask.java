@@ -32,6 +32,7 @@ import app.managers.LoadDistributor;
 import app.managers.ReferenceFrameManager;
 import app.rendering.ColorManager;
 import app.utils.ArrayUtils;
+import app.utils.Mode;
 import app.utils.PixelRaster;
 import app.utils.components.MacroBlock;
 
@@ -211,7 +212,7 @@ public class VectorPredictionTask extends RecursiveAction {
 			vec.setReference(bestMatch.getReference());
 			vec.setSpanX(blockToBeSearched.getPosition().x - bestMatch.getPosition().x);
 			vec.setSpanY(blockToBeSearched.getPosition().y - bestMatch.getPosition().y);
-			vec.setYUVDelta(absoluteColorDifference, true);
+			vec.setYUVDelta(absoluteColorDifference, Mode.ENCODE);
 		}
 		
 		return vec;
