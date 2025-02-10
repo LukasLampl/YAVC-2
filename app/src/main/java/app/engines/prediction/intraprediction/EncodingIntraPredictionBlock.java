@@ -72,7 +72,7 @@ public class EncodingIntraPredictionBlock extends IntraPredictionBlock {
 	 * @return The converted YUV.
 	 */
 	public double[][][] getIDCTOfDeltas() {
-		return DCT_ENGINE.computeIDCTOfDeltas(this.dctYUVDelta, this.size, true);
+		return DCT_ENGINE.computeIDCTOfDeltas(this.dctYUVDelta, this.size, true, false);
 	}
 	
 	/**
@@ -92,7 +92,7 @@ public class EncodingIntraPredictionBlock extends IntraPredictionBlock {
 	 * @param YUVDelta	The YUV delta values.
 	 */
 	public void setYUVDelta(final double[][][] YUVDelta) {
-		this.dctYUVDelta = DCT_ENGINE.computeDCTOfDeltas(YUVDelta, this.size, true);
+		this.dctYUVDelta = DCT_ENGINE.computeDCTOfDeltas(YUVDelta, this.size, true, true);
 	}
 	
 	/**

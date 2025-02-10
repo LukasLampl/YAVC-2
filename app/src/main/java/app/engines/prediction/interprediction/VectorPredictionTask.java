@@ -275,7 +275,7 @@ public class VectorPredictionTask extends RecursiveAction {
 		while (radius > 1) {
 			getHexagonPoints(radius, centerPoint, searchPoints);
 			
-			for (Point p : searchPoints) {
+			for (final Point p : searchPoints) {
 				if (!isHexagonPointInSearchWindow(blockPos, searchWindow, p, dim)
 					|| !isPointInFrame(p, dim)) {
 					continue;
@@ -302,7 +302,7 @@ public class VectorPredictionTask extends RecursiveAction {
 		
 		searchPoints = getSmallHexagonSearchPoints(centerPoint, radius);
 		
-		for (Point p : searchPoints) {
+		for (final Point p : searchPoints) {
 			if (!isHexagonPointInSearchWindow(blockPos, searchWindow, p, dim)
 				|| !isPointInFrame(p, dim)) {
 				continue;
@@ -497,7 +497,7 @@ public class VectorPredictionTask extends RecursiveAction {
 	 * @param size	Size of the color arrays.
 	 */
 	private double[][][] getAbsoluteDifferenceOfColors(double[][][] col1, double[][][] col2, int size) {
-		int halfSize = size / 2;
+		int halfSize = size >> 1;
 		double[][] Y = new double[size][size];
 		double[][] U = new double[halfSize][halfSize];
 		double[][] V = new double[halfSize][halfSize];

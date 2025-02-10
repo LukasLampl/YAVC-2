@@ -127,4 +127,27 @@ public class ArrayUtils {
 	public static void copyArray(final byte[] src, final int srcX, byte[] dest, final int destX, final int length) {
 		System.arraycopy(src, srcX, dest, destX, length);
 	}
+	
+	/**
+	 * Transposes the given matrix and sets the values into it.
+	 * 
+	 * <p><b>Warning:</b><br>
+	 * The given matrix itself will be modified.
+	 * </p>
+	 * 
+	 * @param matrix	The matrix to transpose.
+	 * @param size		Subsize of the matrix to transpose.
+	 * @param posX		Position x of the transposition.
+	 * @param posY		Position y of the transposition.
+	 */
+	public static void transpose(final double[][] matrix, final int size, final int posX,
+			final int posY) {
+		for (int i = 0; i < size; i++) {
+			for (int j = i + 1; j < size; j++) {
+				final double temp = matrix[i + posX][j + posY];
+				matrix[i + posX][j + posY] = matrix[j + posX][i + posY];
+				matrix[j + posX][i + posY] = temp;
+			}
+		}
+	}
 }

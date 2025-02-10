@@ -63,13 +63,13 @@ public class TestDCTEngine {
 			System.out.println(" > Getting DCT-Coeffs");
 		}
 		
-		dE.computeDCTOfDeltas(matrix, size, false);
+		dE.computeDCTOfDeltas(matrix, size, false, true);
 		
 		if (verbose) {
 			System.out.println(" > Getting IDCT-Coeffs");
 		}
 		
-		dE.computeIDCTOfDeltas(matrix, size, false);
+		dE.computeIDCTOfDeltas(matrix, size, false, true);
 		
 		if (verbose) {
 			System.out.println(" > Check values");
@@ -98,7 +98,7 @@ public class TestDCTEngine {
 		double[][][] comparable = ArrayUtils.get3DArray(size, true);
 		ArrayUtils.copy3DArray(matrix, 0, 0, 0, comparable, 0, 0, 0, size, size, ColorManager.CHANNELS, true);
 		
-		dE.computeDCTOfDeltas(matrix, size, false);
+		dE.computeDCTOfDeltas(matrix, size, false, true);
 		assertEquals(comparable.length, matrix.length);
 		
 		for (int i = 0; i < matrix.length; i++) {
@@ -109,7 +109,7 @@ public class TestDCTEngine {
 			}
 		}
 		
-		dE.computeIDCTOfDeltas(matrix, size, false);
+		dE.computeIDCTOfDeltas(matrix, size, false, true);
 		
 		for (int n = 0; n < matrix.length; n++) {
 			for (int i = 0; i < matrix[n].length; i++) {

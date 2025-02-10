@@ -69,44 +69,28 @@ public class FCT8x8 implements FCT {
 	
 	@Override
 	public void fct2D(final double[][] matrix, final int offsetX, final int offsetY) {
-		double[][] temp = new double[N][N];
-		
 		for (int x = 0; x < N; x++) {
 			fct1D(matrix[x + offsetX], offsetY, true);
 		}
 		
+		ArrayUtils.transpose(matrix, N, offsetX, offsetY);
+		
 		for (int x = 0; x < N; x++) {
-			for (int y = 0; y < N; y++) {
-				temp[y][x] = matrix[x + offsetX][y + offsetY];
-			}
+			fct1D(matrix[x + offsetX], offsetY, false);
 		}
-		
-		for (int y = 0; y < N; y++) {
-			fct1D(temp[y], 0, false);
-		}
-		
-		ArrayUtils.copy2DArray(temp, 0, 0, matrix, offsetX, offsetY, N, N);
 	}
 	
 	@Override
 	public void ifct2D(final double[][] matrix, final int offsetX, final int offsetY) {
-		double[][] temp = new double[N][N];
-		
 		for (int x = 0; x < N; x++) {
 			ifct1D(matrix[x + offsetX], offsetY, false);
 		}
 		
+		ArrayUtils.transpose(matrix, N, offsetX, offsetY);
+		
 		for (int x = 0; x < N; x++) {
-			for (int y = 0; y < N; y++) {
-				temp[y][x] = matrix[x + offsetX][y + offsetY];
-			}
+			ifct1D(matrix[x + offsetX], offsetY, true);
 		}
-		
-		for (int y = 0; y < N; y++) {
-			ifct1D(temp[y], 0, true);
-		}
-		
-		ArrayUtils.copy2DArray(temp, 0, 0, matrix, offsetX, offsetY, N, N);
 	}
 	
 	/**

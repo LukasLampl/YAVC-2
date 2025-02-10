@@ -104,14 +104,20 @@ public class DCTEngine {
 	 * @return 3D subsampled double array containing all 8x8 or 4x4 matrices in the
 	 * order Top-Left to Bottom-Right.
 	 * 
-	 * @param deltas		Deltas to convert.
-	 * @param size			Size of the matrix to process.
-	 * @param quantizize	Flag for whether the quantization process should take place or not.
+	 * @param deltas			Deltas to convert.
+	 * @param size				Size of the matrix to process.
+	 * @param quantizize		Flag for whether the quantization process should take place or not.
+	 * @param modifyExisting	Flag for whether the input array is allowed to be modified.
 	 */
-	public double[][][] computeDCTOfDeltas(final double[][][] deltas, final int size, final boolean quantizize) {
-		double[][][] coeffs = ArrayUtils.get3DArray(size, true);
-		ArrayUtils.copy3DArray(deltas, 0, 0, 0, coeffs, 0, 0, 0, size, size, ColorManager.CHANNELS, true);
+	public double[][][] computeDCTOfDeltas(final double[][][] deltas, final int size, final boolean quantizize,
+			final boolean modifyExisting) {
+		double[][][] coeffs = deltas;
 		
+		if (!modifyExisting) {
+			coeffs = ArrayUtils.get3DArray(size, true);
+			ArrayUtils.copy3DArray(deltas, 0, 0, 0, coeffs, 0, 0, 0, size, size, ColorManager.CHANNELS, true);
+		}
+
 		if (size == 4) {
 			FCT4x4.fct2D(coeffs[ColorManager.Y_INDEX], 0, 0);
 			FCT2x2.fct2D(coeffs[ColorManager.U_INDEX], 0, 0);
@@ -151,10 +157,16 @@ public class DCTEngine {
 	 * @param deltas		Coefficients to reverse. The order is from Top-Left to Bottom-Right.
 	 * @param size			Size of the original matrix.
 	 * @param quantizize	Flag for whether the coefficients were quantizized or not.
+	 * @param modifyExisting	Flag for whether the input array is allowed to be modified.
 	 */
-	public double[][][] computeIDCTOfDeltas(final double[][][] deltas, final int size, final boolean quantizize) {
-		double[][][] coeffs = ArrayUtils.get3DArray(size, true);
-		ArrayUtils.copy3DArray(deltas, 0, 0, 0, coeffs, 0, 0, 0, size, size, ColorManager.CHANNELS, true);
+	public double[][][] computeIDCTOfDeltas(final double[][][] deltas, final int size, final boolean quantizize,
+			final boolean modifyExisting) {
+		double[][][] coeffs = deltas;
+		
+		if (!modifyExisting) {
+			coeffs = ArrayUtils.get3DArray(size, true);
+			ArrayUtils.copy3DArray(deltas, 0, 0, 0, coeffs, 0, 0, 0, size, size, ColorManager.CHANNELS, true);
+		}
 		
 		if (size == 4) {
 			if (quantizize) {
