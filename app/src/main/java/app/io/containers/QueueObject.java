@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package app.io;
+package app.io.containers;
 
 import java.util.ArrayList;
 
@@ -54,8 +54,13 @@ public class QueueObject implements Discardable {
 	 * @param diffManager	Non-coded blocks to write.
 	 */
 	public QueueObject(LoadDistributor<EncodingVector> vecManager, LoadDistributor<EncodingIntraPredictionBlock> intraBlocks) {
-		this.vectors.addAll(vecManager.getRawData());
-		this.intraBlocks.addAll(intraBlocks.getRawData());
+		if (vecManager != null) {
+			this.vectors.addAll(vecManager.getRawData());
+		}
+		
+		if (intraBlocks != null) {
+			this.intraBlocks.addAll(intraBlocks.getRawData());
+		}
 	}
 	
 	/**

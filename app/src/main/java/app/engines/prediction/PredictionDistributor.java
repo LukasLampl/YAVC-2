@@ -51,7 +51,7 @@ public class PredictionDistributor {
 		}
 	}
 	
-	public PredictionDistributor.Result estimateBlockPredictionType(LoadDistributor<MacroBlock> macroblocks, Dimension dim) {
+	public static PredictionDistributor.Result estimateBlockPredictionType(final LoadDistributor<MacroBlock> macroblocks, final Dimension dim) {
 		List<MacroBlock> interpredictables = new ArrayList<MacroBlock>();
 		List<MacroBlock> intrapredictables = new ArrayList<MacroBlock>();
 		double totalDeviation = 0;
@@ -83,13 +83,13 @@ public class PredictionDistributor {
 		return new PredictionDistributor.Result(interpredictables, intrapredictables);
 	}
 	
-	private boolean isEdgeBlock(final MacroBlock block, final Dimension dim) {
+	private static boolean isEdgeBlock(final MacroBlock block, final Dimension dim) {
 		return block.getPositionX() == 0 || block.getPositionY() == 0
 				|| block.getPositionX() + block.getSize() >= dim.width
 				|| block.getPositionY() + block.getSize() >= dim.height;
 	}
 	
-	private double calculateDeviation(final int size, final double[][] Ycolor, final double meanYColor) {
+	private static double calculateDeviation(final int size, final double[][] Ycolor, final double meanYColor) {
 		double deviation = 0;
 		double max = Double.MIN_VALUE;
 		

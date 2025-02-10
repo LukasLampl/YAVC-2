@@ -24,6 +24,7 @@ package app.engines.quadtree;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -63,7 +64,7 @@ public class QuadtreeEngine {
 	/**
 	 * The error threshold, at which MacroBlocks stop splitting.
 	 */
-	private final double ERROR_THRESHOLD = 20.0;
+	private final static double ERROR_THRESHOLD = 20.0;
 	
 	
 	/**
@@ -88,7 +89,7 @@ public class QuadtreeEngine {
 	 * 
 	 * @throws NullPointerException	When the passed frame is {@code null}.
 	 */
-	public ArrayList<MacroBlock> constructQuadtree(PixelRaster currentFrame) {
+	public static List<MacroBlock> constructQuadtree(final PixelRaster currentFrame) {
 		if (currentFrame == null) {
 			throw new NullPointerException("PixelRaster \"currentFrame\" == NULL!");
 		}
@@ -105,7 +106,7 @@ public class QuadtreeEngine {
 			
 			for (int x = 0; x < width; x += QuadtreeBase.MAX_SIZE) {
 				for (int y = 0; y < height; y += QuadtreeBase.MAX_SIZE) {
-					Callable<MacroBlock> task = createQuadtreeConstructionTask(new Point(x, y), currentFrame, this.ERROR_THRESHOLD);
+					Callable<MacroBlock> task = createQuadtreeConstructionTask(new Point(x, y), currentFrame, ERROR_THRESHOLD);
 					futureRoots.add(executor.submit(task));
 				}
 			}
@@ -140,7 +141,8 @@ public class QuadtreeEngine {
 	 * @param frame				Current frame.
 	 * @param errorThreshold	Maximum error before subdivision.
 	 */
-	private Callable<MacroBlock> createQuadtreeConstructionTask(final Point pos, final PixelRaster frame, final double errorThreshold) {
+	private static Callable<MacroBlock> createQuadtreeConstructionTask(final Point pos,
+			final PixelRaster frame, final double errorThreshold) {
 		Callable<MacroBlock> task = () -> {
 			MacroBlock origin = new MacroBlock(pos.x, pos.y, QuadtreeBase.MAX_SIZE, false);
 			double[][][] comps = frame.getPixelBlock(new Point(pos.x, pos.y), origin.getSize(), null);
@@ -165,7 +167,7 @@ public class QuadtreeEngine {
 	 * 
 	 * @throws NullPointerException	When no root is provided.
 	 */
-	public LoadDistributor<MacroBlock> getLeaveNodes(ArrayList<MacroBlock> roots) {
+	public static LoadDistributor<MacroBlock> getLeaveNodes(final List<MacroBlock> roots) {
 		if (roots == null) {
 			throw new NullPointerException("No QuadtreeRoots to process.");
 		}
@@ -173,21 +175,21 @@ public class QuadtreeEngine {
 		LoadDistributor<MacroBlock> loadManager = new LoadDistributor<MacroBlock>();
 		
 		try {
-			ArrayList<Future<ArrayList<MacroBlock>>> futureLeavesList = new ArrayList<Future<ArrayList<MacroBlock>>>();
+			ArrayList<Future<List<MacroBlock>>> futureLeavesList = new ArrayList<Future<List<MacroBlock>>>();
 			int threads = Runtime.getRuntime().availableProcessors();
 			ExecutorService executor = Executors.newFixedThreadPool(threads);
 	
-			for (MacroBlock root : roots) {
-				Callable<ArrayList<MacroBlock>> task = () -> {
+			for (final MacroBlock root : roots) {
+				Callable<List<MacroBlock>> task = () -> {
 					return getLeaves(root);
 				};
 				
 				futureLeavesList.add(executor.submit(task));
 			}
 			
-			for (Future<ArrayList<MacroBlock>> flist : futureLeavesList) {
+			for (final Future<List<MacroBlock>> flist : futureLeavesList) {
 				try {
-					ArrayList<MacroBlock> nodes = flist.get();
+					List<MacroBlock> nodes = flist.get();
 					
 					if (nodes == null) {
 						continue;
@@ -218,19 +220,19 @@ public class QuadtreeEngine {
 	 * 
 	 * @param block	Block to go down recursively.
 	 */
-	private ArrayList<MacroBlock> getLeaves(MacroBlock block) {
+	private static List<MacroBlock> getLeaves(final MacroBlock block) {
 		if (block == null) {
 			return null;
 		}
 		
-		ArrayList<MacroBlock> blocks = new ArrayList<MacroBlock>(4);
+		List<MacroBlock> blocks = new ArrayList<MacroBlock>(4);
 		
 		if (block.isSubdivided()) {
 			if (block.getNodes() == null) {
 				return blocks;
 			}
 			
-			for (MacroBlock node : block.getNodes()) {
+			for (final MacroBlock node : block.getNodes()) {
 				if (node == null) {
 					continue;
 				}

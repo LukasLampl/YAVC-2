@@ -65,20 +65,21 @@ public class DifferenceEngine {
 	 * @param threadLoadManager		The LoadDistributor with all MacroBlocks.
 	 * @return A list of all MacroBlocks that should be further processed.
 	 */
-	public List<MacroBlock> computeDifferences(PixelRaster prevFrame, LoadDistributor<MacroBlock> threadLoadManager) {
-		int predictedSize = threadLoadManager.getNumberOfObjects() >> 1;
-		List<MacroBlock> differences = new ArrayList<MacroBlock>();
+	public static LoadDistributor<MacroBlock> computeDifferences(final PixelRaster prevFrame, final LoadDistributor<MacroBlock> macroblocks) {
+		int predictedSize = macroblocks.getNumberOfObjects() >> 1;
+		LoadDistributor<MacroBlock> differences = new LoadDistributor<MacroBlock>();
+		List<MacroBlock> temp = new ArrayList<MacroBlock>();
 		ArrayList<Future<ArrayList<MacroBlock>>> futureDiffs = new ArrayList<Future<ArrayList<MacroBlock>>>(predictedSize);
 		
 		try {
 			int threads = Runtime.getRuntime().availableProcessors();
 			ExecutorService executor = Executors.newFixedThreadPool(threads);
 			
-			for (final List<MacroBlock> blockList : threadLoadManager.getIterable()) {
+			for (final List<MacroBlock> blockList : macroblocks.getIterable()) {
 				Callable<ArrayList<MacroBlock>> task = () -> {
 					ArrayList<MacroBlock> blocksToReturn = new ArrayList<MacroBlock>();
 					
-					for (MacroBlock block : blockList) {
+					for (final MacroBlock block : blockList) {
 						int size = block.getSize();
 						int squaredSize = block.getArea();
 						double[][][] refCols = prevFrame.getPixelBlock(block.getPosition(), size, null);
@@ -127,7 +128,7 @@ public class DifferenceEngine {
 						continue;
 					}
 					
-					differences.addAll(blockList);
+					temp.addAll(blockList);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -139,6 +140,7 @@ public class DifferenceEngine {
 			e.printStackTrace();
 		}
 		
+		differences.setAllAndCompute(temp);
 		return differences;
 	}
 }

@@ -64,11 +64,10 @@ public class TestDecoder {
 				refMan.add(new PixelRaster(TEST_FRAMES[1]));
 				refMan.add(new PixelRaster(TEST_FRAMES[2]));
 				PixelRaster frame = new PixelRaster(TEST_FRAMES[3]);
-				QuadtreeEngine qE = new QuadtreeEngine();
 				VectorEngine vE = new VectorEngine();
 				
-				ArrayList<MacroBlock> quadtreeRoots = qE.constructQuadtree(frame);
-				LoadDistributor<MacroBlock> leaveNodeManager = qE.getLeaveNodes(quadtreeRoots);
+				List<MacroBlock> quadtreeRoots = QuadtreeEngine.constructQuadtree(frame);
+				LoadDistributor<MacroBlock> leaveNodeManager = QuadtreeEngine.getLeaveNodes(quadtreeRoots);
 				leaveNodeManager.compute(frame.getWidth() * frame.getHeight());
 				LoadDistributor<EncodingVector> movementVectors = vE.computeMovementVectors(leaveNodeManager.getRawData(), refMan);
 				List<EncodingVector> originalVectors = movementVectors.getRawData();
@@ -129,12 +128,11 @@ public class TestDecoder {
 				refMan.add(new PixelRaster(TEST_FRAMES[1]));
 				refMan.add(new PixelRaster(TEST_FRAMES[2]));
 				PixelRaster frame = new PixelRaster(TEST_FRAMES[3]);
-				QuadtreeEngine qE = new QuadtreeEngine();
 				VectorEngine vE = new VectorEngine();
 				
 				ArrayList<MacroBlock> list = new ArrayList<MacroBlock>();
 				list.add(new MacroBlock(0, 0, 4, frame.getPixelBlock(new Point(0, 0), 4, null)));
-				LoadDistributor<MacroBlock> leaveNodeManager = qE.getLeaveNodes(list);
+				LoadDistributor<MacroBlock> leaveNodeManager = QuadtreeEngine.getLeaveNodes(list);
 				leaveNodeManager.compute(frame.getWidth() * frame.getHeight());
 				LoadDistributor<EncodingVector> movementVectors = vE.computeMovementVectors(leaveNodeManager.getRawData(), refMan);
 				List<EncodingVector> originalVectors = movementVectors.getRawData();
@@ -199,11 +197,10 @@ public class TestDecoder {
 				refMan.add(new PixelRaster(TEST_FRAMES[1]));
 				refMan.add(new PixelRaster(TEST_FRAMES[2]));
 				PixelRaster frame = new PixelRaster(TEST_FRAMES[3]);
-				QuadtreeEngine qE = new QuadtreeEngine();
 				IntraEngine iE = new IntraEngine();
 				
-				ArrayList<MacroBlock> quadtreeRoots = qE.constructQuadtree(frame);
-				LoadDistributor<MacroBlock> leaveNodeManager = qE.getLeaveNodes(quadtreeRoots);
+				List<MacroBlock> quadtreeRoots = QuadtreeEngine.constructQuadtree(frame);
+				LoadDistributor<MacroBlock> leaveNodeManager = QuadtreeEngine.getLeaveNodes(quadtreeRoots);
 				leaveNodeManager.compute(frame.getWidth() * frame.getHeight());
 				LoadDistributor<EncodingIntraPredictionBlock> intraBlocks = iE.computeIntraPrediction(leaveNodeManager.getRawData(), frame);
 				List<EncodingIntraPredictionBlock> originalBlocks = intraBlocks.getRawData();

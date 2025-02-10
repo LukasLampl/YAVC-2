@@ -34,6 +34,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import app.engines.prediction.interprediction.EncodingVector;
 import app.engines.prediction.intraprediction.EncodingIntraPredictionBlock;
+import app.io.containers.QueueObject;
 import app.utils.PixelRaster;
 
 /**
