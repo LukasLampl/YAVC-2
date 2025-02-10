@@ -143,10 +143,16 @@ public class ArrayUtils {
 	public static void transpose(final double[][] matrix, final int size, final int posX,
 			final int posY) {
 		for (int i = 0; i < size; i++) {
+			final int actual_x_i = i + posX;
+			final int actual_y_i = i + posY;
+			
 			for (int j = i + 1; j < size; j++) {
-				final double temp = matrix[i + posX][j + posY];
-				matrix[i + posX][j + posY] = matrix[j + posX][i + posY];
-				matrix[j + posX][i + posY] = temp;
+				final int actual_x_j = j + posX;
+				final int actual_y_j = j + posY;
+				
+				final double temp = matrix[actual_x_i][actual_y_j];
+				matrix[actual_x_i][actual_y_j] = matrix[actual_x_j][actual_y_i];
+				matrix[actual_x_j][actual_y_i] = temp;
 			}
 		}
 	}
