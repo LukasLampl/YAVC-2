@@ -131,7 +131,7 @@ public class ImagePreReader {
 
 				try {
 					BufferedImage img = ImageIO.read(file);
-					PixelRaster raster = frameManager.getChachedPixelRasterIfAvailable();
+					PixelRaster raster = frameManager.getCachedPixelRasterIfAvailable();
 					
 					if (raster == null) {
 						raster = new PixelRaster(img);

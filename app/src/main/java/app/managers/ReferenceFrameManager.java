@@ -143,7 +143,7 @@ public class ReferenceFrameManager {
 	 * 
 	 * @return An PixelRaster that can be overwritten and reused.
 	 */
-	public PixelRaster getChachedPixelRasterIfAvailable() {
+	public PixelRaster getCachedPixelRasterIfAvailable() {
 		PixelRaster r = this.availableRasters.poll();
 		
 		if (r != null) {
