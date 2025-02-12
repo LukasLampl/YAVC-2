@@ -5,15 +5,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.awt.Color;
-import java.util.Arrays;
+import java.util.Random;
 
 import org.junit.jupiter.api.Test;
 
+import app.exceptions.DCTCoefficientOutOfBoundsException;
 import app.io.Protocol;
 import app.io.ProtocolBase;
 import app.rendering.ColorManager;
 
 public class TestProtocol {
+	private Random random = new Random();
+	
 	@Test
 	public void testPositionBytes_001() {
 		int[] positions = {0, 4, 8, 12, 16, 28, 32, 75, 4096, 65000, 733};
@@ -78,7 +81,7 @@ public class TestProtocol {
 	}
 	
 	@Test
-	public void test_DCT_coefficient_bytes_001() {
+	public void testDCTCoefficientBytes_001() {
 		double[] coeffs = {-51.0, 0, 37.0, -127.0, 127.0, 58.0, 65.0, 87.0, -32.0, -1.0, 1.0};
 		
 		for (double coeff : coeffs) {
@@ -89,7 +92,7 @@ public class TestProtocol {
 	}
 	
 	@Test
-	public void test_border_color_bytes_001() {
+	public void testBorderColorBytes_001() {
 		double[][] vertical = {
 				ColorManager.convertRGBToYUV(Color.RED),
 				ColorManager.convertRGBToYUV(Color.BLUE),
@@ -115,7 +118,7 @@ public class TestProtocol {
 	}
 	
 	@Test
-	public void test_border_color_bytes_002() {
+	public void testBorderColorBytes_002() {
 		int[] sizes = {4, 8, 16, 32, 64, 128};
 		
 		for (final int size : sizes) {
@@ -143,9 +146,25 @@ public class TestProtocol {
 		
 		return arr;
 	}
+
+	private double[][][] generateRandom3DArray(final int size, final int min, final int max) {
+		double[][][] arr = ArrayUtils.get3DArray(size, true);
+		
+		for (int i = 0; i < arr.length; i++) {
+			for (int x = 0; x < arr[i].length; x++) {
+				for (int y = 0; y < arr[i][x].length; y++) {
+					boolean inv = this.random.nextBoolean();
+					arr[i][x][y] = MathUtils.round(inv ? this.random.nextDouble() * min
+							: this.random.nextDouble() * max);
+				}
+			}
+		}
+		
+		return arr;
+	}
 	
 	@Test
-	public void test_size_and_angle_001() {
+	public void testSizeAndAngle_001() {
 		int[] sizes = {4, 16, 64, 128, 128, 64, 64, 4, 4, 8, 16, 4};
 		int[] angles = {0, 5, 45, 65, 90, 125, 90, 35, 145, 75, 80, 100};
 		
@@ -156,6 +175,37 @@ public class TestProtocol {
 			final int[] sizeAndAngle = Protocol.getSizeAndAngle(data[0], data[1]);
 			assertEquals(size, sizeAndAngle[0]);
 			assertEquals(angle, sizeAndAngle[1]);
+		}
+	}
+	
+	@Test
+	public void testDeltaMatrix_001() throws DCTCoefficientOutOfBoundsException {
+		double[][][] deltas = generateRandom3DArray(8, -127, 127);
+		
+		byte[][] data = ProtocolBase.getDeltaMatrixBytes(deltas, 8);
+		byte[] stream = new byte[data[0].length + data[1].length + data[2].length];
+		ArrayUtils.copyArray(data[0], 0, stream, 0, data[0].length);
+		ArrayUtils.copyArray(data[1], 0, stream, data[0].length, data[1].length);
+		ArrayUtils.copyArray(data[2], 0, stream, data[0].length + data[1].length, data[2].length);
+		double[][][] decoded = ProtocolBase.getDeltaCoefficientsFromDatastream(stream, 0, 8);
+		assertArrayEquals(deltas, decoded);
+	}
+	
+	@Test
+	public void testDeltaMatrix_002() throws DCTCoefficientOutOfBoundsException {
+		int[] sizes = {4, 8, 16, 64, 128};
+		
+		for (int i = 0; i < 1024; i++) {
+			int size = sizes[MathUtils.round(this.random.nextDouble() * (sizes.length - 1))];
+			double[][][] deltas = generateRandom3DArray(size, -127, 127);
+			
+			byte[][] data = ProtocolBase.getDeltaMatrixBytes(deltas, size);
+			byte[] stream = new byte[data[0].length + data[1].length + data[2].length];
+			ArrayUtils.copyArray(data[0], 0, stream, 0, data[0].length);
+			ArrayUtils.copyArray(data[1], 0, stream, data[0].length, data[1].length);
+			ArrayUtils.copyArray(data[2], 0, stream, data[0].length + data[1].length, data[2].length);
+			double[][][] decoded = ProtocolBase.getDeltaCoefficientsFromDatastream(stream, 0, size);
+			assertArrayEquals(deltas, decoded);
 		}
 	}
 }
