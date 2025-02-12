@@ -21,6 +21,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package app.io.coder;
 
+import app.exceptions.DCTCoefficientOutOfBoundsException;
+import app.io.ProtocolBase;
+
 /**
  * The {@code ZigZagCoder4x4} is an extension of the {@code ZigZagOrder}
  * that is specialized on coding 4x4 matrices into a stream with zig
@@ -53,12 +56,14 @@ public class ZigZagCoder4x4 implements ZigZagCoder {
 	};
 	
 	@Override
-	public double[] code(final double[][] matrix, final int offsetX, final int offsetY) {
-		final double[] stream = new double[LENGTH];
+	public byte[] code(final double[][] matrix, final int offsetX, final int offsetY)
+			throws DCTCoefficientOutOfBoundsException {
+		final byte[] stream = new byte[LENGTH];
 		
 		for (int x = 0; x < N; x++) {
 			for (int y = 0; y < N; y++) {
-				stream[ORDER[x][y]] = matrix[x + offsetX][y + offsetY];
+				final double value = matrix[x + offsetX][y  + offsetY];
+				stream[ORDER[x][y]] = ProtocolBase.getDCTCoeffByte(ProtocolBase.getAdjustedDCTCoefficient(value));
 			}
 		}
 		
@@ -66,12 +71,13 @@ public class ZigZagCoder4x4 implements ZigZagCoder {
 	}
 
 	@Override
-	public double[][] decode(final double[] stream, final int streamOffset) {
+	public double[][] decode(final byte[] stream, final int streamOffset) {
 		final double[][] mat = new double[N][N];
 		
 		for (int x = 0; x < N; x++) {
 			for (int y = 0; y < N; y++) {
-				mat[x][y] = stream[ORDER[x][y] + streamOffset];
+				final byte value = stream[ORDER[x][y] + streamOffset];
+				mat[x][y] = ProtocolBase.getDCTCoeff(value);
 			}
 		}
 		

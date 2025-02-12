@@ -21,6 +21,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package app.io.coder;
 
+import app.exceptions.DCTCoefficientOutOfBoundsException;
+
 /**
  * The {@code ZigZagCoder} is the base of all ZigZagCoders for
  * setting DCT coefficients in a more compressing format.
@@ -37,7 +39,8 @@ public interface ZigZagCoder {
 	 * @param offsetY	Offset to the y.
 	 * @return An array with the zig zag ordering.
 	 */
-	public double[] code(final double[][] matrix, final int offsetX, final int offsetY);
+	public byte[] code(final double[][] matrix, final int offsetX, final int offsetY)
+			throws DCTCoefficientOutOfBoundsException;
 	
 	/**
 	 * Decodes a given zig zag coded stream into the original matrix.
@@ -46,5 +49,5 @@ public interface ZigZagCoder {
 	 * @param streamOffset	Offset in the stream.
 	 * @return The decoded matrix.
 	 */
-	public double[][] decode(final double[] stream, final int streamOffset);
+	public double[][] decode(final byte[] stream, final int streamOffset);
 }

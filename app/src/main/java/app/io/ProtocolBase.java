@@ -24,9 +24,19 @@ package app.io;
 import app.ArgumentProcessor;
 import app.engines.dct.DCTConstants;
 import app.exceptions.DCTCoefficientOutOfBoundsException;
+import app.io.coder.ZigZagCoder;
+import app.io.coder.ZigZagCoder2x2;
+import app.io.coder.ZigZagCoder4x4;
+import app.io.coder.ZigZagCoder8x8;
+import app.rendering.ColorManager;
 import app.utils.ArrayUtils;
 
 public abstract class ProtocolBase {
+	private static ZigZagCoder ZigZagCoder2x2 = new ZigZagCoder2x2();
+	private static ZigZagCoder ZigZagCoder4x4 = new ZigZagCoder4x4();
+	private static ZigZagCoder ZigZagCoder8x8 = new ZigZagCoder8x8();
+	
+	
 	/**
 	 * The size of an integer in bytes.
 	 */
@@ -129,7 +139,6 @@ public abstract class ProtocolBase {
 	public static byte[][] getDeltaMatrixBytes(double[][][] deltaMatrix, final int size) throws DCTCoefficientOutOfBoundsException {
 		final int halfSize = size >> 1;
 		final int frac = size == 4 ? 4 : 8;
-		final int halfFrac = frac >> 1;
 		final int groups = size == 4 ? 1 : (size * size) / 64;
 		final byte[] YBytes = new byte[size * size];
 		final byte[] UBytes = new byte[halfSize * halfSize];
@@ -147,27 +156,26 @@ public abstract class ProtocolBase {
 				halfYToAdd += 4;
 			}
 			
-			for (int x = 0; x < frac; x++) {
-				final int actualX = xToAdd + x;
-				
-				for (int y = 0; y < frac; y++) {
-					final int actualY = yToAdd + y;
-					double value = deltaMatrix[DCTConstants.Y_COEFFS_INDEX][actualX][actualY];
-					YBytes[YIndex++] = getDCTCoeffByte(getAdjustedDCTCoefficient(value));
-				}
-			}
+			byte[] YStream = null;
+			byte[] UStream = null;
+			byte[] VStream = null;
 			
-			for (int x = 0; x < halfFrac; x++) {
-				final int actualX = halfXToAdd + x;
-				
-				for (int y = 0; y < halfFrac; y++) {
-					final int actualY = halfYToAdd + y;
-					double valueU = deltaMatrix[DCTConstants.U_COEFFS_INDEX][actualX][actualY];
-					double valueV = deltaMatrix[DCTConstants.V_COEFFS_INDEX][actualX][actualY];
-					UBytes[UIndex++] = getDCTCoeffByte(getAdjustedDCTCoefficient(valueU));
-					VBytes[VIndex++] = getDCTCoeffByte(getAdjustedDCTCoefficient(valueV));
-				}
+			if (frac == 4) {
+				YStream = ZigZagCoder4x4.code(deltaMatrix[ColorManager.Y_INDEX], xToAdd, yToAdd);
+				UStream = ZigZagCoder2x2.code(deltaMatrix[ColorManager.U_INDEX], halfXToAdd, halfYToAdd);
+				VStream = ZigZagCoder2x2.code(deltaMatrix[ColorManager.V_INDEX], halfXToAdd, halfYToAdd);
+			} else {
+				YStream = ZigZagCoder8x8.code(deltaMatrix[ColorManager.Y_INDEX], xToAdd, yToAdd);
+				UStream = ZigZagCoder4x4.code(deltaMatrix[ColorManager.U_INDEX], halfXToAdd, halfYToAdd);
+				VStream = ZigZagCoder4x4.code(deltaMatrix[ColorManager.V_INDEX], halfXToAdd, halfYToAdd);
 			}
+
+			ArrayUtils.copyArray(YStream, 0, YBytes, YIndex, YStream.length);
+			ArrayUtils.copyArray(UStream, 0, UBytes, UIndex, UStream.length);
+			ArrayUtils.copyArray(VStream, 0, VBytes, VIndex, VStream.length);
+			YIndex += YStream.length;
+			UIndex += UStream.length;
+			VIndex += VStream.length;
 		}
 		
 		return new byte[][] {YBytes, UBytes, VBytes};
@@ -252,45 +260,31 @@ public abstract class ProtocolBase {
 	private static void writeDCTCoeffsOutOfByteStream(final byte[] data, final int size,
 			double[][][] arrayToWriteInto, final int YStart, final int UStart, final int VStart,
 			final int offsetX, final int offsetY) {
-		final int YLength = size * size;
 		final int halfSize = size >> 1;
-		final int UVLength = halfSize * halfSize;
-		final int lengthTillMatrixBreak = size;
-		final int halfLengthTillMatrixBreak = halfSize;
 		final int halfOffsetX = offsetX >> 1;
 		final int halfOffsetY = offsetY >> 1;
-		int x = 0;
-		int y = 0;
 		
 		double[][] YChannel = arrayToWriteInto[DCTConstants.Y_COEFFS_INDEX];
 		double[][] UChannel = arrayToWriteInto[DCTConstants.U_COEFFS_INDEX];
 		double[][] VChannel = arrayToWriteInto[DCTConstants.V_COEFFS_INDEX];
-				
-		for (int n = 0; n < YLength; n++, y++) {
-			if (y >= lengthTillMatrixBreak) {
-				x++;
-				y = 0;
-			}
-			
-			final int actualX = x + offsetX;
-			final int actualY = y + offsetY;
-			YChannel[actualX][actualY] = ProtocolBase.getDCTCoeff(data[YStart + n]);
-		}
-
-		x = 0;
-		y = 0;
 		
-		for (int n = 0; n < UVLength; n++, y++) {
-			if (y >= halfLengthTillMatrixBreak) {
-				x++;
-				y = 0;
-			}
-			
-			final int actualX = halfOffsetX + x;
-			final int actualY = halfOffsetY + y;
-			UChannel[actualX][actualY] = ProtocolBase.getDCTCoeff(data[UStart + n]);
-			VChannel[actualX][actualY] = ProtocolBase.getDCTCoeff(data[VStart + n]);
+		double[][] YMat = null;
+		double[][] UMat = null;
+		double[][] VMat = null;
+		
+		if (size == 4) {
+			YMat = ZigZagCoder4x4.decode(data, YStart);
+			UMat = ZigZagCoder2x2.decode(data, UStart);
+			VMat = ZigZagCoder2x2.decode(data, VStart);
+		} else {
+			YMat = ZigZagCoder8x8.decode(data, YStart);
+			UMat = ZigZagCoder4x4.decode(data, UStart);
+			VMat = ZigZagCoder4x4.decode(data, VStart);
 		}
+		
+		ArrayUtils.copy2DArray(YMat, 0, 0, YChannel, offsetX, offsetY, size, size);
+		ArrayUtils.copy2DArray(UMat, 0, 0, UChannel, halfOffsetX, halfOffsetY, halfSize, halfSize);
+		ArrayUtils.copy2DArray(VMat, 0, 0, VChannel, halfOffsetX, halfOffsetY, halfSize, halfSize);
 	}
 	
 	/**
@@ -302,7 +296,7 @@ public abstract class ProtocolBase {
 	 * 
 	 * @throws DCTCoefficientOutOfBoundsException When the DCT coefficient is out of bounds from -127 to 127.
 	 */
-	private static double getAdjustedDCTCoefficient(double coeff) throws DCTCoefficientOutOfBoundsException {
+	public static double getAdjustedDCTCoefficient(double coeff) throws DCTCoefficientOutOfBoundsException {
 		if (coeff > 127 || coeff < -127) {
 			double adjustedValue = ArgumentProcessor.autoAdjust ? coeff < -127 ? -127 : 127 : Double.NaN;
 			String autoAdjust = ArgumentProcessor.autoAdjust ? "on" : "off";
@@ -413,5 +407,9 @@ public abstract class ProtocolBase {
 		}
 		
 		return arr;
+	}
+	
+	public static int getDeltaSize(final int size) {
+		return (size * size) + 2 * ((size * size) / 4);
 	}
 }

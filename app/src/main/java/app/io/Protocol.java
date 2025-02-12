@@ -22,6 +22,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 package app.io;
 
 import java.awt.Dimension;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,6 +42,8 @@ import app.managers.ListManager;
 import app.rendering.ColorManager;
 import app.utils.MathUtils;
 import app.utils.PixelRaster;
+import app.utils.components.Component2D;
+import app.utils.components.MacroBlock;
 
 /**
  * The {@code Protocol} class is responsible for converting data into bytes and back
@@ -57,7 +61,7 @@ public class Protocol {
 	/**
 	 * The length of a vector header in bytes.
 	 */
-	public static final int VECTOR_HEADER_LENGTH = 7;
+	public static final int VECTOR_HEADER_LENGTH = 3;
 	
 	/**
 	 * The length of the vector size checksum.
@@ -67,7 +71,7 @@ public class Protocol {
 	/**
 	 * Length of the intra block header in bytes.
 	 */
-	public static final int INTRA_BLOCK_HEADER_LENGTH = 6;
+	public static final int INTRA_BLOCK_HEADER_LENGTH = 2;
 	
 	/**
 	 * The length of the intra blocks checksum.
@@ -618,5 +622,105 @@ public class Protocol {
 		for (int i = 0; i < bytes.length; i++) {
 			arr[index++] = bytes[i];
 		}
+	}
+	
+	public static byte[] binarizeQuadtrees(List<MacroBlock> roots) throws IOException {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		
+		for (final MacroBlock root : roots) {
+			byte[] quadtree = binarizeSingleQuadtree(root);
+			baos.write(ProtocolBase.getPositionBytes(root.getPositionX()));
+			baos.write(ProtocolBase.getPositionBytes(root.getPositionY()));
+			baos.write(quadtree);
+		}
+		
+		return baos.toByteArray();
+	}
+	
+	private static byte[] binarizeSingleQuadtree(final MacroBlock root) throws IOException {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		
+		if (root.isSubdivided()) {
+			baos.write(0x01);
+			
+			for (final MacroBlock child : root.getNodes()) {
+				baos.write(binarizeSingleQuadtree(child));
+			}
+		} else {
+			baos.write(0x00);
+			
+			final Component2D link = root.getLink();
+			
+			if (link instanceof EncodingIntraPredictionBlock) {
+				baos.write(0x00);
+				baos.write(getSingleIntraPredictionBlock((EncodingIntraPredictionBlock)link));
+			} else if (link instanceof EncodingVector) {
+				baos.write(0x01);
+				baos.write(getSingleVector((EncodingVector)link));
+			} else {
+				throw new IllegalStateException("Illegal link type: " + link);
+			}
+		}
+		
+		return baos.toByteArray();
+	}
+	
+	private static final byte[] getSingleIntraPredictionBlock(final EncodingIntraPredictionBlock block) {
+		int index = 0;
+		int size = Protocol.INTRA_BLOCK_HEADER_LENGTH
+				+ block.getSize() * 2 * ColorManager.CHANNELS
+				+ ProtocolBase.getDeltaSize(block.getSize());
+		byte[] data = new byte[size];
+		final byte[] sizeAndAngle = Protocol.getSizeAndAngleByte(block.getSize(), block.getAngle());
+		final byte[] borderColors = Protocol.getBorderColorBytes(block.getVertical(), block.getHorizontal(), block.getSize());
+		
+		byte[][] differences = null;
+		
+		try {
+			differences = ProtocolBase.getDeltaMatrixBytes(block.getYUVDeltas(), block.getSize());
+		} catch (DCTCoefficientOutOfBoundsException e) {
+			e.printStackTrace();
+		}
+		
+		writeBytesToByteArray(sizeAndAngle, data, index);
+		index += sizeAndAngle.length;
+		writeBytesToByteArray(borderColors, data, index);
+		index += borderColors.length;
+		
+		for (int n = 0; n < differences.length; n++) {
+			writeBytesToByteArray(differences[n], data, index);
+			index += differences[n].length;
+		}
+		
+		return data;
+	}
+	
+	private static byte[] getSingleVector(final EncodingVector v) {
+		int index = 0;
+		int size = Protocol.VECTOR_HEADER_LENGTH
+				+ ProtocolBase.getDeltaSize(v.getSize());
+		byte[] data = new byte[size];
+		final byte[] span = Protocol.getVectorSpanBytes(v.getSpanX(), v.getSpanY());
+		final byte refAndSize = Protocol.getReferenceAndSizeByte(v.getReference(), v.getSize());
+		byte[][] differences = null;
+		
+		try {
+			differences = ProtocolBase.getDeltaMatrixBytes(v.getYUVDelta(), v.getSize());
+		} catch (DCTCoefficientOutOfBoundsException e) {
+			System.out.println("Size: " + v.getSize());
+			e.printStackTrace();
+		}
+		
+		writeBytesToByteArray(span, data, index);
+		index += span.length;
+		data[index] = refAndSize;
+		index += 1;
+		
+		for (int n = 0; n < differences.length; n++) {
+			writeBytesToByteArray(differences[n], data, index);
+			index += differences[n].length;
+		}
+		
+		return data;
 	}
 }
