@@ -195,17 +195,18 @@ public class TestProtocol {
 	public void testDeltaMatrix_002() throws DCTCoefficientOutOfBoundsException {
 		int[] sizes = {4, 8, 16, 64, 128};
 		
-		for (int i = 0; i < 1024; i++) {
-			int size = sizes[MathUtils.round(this.random.nextDouble() * (sizes.length - 1))];
-			double[][][] deltas = generateRandom3DArray(size, -127, 127);
-			
-			byte[][] data = ProtocolBase.getDeltaMatrixBytes(deltas, size);
-			byte[] stream = new byte[data[0].length + data[1].length + data[2].length];
-			ArrayUtils.copyArray(data[0], 0, stream, 0, data[0].length);
-			ArrayUtils.copyArray(data[1], 0, stream, data[0].length, data[1].length);
-			ArrayUtils.copyArray(data[2], 0, stream, data[0].length + data[1].length, data[2].length);
-			double[][][] decoded = ProtocolBase.getDeltaCoefficientsFromDatastream(stream, 0, size);
-			assertArrayEquals(deltas, decoded);
+		for (final int size : sizes) {
+			for (int i = 0; i < 1024; i++) {
+				double[][][] deltas = generateRandom3DArray(size, -127, 127);
+				
+				byte[][] data = ProtocolBase.getDeltaMatrixBytes(deltas, size);
+				byte[] stream = new byte[data[0].length + data[1].length + data[2].length];
+				ArrayUtils.copyArray(data[0], 0, stream, 0, data[0].length);
+				ArrayUtils.copyArray(data[1], 0, stream, data[0].length, data[1].length);
+				ArrayUtils.copyArray(data[2], 0, stream, data[0].length + data[1].length, data[2].length);
+				double[][][] decoded = ProtocolBase.getDeltaCoefficientsFromDatastream(stream, 0, size);
+				assertArrayEquals(deltas, decoded);
+			}
 		}
 	}
 }

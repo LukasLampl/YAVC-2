@@ -197,7 +197,6 @@ public class VectorPredictionTask extends RecursiveAction {
 		
 		if (bestMatch != null) {
 			int size = blockToBeSearched.getSize();
-			blockToBeSearched.setConvertedToVector(true);
 			//Re-init reference color since the cache is modified every loop.
 			PixelRaster referenceFrame = refs.getByReference(bestMatch.getReference());
 			double[][][] col = referenceFrame.getPixelBlock(bestMatch.getPosition(), size, null);
@@ -210,6 +209,7 @@ public class VectorPredictionTask extends RecursiveAction {
 			vec.setSpanX(blockToBeSearched.getPosition().x - bestMatch.getPosition().x);
 			vec.setSpanY(blockToBeSearched.getPosition().y - bestMatch.getPosition().y);
 			vec.setYUVDelta(absoluteColorDifference);
+			blockToBeSearched.setLink(vec);
 		}
 		
 		return vec;

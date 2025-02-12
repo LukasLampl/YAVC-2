@@ -65,11 +65,6 @@ public class MacroBlock extends Component2D {
 	private boolean isSubdivided = false;
 	
 	/**
-	 * Flag for whether the block has been converted to a Vector or not.
-	 */
-	private boolean isConvertedToVector = false;
-	
-	/**
 	 * Flag for whether the colors of the MacroBlock are set or not.
 	 */
 	private boolean isColorSet = false;
@@ -99,7 +94,12 @@ public class MacroBlock extends Component2D {
 	 */
 	private int reference = 0;
 	
-	public MacroBlock(MacroBlock block) {
+	/**
+	 * The linked component.
+	 */
+	private Component2D link = null;
+	
+	public MacroBlock(final MacroBlock block) {
 		super(block.getPositionX(), block.getPositionY(), block.getSize());
 		this.positionRelativeToParentX = block.getPositionRelativeToParentX();
 		this.positionRelativeToParentY = block.getPositionRelativeToParentY();
@@ -611,25 +611,21 @@ public class MacroBlock extends Component2D {
 	}
 	
 	/**
-	 * Sets the flag for whether this MacroBlock has been converted to a
-	 * vector or not to the given boolean.
+	 * Sets the linked component.
 	 * 
-	 * @param convertedToVector	Flag for whether the block has been converted or not.
+	 * @param comp	Linked component.
 	 */
-	public void setConvertedToVector(final boolean convertedToVector) {
-		this.isConvertedToVector = convertedToVector;
+	public void setLink(final Component2D comp) {
+		this.link = comp;
 	}
 	
 	/**
-	 * Returns whether the MacroBlock has been converted to a vector or not.
+	 * Gets the linked component.
 	 * 
-	 * @return
-	 * <ul>
-	 * <li>{@code true} - If the MacroBlock has been converted
-	 * <li>{@code false} - If the MacroBlock hasn't been converted
+	 * @return The linked component.
 	 */
-	public boolean isConvertedToVector() {
-		return this.isConvertedToVector;
+	public Component2D getLink() {
+		return this.link;
 	}
 	
 	public void reset(final boolean initColors) {
@@ -648,7 +644,6 @@ public class MacroBlock extends Component2D {
 		}
 		
 		this.nodes = null;
-		this.isConvertedToVector = false;
 		this.isSubdivided = false;
 		this.meanColor = ColorManager.NULL_COLOR;
 		this.MSE = 0;
