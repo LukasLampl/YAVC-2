@@ -53,12 +53,12 @@ public class ZigZagCoder4x4 implements ZigZagCoder {
 	};
 	
 	@Override
-	public double[] code(double[][] matrix) {
+	public double[] code(final double[][] matrix, final int offsetX, final int offsetY) {
 		final double[] stream = new double[LENGTH];
 		
 		for (int x = 0; x < N; x++) {
 			for (int y = 0; y < N; y++) {
-				stream[ORDER[x][y]] = matrix[x][y];
+				stream[ORDER[x][y]] = matrix[x + offsetX][y + offsetY];
 			}
 		}
 		
@@ -66,12 +66,12 @@ public class ZigZagCoder4x4 implements ZigZagCoder {
 	}
 
 	@Override
-	public double[][] decode(double[] stream) {
+	public double[][] decode(final double[] stream, final int streamOffset) {
 		final double[][] mat = new double[N][N];
 		
 		for (int x = 0; x < N; x++) {
 			for (int y = 0; y < N; y++) {
-				mat[x][y] = stream[ORDER[x][y]];
+				mat[x][y] = stream[ORDER[x][y] + streamOffset];
 			}
 		}
 		

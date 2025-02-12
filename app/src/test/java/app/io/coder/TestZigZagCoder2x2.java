@@ -12,8 +12,8 @@ public class TestZigZagCoder2x2 {
 	@Test
 	public void testCode_001() {
 		double[][] mat = MatrixOperations.generateRandom2DMatrix(2, 255);
-		double[] stream = this.coder.code(mat);
-		double[][] decode = this.coder.decode(stream);
+		double[] stream = this.coder.code(mat, 0, 0);
+		double[][] decode = this.coder.decode(stream, 0);
 		assertArrayEquals(mat, decode);
 	}
 	
@@ -21,8 +21,8 @@ public class TestZigZagCoder2x2 {
 	public void testCode_002() {
 		for (int i = 0; i < 1024; i++) {
 			double[][] mat = MatrixOperations.generateRandom2DMatrix(2, 255);
-			double[] stream = this.coder.code(mat);
-			double[][] decode = this.coder.decode(stream);
+			double[] stream = this.coder.code(mat, 0, 0);
+			double[][] decode = this.coder.decode(stream, 0);
 			assertArrayEquals(mat, decode);
 		}
 	}

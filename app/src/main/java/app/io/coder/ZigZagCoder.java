@@ -33,15 +33,18 @@ public interface ZigZagCoder {
 	 * Encodes the given matrix into a zig zag order stream.
 	 * 
 	 * @param matrix	Matrix to encode.
+	 * @param offsetX	Offset to the x.
+	 * @param offsetY	Offset to the y.
 	 * @return An array with the zig zag ordering.
 	 */
-	public double[] code(double[][] matrix);
+	public double[] code(final double[][] matrix, final int offsetX, final int offsetY);
 	
 	/**
 	 * Decodes a given zig zag coded stream into the original matrix.
 	 * 
-	 * @param stream	Stream to decode.
+	 * @param stream		Stream to decode.
+	 * @param streamOffset	Offset in the stream.
 	 * @return The decoded matrix.
 	 */
-	public double[][] decode(double[] stream);
+	public double[][] decode(final double[] stream, final int streamOffset);
 }
