@@ -21,10 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package app.encoder;
 
-import java.io.File;
-import java.util.ArrayList;
-
-import javax.imageio.ImageIO;
+import java.util.List;
 
 import app.ArgumentProcessor;
 import app.engines.dct.DCTEngine;
@@ -148,10 +145,10 @@ public class Encoder {
 				curFrame = frame;
 				
 				long start_construct_quadtree = System.currentTimeMillis();
-				ArrayList<MacroBlock> quadtreeRoots = QUADTREE_ENGINE.constructQuadtree(curFrame);
+				List<MacroBlock> quadtreeRoots = QuadtreeEngine.constructQuadtree(curFrame);
 				long end_construct_quadtree = System.currentTimeMillis();
 				long start_get_leave_nodes = System.currentTimeMillis();
-				LoadDistributor<MacroBlock> leaveNodeManager = QUADTREE_ENGINE.getLeaveNodes(quadtreeRoots);
+				LoadDistributor<MacroBlock> leaveNodeManager = QuadtreeEngine.getLeaveNodes(quadtreeRoots);
 				leaveNodeManager.compute(frame.getWidth() * frame.getHeight());
 				long end_get_leave_nodes = System.currentTimeMillis();
 				
