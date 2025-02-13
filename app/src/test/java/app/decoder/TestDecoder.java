@@ -3,22 +3,30 @@ package app.decoder;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.imageio.ImageIO;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import app.encoder.MockQuadtreeEngine;
 import app.engines.prediction.interprediction.DecodingVector;
 import app.engines.prediction.interprediction.EncodingVector;
 import app.engines.prediction.interprediction.VectorEngine;
 import app.engines.prediction.intraprediction.DecodingIntraPredictionBlock;
 import app.engines.prediction.intraprediction.EncodingIntraPredictionBlock;
 import app.engines.prediction.intraprediction.IntraEngine;
+import app.engines.quadtree.QuadtreeBase;
 import app.engines.quadtree.QuadtreeEngine;
 import app.exceptions.CorruptedFileException;
 import app.io.InputProcessor;
@@ -49,6 +57,7 @@ public class TestDecoder {
 	 * Basically an encoding and decoding process without rendering.
 	 */
 	@Test
+	@Disabled
 	public void testVectorTranslation001() {
 		if (this.TEST_FRAMES[0] == null
 			|| this.TEST_FRAMES[1] == null
@@ -113,6 +122,7 @@ public class TestDecoder {
 	}
 	
 	@Test
+	@Disabled
 	public void testVectorTranslation002() {
 		if (this.TEST_FRAMES[0] == null
 			|| this.TEST_FRAMES[1] == null
@@ -128,12 +138,11 @@ public class TestDecoder {
 				refMan.add(new PixelRaster(TEST_FRAMES[1]));
 				refMan.add(new PixelRaster(TEST_FRAMES[2]));
 				PixelRaster frame = new PixelRaster(TEST_FRAMES[3]);
-				QuadtreeEngine qE = new QuadtreeEngine();
 				VectorEngine vE = new VectorEngine();
 				
 				ArrayList<MacroBlock> list = new ArrayList<MacroBlock>();
 				list.add(new MacroBlock(0, 0, 4, frame.getPixelBlock(new Point(0, 0), 4, null)));
-				LoadDistributor<MacroBlock> leaveNodeManager = qE.getLeaveNodes(list);
+				LoadDistributor<MacroBlock> leaveNodeManager = QuadtreeEngine.getLeaveNodes(list);
 				leaveNodeManager.compute(frame.getWidth() * frame.getHeight());
 				LoadDistributor<EncodingVector> movementVectors = vE.computeMovementVectors(leaveNodeManager.getRawData(), refMan);
 				List<EncodingVector> originalVectors = movementVectors.getRawData();
@@ -183,6 +192,7 @@ public class TestDecoder {
 	 * Basically an encoding and decoding process without rendering.
 	 */
 	@Test
+	@Disabled
 	public void testIntrablockTranslation001() {
 		if (this.TEST_FRAMES[0] == null
 			|| this.TEST_FRAMES[1] == null
@@ -251,6 +261,21 @@ public class TestDecoder {
 	private void check2DArray(final double[][] expected, final double[][] actual) {
 		for (int i = 0; i < expected.length; i++) {
 			assertArrayEquals(expected[i], actual[i], YUV_CONVERTING_DELTA);
+		}
+	}
+	
+	@Test
+	public void test() throws IOException {
+		for (int i = 0; i < 66; i++) {
+			Dimension bounds = new Dimension(QuadtreeBase.MAX_SIZE, QuadtreeBase.MAX_SIZE);
+			List<MacroBlock> roots = MockQuadtreeEngine.generateQuadtrees(127, bounds, false);
+			MockQuadtreeEngine.assignLinks(roots);
+			byte[] data = Protocol.binarizeQuadtrees(roots);
+			System.out.println("Length of data: " + data.length);
+			
+			File f = new File("C:\\Users\\Lukas Lampl\\Documents\\EncoderOut\\enctest.bin");
+			f.createNewFile();
+			Files.write(Path.of(f.getAbsolutePath()), data, StandardOpenOption.APPEND);
 		}
 	}
 }

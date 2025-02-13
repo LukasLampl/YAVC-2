@@ -175,6 +175,7 @@ public class QuadtreeEngine {
 		
 		try {
 			List<Future<List<MacroBlock>>> futureLeavesList = new ArrayList<Future<List<MacroBlock>>>();
+
 			int threads = Runtime.getRuntime().availableProcessors();
 			ExecutorService executor = Executors.newFixedThreadPool(threads);
 	
@@ -219,7 +220,7 @@ public class QuadtreeEngine {
 	 * 
 	 * @param block	Block to go down recursively.
 	 */
-	private static List<MacroBlock> getLeaves(MacroBlock block) {
+	private static List<MacroBlock> getLeaves(final MacroBlock block) {
 		if (block == null) {
 			return null;
 		}
