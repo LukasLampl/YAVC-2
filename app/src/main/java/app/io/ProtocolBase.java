@@ -24,10 +24,10 @@ package app.io;
 import app.ArgumentProcessor;
 import app.engines.dct.DCTConstants;
 import app.exceptions.DCTCoefficientOutOfBoundsException;
-import app.io.coder.ZigZagCoder;
-import app.io.coder.ZigZagCoder2x2;
-import app.io.coder.ZigZagCoder4x4;
-import app.io.coder.ZigZagCoder8x8;
+import app.io.coder.zigzag.ZigZagCoder;
+import app.io.coder.zigzag.ZigZagCoder2x2;
+import app.io.coder.zigzag.ZigZagCoder4x4;
+import app.io.coder.zigzag.ZigZagCoder8x8;
 import app.rendering.ColorManager;
 import app.utils.ArrayUtils;
 

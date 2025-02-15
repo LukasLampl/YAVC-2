@@ -19,26 +19,26 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package app.io.coder;
+package app.io.coder.zigzag;
 
 import app.exceptions.DCTCoefficientOutOfBoundsException;
 import app.io.ProtocolBase;
 
 /**
- * The {@code ZigZagCoder8x8} is an extension of the {@code ZigZagOrder}
- * that is specialized on coding 8x8 matrices into a stream with zig
+ * The {@code ZigZagCoder4x4} is an extension of the {@code ZigZagOrder}
+ * that is specialized on coding 4x4 matrices into a stream with zig
  * zag ordering. In addition to that it provides a decoding function as well.
  * 
  * @author Lukas Lampl
  * @since 1.2 [QT_COMP]
  * 
- * @see app.io.coder.ZigZagCoder ZigZagCoder
+ * @see app.io.coder.zigzag.ZigZagCoder ZigZagCoder
  */
-public class ZigZagCoder8x8 implements ZigZagCoder {
+public class ZigZagCoder4x4 implements ZigZagCoder {
 	/**
 	 * Size of the coder matrix.
 	 */
-	private final static int N = 8;
+	private final static int N = 4;
 	
 	/**
 	 * Length of the 2D matrix.
@@ -49,14 +49,10 @@ public class ZigZagCoder8x8 implements ZigZagCoder {
 	 * Order of the zig zag.
 	 */
 	private final static int[][] ORDER = {
-		{ 0,  2,  3,  9, 10, 20, 21, 35},
-		{ 1,  4,  8, 11, 19, 22, 34, 36},
-		{ 5,  7, 12, 18, 23, 33, 37, 48},
-		{ 6, 13, 17, 24, 32, 38, 47, 49},
-		{14, 16, 25, 31, 39, 46, 50, 57},
-		{15, 26, 30, 40, 45, 51, 56, 58},
-		{27, 29, 41, 44, 52, 55, 59, 62},
-		{28, 42, 43, 53, 54, 60, 61, 63}
+		{0,  2,  3,  9},
+		{1,  4,  8, 10},
+		{5,  7, 11, 14},
+		{6, 12, 13, 15}
 	};
 	
 	@Override

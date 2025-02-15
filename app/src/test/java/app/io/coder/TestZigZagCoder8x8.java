@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Test;
 
 import app.encoder.MatrixOperations;
 import app.exceptions.DCTCoefficientOutOfBoundsException;
+import app.io.coder.zigzag.ZigZagCoder;
+import app.io.coder.zigzag.ZigZagCoder8x8;
 
 public class TestZigZagCoder8x8 {
 	private ZigZagCoder coder = new ZigZagCoder8x8();

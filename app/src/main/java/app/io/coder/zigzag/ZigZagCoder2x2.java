@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package app.io.coder;
+package app.io.coder.zigzag;
 
 import app.exceptions.DCTCoefficientOutOfBoundsException;
 import app.io.ProtocolBase;
@@ -32,7 +32,7 @@ import app.io.ProtocolBase;
  * @author Lukas Lampl
  * @since 1.2 [QT_COMP]
  * 
- * @see app.io.coder.ZigZagCoder ZigZagCoder
+ * @see app.io.coder.zigzag.ZigZagCoder ZigZagCoder
  */
 public class ZigZagCoder2x2 implements ZigZagCoder {
 	/**
