@@ -1,4 +1,4 @@
-package app.utils;
+package app.managers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import app.engines.prediction.interprediction.EncodingVector;
 import app.engines.prediction.interprediction.Vector;
 import app.managers.LoadDistributor;
+import app.utils.MathUtils;
 
 public class TestLoadDistributor {
 	private Random random = new Random();

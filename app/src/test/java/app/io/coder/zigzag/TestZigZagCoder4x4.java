@@ -1,4 +1,4 @@
-package app.io.coder;
+package app.io.coder.zigzag;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 

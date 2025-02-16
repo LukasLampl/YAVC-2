@@ -1,4 +1,4 @@
-package app.utils;
+package app.rendering;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -9,7 +9,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import app.rendering.ColorManager;
+import app.utils.MathUtils;
 
 public class TestColorManager {
 	private static int INCREMENT = 1;

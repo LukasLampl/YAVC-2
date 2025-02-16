@@ -1,3 +1,24 @@
+/////////////////////////////////////////////////////////////
+///////////////////////    LICENSE    ///////////////////////
+/////////////////////////////////////////////////////////////
+/*
+The YAVC video / frame compressor compresses frames.
+Copyright (C) 2025  Lukas Nian En Lampl, Hans Lampl
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 package app.decoder;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -6,11 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,6 +48,8 @@ import app.engines.quadtree.QuadtreeEngine;
 import app.exceptions.CorruptedFileException;
 import app.io.InputProcessor;
 import app.io.Protocol;
+import app.io.coder.cabac.BinaryArithmeticDecoder;
+import app.io.coder.cabac.BinaryArithmeticEncoder;
 import app.managers.ListManager;
 import app.managers.LoadDistributor;
 import app.managers.ReferenceFrameManager;
@@ -266,16 +285,34 @@ public class TestDecoder {
 	
 	@Test
 	public void test() throws IOException {
-		for (int i = 0; i < 66; i++) {
+		BinaryArithmeticEncoder encoder = new BinaryArithmeticEncoder();
+		BinaryArithmeticDecoder decoder = new BinaryArithmeticDecoder();
+		
+		for (int i = 0; i < 1; i++) {
 			Dimension bounds = new Dimension(QuadtreeBase.MAX_SIZE, QuadtreeBase.MAX_SIZE);
-			List<MacroBlock> roots = MockQuadtreeEngine.generateQuadtrees(127, bounds, false);
+			List<MacroBlock> roots = MockQuadtreeEngine.generateQuadtrees(1, bounds, false);
 			MockQuadtreeEngine.assignLinks(roots);
-			byte[] data = Protocol.binarizeQuadtrees(roots);
-			System.out.println("Length of data: " + data.length);
+			byte[] data = {0x7F, 0x7F, 0x7F, 0x7F, 0x7F, 0x7F, 0x7F};//Protocol.binarizeQuadtrees(roots);
+			System.out.println("Length of data: " + (data.length * Byte.SIZE) + " Bits");
 			
-			File f = new File("C:\\Users\\Lukas Lampl\\Documents\\EncoderOut\\enctest.bin");
-			f.createNewFile();
-			Files.write(Path.of(f.getAbsolutePath()), data, StandardOpenOption.APPEND);
+			encoder.encode(data);
+			System.out.println("Encoded");
+			byte[] encoded = encoder.getOutput();
+			System.out.println("Encoded len: " + encoder.getWriter().getTotalBits() + " Bits");
+			
+			decoder.decode(encoded, data.length * Byte.SIZE);
+			byte[] decoded = decoder.getOutput();
+			System.out.println("Decoded len: " + (decoded.length * Byte.SIZE) + " Bits");
+			
+//			File f = new File("C:\\Users\\Lukas Lampl\\Documents\\EncoderOut\\enctest.bin");
+//			f.createNewFile();
+//			
+//			if (i == 0) {
+//				Files.write(Path.of(f.getAbsolutePath()), data, StandardOpenOption.TRUNCATE_EXISTING);
+//				continue;
+//			}
+//			
+//			Files.write(Path.of(f.getAbsolutePath()), data, StandardOpenOption.APPEND);
 		}
 	}
 }
