@@ -66,4 +66,34 @@ public class MathUtils {
 	public static double max(final double a, final double b) {
 		return a < b ? b : a;
 	}
+	
+	/**
+	 * Gets the maximum number of the given two numbers.
+	 * 
+	 * @param a	The first number to compare.
+	 * @param b	The second number to compare.
+	 * @return
+	 * <ul>
+	 * <li>{@code a} - When {@code a} > {@code b}.
+	 * <li>{@code b} - When {@code a} < {@code b}. 
+	 * </ul>
+	 */
+	public static int max(final int a, final int b) {
+		return a < b ? b : a;
+	}
+	
+	/**
+	 * Gets the minimum number of the given two numbers.
+	 * 
+	 * @param a	The first number to compare.
+	 * @param b	The second number to compare.
+	 * @return
+	 * <ul>
+	 * <li>{@code a} - When {@code a} < {@code b}.
+	 * <li>{@code b} - When {@code a} > {@code b}. 
+	 * </ul>
+	 */
+	public static int min(final int a, final int b) {
+		return a < b ? a : b;
+	}
 }

@@ -8,12 +8,14 @@ public class BitWriter {
 	
 	private byte currentByte = 0;
 	private int currentBit = 0;
+	private int totalBits = 0;
 	
 	public void write(byte bit) {
 		bit &= 0x01;
 		this.currentByte <<= 1;
 		this.currentByte |= bit;
 		this.currentBit++;
+		this.totalBits++;
 		
 		if (this.currentBit == Byte.SIZE) {
 			flush();
@@ -48,5 +50,9 @@ public class BitWriter {
 		}
 		
 		return this.baos.toByteArray();
+	}
+	
+	public int getTotalBits() {
+		return this.totalBits;
 	}
 }
