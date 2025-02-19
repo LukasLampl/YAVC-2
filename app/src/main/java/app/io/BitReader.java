@@ -17,6 +17,12 @@ public class BitReader {
 		this.streamLengthBits = this.streamLength * Byte.SIZE;
 	}
 	
+	public BitReader(final byte[] stream, final int totalBits) {
+		this.stream = stream;
+		this.streamLength = stream.length;
+		this.streamLengthBits = totalBits;
+	}
+	
 	public byte read() {
 		if (isFullyRead()) {
 			throw new IllegalStateException("Stream is already fully read!");

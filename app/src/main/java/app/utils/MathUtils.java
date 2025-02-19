@@ -96,4 +96,19 @@ public class MathUtils {
 	public static int min(final int a, final int b) {
 		return a < b ? a : b;
 	}
+	
+	/**
+	 * Gets the minimum number of the given two numbers.
+	 * 
+	 * @param a	The first number to compare.
+	 * @param b	The second number to compare.
+	 * @return
+	 * <ul>
+	 * <li>{@code a} - When {@code a} < {@code b}.
+	 * <li>{@code b} - When {@code a} > {@code b}. 
+	 * </ul>
+	 */
+	public static long min(final long a, final long b) {
+		return a < b ? a : b;
+	}
 }

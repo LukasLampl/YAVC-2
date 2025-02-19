@@ -21,6 +21,5 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package app.io.coder.cabac;
 
-public class Binarizer {
-
+public abstract class Binarizer {
 }
