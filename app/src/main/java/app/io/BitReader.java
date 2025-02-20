@@ -11,6 +11,12 @@ public class BitReader {
 	private int currentBit = 0;
 	private int totalReadBits = 0;
 	
+	public BitReader(final byte stream) {
+		this.stream = new byte[] {stream};
+		this.streamLength = this.stream.length;
+		this.streamLengthBits = this.streamLength * Byte.SIZE;
+	}
+	
 	public BitReader(final byte[] stream) {
 		this.stream = stream;
 		this.streamLength = stream.length;

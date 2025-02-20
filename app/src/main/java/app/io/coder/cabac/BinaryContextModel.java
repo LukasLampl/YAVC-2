@@ -23,7 +23,10 @@ package app.io.coder.cabac;
 
 public class BinaryContextModel {
 	private int[] frequencyOfSymbols = {1, 1};
-	private int total = 2;
+	
+	public void reset() {
+		this.frequencyOfSymbols = new int[] {1, 1};
+	}
 	
 	public int getNumberOfSymbols() {
 		return 2; //Binary has either 0 or 1, thus 2 possible symbols.
@@ -37,33 +40,6 @@ public class BinaryContextModel {
 	public void incrementSymbolFrequency(final int symbol) {
 		ensureBit(symbol);
 		this.frequencyOfSymbols[symbol]++;
-		this.total++;
-	}
-	
-	public int getLow(final int symbol) {
-		ensureBit(symbol);
-		return getCumulative()[symbol];
-	}
-	
-	public int getHigh(final int symbol) {
-		ensureBit(symbol);
-		return getCumulative()[symbol + 1];
-	}
-	
-	public int getTotal() {
-		return this.total;
-	}
-	
-	private int[] getCumulative() {
-		final int[] arr = {0, 0, 0};
-		int sum = 0;
-		
-		for (int i = 0; i < 2; i++) {
-			sum += this.frequencyOfSymbols[i];
-			arr[i + 1] = sum;
-		}
-		
-		return arr;
 	}
 	
 	private void ensureBit(final int symbol) {

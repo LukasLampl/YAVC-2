@@ -46,11 +46,9 @@ import app.engines.prediction.intraprediction.IntraEngine;
 import app.engines.quadtree.QuadtreeBase;
 import app.engines.quadtree.QuadtreeEngine;
 import app.exceptions.CorruptedFileException;
-import app.io.BitReader;
 import app.io.BitWriter;
 import app.io.InputProcessor;
 import app.io.Protocol;
-import app.io.coder.cabac.BinaryArithmeticCoder;
 import app.managers.ListManager;
 import app.managers.LoadDistributor;
 import app.managers.ReferenceFrameManager;
@@ -286,25 +284,14 @@ public class TestDecoder {
 	
 	@Test
 	public void test() throws IOException {
-		BinaryArithmeticCoder coder = new BinaryArithmeticCoder();
-		
 		for (int i = 0; i < 1; i++) {
 			Dimension bounds = new Dimension(QuadtreeBase.MAX_SIZE, QuadtreeBase.MAX_SIZE);
 			List<MacroBlock> roots = MockQuadtreeEngine.generateQuadtrees(1, bounds, false);
 			MockQuadtreeEngine.assignLinks(roots);
-			byte[] data = Protocol.binarizeQuadtrees(roots);
-			System.out.println("Length of data: " + (data.length * Byte.SIZE) + " Bits");
-			
-			BitReader inStream = new BitReader(data);
-			BitWriter out = new BitWriter();
-			
-			coder.encode(inStream, out);
-			System.out.println("Encoded len: " + out.getTotalBits() + " Bits");
-			
-			BitWriter decOut = new BitWriter();
-			BitReader inDec = new BitReader(out.toByteArray(), out.getTotalBits());
-			coder.decode(out.getTotalBits(), inDec, decOut);
-			System.out.println("Decoded len: " + decOut.getTotalBits() + " Bits");
+			BitWriter data = Protocol.binarizeQuadtrees(roots);
+			System.out.println("Final len: " + data.getTotalBits() + " Bits");
+			System.out.println(" - " + (data.getTotalBits() / Byte.SIZE) + " Byte");
+			System.out.println(" - Around " + (((double)data.getTotalBits() / (double)Byte.SIZE) / 24000) + "% of 24kB");
 			
 //			File f = new File("C:\\Users\\Lukas Lampl\\Documents\\EncoderOut\\enctest.bin");
 //			f.createNewFile();

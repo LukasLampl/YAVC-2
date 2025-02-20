@@ -52,6 +52,10 @@ public class BitWriter {
 		return this.baos.toByteArray();
 	}
 	
+	public byte getFirstByte() {
+		return toByteArray()[0];
+	}
+	
 	public int getTotalBits() {
 		return this.totalBits;
 	}

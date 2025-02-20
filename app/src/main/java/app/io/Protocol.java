@@ -38,8 +38,12 @@ import app.engines.prediction.intraprediction.IntraPipeline;
 import app.engines.quadtree.QuadtreeBase;
 import app.exceptions.CorruptedFileException;
 import app.exceptions.DCTCoefficientOutOfBoundsException;
+import app.io.coder.cabac.CABAC;
+import app.io.coder.cabac.ContextModelManager;
+import app.io.coder.cabac.ContextModelManager.CodingType;
 import app.managers.ListManager;
 import app.rendering.ColorManager;
+import app.utils.ArrayUtils;
 import app.utils.MathUtils;
 import app.utils.PixelRaster;
 import app.utils.components.Component2D;
@@ -134,8 +138,8 @@ public class Protocol {
 	 * @param size		The size of the vector (block size).
 	 * @return A byte spit in two, that contains:
 	 * <ul>
-	 * <li>Bytes 0 to 4 - Frames to go back until the reference frame.
-	 * <li>Bytes 4 to 8 - Size of the vector.
+	 * <li>Bits 0 to 4 - Frames to go back until the reference frame.
+	 * <li>Bits 4 to 8 - Size of the vector.
 	 * </ul>
 	 */
 	public static byte getReferenceAndSizeByte(final int reference, final int size) {
@@ -624,39 +628,48 @@ public class Protocol {
 		}
 	}
 	
-	public static byte[] binarizeQuadtrees(List<MacroBlock> roots) throws IOException {
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+	public static BitWriter binarizeQuadtrees(List<MacroBlock> roots) throws IOException {
+		ContextModelManager manager = new ContextModelManager();
+		CABAC encoder = new CABAC();
+		BitWriter output = new BitWriter();
 		
 		for (final MacroBlock root : roots) {
-			byte[] quadtree = binarizeSingleQuadtree(root);
-			baos.write(ProtocolBase.getPositionBytes(root.getPositionX()));
-			baos.write(ProtocolBase.getPositionBytes(root.getPositionY()));
-			baos.write(quadtree);
+			encoder.encode(new BitReader(ProtocolBase.getPositionBytes(root.getPositionX())),
+					output, manager.getModel(CodingType.QUADTREE_POSITION_X));
+			encoder.encode(new BitReader(ProtocolBase.getPositionBytes(root.getPositionY())),
+					output, manager.getModel(CodingType.QUADTREE_POSITION_Y));
+			
+			binarizeSingleQuadtree(root, encoder, manager, output);
 		}
 		
-		return baos.toByteArray();
+		return output;
 	}
 	
-	private static byte[] binarizeSingleQuadtree(final MacroBlock root) throws IOException {
+	private static byte[] binarizeSingleQuadtree(final MacroBlock root,
+			final CABAC encoder, final ContextModelManager manager,
+			final BitWriter output)
+					throws IOException {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		
 		if (root.isSubdivided()) {
-			baos.write(0x01);
+			encoder.encode(0x01, output, manager.getModel(CodingType.QUADTREE_SUBDIVISION));
 			
 			for (final MacroBlock child : root.getNodes()) {
-				baos.write(binarizeSingleQuadtree(child));
+				baos.write(binarizeSingleQuadtree(child, encoder, manager, output));
 			}
 		} else {
-			baos.write(0x00);
+			encoder.encode(0x00, output, manager.getModel(CodingType.QUADTREE_SUBDIVISION));
 			
 			final Component2D link = root.getLink();
 			
 			if (link instanceof EncodingIntraPredictionBlock) {
-				baos.write(0x00);
-				baos.write(getSingleIntraPredictionBlock((EncodingIntraPredictionBlock)link));
+				encoder.encode(0x01, output, manager.getModel(CodingType.PREDICTION_TYPE));
+				
+				getSingleIntraPredictionBlock((EncodingIntraPredictionBlock)link, encoder, manager, output);
 			} else if (link instanceof EncodingVector) {
-				baos.write(0x01);
-				baos.write(getSingleVector((EncodingVector)link));
+				encoder.encode(0x01, output, manager.getModel(CodingType.PREDICTION_TYPE));
+				
+				binarizeVector((EncodingVector)link, encoder, manager, output);
 			} else {
 				throw new IllegalStateException("Illegal link type: " + link);
 			}
@@ -665,12 +678,9 @@ public class Protocol {
 		return baos.toByteArray();
 	}
 	
-	private static final byte[] getSingleIntraPredictionBlock(final EncodingIntraPredictionBlock block) {
-		int index = 0;
-		int size = Protocol.INTRA_BLOCK_HEADER_LENGTH
-				+ block.getSize() * 2 * ColorManager.CHANNELS
-				+ ProtocolBase.getDeltaSize(block.getSize());
-		byte[] data = new byte[size];
+	private static final void getSingleIntraPredictionBlock(final EncodingIntraPredictionBlock block,
+			final CABAC encoder, final ContextModelManager manager,
+			final BitWriter output) {
 		final byte[] sizeAndAngle = Protocol.getSizeAndAngleByte(block.getSize(), block.getAngle());
 		final byte[] borderColors = Protocol.getBorderColorBytes(block.getVertical(), block.getHorizontal(), block.getSize());
 		
@@ -682,24 +692,61 @@ public class Protocol {
 			e.printStackTrace();
 		}
 		
-		writeBytesToByteArray(sizeAndAngle, data, index);
-		index += sizeAndAngle.length;
-		writeBytesToByteArray(borderColors, data, index);
-		index += borderColors.length;
+		encoder.encode(new BitReader(sizeAndAngle), output, manager.getModel(CodingType.INTRA_PREDICTION_ANGLE));
 		
-		for (int n = 0; n < differences.length; n++) {
-			writeBytesToByteArray(differences[n], data, index);
-			index += differences[n].length;
-		}
+		encoder.encode(new BitReader(borderColors), output, manager.getModel(CodingType.INTRA_BORDER_HORIZONTAL));
 		
-		return data;
+		encoder.encode(new BitReader(differences[ColorManager.Y_INDEX]),
+				output, manager.getModel(CodingType.RESIDUALS_Y));
+		encoder.encode(new BitReader(differences[ColorManager.U_INDEX]),
+				output, manager.getModel(CodingType.RESIDUALS_U));
+		encoder.encode(new BitReader(differences[ColorManager.V_INDEX]),
+				output, manager.getModel(CodingType.RESIDUALS_V));
 	}
 	
-	private static byte[] getSingleVector(final EncodingVector v) {
-		int index = 0;
-		int size = Protocol.VECTOR_HEADER_LENGTH
-				+ ProtocolBase.getDeltaSize(v.getSize());
-		byte[] data = new byte[size];
+	public static DecodingVector debinarizeVector(final CABAC decoder,
+			final ContextModelManager manager, final BitReader input,
+			final int vectorSize) {
+		final int differenceY_Length = vectorSize * vectorSize;
+		final int differenceUV_Length = differenceY_Length / 4;
+		
+		BitWriter spanXWriter = new BitWriter();
+		BitWriter spanYWriter = new BitWriter();
+		BitWriter referenceAndSizeWriter = new BitWriter();
+		BitWriter diffYWriter = new BitWriter();
+		BitWriter diffUWriter = new BitWriter();
+		BitWriter diffVWriter = new BitWriter();
+		
+		decoder.decode(Byte.SIZE * 2, input, spanXWriter, manager.getModel(CodingType.VECTOR_SPAN_X));
+		decoder.decode(Byte.SIZE * 2, input, spanYWriter, manager.getModel(CodingType.VECTOR_SPAN_Y));
+		decoder.decode(Byte.SIZE, input, referenceAndSizeWriter, manager.getModel(CodingType.VECTOR_REFERENCE));
+		decoder.decode(differenceY_Length * Byte.SIZE, input, diffYWriter, manager.getModel(CodingType.RESIDUALS_Y));
+		decoder.decode(differenceUV_Length * Byte.SIZE, input, diffUWriter, manager.getModel(CodingType.RESIDUALS_U));
+		decoder.decode(differenceUV_Length * Byte.SIZE, input, diffVWriter, manager.getModel(CodingType.RESIDUALS_V));
+		
+		byte[] spanX = spanXWriter.toByteArray();
+		byte[] spanY = spanYWriter.toByteArray();
+		byte[] deltas = new byte[differenceY_Length + 2 * differenceUV_Length];
+		ArrayUtils.copyArray(diffYWriter.toByteArray(), 0, deltas, 0, differenceY_Length);
+		ArrayUtils.copyArray(diffUWriter.toByteArray(), 0, deltas, differenceY_Length, differenceUV_Length);
+		ArrayUtils.copyArray(diffVWriter.toByteArray(), 0, deltas, differenceY_Length + differenceUV_Length, differenceUV_Length);
+		
+		final int f_spanX = ProtocolBase.getPosition(spanX[0], spanX[1]);
+		final int f_spanY = ProtocolBase.getPosition(spanY[0], spanY[1]);
+		final int[] f_refAndSize = Protocol.getReferenceAndSizeInt(referenceAndSizeWriter.getFirstByte());
+		final double[][][] f_deltas = ProtocolBase.getDeltaCoefficientsFromDatastream(deltas, 0, 8);
+		
+		DecodingVector vec = new DecodingVector(0, 0, 8);
+		vec.setSpanX(f_spanX);
+		vec.setSpanY(f_spanY);
+		vec.setReference(f_refAndSize[0]);
+		vec.setYUVDelta(f_deltas);
+		return vec;
+	}
+	
+	public static void binarizeVector(final EncodingVector v,
+			final CABAC encoder, final ContextModelManager manager,
+			final BitWriter output) {
 		final byte[] span = Protocol.getVectorSpanBytes(v.getSpanX(), v.getSpanY());
 		final byte refAndSize = Protocol.getReferenceAndSizeByte(v.getReference(), v.getSize());
 		byte[][] differences = null;
@@ -711,16 +758,17 @@ public class Protocol {
 			e.printStackTrace();
 		}
 		
-		writeBytesToByteArray(span, data, index);
-		index += span.length;
-		data[index] = refAndSize;
-		index += 1;
+		encoder.encode(new BitReader(span[0]), output, manager.getModel(CodingType.VECTOR_SPAN_X));
 		
-		for (int n = 0; n < differences.length; n++) {
-			writeBytesToByteArray(differences[n], data, index);
-			index += differences[n].length;
-		}
+		encoder.encode(new BitReader(span[1]), output, manager.getModel(CodingType.VECTOR_SPAN_Y));
 		
-		return data;
+		encoder.encode(new BitReader(refAndSize), output, manager.getModel(CodingType.VECTOR_REFERENCE));
+		
+		encoder.encode(new BitReader(differences[ColorManager.Y_INDEX]),
+				output, manager.getModel(CodingType.RESIDUALS_Y));
+		encoder.encode(new BitReader(differences[ColorManager.U_INDEX]),
+				output, manager.getModel(CodingType.RESIDUALS_U));
+		encoder.encode(new BitReader(differences[ColorManager.V_INDEX]),
+				output, manager.getModel(CodingType.RESIDUALS_V));
 	}
 }
