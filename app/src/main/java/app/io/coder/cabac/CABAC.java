@@ -34,15 +34,15 @@ public class CABAC {
 
 	private int underflowCount = 0;
 	private BinaryContextModel model = null;
-	
+
 	private int low = 0x00;
 	private int high = PRECISION_MAX;
 	private int mid = HALF_RANGE;
-	
+
 	public CABAC() {
 		reset();
 	}
-	
+
 	public void reset() {
 		this.low = 0x00;
 		this.mid = HALF_RANGE;
@@ -50,32 +50,32 @@ public class CABAC {
 		this.underflowCount = 0;
 		this.model = null;
 	}
-	
+
 	private void resolveModel() {
 		int range = this.high - this.low;
 		int freq_0 = this.model.getSymbolFrequency(0x00);
 		int freq_1 = this.model.getSymbolFrequency(0x01);
-		
+
 		int midRange = range * freq_0 / (freq_0 + freq_1);
-		this.mid = this.low + ((midRange) & ~0x01);
+		this.mid = this.low + midRange;
 	}
-	
+
 	private void encodeSymbol(int bit) {
 		resolveModel();
 		bit &= 0x01;
-		
+
 		if (bit == 0x01) {
 			this.low = this.mid + 1;
 		} else {
 			this.high = this.mid;
 		}
-		
+
 		this.model.incrementSymbolFrequency(bit);
 	}
-	
+
 	private void decodeSymbol(final int value, final BitWriter output) {
 		resolveModel();
-		
+
 		if (value >= this.low && value <= this.mid) {
 			this.high = this.mid;
 			this.model.incrementSymbolFrequency(0x00);
@@ -88,125 +88,127 @@ public class CABAC {
 			throw new IllegalStateException("Unknown state for CABAC.");
 		}
 	}
-	
+
 	private void flushInverseBits(int bit, final BitWriter output) {
-		bit = bit == 0x00 ? 0x01 : 0x00;
-		
+		bit = ~bit;
+
 		for (int i = 0; i < this.underflowCount; i++) {
 			output.write(bit);
 		}
-		
+
 		this.underflowCount = 0;
 	}
-	
+
 	private void resolveEncodeScaling(final BitWriter output) {
 		while (true) {
 			if ((this.high & MSB_MASK) == (this.low & MSB_MASK)) {
-				final int MSB = (int)(this.high & MSB_MASK) >> (PRECISION - 1);
+				final int MSB = (int) (this.high & MSB_MASK) >> (PRECISION - 1);
 				this.low -= HALF_RANGE * MSB + MSB;
 				this.high -= HALF_RANGE * MSB + MSB;
 				output.write(MSB);
 				flushInverseBits(MSB, output);
-			} else if (this.high <= THREE_QUARTER_RANGE
-					&& this.low > QUARTER_RANGE) {
+			} else if (this.high <= THREE_QUARTER_RANGE && this.low > QUARTER_RANGE) {
 				this.high -= QUARTER_RANGE + 1;
 				this.low -= QUARTER_RANGE + 1;
 				this.underflowCount++;
 			} else {
 				break;
 			}
-			
+
 			this.high = ((this.high << 0x01) & PRECISION_MAX) | 0x01;
 			this.low = ((this.low << 0x01) & PRECISION_MAX) | 0x00;
 		}
 	}
-	
+
 	private int resolveDecodeScaling(final int value, final BitReader input) {
 		int bit = 0x00;
 		int temp = value;
-		
+
 		while (true) {
 			if (this.high <= HALF_RANGE) {
 			} else if (this.low > HALF_RANGE) {
 				this.high -= HALF_RANGE + 1;
 				this.low -= HALF_RANGE + 1;
 				temp -= HALF_RANGE + 1;
-			} else if (this.high <= THREE_QUARTER_RANGE
-					&& this.low > QUARTER_RANGE) {
+			} else if (this.high <= THREE_QUARTER_RANGE && this.low > QUARTER_RANGE) {
 				this.high -= QUARTER_RANGE + 1;
 				this.low -= QUARTER_RANGE + 1;
 				temp -= QUARTER_RANGE + 1;
 			} else {
 				break;
 			}
-			
-			if (!input.hasRemainingBits()) {
+
+			if (input.hasRemainingBits()) {
 				bit = input.read();
 			}
-			
+
 			this.high = ((this.high << 0x01) & PRECISION_MAX) | 0x01;
 			this.low = ((this.low << 0x01) & PRECISION_MAX) | 0x00;
 			temp = ((temp << 0x01) & PRECISION_MAX) | bit;
 		}
-		
+
 		return temp;
 	}
-	
-	private void flushEncoder(final BitWriter writer) {
+
+	private void flushEncoder(final BitWriter output) {
 		this.underflowCount++;
-		
+
 		if (this.low < QUARTER_RANGE) {
-			writer.write(0x00);
-			flushInverseBits(0x00, writer);
+			output.write(0x00);
+			flushInverseBits(0x00, output);
 		} else {
-			writer.write(0x01);
-			flushInverseBits(0x01, writer);
+			output.write(0x01);
+			flushInverseBits(0x01, output);
+		}
+
+		for (int i = PRECISION - 1; i >= 0; i--) {
+			output.write((this.low >> i) & 0x01);
 		}
 	}
-	
-	public void encode(final BitReader input, final BitWriter output,
-			final BinaryContextModel model) {
+
+	public void encode(final BitReader input, final BitWriter output, final BinaryContextModel model) {
 		this.model = model;
-		
-		while (!input.hasRemainingBits()) {
+
+		while (input.hasRemainingBits()) {
 			final int bit = input.read();
 			encodeSymbol(bit);
 			resolveEncodeScaling(output);
 		}
-		
+
 		flushEncoder(output);
 	}
-	
-	public void encode(final int bit, final BitWriter output,
-			final BinaryContextModel model) {
+
+	public void encode(final int bit, final BitWriter output, final BinaryContextModel model) {
 		this.model = model;
 		encodeSymbol(bit);
 		resolveEncodeScaling(output);
 		flushEncoder(output);
 	}
-	
-	public void decode(final int numberOfBits, final BitReader input,
-			final BitWriter output, final BinaryContextModel model) {
+
+	public void decode(final int numberOfBits, final BitReader input, final BitWriter output,
+			final BinaryContextModel model) {
 		this.model = model;
 		int value = readBits(input, PRECISION);
-		
+
 		for (int i = 0; i < numberOfBits; i++) {
 			decodeSymbol(value, output);
 			value = resolveDecodeScaling(value, input);
 		}
 	}
-	
+
 	private int readBits(final BitReader input, final int numberOfBits) {
 		int value = 0x00;
+		int bit = 0x00;
 
 		for (int i = 0; i < numberOfBits; i++) {
-			value <<= 0x01;
-		
-			if (!input.hasRemainingBits()) {
-				value |= input.read();
+			if (input.hasRemainingBits()) {
+				bit = input.read();
 			}
+
+			value <<= 0x01;
+			value |= bit;
 		}
-		
+
 		return value;
 	}
 }

@@ -30,7 +30,7 @@ public class BitReader {
 	}
 	
 	public byte read() {
-		if (hasRemainingBits()) {
+		if (!hasRemainingBits()) {
 			throw new IllegalStateException("Stream is already fully read!");
 		}
 		
@@ -49,6 +49,6 @@ public class BitReader {
 	}
 	
 	public boolean hasRemainingBits() {
-		return this.totalReadBits >= this.streamLengthBits;
+		return this.totalReadBits < this.streamLengthBits;
 	}
 }

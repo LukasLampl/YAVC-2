@@ -12,6 +12,7 @@ import app.engines.prediction.interprediction.EncodingVector;
 import app.io.BitReader;
 import app.io.BitWriter;
 import app.io.Protocol;
+import app.utils.MathUtils;
 
 public class TestCABAC {
 	@Test
@@ -217,7 +218,43 @@ public class TestCABAC {
 	}
 	
 	@Test
-	@Disabled
+	public void testGeneral009() {
+		final int steps = 2048;
+		final int ten_percent = steps / 10;
+		BinaryContextModel model_enc = new BinaryContextModel();
+		BinaryContextModel model_dec = new BinaryContextModel();
+		
+		CABAC encoder = new CABAC();
+		CABAC decoder = new CABAC();
+		
+		for (int i = 0; i < steps; i++) {
+			if (i % ten_percent == 0) {
+				System.out.println("CABAC test progress: " + (i * 100 / steps) + "%");
+			}
+			
+			model_enc.reset();
+			model_dec.reset();
+			encoder.reset();
+			decoder.reset();
+			
+			byte[] data = MatrixOperations.generateRandomByteMatrix(MathUtils.round(Math.random() * 8192));
+			BitReader dataReader = new BitReader(data);
+			BitWriter bin = new BitWriter();
+			
+			encoder.encode(dataReader, bin, model_enc);
+			
+			BitReader binIn = new BitReader(bin.toByteArray());
+			BitWriter dec = new BitWriter();
+			
+			decoder.decode(data.length * Byte.SIZE, binIn, dec, model_dec);
+			byte[] decoded = dec.toByteArray();
+			
+			assertEquals(data.length, decoded.length);
+			assertArrayEquals(data, decoded);
+		}
+	}
+	
+	@Test
 	public void test_vectorConversion_001() {
 		ContextModelManager manager_enc = new ContextModelManager();
 		CABAC encoder = new CABAC();
