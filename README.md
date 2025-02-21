@@ -106,7 +106,7 @@ $\sigma_U$ : Standard deviation of the U-Channel
 
 $\sigma_V$ : Standard deviation of the V-Channel
 
-$N=\begin{cases} \text{Macroblock size for Y-Channel} \\ \frac{\text{Macroblock size}}{2} \text{ for U- and V-Channel} \end{cases}$
+$N$=$\begin{cases} \text{Macroblock size for Y-Channel} \\ \frac{\text{Macroblock size}}{2} \text{ for U- and V-Channel} \end{cases}$
 
 $\mu$ : Mean pixel value of the channel
 
@@ -196,7 +196,8 @@ ensure high compression ratios.
 | Discrete cosine transform | FCT for **2x2**, **4x4** and **8x8** | Native DCT for **2x2**, **4x4**, **8x8** |
 | Zig-Zag-Coding | For **2x2**, **4x4** and **8x8** | ❌ |
 | Scene change detection | ❌ | Histogram based scene change detection |
-| B-Frames (inter- and intrapredicted) | ✅ | ✅ |
+| B-Frames (inter- and intrapredicted) | ✅ | ❌ |
 | M-Frames (no reference; mark frame) | ✅ (future release) | ❌ |
-| Audio (future release) | ❌ | ❌ |
+| I-Frames (interprediction only) | ✅ (future releases) | ✅ |
+| Audio | ❌ (future release) | ❌ |
 | Decoding speed (1920x1080; i7 8-core) | ~35 - 45 ms | ~800 - 1200ms |
