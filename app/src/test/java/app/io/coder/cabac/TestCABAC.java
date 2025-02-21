@@ -30,6 +30,7 @@ public class TestCABAC {
 		
 		BitReader binIn = new BitReader(bin.toByteArray());
 		BitWriter dec = new BitWriter();
+		
 		decoder.decode(data.length * Byte.SIZE, binIn, dec, model_dec);
 		byte[] decoded = dec.toByteArray();
 		
@@ -63,6 +64,7 @@ public class TestCABAC {
 		
 		BitReader binIn = new BitReader(bin.toByteArray());
 		BitWriter dec = new BitWriter();
+		
 		decoder.decode(data.length * Byte.SIZE, binIn, dec, model_dec);
 		byte[] decoded = dec.toByteArray();
 		
@@ -86,6 +88,7 @@ public class TestCABAC {
 		
 		BitReader binIn = new BitReader(bin.toByteArray());
 		BitWriter dec = new BitWriter();
+		
 		decoder.decode(data.length * Byte.SIZE, binIn, dec, model_dec);
 		byte[] decoded = dec.toByteArray();
 		
@@ -101,6 +104,102 @@ public class TestCABAC {
 		CABAC encoder = new CABAC();
 		CABAC decoder = new CABAC();
 		
+		byte[] data = new byte[] {1};
+		BitReader dataReader = new BitReader(data);
+		BitWriter bin = new BitWriter();
+		
+		encoder.encode(dataReader, bin, model_enc);
+		
+		BitReader binIn = new BitReader(bin.toByteArray());
+		BitWriter dec = new BitWriter();
+		
+		decoder.decode(data.length * Byte.SIZE, binIn, dec, model_dec);
+		byte[] decoded = dec.toByteArray();
+		
+		assertEquals(data.length, decoded.length);
+		assertArrayEquals(data, decoded);
+	}
+	
+	@Test
+	public void testGeneral005() {
+		BinaryContextModel model_enc = new BinaryContextModel();
+		BinaryContextModel model_dec = new BinaryContextModel();
+		
+		CABAC encoder = new CABAC();
+		CABAC decoder = new CABAC();
+		
+		byte[] data = new byte[] {3};
+		BitReader dataReader = new BitReader(data);
+		BitWriter bin = new BitWriter();
+		
+		encoder.encode(dataReader, bin, model_enc);
+		
+		BitReader binIn = new BitReader(bin.toByteArray());
+		BitWriter dec = new BitWriter();
+		
+		decoder.decode(data.length * Byte.SIZE, binIn, dec, model_dec);
+		byte[] decoded = dec.toByteArray();
+		
+		assertEquals(data.length, decoded.length);
+		assertArrayEquals(data, decoded);
+	}
+	
+	@Test
+	public void testGeneral006() {
+		BinaryContextModel model_enc = new BinaryContextModel();
+		BinaryContextModel model_dec = new BinaryContextModel();
+		
+		CABAC encoder = new CABAC();
+		CABAC decoder = new CABAC();
+		
+		byte[] data = new byte[] {7};
+		BitReader dataReader = new BitReader(data);
+		BitWriter bin = new BitWriter();
+		
+		encoder.encode(dataReader, bin, model_enc);
+		
+		BitReader binIn = new BitReader(bin.toByteArray());
+		BitWriter dec = new BitWriter();
+		
+		decoder.decode(data.length * Byte.SIZE, binIn, dec, model_dec);
+		byte[] decoded = dec.toByteArray();
+		
+		assertEquals(data.length, decoded.length);
+		assertArrayEquals(data, decoded);
+	}
+	
+	@Test
+	public void testGeneral007() {
+		BinaryContextModel model_enc = new BinaryContextModel();
+		BinaryContextModel model_dec = new BinaryContextModel();
+		
+		CABAC encoder = new CABAC();
+		CABAC decoder = new CABAC();
+		
+		byte[] data = new byte[] {12};
+		BitReader dataReader = new BitReader(data);
+		BitWriter bin = new BitWriter();
+		
+		encoder.encode(dataReader, bin, model_enc);
+		
+		BitReader binIn = new BitReader(bin.toByteArray());
+		BitWriter dec = new BitWriter();
+		
+		decoder.decode(data.length * Byte.SIZE, binIn, dec, model_dec);
+		byte[] decoded = dec.toByteArray();
+		
+		assertEquals(data.length, decoded.length);
+		assertArrayEquals(data, decoded);
+	}
+	
+	@Test
+	public void testGeneral008() {
+		BinaryContextModel model_enc = new BinaryContextModel();
+		BinaryContextModel model_dec = new BinaryContextModel();
+		
+		CABAC encoder = new CABAC();
+		CABAC decoder = new CABAC();
+		
 		byte[] data = MatrixOperations.generateRandomByteMatrix(15);
 		BitReader dataReader = new BitReader(data);
 		BitWriter bin = new BitWriter();
@@ -109,6 +208,7 @@ public class TestCABAC {
 		
 		BitReader binIn = new BitReader(bin.toByteArray());
 		BitWriter dec = new BitWriter();
+		
 		decoder.decode(data.length * Byte.SIZE, binIn, dec, model_dec);
 		byte[] decoded = dec.toByteArray();
 		
