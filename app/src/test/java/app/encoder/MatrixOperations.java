@@ -81,4 +81,14 @@ public abstract class MatrixOperations {
 		
 		return matrix;
 	}
+	
+	public static byte[] generateRandomByteMatrix(final int length) {
+		byte[] data = new byte[length];
+		
+		for (int i = 0; i < length; i++) {
+			data[i] = (byte)MathUtils.round(r.nextDouble() * 255);
+		}
+		
+		return data;
+	}
 }

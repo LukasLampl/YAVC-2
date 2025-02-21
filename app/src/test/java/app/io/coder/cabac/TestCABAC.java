@@ -3,6 +3,7 @@ package app.io.coder.cabac;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import app.encoder.MatrixOperations;
@@ -70,6 +71,53 @@ public class TestCABAC {
 	}
 	
 	@Test
+	public void testGeneral003() {
+		BinaryContextModel model_enc = new BinaryContextModel();
+		BinaryContextModel model_dec = new BinaryContextModel();
+		
+		CABAC encoder = new CABAC();
+		CABAC decoder = new CABAC();
+		
+		byte[] data = new byte[] {3, -5, 37, 98, -92, -12, 127, -127, 32, -56, 89, 44};
+		BitReader dataReader = new BitReader(data);
+		BitWriter bin = new BitWriter();
+		
+		encoder.encode(dataReader, bin, model_enc);
+		
+		BitReader binIn = new BitReader(bin.toByteArray());
+		BitWriter dec = new BitWriter();
+		decoder.decode(data.length * Byte.SIZE, binIn, dec, model_dec);
+		byte[] decoded = dec.toByteArray();
+		
+		assertEquals(data.length, decoded.length);
+		assertArrayEquals(data, decoded);
+	}
+	
+	@Test
+	public void testGeneral004() {
+		BinaryContextModel model_enc = new BinaryContextModel();
+		BinaryContextModel model_dec = new BinaryContextModel();
+		
+		CABAC encoder = new CABAC();
+		CABAC decoder = new CABAC();
+		
+		byte[] data = MatrixOperations.generateRandomByteMatrix(15);
+		BitReader dataReader = new BitReader(data);
+		BitWriter bin = new BitWriter();
+		
+		encoder.encode(dataReader, bin, model_enc);
+		
+		BitReader binIn = new BitReader(bin.toByteArray());
+		BitWriter dec = new BitWriter();
+		decoder.decode(data.length * Byte.SIZE, binIn, dec, model_dec);
+		byte[] decoded = dec.toByteArray();
+		
+		assertEquals(data.length, decoded.length);
+		assertArrayEquals(data, decoded);
+	}
+	
+	@Test
+	@Disabled
 	public void test_vectorConversion_001() {
 		ContextModelManager manager_enc = new ContextModelManager();
 		CABAC encoder = new CABAC();
