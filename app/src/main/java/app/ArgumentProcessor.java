@@ -115,6 +115,8 @@ public class ArgumentProcessor {
 	private void checkArgs() {
 		if (encode && decode) {
 			exit("Can't encode and decode at the same time!");
+		} else if (!encode && !decode) {
+			exit("Neither -encode nor -decode was used.");
 		}
 		
 		if (decode) {

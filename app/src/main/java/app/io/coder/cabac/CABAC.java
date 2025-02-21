@@ -25,7 +25,7 @@ import app.io.BitReader;
 import app.io.BitWriter;
 
 public class CABAC {
-	private static final int PRECISION = 16;
+	private static final int PRECISION = 8;
 	private static final int PRECISION_MAX = (0x1 << PRECISION) - 1;
 	private static final int HALF_RANGE = PRECISION_MAX >> 1;
 	private static final int QUARTER_RANGE = HALF_RANGE >> 1;
@@ -151,7 +151,7 @@ public class CABAC {
 	}
 
 	private void flushEncoder(final BitWriter output) {
-		this.underflowCount++;
+		this.underflowCount += PRECISION - 1;
 
 		if (this.low < QUARTER_RANGE) {
 			output.write(0x00);
@@ -160,10 +160,30 @@ public class CABAC {
 			output.write(0x01);
 			flushInverseBits(0x01, output);
 		}
-
-		for (int i = PRECISION - 1; i >= 0; i--) {
-			output.write((this.low >> i) & 0x01);
-		}
+//		System.out.println(this.low);
+//		String low_str = "";
+//		String flush_str = "";
+//		
+//		for (int i = Integer.SIZE - 1; i >= 0; i--) {
+//			int bit = this.low >> i & 0x01;
+//			low_str += String.valueOf(bit);
+//			
+//			if (i % 8 == 0) {
+//				low_str += " ";
+//			}
+//		}
+//		
+//		System.out.println("Bin of Low: " + low_str);
+//		
+//		final int offset = Integer.numberOfLeadingZeros(this.low);
+//		
+//		for (int i = Integer.SIZE - offset; i >= 0; i--) {
+//			final int bit = (this.low >> i) & 0x01;
+//			flush_str += String.valueOf(bit);
+//			output.write(bit);
+//		}
+//		
+//		System.out.println("Flush: " + flush_str);
 	}
 
 	public void encode(final BitReader input, final BitWriter output, final BinaryContextModel model) {

@@ -91,4 +91,14 @@ public abstract class MatrixOperations {
 		
 		return data;
 	}
+	
+	public static byte[] generateSteadyByteMatrix(final int length, final byte b) {
+		byte[] data = new byte[length];
+		
+		for (int i = 0; i < length; i++) {
+			data[i] = b;
+		}
+		
+		return data;
+	}
 }
