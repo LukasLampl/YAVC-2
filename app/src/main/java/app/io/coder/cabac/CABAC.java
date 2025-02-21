@@ -26,7 +26,7 @@ import app.io.BitWriter;
 
 public class CABAC {
 	private static final int PRECISION = 16;
-	private static final int PRECISION_MAX = (0x1 << PRECISION) - 1;
+	private static final int PRECISION_MAX = 0xFFFF;
 	private static final int HALF_RANGE = PRECISION_MAX >> 1;
 	private static final int QUARTER_RANGE = HALF_RANGE >> 1;
 	private static final int THREE_QUARTER_RANGE = 3 * QUARTER_RANGE;
@@ -60,13 +60,17 @@ public class CABAC {
 		this.mid = this.low + (range * freq_0 / total_freqs);
 	}
 	
-	public void encode(final BitReader input, final BitWriter output) {
+	public void encode(final BitReader input, final BitWriter output,
+			final BinaryContextModel model) {
+		this.model = model;
+		
 		while (!input.isFullyRead()) {
-			encodeSymbol(input.read(), output);
+			encodeSymbol(input.read());
+			normalize(output);
 		}
 	}
 	
-	private void encodeSymbol(final int bit, final BitWriter output) {
+	private void encodeSymbol(final int bit) {
 		if (bit == 0x01) {
 			this.low = this.mid;
 		} else {
@@ -74,19 +78,38 @@ public class CABAC {
 		}
 		
 		calculateMidpoint();
-
+	}
+	
+	private void normalize(final BitWriter output) {
 		while (true) {
+			final int quarter = this.mid >> 1;
+			final int three_quarter = quarter * 3;
+			
 			if (this.low > this.mid && this.high > this.mid) {
 				this.low = ((this.low - this.mid) << 1) & PRECISION_MAX;
 				this.high = ((this.high - this.mid) << 1) & PRECISION_MAX;
+				flushUnderflow(0x01, output);
 				output.write(0x01);
 			} else if (this.low < this.mid && this.high < this.mid) {
 				this.low = (this.low << 1) & PRECISION_MAX;
 				this.high = (this.high << 1) & PRECISION_MAX;
+				flushUnderflow(0x00, output);
 				output.write(0x00);
+			} else if (this.low > quarter && this.high < three_quarter) {
+				this.low = (this.low - quarter) << 1;
+				this.high = (this.high - quarter) << 1;
+				this.underflowCount++;
 			} else {
 				break;
 			}
 		}
+	}
+	
+	private void flushUnderflow(final int bit, final BitWriter output) {
+		for (int i = 0; i < this.underflowCount; i++) {
+			output.write(bit);
+		}
+		
+		this.underflowCount = 0;
 	}
 }
