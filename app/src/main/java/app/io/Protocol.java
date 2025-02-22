@@ -567,10 +567,18 @@ public class Protocol {
 		return new byte[] {sizeByte, angleByte};
 	}
 	
+	public static byte getAngleByte(final int angle) {
+		return (byte)(IntraPipeline.getIndexByAngle(angle) & 0xFF);
+	}
+	
 	public static int[] getSizeAndAngle(final byte sizeByte, final byte angleByte) {
 		int angle = IntraPipeline.getAngleByIndex(angleByte);
 		int size = QuadtreeBase.getSizeByIndex(sizeByte);
 		return new int[] {size, angle};
+	}
+	
+	public static int getAngle(final byte angleByte) {
+		return IntraPipeline.getAngleByIndex(angleByte);
 	}
 	
 	public static void getIntraBlocks(final byte[] data, final ListManager<DecodingIntraPredictionBlock> intraBlockManager,
@@ -665,7 +673,7 @@ public class Protocol {
 			if (link instanceof EncodingIntraPredictionBlock) {
 				encoder.encode(0x01, output, manager.getModel(CodingType.PREDICTION_TYPE));
 				
-				getSingleIntraPredictionBlock((EncodingIntraPredictionBlock)link, encoder, manager, output);
+				binarizeIntraPredictionBlock((EncodingIntraPredictionBlock)link, encoder, manager, output);
 			} else if (link instanceof EncodingVector) {
 				encoder.encode(0x01, output, manager.getModel(CodingType.PREDICTION_TYPE));
 				
@@ -678,10 +686,10 @@ public class Protocol {
 		return baos.toByteArray();
 	}
 	
-	private static final void getSingleIntraPredictionBlock(final EncodingIntraPredictionBlock block,
+	public static final void binarizeIntraPredictionBlock(final EncodingIntraPredictionBlock block,
 			final CABAC encoder, final ContextModelManager manager,
 			final BitWriter output) {
-		final byte[] sizeAndAngle = Protocol.getSizeAndAngleByte(block.getSize(), block.getAngle());
+		final byte angle = Protocol.getAngleByte(block.getAngle());
 		final byte[] borderColors = Protocol.getBorderColorBytes(block.getVertical(), block.getHorizontal(), block.getSize());
 		
 		byte[][] differences = null;
@@ -692,9 +700,72 @@ public class Protocol {
 			e.printStackTrace();
 		}
 		
-		encoder.encode(new BitReader(sizeAndAngle), output, manager.getModel(CodingType.INTRA_PREDICTION_ANGLE));
+		encoder.encode(new BitReader(angle), output, manager.getModel(CodingType.INTRA_PREDICTION_ANGLE));
 		
 		encoder.encode(new BitReader(borderColors), output, manager.getModel(CodingType.INTRA_BORDER_HORIZONTAL));
+		
+		encoder.encode(new BitReader(differences[ColorManager.Y_INDEX]),
+				output, manager.getModel(CodingType.RESIDUALS_Y));
+		encoder.encode(new BitReader(differences[ColorManager.U_INDEX]),
+				output, manager.getModel(CodingType.RESIDUALS_U));
+		encoder.encode(new BitReader(differences[ColorManager.V_INDEX]),
+				output, manager.getModel(CodingType.RESIDUALS_V));
+	}
+	
+	public static DecodingIntraPredictionBlock debinarizeIntraPredictionBlock(final CABAC decoder, final ContextModelManager manager,
+			final BitReader input, final int size) {
+		final int differenceY_Length = size * size;
+		final int differenceUV_Length = differenceY_Length / 4;
+		
+		BitWriter angleWriter = new BitWriter();
+		BitWriter borderWriter = new BitWriter();
+		BitWriter diffYWriter = new BitWriter();
+		BitWriter diffUWriter = new BitWriter();
+		BitWriter diffVWriter = new BitWriter();
+		
+		decoder.decode(Byte.SIZE, input, angleWriter, manager.getModel(CodingType.INTRA_PREDICTION_ANGLE));
+		decoder.decode(2 * Byte.SIZE * 3 * size, input, borderWriter, manager.getModel(CodingType.INTRA_BORDER_HORIZONTAL));
+		decoder.decode(differenceY_Length * Byte.SIZE, input, diffYWriter, manager.getModel(CodingType.RESIDUALS_Y));
+		decoder.decode(differenceUV_Length * Byte.SIZE, input, diffUWriter, manager.getModel(CodingType.RESIDUALS_U));
+		decoder.decode(differenceUV_Length * Byte.SIZE, input, diffVWriter, manager.getModel(CodingType.RESIDUALS_V));
+		
+		byte[] angle = angleWriter.toByteArray();
+		byte[] border = borderWriter.toByteArray();
+		byte[] deltas = new byte[differenceY_Length + 2 * differenceUV_Length];
+		ArrayUtils.copyArray(diffYWriter.toByteArray(), 0, deltas, 0, differenceY_Length);
+		ArrayUtils.copyArray(diffUWriter.toByteArray(), 0, deltas, differenceY_Length, differenceUV_Length);
+		ArrayUtils.copyArray(diffVWriter.toByteArray(), 0, deltas, differenceY_Length + differenceUV_Length, differenceUV_Length);
+		
+		final int f_angle = Protocol.getAngle(angle[0]);
+		final double[][][] f_border = Protocol.getBorderColors(border, size, 0);
+		final double[][][] f_deltas = ProtocolBase.getDeltaCoefficientsFromDatastream(deltas, 0, 8);
+		
+		DecodingIntraPredictionBlock intraBlock = new DecodingIntraPredictionBlock(0, 0, f_angle, size);
+		intraBlock.setYUVDelta(f_deltas);
+		intraBlock.setHorizontal(f_border[0]);
+		intraBlock.setVertical(f_border[1]);
+		return intraBlock;
+	}
+	
+	public static void binarizeVector(final EncodingVector v,
+			final CABAC encoder, final ContextModelManager manager,
+			final BitWriter output) {
+		final byte[] span = Protocol.getVectorSpanBytes(v.getSpanX(), v.getSpanY());
+		final byte refAndSize = Protocol.getReferenceAndSizeByte(v.getReference(), v.getSize());
+		byte[][] differences = null;
+		
+		try {
+			differences = ProtocolBase.getDeltaMatrixBytes(v.getYUVDelta(), v.getSize());
+		} catch (DCTCoefficientOutOfBoundsException e) {
+			System.out.println("Size: " + v.getSize());
+			e.printStackTrace();
+		}
+		
+		encoder.encode(new BitReader(span[0]), output, manager.getModel(CodingType.VECTOR_SPAN_X));
+		
+		encoder.encode(new BitReader(span[1]), output, manager.getModel(CodingType.VECTOR_SPAN_Y));
+		
+		encoder.encode(new BitReader(refAndSize), output, manager.getModel(CodingType.VECTOR_REFERENCE));
 		
 		encoder.encode(new BitReader(differences[ColorManager.Y_INDEX]),
 				output, manager.getModel(CodingType.RESIDUALS_Y));
@@ -734,41 +805,13 @@ public class Protocol {
 		final int f_spanX = Protocol.getVectorSpanInt(spanX[0]);
 		final int f_spanY = Protocol.getVectorSpanInt(spanY[0]);
 		final int[] f_refAndSize = Protocol.getReferenceAndSizeInt(referenceAndSizeWriter.getFirstByte());
-		final double[][][] f_deltas = ProtocolBase.getDeltaCoefficientsFromDatastream(deltas, 0, 8);
+		final double[][][] f_deltas = ProtocolBase.getDeltaCoefficientsFromDatastream(deltas, 0, vectorSize);
 		
-		DecodingVector vec = new DecodingVector(0, 0, 8);
+		DecodingVector vec = new DecodingVector(0, 0, vectorSize);
 		vec.setSpanX(f_spanX);
 		vec.setSpanY(f_spanY);
 		vec.setReference(f_refAndSize[0]);
 		vec.setYUVDelta(f_deltas);
 		return vec;
-	}
-	
-	public static void binarizeVector(final EncodingVector v,
-			final CABAC encoder, final ContextModelManager manager,
-			final BitWriter output) {
-		final byte[] span = Protocol.getVectorSpanBytes(v.getSpanX(), v.getSpanY());
-		final byte refAndSize = Protocol.getReferenceAndSizeByte(v.getReference(), v.getSize());
-		byte[][] differences = null;
-		
-		try {
-			differences = ProtocolBase.getDeltaMatrixBytes(v.getYUVDelta(), v.getSize());
-		} catch (DCTCoefficientOutOfBoundsException e) {
-			System.out.println("Size: " + v.getSize());
-			e.printStackTrace();
-		}
-		
-		encoder.encode(new BitReader(span[0]), output, manager.getModel(CodingType.VECTOR_SPAN_X));
-		
-		encoder.encode(new BitReader(span[1]), output, manager.getModel(CodingType.VECTOR_SPAN_Y));
-		
-		encoder.encode(new BitReader(refAndSize), output, manager.getModel(CodingType.VECTOR_REFERENCE));
-		
-		encoder.encode(new BitReader(differences[ColorManager.Y_INDEX]),
-				output, manager.getModel(CodingType.RESIDUALS_Y));
-		encoder.encode(new BitReader(differences[ColorManager.U_INDEX]),
-				output, manager.getModel(CodingType.RESIDUALS_U));
-		encoder.encode(new BitReader(differences[ColorManager.V_INDEX]),
-				output, manager.getModel(CodingType.RESIDUALS_V));
 	}
 }
