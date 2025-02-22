@@ -717,8 +717,8 @@ public class Protocol {
 		BitWriter diffUWriter = new BitWriter();
 		BitWriter diffVWriter = new BitWriter();
 		
-		decoder.decode(Byte.SIZE * 2, input, spanXWriter, manager.getModel(CodingType.VECTOR_SPAN_X));
-		decoder.decode(Byte.SIZE * 2, input, spanYWriter, manager.getModel(CodingType.VECTOR_SPAN_Y));
+		decoder.decode(Byte.SIZE, input, spanXWriter, manager.getModel(CodingType.VECTOR_SPAN_X));
+		decoder.decode(Byte.SIZE, input, spanYWriter, manager.getModel(CodingType.VECTOR_SPAN_Y));
 		decoder.decode(Byte.SIZE, input, referenceAndSizeWriter, manager.getModel(CodingType.VECTOR_REFERENCE));
 		decoder.decode(differenceY_Length * Byte.SIZE, input, diffYWriter, manager.getModel(CodingType.RESIDUALS_Y));
 		decoder.decode(differenceUV_Length * Byte.SIZE, input, diffUWriter, manager.getModel(CodingType.RESIDUALS_U));
@@ -731,8 +731,8 @@ public class Protocol {
 		ArrayUtils.copyArray(diffUWriter.toByteArray(), 0, deltas, differenceY_Length, differenceUV_Length);
 		ArrayUtils.copyArray(diffVWriter.toByteArray(), 0, deltas, differenceY_Length + differenceUV_Length, differenceUV_Length);
 		
-		final int f_spanX = ProtocolBase.getPosition(spanX[0], spanX[1]);
-		final int f_spanY = ProtocolBase.getPosition(spanY[0], spanY[1]);
+		final int f_spanX = Protocol.getVectorSpanInt(spanX[0]);
+		final int f_spanY = Protocol.getVectorSpanInt(spanY[0]);
 		final int[] f_refAndSize = Protocol.getReferenceAndSizeInt(referenceAndSizeWriter.getFirstByte());
 		final double[][][] f_deltas = ProtocolBase.getDeltaCoefficientsFromDatastream(deltas, 0, 8);
 		
