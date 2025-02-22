@@ -1,8 +1,10 @@
 package app.io.coder.cabac;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.jupiter.api.Disabled;
+import java.awt.Color;
+
 import org.junit.jupiter.api.Test;
 
 import app.config;
@@ -14,6 +16,7 @@ import app.engines.prediction.intraprediction.EncodingIntraPredictionBlock;
 import app.io.BitReader;
 import app.io.BitWriter;
 import app.io.Protocol;
+import app.rendering.ColorManager;
 import app.utils.MathUtils;
 
 public class TestCABACAdvanced {
@@ -41,7 +44,6 @@ public class TestCABACAdvanced {
 	}
 	
 	@Test
-	@Disabled
 	public void test_vectorConversion_002() {
 		final int steps = 0xFFFF;
 		final int ten_percent = steps / 10;
@@ -126,8 +128,26 @@ public class TestCABACAdvanced {
 		
 		EncodingIntraPredictionBlock intraBlock = new EncodingIntraPredictionBlock(43, 31, 30, 8);
 		intraBlock.setYUVDelta(MatrixOperations.generateRandom3DMatrix(8, 255));
-		intraBlock.setHorizontal(MatrixOperations.generateRGBColor(8));
-		intraBlock.setVertical(MatrixOperations.generateRGBColor(8));
+		intraBlock.setHorizontal(new double[][] {
+			ColorManager.convertRGBToYUV(Color.RED),
+			ColorManager.convertRGBToYUV(Color.BLUE),
+			ColorManager.convertRGBToYUV(Color.YELLOW),
+			ColorManager.convertRGBToYUV(Color.GREEN),
+			ColorManager.convertRGBToYUV(Color.MAGENTA),
+			ColorManager.convertRGBToYUV(Color.ORANGE),
+			ColorManager.convertRGBToYUV(Color.WHITE),
+			ColorManager.convertRGBToYUV(Color.BLACK)
+		});
+		intraBlock.setVertical(new double[][] {
+			ColorManager.convertRGBToYUV(Color.BLACK),
+			ColorManager.convertRGBToYUV(Color.RED),
+			ColorManager.convertRGBToYUV(Color.ORANGE),
+			ColorManager.convertRGBToYUV(Color.WHITE),
+			ColorManager.convertRGBToYUV(Color.MAGENTA),
+			ColorManager.convertRGBToYUV(Color.GREEN),
+			ColorManager.convertRGBToYUV(Color.BLUE),
+			ColorManager.convertRGBToYUV(Color.YELLOW)
+		});
 		
 		BitWriter bin = new BitWriter();
 		Protocol.binarizeIntraPredictionBlock(intraBlock, encoder, manager_enc, bin);
@@ -136,7 +156,69 @@ public class TestCABACAdvanced {
 		DecodingIntraPredictionBlock decoded = Protocol.debinarizeIntraPredictionBlock(decoder, manager_dec, binStream, 8);
 		
 		assertEquals(intraBlock.getAngle(), decoded.getAngle());
-		assertEquals(intraBlock.getHorizontal(), decoded.getHorizontal());
-		assertEquals(intraBlock.getVertical(), decoded.getVertical());
+		assertArrayEquals(intraBlock.getHorizontal(), decoded.getHorizontal());
+		assertArrayEquals(intraBlock.getVertical(), decoded.getVertical());
+	}
+	
+	@Test
+	public void test_intraConversion_002() {
+		ContextModelManager manager_enc = new ContextModelManager();
+		CABAC encoder = new CABAC();
+		
+		ContextModelManager manager_dec = new ContextModelManager();
+		CABAC decoder = new CABAC();
+		
+		EncodingIntraPredictionBlock intraBlock = new EncodingIntraPredictionBlock(43, 31, 30, 8);
+		intraBlock.setYUVDelta(MatrixOperations.generateRandom3DMatrix(8, 255));
+		intraBlock.setHorizontal(MatrixOperations.generateColorBased2DMatrix(8));
+		intraBlock.setVertical(MatrixOperations.generateColorBased2DMatrix(8));
+		
+		BitWriter bin = new BitWriter();
+		Protocol.binarizeIntraPredictionBlock(intraBlock, encoder, manager_enc, bin);
+		
+		BitReader binStream = new BitReader(bin.toByteArray());
+		DecodingIntraPredictionBlock decoded = Protocol.debinarizeIntraPredictionBlock(decoder, manager_dec, binStream, 8);
+		
+		assertEquals(intraBlock.getAngle(), decoded.getAngle());
+		assertArrayEquals(intraBlock.getHorizontal(), decoded.getHorizontal());
+		assertArrayEquals(intraBlock.getVertical(), decoded.getVertical());
+	}
+	
+	@Test
+	public void test_intraConversion_003() {
+		final int steps = 0xFFFF;
+		final int ten_percent = steps / 10;
+		
+		ContextModelManager manager_enc = new ContextModelManager();
+		CABAC encoder = new CABAC();
+		
+		ContextModelManager manager_dec = new ContextModelManager();
+		CABAC decoder = new CABAC();
+		
+		for (int i = 0; i < steps; i++) {
+			if (i % ten_percent == 0) {
+				System.out.println("Intra conversion test progress: " + (i * 100 / steps) + "%");
+			}
+			
+			manager_enc.resetModels();
+			manager_dec.resetModels();
+			encoder.reset();
+			decoder.reset();
+			
+			EncodingIntraPredictionBlock intraBlock = new EncodingIntraPredictionBlock(43, 31, 30, 8);
+			intraBlock.setYUVDelta(MatrixOperations.generateRandom3DMatrix(8, 255));
+			intraBlock.setHorizontal(MatrixOperations.generateColorBased2DMatrix(8));
+			intraBlock.setVertical(MatrixOperations.generateColorBased2DMatrix(8));
+			
+			BitWriter bin = new BitWriter();
+			Protocol.binarizeIntraPredictionBlock(intraBlock, encoder, manager_enc, bin);
+			
+			BitReader binStream = new BitReader(bin.toByteArray());
+			DecodingIntraPredictionBlock decoded = Protocol.debinarizeIntraPredictionBlock(decoder, manager_dec, binStream, 8);
+			
+			assertEquals(intraBlock.getAngle(), decoded.getAngle());
+			assertArrayEquals(intraBlock.getHorizontal(), decoded.getHorizontal());
+			assertArrayEquals(intraBlock.getVertical(), decoded.getVertical());
+		}
 	}
 }

@@ -742,8 +742,8 @@ public class Protocol {
 		
 		DecodingIntraPredictionBlock intraBlock = new DecodingIntraPredictionBlock(0, 0, f_angle, size);
 		intraBlock.setYUVDelta(f_deltas);
-		intraBlock.setHorizontal(f_border[0]);
-		intraBlock.setVertical(f_border[1]);
+		intraBlock.setHorizontal(f_border[1]);
+		intraBlock.setVertical(f_border[0]);
 		return intraBlock;
 	}
 	
