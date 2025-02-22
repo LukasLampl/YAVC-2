@@ -3,8 +3,6 @@ package app.io.coder.cabac;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.util.Arrays;
-
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -396,8 +394,7 @@ public class TestCABAC {
 			
 		byte[] data_p1 = MatrixOperations.generateRandomByteMatrix(12);
 		byte[] data_p2 = MatrixOperations.generateRandomByteMatrix(16);
-		System.out.println(Arrays.toString(data_p1));
-		System.out.println(Arrays.toString(data_p2));
+
 		BitReader dataReader_1 = new BitReader(data_p1);
 		BitReader dataReader_2 = new BitReader(data_p2);
 
@@ -489,6 +486,146 @@ public class TestCABAC {
 		BitWriter dec_2 = new BitWriter();
 		
 		decoder.decode(data_p1.length * Byte.SIZE, binIn, dec_1, manager_dec.getModel(CodingType.PREDICTION_TYPE));
+		decoder.decode(data_p2.length * Byte.SIZE, binIn, dec_2, manager_dec.getModel(CodingType.VECTOR_SPAN_X));
+		
+		byte[] decoded_p1 = dec_1.toByteArray();
+		byte[] decoded_p2 = dec_2.toByteArray();
+		
+		assertEquals(data_p1.length, decoded_p1.length);
+		assertEquals(data_p2.length, decoded_p2.length);
+		assertArrayEquals(data_p1, decoded_p1);
+		assertArrayEquals(data_p2, decoded_p2);
+	}
+	
+	@Test
+	public void testMultiModal007() {
+		ContextModelManager manager_enc = new ContextModelManager();
+		ContextModelManager manager_dec = new ContextModelManager();
+		
+		CABAC encoder = new CABAC();
+		CABAC decoder = new CABAC();
+			
+		byte[] data_p1 = {38};
+		byte[] data_p2 = {21};
+		
+		BitReader dataReader_1 = new BitReader(data_p1);
+		BitReader dataReader_2 = new BitReader(data_p2);
+		
+		BitWriter bin = new BitWriter();
+		
+		encoder.encode(dataReader_1, bin, manager_enc.getModel(CodingType.PREDICTION_TYPE));
+		encoder.encode(dataReader_2, bin, manager_enc.getModel(CodingType.VECTOR_SPAN_X));
+
+		BitReader binIn = new BitReader(bin.toByteArray(), bin.getTotalBits());
+		BitWriter dec_1 = new BitWriter();
+		BitWriter dec_2 = new BitWriter();
+		
+		decoder.decode(data_p1.length * Byte.SIZE, binIn, dec_1, manager_dec.getModel(CodingType.PREDICTION_TYPE));
+		decoder.decode(data_p2.length * Byte.SIZE, binIn, dec_2, manager_dec.getModel(CodingType.VECTOR_SPAN_X));
+		
+		byte[] decoded_p1 = dec_1.toByteArray();
+		byte[] decoded_p2 = dec_2.toByteArray();
+		
+		assertEquals(data_p1.length, decoded_p1.length);
+		assertEquals(data_p2.length, decoded_p2.length);
+		assertArrayEquals(data_p1, decoded_p1);
+		assertArrayEquals(data_p2, decoded_p2);
+	}
+	
+	@Test
+	public void testMultiModal008() {
+		ContextModelManager manager_enc = new ContextModelManager();
+		ContextModelManager manager_dec = new ContextModelManager();
+		
+		CABAC encoder = new CABAC();
+		CABAC decoder = new CABAC();
+			
+		byte[] data_p1 = {0};
+		byte[] data_p2 = {0};
+		
+		BitReader dataReader_1 = new BitReader(data_p1);
+		BitReader dataReader_2 = new BitReader(data_p2);
+		
+		BitWriter bin = new BitWriter();
+		
+		encoder.encode(dataReader_1, bin, manager_enc.getModel(CodingType.PREDICTION_TYPE));
+		encoder.encode(dataReader_2, bin, manager_enc.getModel(CodingType.VECTOR_SPAN_X));
+
+		BitReader binIn = new BitReader(bin.toByteArray(), bin.getTotalBits());
+		BitWriter dec_1 = new BitWriter();
+		BitWriter dec_2 = new BitWriter();
+		
+		decoder.decode(data_p1.length * Byte.SIZE, binIn, dec_1, manager_dec.getModel(CodingType.PREDICTION_TYPE));
+		decoder.decode(data_p2.length * Byte.SIZE, binIn, dec_2, manager_dec.getModel(CodingType.VECTOR_SPAN_X));
+		
+		byte[] decoded_p1 = dec_1.toByteArray();
+		byte[] decoded_p2 = dec_2.toByteArray();
+		
+		assertEquals(data_p1.length, decoded_p1.length);
+		assertEquals(data_p2.length, decoded_p2.length);
+		assertArrayEquals(data_p1, decoded_p1);
+		assertArrayEquals(data_p2, decoded_p2);
+	}
+	
+	@Test
+	public void testMultiModal009() {
+		ContextModelManager manager_enc = new ContextModelManager();
+		ContextModelManager manager_dec = new ContextModelManager();
+		
+		CABAC encoder = new CABAC();
+		CABAC decoder = new CABAC();
+			
+		byte[] data_p1 = {78};
+		byte[] data_p2 = {93};
+		
+		BitReader dataReader_1 = new BitReader(data_p1);
+		BitReader dataReader_2 = new BitReader(data_p2);
+		
+		BitWriter bin = new BitWriter();
+		
+		encoder.encode(dataReader_1, bin, manager_enc.getModel(CodingType.VECTOR_SPAN_X));
+		encoder.encode(dataReader_2, bin, manager_enc.getModel(CodingType.VECTOR_SPAN_X));
+
+		BitReader binIn = new BitReader(bin.toByteArray(), bin.getTotalBits());
+		BitWriter dec_1 = new BitWriter();
+		BitWriter dec_2 = new BitWriter();
+		
+		decoder.decode(data_p1.length * Byte.SIZE, binIn, dec_1, manager_dec.getModel(CodingType.VECTOR_SPAN_X));
+		decoder.decode(data_p2.length * Byte.SIZE, binIn, dec_2, manager_dec.getModel(CodingType.VECTOR_SPAN_X));
+		
+		byte[] decoded_p1 = dec_1.toByteArray();
+		byte[] decoded_p2 = dec_2.toByteArray();
+		
+		assertEquals(data_p1.length, decoded_p1.length);
+		assertEquals(data_p2.length, decoded_p2.length);
+		assertArrayEquals(data_p1, decoded_p1);
+		assertArrayEquals(data_p2, decoded_p2);
+	}
+	
+	@Test
+	public void testMultiModal010() {
+		ContextModelManager manager_enc = new ContextModelManager();
+		ContextModelManager manager_dec = new ContextModelManager();
+		
+		CABAC encoder = new CABAC();
+		CABAC decoder = new CABAC();
+			
+		byte[] data_p1 = MatrixOperations.generateRandomByteMatrix(0xFF);
+		byte[] data_p2 = MatrixOperations.generateRandomByteMatrix(0x40);
+		
+		BitReader dataReader_1 = new BitReader(data_p1);
+		BitReader dataReader_2 = new BitReader(data_p2);
+		
+		BitWriter bin = new BitWriter();
+		
+		encoder.encode(dataReader_1, bin, manager_enc.getModel(CodingType.VECTOR_SPAN_X));
+		encoder.encode(dataReader_2, bin, manager_enc.getModel(CodingType.VECTOR_SPAN_X));
+
+		BitReader binIn = new BitReader(bin.toByteArray(), bin.getTotalBits());
+		BitWriter dec_1 = new BitWriter();
+		BitWriter dec_2 = new BitWriter();
+		
+		decoder.decode(data_p1.length * Byte.SIZE, binIn, dec_1, manager_dec.getModel(CodingType.VECTOR_SPAN_X));
 		decoder.decode(data_p2.length * Byte.SIZE, binIn, dec_2, manager_dec.getModel(CodingType.VECTOR_SPAN_X));
 		
 		byte[] decoded_p1 = dec_1.toByteArray();
