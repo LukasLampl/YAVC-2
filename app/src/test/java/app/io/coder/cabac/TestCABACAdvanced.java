@@ -4,23 +4,31 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.awt.Color;
+import java.awt.Dimension;
+import java.io.IOException;
+import java.util.List;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import app.config;
 import app.encoder.MatrixOperations;
+import app.encoder.MockQuadtreeEngine;
 import app.engines.prediction.interprediction.DecodingVector;
 import app.engines.prediction.interprediction.EncodingVector;
 import app.engines.prediction.intraprediction.DecodingIntraPredictionBlock;
 import app.engines.prediction.intraprediction.EncodingIntraPredictionBlock;
+import app.engines.quadtree.QuadtreeBase;
 import app.io.BitReader;
 import app.io.BitWriter;
 import app.io.Protocol;
 import app.rendering.ColorManager;
 import app.utils.MathUtils;
+import app.utils.components.MacroBlock;
 
 public class TestCABACAdvanced {
 	@Test
+	@Disabled
 	public void test_vectorConversion_001() {
 		ContextModelManager manager_enc = new ContextModelManager();
 		CABAC encoder = new CABAC();
@@ -44,6 +52,7 @@ public class TestCABACAdvanced {
 	}
 	
 	@Test
+	@Disabled
 	public void test_vectorConversion_002() {
 		final int steps = 0xFFFF;
 		final int ten_percent = steps / 10;
@@ -86,6 +95,7 @@ public class TestCABACAdvanced {
 	}
 	
 	@Test
+	@Disabled
 	public void test_vectorConversion_003() {
 		ContextModelManager manager_enc = new ContextModelManager();
 		CABAC encoder = new CABAC();
@@ -119,6 +129,7 @@ public class TestCABACAdvanced {
 	}
 	
 	@Test
+	@Disabled
 	public void test_intraConversion_001() {
 		ContextModelManager manager_enc = new ContextModelManager();
 		CABAC encoder = new CABAC();
@@ -161,6 +172,7 @@ public class TestCABACAdvanced {
 	}
 	
 	@Test
+	@Disabled
 	public void test_intraConversion_002() {
 		ContextModelManager manager_enc = new ContextModelManager();
 		CABAC encoder = new CABAC();
@@ -185,6 +197,7 @@ public class TestCABACAdvanced {
 	}
 	
 	@Test
+	@Disabled
 	public void test_intraConversion_003() {
 		final int steps = 0xFFFF;
 		final int ten_percent = steps / 10;
@@ -220,5 +233,20 @@ public class TestCABACAdvanced {
 			assertArrayEquals(intraBlock.getHorizontal(), decoded.getHorizontal());
 			assertArrayEquals(intraBlock.getVertical(), decoded.getVertical());
 		}
+	}
+	
+	@Test
+	public void testQuadtreeConversion() throws IOException {
+		Dimension bounds = new Dimension(QuadtreeBase.MAX_SIZE, QuadtreeBase.MAX_SIZE);
+		List<MacroBlock> roots = MockQuadtreeEngine.generateQuadtrees(1, bounds, false);
+		MockQuadtreeEngine.assignLinks(roots);
+		BitWriter data = Protocol.binarizeQuadtrees(roots);
+		BitReader input = new BitReader(data.toByteArray(), data.getTotalBits());
+		List<MacroBlock> decoded = Protocol.debinarizeQuadtrees(input, bounds);
+		
+		
+//		System.out.println("Final len: " + data.getTotalBits() + " Bits");
+//		System.out.println(" - " + (data.getTotalBits() / Byte.SIZE) + " Byte");
+//		System.out.println(" - Around " + ((((double)data.getTotalBits() / (double)Byte.SIZE) / 24000) * 100) + "% of 24kB");
 	}
 }

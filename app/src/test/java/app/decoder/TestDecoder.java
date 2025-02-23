@@ -24,7 +24,6 @@ package app.decoder;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -36,17 +35,14 @@ import javax.imageio.ImageIO;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import app.encoder.MockQuadtreeEngine;
 import app.engines.prediction.interprediction.DecodingVector;
 import app.engines.prediction.interprediction.EncodingVector;
 import app.engines.prediction.interprediction.VectorEngine;
 import app.engines.prediction.intraprediction.DecodingIntraPredictionBlock;
 import app.engines.prediction.intraprediction.EncodingIntraPredictionBlock;
 import app.engines.prediction.intraprediction.IntraEngine;
-import app.engines.quadtree.QuadtreeBase;
 import app.engines.quadtree.QuadtreeEngine;
 import app.exceptions.CorruptedFileException;
-import app.io.BitWriter;
 import app.io.InputProcessor;
 import app.io.Protocol;
 import app.managers.ListManager;
@@ -279,29 +275,6 @@ public class TestDecoder {
 	private void check2DArray(final double[][] expected, final double[][] actual) {
 		for (int i = 0; i < expected.length; i++) {
 			assertArrayEquals(expected[i], actual[i], YUV_CONVERTING_DELTA);
-		}
-	}
-	
-	@Test
-	public void test() throws IOException {
-		for (int i = 0; i < 1; i++) {
-			Dimension bounds = new Dimension(QuadtreeBase.MAX_SIZE, QuadtreeBase.MAX_SIZE);
-			List<MacroBlock> roots = MockQuadtreeEngine.generateQuadtrees(1, bounds, false);
-			MockQuadtreeEngine.assignLinks(roots);
-			BitWriter data = Protocol.binarizeQuadtrees(roots);
-			System.out.println("Final len: " + data.getTotalBits() + " Bits");
-			System.out.println(" - " + (data.getTotalBits() / Byte.SIZE) + " Byte");
-			System.out.println(" - Around " + (((double)data.getTotalBits() / (double)Byte.SIZE) / 24000) + "% of 24kB");
-			
-//			File f = new File("C:\\Users\\Lukas Lampl\\Documents\\EncoderOut\\enctest.bin");
-//			f.createNewFile();
-//			
-//			if (i == 0) {
-//				Files.write(Path.of(f.getAbsolutePath()), data, StandardOpenOption.TRUNCATE_EXISTING);
-//				continue;
-//			}
-//			
-//			Files.write(Path.of(f.getAbsolutePath()), data, StandardOpenOption.APPEND);
 		}
 	}
 }

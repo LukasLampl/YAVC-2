@@ -92,6 +92,19 @@ public abstract class MatrixOperations {
 		return data;
 	}
 	
+	public static byte[] generateIncreasingByteMatrix(final int length, final int min, final int max) {
+		int range = max - min;
+		double stepSize = (double)range / (double)length;
+		
+		byte[] data = new byte[length];
+		
+		for (int i = 0; i < length; i++) {
+			data[i] = (byte)MathUtils.round(i * stepSize);
+		}
+		
+		return data;
+	}
+	
 	public static byte[] generateSteadyByteMatrix(final int length, final byte b) {
 		byte[] data = new byte[length];
 		

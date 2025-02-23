@@ -22,7 +22,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 package app.io;
 
 import java.awt.Dimension;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -640,6 +639,8 @@ public class Protocol {
 		ContextModelManager manager = new ContextModelManager();
 		CABAC encoder = new CABAC();
 		BitWriter output = new BitWriter();
+		encoder.encode(new BitReader(ProtocolBase.getSizeBytes(roots.size())),
+				output, manager.getModel(CodingType.NUMBER_OF_QUADTREES));
 		
 		for (final MacroBlock root : roots) {
 			encoder.encode(new BitReader(ProtocolBase.getPositionBytes(root.getPositionX())),
@@ -653,17 +654,41 @@ public class Protocol {
 		return output;
 	}
 	
-	private static byte[] binarizeSingleQuadtree(final MacroBlock root,
-			final CABAC encoder, final ContextModelManager manager,
-			final BitWriter output)
-					throws IOException {
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+	public static List<MacroBlock> debinarizeQuadtrees(final BitReader input, final Dimension dim) {
+		ContextModelManager manager = new ContextModelManager();
+		CABAC decoder = new CABAC();
+		List<MacroBlock> roots = new ArrayList<MacroBlock>();
 		
+		BitWriter rootNumberWriter = new BitWriter();
+		decoder.decode(ProtocolBase.SIZE_LENGTH * Byte.SIZE, input,
+				rootNumberWriter, manager.getModel(CodingType.NUMBER_OF_QUADTREES));
+		final int numberOfRoots = ProtocolBase.getSizeFromBytes(rootNumberWriter.toByteArray());
+		System.out.println("Number of roots: " + numberOfRoots);
+		
+		for (int i = 0; i < numberOfRoots; i++) {
+			BitWriter posXWriter = new BitWriter();
+			BitWriter posYWriter = new BitWriter();
+			decoder.decode(ProtocolBase.SIZE_POSITION, input, posXWriter, manager.getModel(CodingType.QUADTREE_POSITION_X));
+			decoder.decode(ProtocolBase.SIZE_POSITION, input, posYWriter, manager.getModel(CodingType.QUADTREE_POSITION_Y));
+			byte[] f_posX = posXWriter.toByteArray();
+			byte[] f_posY = posYWriter.toByteArray();
+			final int posX = ProtocolBase.getPosition(f_posX[0], f_posX[1]);
+			final int posY = ProtocolBase.getPosition(f_posY[0], f_posY[1]);
+			final MacroBlock root = new MacroBlock(posX, posY, QuadtreeBase.MAX_SIZE, true);
+			debinarizeSingleQuadtree(root, decoder, manager, input, dim);
+		}
+		
+		return roots;
+	}
+	
+	private static void binarizeSingleQuadtree(final MacroBlock root,
+			final CABAC encoder, final ContextModelManager manager,
+			final BitWriter output) {
 		if (root.isSubdivided()) {
 			encoder.encode(0x01, output, manager.getModel(CodingType.QUADTREE_SUBDIVISION));
 			
 			for (final MacroBlock child : root.getNodes()) {
-				baos.write(binarizeSingleQuadtree(child, encoder, manager, output));
+				binarizeSingleQuadtree(child, encoder, manager, output);
 			}
 		} else {
 			encoder.encode(0x00, output, manager.getModel(CodingType.QUADTREE_SUBDIVISION));
@@ -682,8 +707,29 @@ public class Protocol {
 				throw new IllegalStateException("Illegal link type: " + link);
 			}
 		}
+	}
+	
+	private static final void debinarizeSingleQuadtree(final MacroBlock root, final CABAC decoder,
+			final ContextModelManager manager, final BitReader input, final Dimension dim) {
+		BitWriter subdivisionWriter = new BitWriter();
+		decoder.decode(1, input, subdivisionWriter, manager.getModel(CodingType.QUADTREE_SUBDIVISION));
 		
-		return baos.toByteArray();
+		if (subdivisionWriter.toByteArray()[0] == 0x00) {
+			BitWriter typeWriter = new BitWriter();
+			decoder.decode(1, input, typeWriter, manager.getModel(CodingType.PREDICTION_TYPE));
+			
+			if (typeWriter.toByteArray()[0] == 0x00) {
+				debinarizeVector(decoder, manager, input, root.getSize());
+			} else {
+				debinarizeIntraPredictionBlock(decoder, manager, input, root.getSize());
+			}
+		} else {
+			root.subdivide(dim);
+			
+			for (final MacroBlock child : root.getNodes()) {
+				debinarizeSingleQuadtree(child, decoder, manager, input, dim);
+			}
+		}
 	}
 	
 	public static final void binarizeIntraPredictionBlock(final EncodingIntraPredictionBlock block,

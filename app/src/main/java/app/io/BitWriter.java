@@ -33,6 +33,11 @@ import java.io.IOException;
  */
 public class BitWriter {
 	/**
+	 * Position of the most significant bit.
+	 */
+	public final static int MSB_POS = Byte.SIZE - 1;
+	
+	/**
 	 * Holds the output stream in which to write a fully constructed byte.
 	 */
 	private final ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -46,7 +51,7 @@ public class BitWriter {
 	/**
 	 * Holds the current bit position in the current byte.
 	 */
-	private int currentBit = 0;
+	private int currentBit = MSB_POS;
 	
 	/**
 	 * Counter for the total amount of written bits.
@@ -62,12 +67,11 @@ public class BitWriter {
 	 */
 	public void write(byte bit) {
 		bit &= 0x01;
-		this.currentByte <<= 1;
-		this.currentByte |= bit;
-		this.currentBit++;
+		this.currentByte |= (bit << this.currentBit);
+		this.currentBit--;
 		this.totalBits++;
 		
-		if (this.currentBit == Byte.SIZE) {
+		if (this.currentBit < 0) {
 			flush();
 		}
 	}
@@ -88,7 +92,7 @@ public class BitWriter {
 	 * @param b	The byte to write.
 	 */
 	public void writeByte(final byte b) {
-		for (int i = 0; i < Byte.SIZE; i++) {
+		for (int i = MSB_POS; i >= 0; i--) {
 			write((b >> i) & 0x01);
 		}
 	}
@@ -98,9 +102,9 @@ public class BitWriter {
 	 * to ensure that all fed in bits are present.
 	 */
 	private void flush() {
-		if (this.currentBit > 0) {
+		if (this.currentBit < MSB_POS) {
 			this.baos.write(this.currentByte);
-			this.currentBit = 0;
+			this.currentBit = MSB_POS;
 			this.currentByte = 0x00;
 		}
 	}

@@ -46,8 +46,9 @@ public class ContextModelManager {
 		QUADTREE_POSITION_X(9),
 		QUADTREE_POSITION_Y(10),
 		QUADTREE_SUBDIVISION(11),
+		NUMBER_OF_QUADTREES(12),
 		
-		PREDICTION_TYPE(12);
+		PREDICTION_TYPE(13);
 		
 		private int index = 0;
 		

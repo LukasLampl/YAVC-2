@@ -56,6 +56,36 @@ public class TestBitReader {
 	
 	@Test
 	public void test003() {
+		final byte[] stream = {0x00, 0x69};
+		final BitReader reader = new BitReader(stream);
+		
+		for (final byte b : stream) {
+			final byte read = readFullByte(reader);
+			assertEquals(b, read);
+		}
+	}
+	
+	@Test
+	public void test004() {
+		final BitWriter writer = new BitWriter();
+		writer.write(0x00);
+		writer.write(0x00);
+		writer.write(0x01);
+		
+		final byte[] stream = writer.toByteArray();
+		
+		final BitReader reader = new BitReader(stream);
+		
+		final int bit_1 = reader.read();
+		final int bit_2 = reader.read();
+		final int bit_3 = reader.read();
+		assertEquals(0x00, bit_1);
+		assertEquals(0x00, bit_2);
+		assertEquals(0x01, bit_3);
+	}
+	
+	@Test
+	public void test005() {
 		final int steps = 65535;
 		
 		for (int i = 0; i < steps; i++) {

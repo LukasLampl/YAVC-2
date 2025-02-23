@@ -77,7 +77,7 @@ import app.io.BitWriter;
  * <p><b>Working with Ranges:</b><br>
  * CABAC operates with two variables, {@code low} and {@code high}, which define the current range
  * during each iteration. Due to the finite precision limitation, the interval {@code [0, 1)} is
- * scaled to a fixed range, such as {@code [0, 255)}. By halving the range, you can assign {@code 0}
+ * scaled to a fixed range, such as {@code [0, 65535)}. By halving the range, you can assign {@code 0}
  * to the lower half and {@code 1} to the upper half, initiating the encoding process.
  * <ul>
  * <li>When both {@code low} and {@code high} fall below {@code HALF_RANGE}, the output is always {@code 0},
@@ -101,7 +101,7 @@ public class CABAC {
 	/**
 	 * The precision used for the finite CABAC coding.
 	 */
-	private static final int PRECISION = 8;
+	private static final int PRECISION = 16;
 	
 	/**
 	 * The highest possible number defined by the precision.

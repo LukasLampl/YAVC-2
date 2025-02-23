@@ -1,7 +1,1 @@
-1. Implement intra prediction from Hans Lampl
-2. Merge main and intra branch
-2.5 USE STD_DEVIATION TO DETERMINE WHETHER INTER OR INTRA PREDICTION
-
-3. Branch GPU impl
-4. Make GPU usable for encoder
-5. Make GPU usable for decoder
+1. CABAC currently does not allow infinite amount of data, fix it!

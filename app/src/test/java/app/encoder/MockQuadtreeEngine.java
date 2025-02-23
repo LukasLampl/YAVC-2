@@ -81,12 +81,11 @@ public abstract class MockQuadtreeEngine {
 		List<MacroBlock> leaves = QuadtreeEngine.getLeaveNodes(roots).getRawData();
 		
 		for (final MacroBlock leaf : leaves) {
-//			if (random.nextDouble() < 0.89) {
-//				generateVector(leaf);
-//			} else {
-//				generateIntraBlock(leaf);
-//			}
-			generateVector(leaf);
+			if (random.nextDouble() < 0.89) {
+				generateVector(leaf);
+			} else {
+				generateIntraBlock(leaf);
+			}
 		}
 	}
 	

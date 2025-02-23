@@ -48,6 +48,11 @@ public abstract class ProtocolBase {
 	public static final int SIZE_LENGTH = 3;
 	
 	/**
+	 * The length of a position in bytes.
+	 */
+	public static final int SIZE_POSITION = 2;
+	
+	/**
 	 * Get the DCT coefficient in form of a byte.
 	 * 
 	 * @param coeff	The coefficient to convert.
