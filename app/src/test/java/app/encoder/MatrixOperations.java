@@ -29,7 +29,7 @@ import app.utils.ArrayUtils;
 import app.utils.MathUtils;
 
 public abstract class MatrixOperations {
-	private static Random r = new Random();
+	private static Random r = new Random(42L);
 	
 	public static double[][][] generateRandom3DMatrix(final int size, final double scale) {
 		double[][][] matrix = ArrayUtils.get3DArray(size, true);

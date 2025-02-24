@@ -77,7 +77,7 @@ import app.io.BitWriter;
  * <p><b>Working with Ranges:</b><br>
  * CABAC operates with two variables, {@code low} and {@code high}, which define the current range
  * during each iteration. Due to the finite precision limitation, the interval {@code [0, 1)} is
- * scaled to a fixed range, such as {@code [0, 65535)}. By halving the range, you can assign {@code 0}
+ * scaled to a fixed range, such as {@code [0, 16777215)}. By halving the range, you can assign {@code 0}
  * to the lower half and {@code 1} to the upper half, initiating the encoding process.
  * <ul>
  * <li>When both {@code low} and {@code high} fall below {@code HALF_RANGE}, the output is always {@code 0},
@@ -101,7 +101,7 @@ public class CABAC {
 	/**
 	 * The precision used for the finite CABAC coding.
 	 */
-	private static final int PRECISION = 16;
+	private static final int PRECISION = 24;
 	
 	/**
 	 * The highest possible number defined by the precision.
@@ -127,6 +127,11 @@ public class CABAC {
 	 * Mask of the most significant bit.
 	 */
 	private static final int MSB_MASK = 0x1 << (PRECISION - 1);
+	
+	/**
+	 * Shift operation to obtain the MSB.
+	 */
+	private static final int MSB_SHIFT = PRECISION - 1;
 
 	/**
 	 * Holds the number of underflows (E3 scaling violations).
@@ -181,11 +186,18 @@ public class CABAC {
 	 * decoding the next bit.
 	 */
 	private void resolveModel() {
-		int range = this.high - this.low;
-		int freq_0 = this.model.getSymbolFrequency(0x00);
-		int freq_1 = this.model.getSymbolFrequency(0x01);
-
-		int midRange = range * freq_0 / (freq_0 + freq_1);
+		if (this.high < 0 || this.low < 0) {
+			throw new IllegalStateException("Either low or high are < 0! Range: "
+					+ (this.high - this.low));
+		}
+		
+		final long range = this.high - this.low;
+		final long freq_0 = this.model.getSymbolFrequency(0x00);
+		final long freq_1 = this.model.getSymbolFrequency(0x01);
+		final long range_freq_0 = range * freq_0;
+		final long total = freq_0 + freq_1;
+		
+		final int midRange = (int)(range_freq_0 / total);
 		this.mid = this.low + midRange;
 	}
 
@@ -201,7 +213,7 @@ public class CABAC {
 		bit &= 0x01;
 
 		if (bit == 0x01) {
-			this.low = this.mid + 1;
+			this.low = this.mid;
 		} else {
 			this.high = this.mid;
 		}
@@ -217,7 +229,7 @@ public class CABAC {
 	 * @param value		The current state of the decoder.
 	 * @param output	The bit writer to write the decoded bit.
 	 */
-	private void decodeSymbol(final int value, final BitWriter output) {
+	private void decodeSymbol(final long value, final BitWriter output) {
 		resolveModel();
 
 		if (value >= this.low && value <= this.mid) {
@@ -225,7 +237,7 @@ public class CABAC {
 			this.model.incrementSymbolFrequency(0x00);
 			output.write(0x00);
 		} else if (value > this.mid && value <= this.high) {
-			this.low = this.mid + 1;
+			this.low = this.mid;
 			this.model.incrementSymbolFrequency(0x01);
 			output.write(0x01);
 		} else {
@@ -258,11 +270,18 @@ public class CABAC {
 	 * @param output	The bit writer for the encoded bits.
 	 */
 	private void resolveEncodeScaling(final BitWriter output) {
+		int counter = 0;
+		
 		while (true) {
+			if (counter++ > 65535) {
+				break;
+			}
+			
 			if ((this.high & MSB_MASK) == (this.low & MSB_MASK)) {
-				final int MSB = (int) (this.high & MSB_MASK) >> (PRECISION - 1);
-				this.low -= HALF_RANGE * MSB + MSB;
-				this.high -= HALF_RANGE * MSB + MSB;
+				final int MSB = (int)((this.high >> MSB_SHIFT) & 0x01);
+				final int offset = HALF_RANGE * MSB + MSB;
+				this.high -= offset;
+				this.low -= offset;
 				output.write(MSB);
 				flushInverseBits(MSB, output);
 			} else if (this.high <= THREE_QUARTER_RANGE && this.low > QUARTER_RANGE) {
@@ -273,8 +292,7 @@ public class CABAC {
 				break;
 			}
 
-			this.high = ((this.high << 0x01) & PRECISION_MAX) | 0x01;
-			this.low = ((this.low << 0x01) & PRECISION_MAX) | 0x00;
+			shiftInterval();
 		}
 	}
 
@@ -291,8 +309,13 @@ public class CABAC {
 	private int resolveDecodeScaling(final int value, final BitReader input) {
 		int bit = 0x00;
 		int temp = value;
+		int counter = 0;
 
 		while (true) {
+			if (counter++ > 65535) {
+				break;
+			}
+			
 			if (this.high <= HALF_RANGE) {
 			} else if (this.low > HALF_RANGE) {
 				this.high -= HALF_RANGE + 1;
@@ -310,12 +333,19 @@ public class CABAC {
 				bit = input.read();
 			}
 
-			this.high = ((this.high << 0x01) & PRECISION_MAX) | 0x01;
-			this.low = ((this.low << 0x01) & PRECISION_MAX) | 0x00;
-			temp = ((temp << 0x01) & PRECISION_MAX) | bit;
+			shiftInterval();
+			temp = ((temp << 1) & PRECISION_MAX) | bit;
 		}
 
 		return temp;
+	}
+	
+	/**
+	 * Shifts and thus scales the current interval by 2.
+	 */
+	private void shiftInterval() {
+		this.high = ((this.high << 1) & PRECISION_MAX) | 0x01;
+		this.low = ((this.low << 1) & PRECISION_MAX) | 0x00;
 	}
 
 	/**
@@ -406,8 +436,7 @@ public class CABAC {
 				bit = input.read();
 			}
 
-			value <<= 0x01;
-			value |= bit;
+			value = (value << 1) | bit;
 		}
 
 		return value;

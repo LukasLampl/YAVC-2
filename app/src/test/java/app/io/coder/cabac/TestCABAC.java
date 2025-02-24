@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import app.encoder.MatrixOperations;
 import app.io.BitReader;
 import app.io.BitWriter;
+import app.io.TestCABACFunctions;
 import app.io.coder.cabac.ContextModelManager.CodingType;
 import app.utils.MathUtils;
 
@@ -216,6 +217,30 @@ public class TestCABAC {
 	
 	@Test
 	public void testGeneral009() {
+		BinaryContextModel model_enc = new BinaryContextModel();
+		BinaryContextModel model_dec = new BinaryContextModel();
+		
+		CABAC encoder = new CABAC();
+		CABAC decoder = new CABAC();
+		
+		byte[] data = MatrixOperations.generateRandomByteMatrix(8192);
+		BitReader dataReader = new BitReader(data);
+		BitWriter bin = new BitWriter();
+		
+		encoder.encode(dataReader, bin, model_enc);
+		
+		BitReader binIn = new BitReader(bin.toByteArray());
+		BitWriter dec = new BitWriter();
+		
+		decoder.decode(data.length * Byte.SIZE, binIn, dec, model_dec);
+		byte[] decoded = dec.toByteArray();
+		
+		assertEquals(data.length, decoded.length);
+		assertArrayEquals(data, decoded);
+	}
+	
+	@Test
+	public void testGeneral010() {
 		final int steps = 2048;
 		final int ten_percent = steps / 10;
 		BinaryContextModel model_enc = new BinaryContextModel();
@@ -252,7 +277,7 @@ public class TestCABAC {
 	}
 	
 	@Test
-	public void testGeneral010() {
+	public void testGeneral011() {
 		BinaryContextModel model_enc = new BinaryContextModel();
 		BinaryContextModel model_dec = new BinaryContextModel();
 		
@@ -654,7 +679,7 @@ public class TestCABAC {
 		System.out.println("> " + data.length + " Bytes");
 		System.out.println("Encoded size: " + bin.getTotalBits() + " Bits");
 		System.out.println("> " + (bin.getTotalBits() / Byte.SIZE) + " Bytes");
-		calculateEfficency(data, bin.getTotalBits());
+		TestCABACFunctions.calculateEfficency(data, bin.getTotalBits());
 		
 		BitReader binIn = new BitReader(bin.toByteArray(), bin.getTotalBits());
 		BitWriter dec = new BitWriter();
@@ -687,7 +712,7 @@ public class TestCABAC {
 		System.out.println("> " + data.length + " Bytes");
 		System.out.println("Encoded size: " + bin.getTotalBits() + " Bits");
 		System.out.println("> " + (bin.getTotalBits() / Byte.SIZE) + " Bytes");
-		calculateEfficency(data, bin.getTotalBits());
+		TestCABACFunctions.calculateEfficency(data, bin.getTotalBits());
 		
 		BitReader binIn = new BitReader(bin.toByteArray(), bin.getTotalBits());
 		BitWriter dec = new BitWriter();
@@ -829,30 +854,5 @@ public class TestCABAC {
 		assertEquals(bit_9, reader.read());
 		assertEquals(bit_10, reader.read());
 		assertEquals(bit_11, reader.read());
-	}
-	
-	private static void calculateEfficency(final byte[] arr, final int actualBitsUsed) {
-		BitReader reader = new BitReader(arr);
-		BinaryContextModel model = new BinaryContextModel();
-		
-		while (reader.hasRemainingBits()) {
-			model.incrementSymbolFrequency(reader.read());
-		}
-		
-		final double freq_0 = model.getSymbolFrequency(0x00);
-		final double freq_1 = model.getSymbolFrequency(0x01);
-		final double total = freq_0 + freq_1;
-		final double p0 = freq_0 / total;
-		final double p1 = freq_1 / total;
-		
-		final double H = -(p0 * (Math.log(p0) / Math.log(2))
-				+ p1 * (Math.log(p1) / Math.log(2)));
-		
-		final double minimumRequiredBits = MathUtils.round(H * arr.length);
-		
-		System.out.println("Shannon entropy: H(x)=" + H);
-		System.out.println("Minimum required bits: " + minimumRequiredBits);
-		System.out.println(" > Actually used: " + actualBitsUsed);
-		System.out.println("Efficency: " + ((minimumRequiredBits / actualBitsUsed) * 100) + "%");
 	}
 }
