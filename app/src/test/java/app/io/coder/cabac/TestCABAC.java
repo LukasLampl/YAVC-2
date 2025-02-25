@@ -855,4 +855,88 @@ public class TestCABAC {
 		assertEquals(bit_10, reader.read());
 		assertEquals(bit_11, reader.read());
 	}
+	
+	@Test
+	public void testBitProcessing005() {
+		ContextModelManager manager_enc = new ContextModelManager();
+		ContextModelManager manager_dec = new ContextModelManager();
+		
+		CABAC encoder = new CABAC();
+		CABAC decoder = new CABAC();
+		
+		byte bit_1 = 0x00;
+		byte[] data = {0x59};
+		
+		BitWriter bin = new BitWriter();
+		encoder.encode(bit_1, bin, manager_enc.getModel(CodingType.INTRA_BORDER_HORIZONTAL));
+		encoder.encode(new BitReader(data), bin, manager_enc.getModel(CodingType.PREDICTION_TYPE));
+		
+		BitReader binIn = new BitReader(bin.toByteArray(), bin.getTotalBits());
+		BitWriter dec_1 = new BitWriter();
+		BitWriter dec_2 = new BitWriter();
+		
+		decoder.decode(1, binIn, dec_1, manager_dec.getModel(CodingType.INTRA_BORDER_HORIZONTAL));
+		decoder.decode(Byte.SIZE, binIn, dec_2, manager_dec.getModel(CodingType.PREDICTION_TYPE));
+		BitReader reader_1 = new BitReader(dec_1.toByteArray(), dec_1.getTotalBits());
+		
+		assertEquals(bit_1, reader_1.read());
+		assertEquals(data[0], dec_2.toByteArray()[0]);
+	}
+	
+	@Test
+	public void testBitProcessing006() {
+		ContextModelManager manager_enc = new ContextModelManager();
+		ContextModelManager manager_dec = new ContextModelManager();
+		
+		CABAC encoder = new CABAC();
+		CABAC decoder = new CABAC();
+		
+		byte bit_1 = 0x00;
+		byte bit_2 = 0x01;
+		byte[] data = {0x59};
+		
+		BitWriter bin = new BitWriter();
+		encoder.encode(bit_1, bin, manager_enc.getModel(CodingType.INTRA_BORDER_HORIZONTAL));
+		encoder.encode(bit_2, bin, manager_enc.getModel(CodingType.INTRA_BORDER_HORIZONTAL));
+		encoder.encode(new BitReader(data), bin, manager_enc.getModel(CodingType.PREDICTION_TYPE));
+		
+		BitReader binIn = new BitReader(bin.toByteArray(), bin.getTotalBits());
+		BitWriter dec_1 = new BitWriter();
+		BitWriter dec_2 = new BitWriter();
+		BitWriter dec_3 = new BitWriter();
+		
+		decoder.decode(1, binIn, dec_1, manager_dec.getModel(CodingType.INTRA_BORDER_HORIZONTAL));
+		decoder.decode(1, binIn, dec_2, manager_dec.getModel(CodingType.INTRA_BORDER_HORIZONTAL));
+		decoder.decode(Byte.SIZE, binIn, dec_3, manager_dec.getModel(CodingType.PREDICTION_TYPE));
+		BitReader reader_1 = new BitReader(dec_1.toByteArray(), dec_1.getTotalBits());
+		BitReader reader_2 = new BitReader(dec_2.toByteArray(), dec_2.getTotalBits());
+		
+		assertEquals(bit_1, reader_1.read());
+		assertEquals(bit_2, reader_2.read());
+		assertEquals(data[0], dec_3.toByteArray()[0]);
+	}
+	
+	@Test
+	public void testLongCoding() {
+		BinaryContextModel model_enc = new BinaryContextModel();
+		BinaryContextModel model_dec = new BinaryContextModel();
+		
+		CABAC encoder = new CABAC();
+		CABAC decoder = new CABAC();
+		
+		byte[] data = MatrixOperations.generateRandomByteMatrix(0x7FFFFF);
+		BitReader dataReader = new BitReader(data);
+		BitWriter bin = new BitWriter();
+		
+		encoder.encode(dataReader, bin, model_enc);
+		
+		BitReader binIn = new BitReader(bin.toByteArray());
+		BitWriter dec = new BitWriter();
+		
+		decoder.decode(data.length * Byte.SIZE, binIn, dec, model_dec);
+		byte[] decoded = dec.toByteArray();
+		
+		assertEquals(data.length, decoded.length);
+		assertArrayEquals(data, decoded);
+	}
 }

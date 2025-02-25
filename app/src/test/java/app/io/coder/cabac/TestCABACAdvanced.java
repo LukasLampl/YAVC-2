@@ -8,7 +8,6 @@ import java.awt.Dimension;
 import java.io.IOException;
 import java.util.List;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import app.config;
@@ -28,7 +27,6 @@ import app.utils.components.MacroBlock;
 
 public class TestCABACAdvanced {
 	@Test
-	@Disabled
 	public void test_vectorConversion_001() {
 		ContextModelManager manager_enc = new ContextModelManager();
 		CABAC encoder = new CABAC();
@@ -52,7 +50,6 @@ public class TestCABACAdvanced {
 	}
 	
 	@Test
-	@Disabled
 	public void test_vectorConversion_002() {
 		final int steps = 0xFFFF;
 		final int ten_percent = steps / 10;
@@ -95,7 +92,6 @@ public class TestCABACAdvanced {
 	}
 	
 	@Test
-	@Disabled
 	public void test_vectorConversion_003() {
 		ContextModelManager manager_enc = new ContextModelManager();
 		CABAC encoder = new CABAC();
@@ -129,7 +125,6 @@ public class TestCABACAdvanced {
 	}
 	
 	@Test
-	@Disabled
 	public void test_intraConversion_001() {
 		ContextModelManager manager_enc = new ContextModelManager();
 		CABAC encoder = new CABAC();
@@ -172,7 +167,6 @@ public class TestCABACAdvanced {
 	}
 	
 	@Test
-	@Disabled
 	public void test_intraConversion_002() {
 		ContextModelManager manager_enc = new ContextModelManager();
 		CABAC encoder = new CABAC();
@@ -197,7 +191,6 @@ public class TestCABACAdvanced {
 	}
 	
 	@Test
-	@Disabled
 	public void test_intraConversion_003() {
 		final int steps = 0xFFFF;
 		final int ten_percent = steps / 10;

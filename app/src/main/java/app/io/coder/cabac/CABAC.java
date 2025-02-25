@@ -23,6 +23,7 @@ package app.io.coder.cabac;
 
 import app.io.BitReader;
 import app.io.BitWriter;
+import app.utils.MathUtils;
 
 /**
  * The {@code CABAC} class is a simple implementation of a
@@ -213,7 +214,7 @@ public class CABAC {
 		bit &= 0x01;
 
 		if (bit == 0x01) {
-			this.low = this.mid;
+			this.low = MathUtils.min(this.mid + 1, this.high);
 		} else {
 			this.high = this.mid;
 		}
@@ -237,7 +238,7 @@ public class CABAC {
 			this.model.incrementSymbolFrequency(0x00);
 			output.write(0x00);
 		} else if (value > this.mid && value <= this.high) {
-			this.low = this.mid;
+			this.low = MathUtils.min(this.mid + 1, this.high);
 			this.model.incrementSymbolFrequency(0x01);
 			output.write(0x01);
 		} else {
@@ -277,20 +278,22 @@ public class CABAC {
 				break;
 			}
 			
+			int offset = 0;
+			
 			if ((this.high & MSB_MASK) == (this.low & MSB_MASK)) {
 				final int MSB = (int)((this.high >> MSB_SHIFT) & 0x01);
-				final int offset = HALF_RANGE * MSB + MSB;
-				this.high -= offset;
-				this.low -= offset;
+				offset = HALF_RANGE * MSB + MSB;
 				output.write(MSB);
 				flushInverseBits(MSB, output);
 			} else if (this.high <= THREE_QUARTER_RANGE && this.low > QUARTER_RANGE) {
-				this.high -= QUARTER_RANGE + 1;
-				this.low -= QUARTER_RANGE + 1;
+				offset = QUARTER_RANGE + 1;
 				this.underflowCount++;
 			} else {
 				break;
 			}
+			
+			this.high -= offset;
+			this.low -= offset;
 
 			shiftInterval();
 		}
@@ -316,18 +319,20 @@ public class CABAC {
 				break;
 			}
 			
+			int offset = 0;
+			
 			if (this.high <= HALF_RANGE) {
 			} else if (this.low > HALF_RANGE) {
-				this.high -= HALF_RANGE + 1;
-				this.low -= HALF_RANGE + 1;
-				temp -= HALF_RANGE + 1;
+				offset = HALF_RANGE + 1;
 			} else if (this.high <= THREE_QUARTER_RANGE && this.low > QUARTER_RANGE) {
-				this.high -= QUARTER_RANGE + 1;
-				this.low -= QUARTER_RANGE + 1;
-				temp -= QUARTER_RANGE + 1;
+				offset = QUARTER_RANGE + 1;
 			} else {
 				break;
 			}
+			
+			this.high -= offset;
+			this.low -= offset;
+			temp -= offset;
 
 			if (input.hasRemainingBits()) {
 				bit = input.read();
