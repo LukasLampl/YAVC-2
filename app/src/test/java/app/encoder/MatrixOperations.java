@@ -114,17 +114,4 @@ public abstract class MatrixOperations {
 		
 		return data;
 	}
-	
-	public static double[][] generateRGBColor(final int length) {
-		double[][] cols = new double[length][ColorManager.CHANNELS];
-		
-		for (int i = 0; i < length; i++) {
-			final int r = MathUtils.round(Math.random() * 255);
-			final int g = MathUtils.round(Math.random() * 255);
-			final int b = MathUtils.round(Math.random() * 255);
-			cols[i] = ColorManager.convertRGBToYUV(new Color(r, g, b));
-		}
-		
-		return cols;
-	}
 }

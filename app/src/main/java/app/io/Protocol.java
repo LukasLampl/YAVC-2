@@ -560,6 +560,39 @@ public class Protocol {
 		return new double[][][] {vertical, horizontal};
 	}
 	
+	public static byte[] N_getBorderColorBytes(final double[][] border, final int blockSize) {
+		final int size = blockSize * ColorManager.CHANNELS;
+		byte[] data = new byte[size];
+		int offset = 0;
+		int[] rgb = new int[3];
+		
+		for (int i = 0; i < blockSize; i++, offset += 3) {
+			rgb = ColorManager.convertYUVToRGB_intARR(border[i], rgb);
+			
+			data[offset] = (byte)(rgb[ColorManager.R_INDEX] & 0xFF);
+			data[offset + 1] = (byte)(rgb[ColorManager.G_INDEX] & 0xFF);
+			data[offset + 2] = (byte)(rgb[ColorManager.B_INDEX] & 0xFF);
+		}
+
+		return data;
+	}
+	
+	public static double[][] N_getBorderColors(final byte[] data, final int blockSize) {
+		double[][] border = new double[blockSize][ColorManager.CHANNELS];
+		int offset = 0;
+		
+		for (int i = 0; i < blockSize; i++, offset += 3) {
+			byte r = data[offset];
+			byte g = data[offset + 1];
+			byte b = data[offset + 2];
+			
+			border[i] = ColorManager.convertRGBToYUV(r, g, b);
+		}
+		
+		return border;
+	}
+	
+	
 	public static byte[] getSizeAndAngleByte(final int size, final int angle) {
 		byte angleByte = (byte)(IntraPipeline.getIndexByAngle(angle) & 0xFF);
 		byte sizeByte = (byte)(QuadtreeBase.getIndexBySize(size) & 0xFF);
@@ -714,12 +747,15 @@ public class Protocol {
 			final ContextModelManager manager, final BitReader input, final Dimension dim) {
 		BitWriter subdivisionWriter = new BitWriter();
 		decoder.decode(1, input, subdivisionWriter, manager.getModel(CodingType.QUADTREE_SUBDIVISION));
-		
-		if (subdivisionWriter.toByteArray()[0] == 0x00) {
+		BitReader subdivisionReader = new BitReader(subdivisionWriter.toByteArray());
+
+		if (subdivisionReader.read() == 0x00) {
 			BitWriter typeWriter = new BitWriter();
 			decoder.decode(1, input, typeWriter, manager.getModel(CodingType.PREDICTION_TYPE));
-			
-			if (typeWriter.toByteArray()[0] == 0x00) {
+			BitReader typeReader = new BitReader(typeWriter.toByteArray());
+			int type = typeReader.read();
+			System.out.println("Type: " + type);
+			if (type == 0x00) {
 				debinarizeVector(decoder, manager, input, root.getSize());
 			} else {
 				debinarizeIntraPredictionBlock(decoder, manager, input, root.getSize());
@@ -737,7 +773,8 @@ public class Protocol {
 			final CABAC encoder, final ContextModelManager manager,
 			final BitWriter output) {
 		final byte angle = Protocol.getAngleByte(block.getAngle());
-		final byte[] borderColors = Protocol.getBorderColorBytes(block.getVertical(), block.getHorizontal(), block.getSize());
+		final byte[] borderColors_h = Protocol.N_getBorderColorBytes(block.getHorizontal(), block.getSize());
+		final byte[] borderColors_v = Protocol.N_getBorderColorBytes(block.getVertical(), block.getSize());
 		
 		byte[][] differences = null;
 		
@@ -747,9 +784,14 @@ public class Protocol {
 			e.printStackTrace();
 		}
 		
-		encoder.encode(new BitReader(angle), output, manager.getModel(CodingType.INTRA_PREDICTION_ANGLE));
+		encoder.encode(new BitReader(angle), output,
+				manager.getModel(CodingType.INTRA_PREDICTION_ANGLE));
 		
-		encoder.encode(new BitReader(borderColors), output, manager.getModel(CodingType.INTRA_BORDER_HORIZONTAL));
+		encoder.encode(new BitReader(borderColors_h), output,
+				manager.getModel(CodingType.INTRA_BORDER_HORIZONTAL));
+		
+		encoder.encode(new BitReader(borderColors_v), output,
+				manager.getModel(CodingType.INTRA_BORDER_VERTICAL));
 		
 		encoder.encode(new BitReader(differences[ColorManager.Y_INDEX]),
 				output, manager.getModel(CodingType.RESIDUALS_Y));
@@ -765,32 +807,45 @@ public class Protocol {
 		final int differenceUV_Length = differenceY_Length / 4;
 		
 		BitWriter angleWriter = new BitWriter();
-		BitWriter borderWriter = new BitWriter();
+		BitWriter borderWriter_h = new BitWriter();
+		BitWriter borderWriter_v = new BitWriter();
 		BitWriter diffYWriter = new BitWriter();
 		BitWriter diffUWriter = new BitWriter();
 		BitWriter diffVWriter = new BitWriter();
 		
-		decoder.decode(Byte.SIZE, input, angleWriter, manager.getModel(CodingType.INTRA_PREDICTION_ANGLE));
-		decoder.decode(2 * Byte.SIZE * 3 * size, input, borderWriter, manager.getModel(CodingType.INTRA_BORDER_HORIZONTAL));
-		decoder.decode(differenceY_Length * Byte.SIZE, input, diffYWriter, manager.getModel(CodingType.RESIDUALS_Y));
-		decoder.decode(differenceUV_Length * Byte.SIZE, input, diffUWriter, manager.getModel(CodingType.RESIDUALS_U));
-		decoder.decode(differenceUV_Length * Byte.SIZE, input, diffVWriter, manager.getModel(CodingType.RESIDUALS_V));
+		decoder.decode(Byte.SIZE, input, angleWriter,
+				manager.getModel(CodingType.INTRA_PREDICTION_ANGLE));
+		
+		decoder.decode(Byte.SIZE * ColorManager.CHANNELS * size, input, borderWriter_h,
+				manager.getModel(CodingType.INTRA_BORDER_HORIZONTAL));
+		
+		decoder.decode(Byte.SIZE * ColorManager.CHANNELS * size, input, borderWriter_v,
+				manager.getModel(CodingType.INTRA_BORDER_VERTICAL));
+		
+		decoder.decode(differenceY_Length * Byte.SIZE, input, diffYWriter,
+				manager.getModel(CodingType.RESIDUALS_Y));
+		decoder.decode(differenceUV_Length * Byte.SIZE, input, diffUWriter,
+				manager.getModel(CodingType.RESIDUALS_U));
+		decoder.decode(differenceUV_Length * Byte.SIZE, input, diffVWriter,
+				manager.getModel(CodingType.RESIDUALS_V));
 		
 		byte[] angle = angleWriter.toByteArray();
-		byte[] border = borderWriter.toByteArray();
+		byte[] border_h = borderWriter_h.toByteArray();
+		byte[] border_v = borderWriter_v.toByteArray();
 		byte[] deltas = new byte[differenceY_Length + 2 * differenceUV_Length];
 		ArrayUtils.copyArray(diffYWriter.toByteArray(), 0, deltas, 0, differenceY_Length);
 		ArrayUtils.copyArray(diffUWriter.toByteArray(), 0, deltas, differenceY_Length, differenceUV_Length);
 		ArrayUtils.copyArray(diffVWriter.toByteArray(), 0, deltas, differenceY_Length + differenceUV_Length, differenceUV_Length);
 		
 		final int f_angle = Protocol.getAngle(angle[0]);
-		final double[][][] f_border = Protocol.getBorderColors(border, size, 0);
-		final double[][][] f_deltas = ProtocolBase.getDeltaCoefficientsFromDatastream(deltas, 0, 8);
+		final double[][] f_border_h = Protocol.N_getBorderColors(border_h, size);
+		final double[][] f_border_v = Protocol.N_getBorderColors(border_v, size);
+		final double[][][] f_deltas = ProtocolBase.getDeltaCoefficientsFromDatastream(deltas, 0, size);
 		
 		DecodingIntraPredictionBlock intraBlock = new DecodingIntraPredictionBlock(0, 0, f_angle, size);
 		intraBlock.setYUVDelta(f_deltas);
-		intraBlock.setHorizontal(f_border[1]);
-		intraBlock.setVertical(f_border[0]);
+		intraBlock.setHorizontal(f_border_h);
+		intraBlock.setVertical(f_border_v);
 		return intraBlock;
 	}
 	

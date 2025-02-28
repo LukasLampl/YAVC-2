@@ -125,6 +125,29 @@ public class TestCABACAdvanced {
 	}
 	
 	@Test
+	public void test_vectorConversion_004() {
+		ContextModelManager manager_enc = new ContextModelManager();
+		CABAC encoder = new CABAC();
+		
+		ContextModelManager manager_dec = new ContextModelManager();
+		CABAC decoder = new CABAC();
+		
+		EncodingVector vector = new EncodingVector(4, 16, 4);
+		vector.setReference(3);
+		vector.setYUVDelta(MatrixOperations.generateRandom3DMatrix(4, 255));
+		
+		BitWriter bin = new BitWriter();
+		Protocol.binarizeVector(vector, encoder, manager_enc, bin);
+		
+		BitReader binStream = new BitReader(bin.toByteArray());
+		DecodingVector decoded = Protocol.debinarizeVector(decoder, manager_dec, binStream, 4);
+		
+		assertEquals(vector.getSpanX(), decoded.getSpanX());
+		assertEquals(vector.getSpanY(), decoded.getSpanY());
+		assertEquals(vector.getReference(), decoded.getReference());
+	}
+	
+	@Test
 	public void test_intraConversion_001() {
 		ContextModelManager manager_enc = new ContextModelManager();
 		CABAC encoder = new CABAC();
@@ -226,6 +249,30 @@ public class TestCABACAdvanced {
 			assertArrayEquals(intraBlock.getHorizontal(), decoded.getHorizontal());
 			assertArrayEquals(intraBlock.getVertical(), decoded.getVertical());
 		}
+	}
+	
+	@Test
+	public void test_intraConversion_004() {
+		ContextModelManager manager_enc = new ContextModelManager();
+		CABAC encoder = new CABAC();
+		
+		ContextModelManager manager_dec = new ContextModelManager();
+		CABAC decoder = new CABAC();
+		
+		EncodingIntraPredictionBlock intraBlock = new EncodingIntraPredictionBlock(16, 4, 30, 4);
+		intraBlock.setYUVDelta(MatrixOperations.generateRandom3DMatrix(4, 255));
+		intraBlock.setHorizontal(MatrixOperations.generateColorBased2DMatrix(4));
+		intraBlock.setVertical(MatrixOperations.generateColorBased2DMatrix(4));
+		
+		BitWriter bin = new BitWriter();
+		Protocol.binarizeIntraPredictionBlock(intraBlock, encoder, manager_enc, bin);
+		
+		BitReader binStream = new BitReader(bin.toByteArray());
+		DecodingIntraPredictionBlock decoded = Protocol.debinarizeIntraPredictionBlock(decoder, manager_dec, binStream, 4);
+		
+		assertEquals(intraBlock.getAngle(), decoded.getAngle());
+		assertArrayEquals(intraBlock.getHorizontal(), decoded.getHorizontal());
+		assertArrayEquals(intraBlock.getVertical(), decoded.getVertical());
 	}
 	
 	@Test

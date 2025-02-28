@@ -35,7 +35,7 @@ import app.utils.MathUtils;
 import app.utils.components.MacroBlock;
 
 public abstract class MockQuadtreeEngine {
-	private static Random random = new Random();
+	private static Random random = new Random(21);
 	
 	public static List<MacroBlock> generateQuadtrees(final int number, final Dimension dim,
 			final boolean splitFully) {
@@ -81,7 +81,7 @@ public abstract class MockQuadtreeEngine {
 		List<MacroBlock> leaves = QuadtreeEngine.getLeaveNodes(roots).getRawData();
 		
 		for (final MacroBlock leaf : leaves) {
-			if (random.nextDouble() < 0.89) {
+			if (random.nextDouble() < 0.5) {
 				generateVector(leaf);
 			} else {
 				generateIntraBlock(leaf);

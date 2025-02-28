@@ -75,8 +75,8 @@ public class BitReader {
 	 */
 	public BitReader(final byte stream) {
 		this.stream = new byte[] {stream};
-		this.streamLength = this.stream.length;
-		this.streamLengthBits = this.streamLength * Byte.SIZE;
+		this.streamLength = 1;
+		this.streamLengthBits = Byte.SIZE;
 	}
 	
 	/**
