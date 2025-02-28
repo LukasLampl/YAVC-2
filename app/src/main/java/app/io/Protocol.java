@@ -668,13 +668,14 @@ public class Protocol {
 		for (int i = 0; i < numberOfRoots; i++) {
 			BitWriter posXWriter = new BitWriter();
 			BitWriter posYWriter = new BitWriter();
-			decoder.decode(ProtocolBase.SIZE_POSITION, input, posXWriter, manager.getModel(CodingType.QUADTREE_POSITION_X));
-			decoder.decode(ProtocolBase.SIZE_POSITION, input, posYWriter, manager.getModel(CodingType.QUADTREE_POSITION_Y));
+			decoder.decode(ProtocolBase.SIZE_POSITION * Byte.SIZE, input, posXWriter, manager.getModel(CodingType.QUADTREE_POSITION_X));
+			decoder.decode(ProtocolBase.SIZE_POSITION * Byte.SIZE, input, posYWriter, manager.getModel(CodingType.QUADTREE_POSITION_Y));
 			byte[] f_posX = posXWriter.toByteArray();
 			byte[] f_posY = posYWriter.toByteArray();
 			final int posX = ProtocolBase.getPosition(f_posX[0], f_posX[1]);
 			final int posY = ProtocolBase.getPosition(f_posY[0], f_posY[1]);
-			final MacroBlock root = new MacroBlock(posX, posY, QuadtreeBase.MAX_SIZE, true);
+			System.out.println("Pos: " + posX + "; " + posY);
+			final MacroBlock root = new MacroBlock(posX, posY, 4, true);//QuadtreeBase.MAX_SIZE, true);
 			debinarizeSingleQuadtree(root, decoder, manager, input, dim);
 		}
 		
