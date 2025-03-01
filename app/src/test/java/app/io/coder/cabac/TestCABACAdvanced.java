@@ -17,11 +17,13 @@ import app.engines.prediction.interprediction.DecodingVector;
 import app.engines.prediction.interprediction.EncodingVector;
 import app.engines.prediction.intraprediction.DecodingIntraPredictionBlock;
 import app.engines.prediction.intraprediction.EncodingIntraPredictionBlock;
+import app.engines.quadtree.QuadtreeBase;
 import app.io.BitReader;
 import app.io.BitWriter;
 import app.io.Protocol;
 import app.rendering.ColorManager;
 import app.utils.MathUtils;
+import app.utils.components.Component2D;
 import app.utils.components.MacroBlock;
 
 public class TestCABACAdvanced {
@@ -331,7 +333,9 @@ public class TestCABACAdvanced {
 	@Test
 	public void testQuadtreeConversion() throws IOException {
 		Dimension bounds = new Dimension(1920, 1080);
-		List<MacroBlock> roots = MockQuadtreeEngine.generateQuadtrees(2, bounds, false);
+		final int numOfRoots = (1920 * 1080) / (QuadtreeBase.MAX_SIZE * QuadtreeBase.MAX_SIZE) + 1;
+		
+		List<MacroBlock> roots = MockQuadtreeEngine.generateQuadtrees(numOfRoots, bounds, false);
 		MockQuadtreeEngine.assignLinks(roots);
 		BitWriter data = Protocol.binarizeQuadtrees(roots);
 		BitReader input = new BitReader(data.toByteArray(), data.getTotalBits());
@@ -354,8 +358,45 @@ public class TestCABACAdvanced {
 			assertEquals(expected.getNodes().length, got.getNodes().length);
 			
 			for (int i = 0; i < expected.getNodes().length; i++) {
+				if (expected.getNodes()[i] == null) {
+					continue;
+				}
+				
 				assertSingleQuadtree(expected.getNodes()[i], got.getNodes()[i]);
 			}
+		} else {
+			assertLink(expected, got);
 		}
+	}
+	
+	private void assertLink(final MacroBlock expected, final MacroBlock got) {
+		final Component2D exp_link = expected.getLink();
+		final Component2D got_link = got.getLink();
+		
+		if (exp_link instanceof EncodingVector) {
+			assertEquals(got_link.getClass(), DecodingVector.class);
+			
+			EncodingVector v_enc = (EncodingVector)exp_link;
+			DecodingVector v_dec = (DecodingVector)got_link;
+			
+			assertEquals(v_enc.getSpanX(), v_dec.getSpanX());
+			assertEquals(v_enc.getSpanY(), v_dec.getSpanY());
+			assertEquals(v_enc.getReference(), v_dec.getReference());
+		} else if (exp_link instanceof EncodingIntraPredictionBlock) {
+			assertEquals(got_link.getClass(), DecodingIntraPredictionBlock.class);
+			
+			EncodingIntraPredictionBlock intra_enc = (EncodingIntraPredictionBlock)exp_link;
+			DecodingIntraPredictionBlock intra_dec = (DecodingIntraPredictionBlock)got_link;
+			
+			assertEquals(intra_enc.getAngle(), intra_dec.getAngle());
+			assertArrayEquals(intra_enc.getHorizontal(), intra_dec.getHorizontal());
+			assertArrayEquals(intra_enc.getVertical(), intra_dec.getVertical());
+		} else {
+			throw new IllegalStateException("No such type: " + exp_link.getClass() + "!");
+		}
+		
+		assertEquals(exp_link.getPositionX(), got_link.getPositionX());
+		assertEquals(exp_link.getPositionY(), got_link.getPositionY());
+		assertEquals(exp_link.getSize(), got_link.getSize());
 	}
 }

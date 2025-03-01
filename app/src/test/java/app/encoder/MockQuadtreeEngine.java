@@ -73,6 +73,10 @@ public abstract class MockQuadtreeEngine {
 			block.subdivide(dim);
 			
 			for (final MacroBlock leaf : block.getNodes()) {
+				if (leaf == null) {
+					continue;
+				}
+				
 				generateLeaves(leaf, dim, splitFully);
 			}
 		}

@@ -707,7 +707,6 @@ public class Protocol {
 			byte[] f_posY = posYWriter.toByteArray();
 			final int posX = ProtocolBase.getPosition(f_posX[0], f_posX[1]);
 			final int posY = ProtocolBase.getPosition(f_posY[0], f_posY[1]);
-			System.out.println("Pos: " + posX + "; " + posY);
 			final MacroBlock root = new MacroBlock(posX, posY, QuadtreeBase.MAX_SIZE, false);
 			debinarizeSingleQuadtree(root, decoder, manager, input, dim);
 			roots.add(root);
@@ -723,6 +722,10 @@ public class Protocol {
 			encoder.encode(0x01, output, manager.getModel(CodingType.QUADTREE_SUBDIVISION));
 			
 			for (final MacroBlock child : root.getNodes()) {
+				if (child == null) {
+					continue;
+				}
+				
 				binarizeSingleQuadtree(child, encoder, manager, output);
 			}
 		} else {
@@ -764,6 +767,10 @@ public class Protocol {
 			root.subdivide(dim);
 			
 			for (final MacroBlock child : root.getNodes()) {
+				if (child == null) {
+					continue;
+				}
+				
 				debinarizeSingleQuadtree(child, decoder, manager, input, dim);
 			}
 		}
