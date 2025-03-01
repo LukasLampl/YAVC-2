@@ -17,7 +17,6 @@ import app.engines.prediction.interprediction.DecodingVector;
 import app.engines.prediction.interprediction.EncodingVector;
 import app.engines.prediction.intraprediction.DecodingIntraPredictionBlock;
 import app.engines.prediction.intraprediction.EncodingIntraPredictionBlock;
-import app.engines.quadtree.QuadtreeBase;
 import app.io.BitReader;
 import app.io.BitWriter;
 import app.io.Protocol;
@@ -34,6 +33,8 @@ public class TestCABACAdvanced {
 		ContextModelManager manager_dec = new ContextModelManager();
 		CABAC decoder = new CABAC();
 		
+		MacroBlock block = new MacroBlock(43, 41, 8, true);
+		
 		EncodingVector vector = new EncodingVector(43, 31, 8);
 		vector.setReference(4);
 		vector.setYUVDelta(MatrixOperations.generateRandom3DMatrix(8, 255));
@@ -42,7 +43,7 @@ public class TestCABACAdvanced {
 		Protocol.binarizeVector(vector, encoder, manager_enc, bin);
 		
 		BitReader binStream = new BitReader(bin.toByteArray());
-		DecodingVector decoded = Protocol.debinarizeVector(decoder, manager_dec, binStream, 8);
+		DecodingVector decoded = Protocol.debinarizeVector(decoder, manager_dec, binStream, block);
 		
 		assertEquals(vector.getSpanX(), decoded.getSpanX());
 		assertEquals(vector.getSpanY(), decoded.getSpanY());
@@ -75,6 +76,8 @@ public class TestCABACAdvanced {
 			final int size = 8;
 			final int reference = MathUtils.round(Math.random() * config.MAX_REFERENCES);
 			
+			MacroBlock block = new MacroBlock(0, 0, size, true);
+			
 			EncodingVector vector = new EncodingVector(spanX, spanY, size);
 			vector.setReference(reference);
 			vector.setYUVDelta(MatrixOperations.generateRandom3DMatrix(size, 127));
@@ -83,7 +86,7 @@ public class TestCABACAdvanced {
 			Protocol.binarizeVector(vector, encoder, manager_enc, bin);
 			
 			BitReader binStream = new BitReader(bin.toByteArray());
-			DecodingVector decoded = Protocol.debinarizeVector(decoder, manager_dec, binStream, size);
+			DecodingVector decoded = Protocol.debinarizeVector(decoder, manager_dec, binStream, block);
 			
 			assertEquals(vector.getSpanX(), decoded.getSpanX());
 			assertEquals(vector.getSpanY(), decoded.getSpanY());
@@ -99,6 +102,8 @@ public class TestCABACAdvanced {
 		ContextModelManager manager_dec = new ContextModelManager();
 		CABAC decoder = new CABAC();
 		
+		MacroBlock block = new MacroBlock(0, 0, 8, true);
+		
 		EncodingVector vector_1 = new EncodingVector(43, 31, 8);
 		vector_1.setReference(4);
 		vector_1.setYUVDelta(MatrixOperations.generateRandom3DMatrix(8, 255));
@@ -112,8 +117,8 @@ public class TestCABACAdvanced {
 		Protocol.binarizeVector(vector_2, encoder, manager_enc, bin);
 		
 		BitReader binStream = new BitReader(bin.toByteArray());
-		DecodingVector decoded_1 = Protocol.debinarizeVector(decoder, manager_dec, binStream, 8);
-		DecodingVector decoded_2 = Protocol.debinarizeVector(decoder, manager_dec, binStream, 8);
+		DecodingVector decoded_1 = Protocol.debinarizeVector(decoder, manager_dec, binStream, block);
+		DecodingVector decoded_2 = Protocol.debinarizeVector(decoder, manager_dec, binStream, block);
 		
 		assertEquals(vector_1.getSpanX(), decoded_1.getSpanX());
 		assertEquals(vector_1.getSpanY(), decoded_1.getSpanY());
@@ -132,6 +137,8 @@ public class TestCABACAdvanced {
 		ContextModelManager manager_dec = new ContextModelManager();
 		CABAC decoder = new CABAC();
 		
+		MacroBlock block = new MacroBlock(4, 16, 4, true);
+		
 		EncodingVector vector = new EncodingVector(4, 16, 4);
 		vector.setReference(3);
 		vector.setYUVDelta(MatrixOperations.generateRandom3DMatrix(4, 255));
@@ -140,7 +147,7 @@ public class TestCABACAdvanced {
 		Protocol.binarizeVector(vector, encoder, manager_enc, bin);
 		
 		BitReader binStream = new BitReader(bin.toByteArray());
-		DecodingVector decoded = Protocol.debinarizeVector(decoder, manager_dec, binStream, 4);
+		DecodingVector decoded = Protocol.debinarizeVector(decoder, manager_dec, binStream, block);
 		
 		assertEquals(vector.getSpanX(), decoded.getSpanX());
 		assertEquals(vector.getSpanY(), decoded.getSpanY());
@@ -155,6 +162,8 @@ public class TestCABACAdvanced {
 		ContextModelManager manager_dec = new ContextModelManager();
 		CABAC decoder = new CABAC();
 		
+		MacroBlock block = new MacroBlock(43, 31, 8, true);
+		
 		EncodingIntraPredictionBlock intraBlock = new EncodingIntraPredictionBlock(43, 31, 30, 8);
 		intraBlock.setYUVDelta(MatrixOperations.generateRandom3DMatrix(8, 255));
 		intraBlock.setHorizontal(new double[][] {
@@ -167,6 +176,7 @@ public class TestCABACAdvanced {
 			ColorManager.convertRGBToYUV(Color.WHITE),
 			ColorManager.convertRGBToYUV(Color.BLACK)
 		});
+		
 		intraBlock.setVertical(new double[][] {
 			ColorManager.convertRGBToYUV(Color.BLACK),
 			ColorManager.convertRGBToYUV(Color.RED),
@@ -182,7 +192,7 @@ public class TestCABACAdvanced {
 		Protocol.binarizeIntraPredictionBlock(intraBlock, encoder, manager_enc, bin);
 		
 		BitReader binStream = new BitReader(bin.toByteArray());
-		DecodingIntraPredictionBlock decoded = Protocol.debinarizeIntraPredictionBlock(decoder, manager_dec, binStream, 8);
+		DecodingIntraPredictionBlock decoded = Protocol.debinarizeIntraPredictionBlock(decoder, manager_dec, binStream, block);
 		
 		assertEquals(intraBlock.getAngle(), decoded.getAngle());
 		assertArrayEquals(intraBlock.getHorizontal(), decoded.getHorizontal());
@@ -197,6 +207,8 @@ public class TestCABACAdvanced {
 		ContextModelManager manager_dec = new ContextModelManager();
 		CABAC decoder = new CABAC();
 		
+		MacroBlock block = new MacroBlock(43, 31, 8, true);
+		
 		EncodingIntraPredictionBlock intraBlock = new EncodingIntraPredictionBlock(43, 31, 30, 8);
 		intraBlock.setYUVDelta(MatrixOperations.generateRandom3DMatrix(8, 255));
 		intraBlock.setHorizontal(MatrixOperations.generateColorBased2DMatrix(8));
@@ -206,7 +218,7 @@ public class TestCABACAdvanced {
 		Protocol.binarizeIntraPredictionBlock(intraBlock, encoder, manager_enc, bin);
 		
 		BitReader binStream = new BitReader(bin.toByteArray());
-		DecodingIntraPredictionBlock decoded = Protocol.debinarizeIntraPredictionBlock(decoder, manager_dec, binStream, 8);
+		DecodingIntraPredictionBlock decoded = Protocol.debinarizeIntraPredictionBlock(decoder, manager_dec, binStream, block);
 		
 		assertEquals(intraBlock.getAngle(), decoded.getAngle());
 		assertArrayEquals(intraBlock.getHorizontal(), decoded.getHorizontal());
@@ -223,6 +235,8 @@ public class TestCABACAdvanced {
 		
 		ContextModelManager manager_dec = new ContextModelManager();
 		CABAC decoder = new CABAC();
+		
+		MacroBlock block = new MacroBlock(43, 31, 8, true);
 		
 		for (int i = 0; i < steps; i++) {
 			if (i % ten_percent == 0) {
@@ -243,7 +257,7 @@ public class TestCABACAdvanced {
 			Protocol.binarizeIntraPredictionBlock(intraBlock, encoder, manager_enc, bin);
 			
 			BitReader binStream = new BitReader(bin.toByteArray());
-			DecodingIntraPredictionBlock decoded = Protocol.debinarizeIntraPredictionBlock(decoder, manager_dec, binStream, 8);
+			DecodingIntraPredictionBlock decoded = Protocol.debinarizeIntraPredictionBlock(decoder, manager_dec, binStream, block);
 			
 			assertEquals(intraBlock.getAngle(), decoded.getAngle());
 			assertArrayEquals(intraBlock.getHorizontal(), decoded.getHorizontal());
@@ -259,6 +273,8 @@ public class TestCABACAdvanced {
 		ContextModelManager manager_dec = new ContextModelManager();
 		CABAC decoder = new CABAC();
 		
+		MacroBlock block = new MacroBlock(16, 4, 4, true);
+		
 		EncodingIntraPredictionBlock intraBlock = new EncodingIntraPredictionBlock(16, 4, 30, 4);
 		intraBlock.setYUVDelta(MatrixOperations.generateRandom3DMatrix(4, 255));
 		intraBlock.setHorizontal(MatrixOperations.generateColorBased2DMatrix(4));
@@ -268,7 +284,7 @@ public class TestCABACAdvanced {
 		Protocol.binarizeIntraPredictionBlock(intraBlock, encoder, manager_enc, bin);
 		
 		BitReader binStream = new BitReader(bin.toByteArray());
-		DecodingIntraPredictionBlock decoded = Protocol.debinarizeIntraPredictionBlock(decoder, manager_dec, binStream, 4);
+		DecodingIntraPredictionBlock decoded = Protocol.debinarizeIntraPredictionBlock(decoder, manager_dec, binStream, block);
 		
 		assertEquals(intraBlock.getAngle(), decoded.getAngle());
 		assertArrayEquals(intraBlock.getHorizontal(), decoded.getHorizontal());
@@ -276,17 +292,70 @@ public class TestCABACAdvanced {
 	}
 	
 	@Test
+	public void test_intraConversion_005() {
+		ContextModelManager manager_enc = new ContextModelManager();
+		CABAC encoder = new CABAC();
+		
+		ContextModelManager manager_dec = new ContextModelManager();
+		CABAC decoder = new CABAC();
+		
+		MacroBlock block = new MacroBlock(16, 4, 4, true);
+		
+		EncodingIntraPredictionBlock intraBlock_1 = new EncodingIntraPredictionBlock(16, 4, 30, 4);
+		intraBlock_1.setYUVDelta(MatrixOperations.generateRandom3DMatrix(4, 255));
+		intraBlock_1.setHorizontal(MatrixOperations.generateColorBased2DMatrix(4));
+		intraBlock_1.setVertical(MatrixOperations.generateColorBased2DMatrix(4));
+		
+		EncodingIntraPredictionBlock intraBlock_2 = new EncodingIntraPredictionBlock(0, 28, 5, 4);
+		intraBlock_2.setYUVDelta(MatrixOperations.generateRandom3DMatrix(4, 255));
+		intraBlock_2.setHorizontal(MatrixOperations.generateColorBased2DMatrix(4));
+		intraBlock_2.setVertical(MatrixOperations.generateColorBased2DMatrix(4));
+		
+		BitWriter bin = new BitWriter();
+		Protocol.binarizeIntraPredictionBlock(intraBlock_1, encoder, manager_enc, bin);
+		Protocol.binarizeIntraPredictionBlock(intraBlock_2, encoder, manager_enc, bin);
+		
+		BitReader binStream = new BitReader(bin.toByteArray());
+		DecodingIntraPredictionBlock decoded_1 = Protocol.debinarizeIntraPredictionBlock(decoder, manager_dec, binStream, block);
+		DecodingIntraPredictionBlock decoded_2 = Protocol.debinarizeIntraPredictionBlock(decoder, manager_dec, binStream, block);
+		
+		assertEquals(intraBlock_1.getAngle(), decoded_1.getAngle());
+		assertArrayEquals(intraBlock_1.getHorizontal(), decoded_1.getHorizontal());
+		assertArrayEquals(intraBlock_1.getVertical(), decoded_1.getVertical());
+		
+		assertEquals(intraBlock_2.getAngle(), decoded_2.getAngle());
+		assertArrayEquals(intraBlock_2.getHorizontal(), decoded_2.getHorizontal());
+		assertArrayEquals(intraBlock_2.getVertical(), decoded_2.getVertical());
+	}
+	
+	@Test
 	public void testQuadtreeConversion() throws IOException {
-		Dimension bounds = new Dimension(QuadtreeBase.MAX_SIZE, QuadtreeBase.MAX_SIZE);
-		List<MacroBlock> roots = MockQuadtreeEngine.generateQuadtrees(1, bounds, false);
+		Dimension bounds = new Dimension(1920, 1080);
+		List<MacroBlock> roots = MockQuadtreeEngine.generateQuadtrees(2, bounds, false);
 		MockQuadtreeEngine.assignLinks(roots);
 		BitWriter data = Protocol.binarizeQuadtrees(roots);
 		BitReader input = new BitReader(data.toByteArray(), data.getTotalBits());
 		List<MacroBlock> decoded = Protocol.debinarizeQuadtrees(input, bounds);
 		
+		assertEquals(roots.size(), decoded.size());
 		
-//		System.out.println("Final len: " + data.getTotalBits() + " Bits");
-//		System.out.println(" - " + (data.getTotalBits() / Byte.SIZE) + " Byte");
-//		System.out.println(" - Around " + ((((double)data.getTotalBits() / (double)Byte.SIZE) / 24000) * 100) + "% of 24kB");
+		for (int i = 0; i < roots.size(); i++) {
+			assertSingleQuadtree(roots.get(i), decoded.get(i));
+		}
+	}
+	
+	private void assertSingleQuadtree(final MacroBlock expected, final MacroBlock got) {
+		assertEquals(expected.isSubdivided(), got.isSubdivided());
+		assertEquals(expected.getPositionX(), got.getPositionX());
+		assertEquals(expected.getPositionY(), got.getPositionY());
+		assertEquals(expected.getSize(), got.getSize());
+		
+		if (expected.isSubdivided()) {
+			assertEquals(expected.getNodes().length, got.getNodes().length);
+			
+			for (int i = 0; i < expected.getNodes().length; i++) {
+				assertSingleQuadtree(expected.getNodes()[i], got.getNodes()[i]);
+			}
+		}
 	}
 }

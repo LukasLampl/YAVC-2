@@ -708,8 +708,9 @@ public class Protocol {
 			final int posX = ProtocolBase.getPosition(f_posX[0], f_posX[1]);
 			final int posY = ProtocolBase.getPosition(f_posY[0], f_posY[1]);
 			System.out.println("Pos: " + posX + "; " + posY);
-			final MacroBlock root = new MacroBlock(posX, posY, 4, true);//QuadtreeBase.MAX_SIZE, true);
+			final MacroBlock root = new MacroBlock(posX, posY, QuadtreeBase.MAX_SIZE, false);
 			debinarizeSingleQuadtree(root, decoder, manager, input, dim);
+			roots.add(root);
 		}
 		
 		return roots;
@@ -734,7 +735,7 @@ public class Protocol {
 				
 				binarizeIntraPredictionBlock((EncodingIntraPredictionBlock)link, encoder, manager, output);
 			} else if (link instanceof EncodingVector) {
-				encoder.encode(0x01, output, manager.getModel(CodingType.PREDICTION_TYPE));
+				encoder.encode(0x00, output, manager.getModel(CodingType.PREDICTION_TYPE));
 				
 				binarizeVector((EncodingVector)link, encoder, manager, output);
 			} else {
@@ -753,12 +754,11 @@ public class Protocol {
 			BitWriter typeWriter = new BitWriter();
 			decoder.decode(1, input, typeWriter, manager.getModel(CodingType.PREDICTION_TYPE));
 			BitReader typeReader = new BitReader(typeWriter.toByteArray());
-			int type = typeReader.read();
-			System.out.println("Type: " + type);
-			if (type == 0x00) {
-				debinarizeVector(decoder, manager, input, root.getSize());
+
+			if (typeReader.read() == 0x00) {
+				root.setLink(debinarizeVector(decoder, manager, input, root));
 			} else {
-				debinarizeIntraPredictionBlock(decoder, manager, input, root.getSize());
+				root.setLink(debinarizeIntraPredictionBlock(decoder, manager, input, root));
 			}
 		} else {
 			root.subdivide(dim);
@@ -802,7 +802,8 @@ public class Protocol {
 	}
 	
 	public static DecodingIntraPredictionBlock debinarizeIntraPredictionBlock(final CABAC decoder, final ContextModelManager manager,
-			final BitReader input, final int size) {
+			final BitReader input, final MacroBlock parent) {
+		final int size = parent.getSize();
 		final int differenceY_Length = size * size;
 		final int differenceUV_Length = differenceY_Length / 4;
 		
@@ -842,7 +843,7 @@ public class Protocol {
 		final double[][] f_border_v = Protocol.N_getBorderColors(border_v, size);
 		final double[][][] f_deltas = ProtocolBase.getDeltaCoefficientsFromDatastream(deltas, 0, size);
 		
-		DecodingIntraPredictionBlock intraBlock = new DecodingIntraPredictionBlock(0, 0, f_angle, size);
+		DecodingIntraPredictionBlock intraBlock = new DecodingIntraPredictionBlock(parent.getPositionX(), parent.getPositionY(), f_angle, size);
 		intraBlock.setYUVDelta(f_deltas);
 		intraBlock.setHorizontal(f_border_h);
 		intraBlock.setVertical(f_border_v);
@@ -879,7 +880,8 @@ public class Protocol {
 	
 	public static DecodingVector debinarizeVector(final CABAC decoder,
 			final ContextModelManager manager, final BitReader input,
-			final int vectorSize) {
+			final MacroBlock parent) {
+		final int vectorSize = parent.getSize();
 		final int differenceY_Length = vectorSize * vectorSize;
 		final int differenceUV_Length = differenceY_Length / 4;
 		
@@ -909,7 +911,7 @@ public class Protocol {
 		final int[] f_refAndSize = Protocol.getReferenceAndSizeInt(referenceAndSizeWriter.getFirstByte());
 		final double[][][] f_deltas = ProtocolBase.getDeltaCoefficientsFromDatastream(deltas, 0, vectorSize);
 		
-		DecodingVector vec = new DecodingVector(0, 0, vectorSize);
+		DecodingVector vec = new DecodingVector(parent.getPositionX(), parent.getPositionY(), vectorSize);
 		vec.setSpanX(f_spanX);
 		vec.setSpanY(f_spanY);
 		vec.setReference(f_refAndSize[0]);

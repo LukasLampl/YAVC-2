@@ -45,6 +45,7 @@ public abstract class MockQuadtreeEngine {
 		
 		for (int i = 0; i < number; i++) {
 			roots.add(generateQuadtree(posX, posY, dim, splitFully));
+			posX += QuadtreeBase.MAX_SIZE;
 			
 			if (posX >= dim.width) {
 				posX = 0;
@@ -57,7 +58,7 @@ public abstract class MockQuadtreeEngine {
 	
 	private static MacroBlock generateQuadtree(final int posX, final int posY,
 			final Dimension dim, final boolean splitFully) {
-		MacroBlock root = new MacroBlock(posX, posY, 4, true);//QuadtreeBase.MAX_SIZE, true);
+		MacroBlock root = new MacroBlock(posX, posY, QuadtreeBase.MAX_SIZE, false);
 		generateLeaves(root, dim, splitFully);
 		return root;
 	}

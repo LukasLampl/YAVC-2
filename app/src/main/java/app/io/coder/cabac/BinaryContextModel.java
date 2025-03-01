@@ -62,7 +62,6 @@ public class BinaryContextModel {
 	 * @return The frequency of the given binary state.
 	 */
 	public int getSymbolFrequency(final int symbol) {
-		ensureBit(symbol);
 		return frequencyOfSymbols[symbol];
 	}
 	
@@ -72,18 +71,6 @@ public class BinaryContextModel {
 	 * @param symbol	Binary state of which to increase the occurring frequency.
 	 */
 	public void incrementSymbolFrequency(final int symbol) {
-		ensureBit(symbol);
 		this.frequencyOfSymbols[symbol]++;
-	}
-	
-	/**
-	 * Ensures that a given symbol is a bit.
-	 * 
-	 * @param symbol	Symbol to check.
-	 */
-	private void ensureBit(final int symbol) {
-		if (symbol != 0x00 && symbol != 0x01) {
-			throw new IllegalArgumentException("A bit must either be 0 or 1!");
-		}
 	}
 }

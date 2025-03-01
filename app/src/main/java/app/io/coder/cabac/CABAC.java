@@ -192,12 +192,12 @@ public class CABAC {
 					+ (this.high - this.low));
 		}
 		
+		// Must use long, since for some cases `freq * range > 32 bits` of data.
 		final long range = this.high - this.low;
 		final long freq_0 = this.model.getSymbolFrequency(0x00);
 		final long freq_1 = this.model.getSymbolFrequency(0x01);
 		final long range_freq_0 = range * freq_0;
 		final long total = freq_0 + freq_1;
-		
 		final int midRange = (int)(range_freq_0 / total);
 		this.mid = this.low + midRange;
 	}

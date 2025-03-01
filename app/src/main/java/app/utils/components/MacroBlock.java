@@ -129,8 +129,9 @@ public class MacroBlock extends Component2D {
 			this.Y = new double[size][size];
 			this.U = new double[halfSize][halfSize];
 			this.V = new double[halfSize][halfSize];
-			this.isColorSet = true;
 		}
+		
+		this.isColorSet = initColor;
 	}
 	
 	/**
@@ -448,7 +449,14 @@ public class MacroBlock extends Component2D {
 					continue;
 				}
 				
-				MacroBlock b = getSubBlock(new Point(x, y), fraction);
+				final MacroBlock b;
+				
+				if (this.isColorSet) {
+					b = getSubBlock(x, y, fraction);
+				} else {
+					b = new MacroBlock(x, y, fraction, false);
+				}
+				
 				b.setPositionRelativeToParent(x + this.positionRelativeToParentX, y + this.positionRelativeToParentY);
 				this.nodes[index++] = b;
 			}
@@ -557,7 +565,8 @@ public class MacroBlock extends Component2D {
 	 * 
 	 * @return Sub-block from the MacroBlock
 	 * 
-	 * @param pos	Position of the sub-block within the MacroBlock
+	 * @param x		Position x of the parent block.
+	 * @param y		Position y of the parent block.
 	 * @param size	Size of the sub-block
 	 * 
 	 * @throws ArrayIndexOutOfBoundsException	If x or y is below 0 or bigger
@@ -565,10 +574,10 @@ public class MacroBlock extends Component2D {
 	 * @throws IllegalArgumentException	When the size is smaller than 1 or bigger
 	 * than the MacroBlock itself
 	 */
-	private MacroBlock getSubBlock(final Point pos, final int size) {
-		final double[][][] res = getColorSubBlock(pos.x, pos.y, size, null);
-		final int posX = pos.x + this.positionX;
-		final int posY = pos.y + this.positionY;
+	private MacroBlock getSubBlock(final int x, final int y, final int size) {
+		final double[][][] res = getColorSubBlock(x, y, size, null);
+		final int posX = x + this.positionX;
+		final int posY = y + this.positionY;
 		return new MacroBlock(posX, posY, size, res[ColorManager.Y_INDEX], res[ColorManager.U_INDEX], res[ColorManager.V_INDEX]);
 	}
 	
@@ -667,5 +676,15 @@ public class MacroBlock extends Component2D {
 		ArrayUtils.copy2DArray(this.U, 0, 0, UClone, 0, 0, halfSize, halfSize);
 		ArrayUtils.copy2DArray(this.V, 0, 0, VClone, 0, 0, halfSize, halfSize);
 		return new MacroBlock(this.positionX, this.positionY, this.size, YClone, UClone, VClone);
+	}
+	
+	@Override
+	public String toString() {
+		return this.getClass().getSimpleName() + "["
+			+ "x=" + this.positionX + ", y=" + this.positionY + ", "
+			+ "x_relToParent=" + this.positionRelativeToParentX + ", y_relToParent=" + this.positionRelativeToParentY + ", "
+			+ "size=" + this.size + ", " 
+			+ "subdivided=" + this.isSubdivided
+			+ "]";
 	}
 }
