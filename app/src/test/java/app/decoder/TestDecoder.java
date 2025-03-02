@@ -37,7 +37,7 @@ import org.junit.jupiter.api.Test;
 
 import app.engines.prediction.interprediction.DecodingVector;
 import app.engines.prediction.interprediction.EncodingVector;
-import app.engines.prediction.interprediction.VectorEngine;
+import app.engines.prediction.interprediction.encoding.VectorEngine;
 import app.engines.prediction.intraprediction.DecodingIntraPredictionBlock;
 import app.engines.prediction.intraprediction.EncodingIntraPredictionBlock;
 import app.engines.prediction.intraprediction.IntraEngine;

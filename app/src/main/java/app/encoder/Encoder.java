@@ -28,7 +28,7 @@ import app.engines.dct.DCTEngine;
 import app.engines.prediction.PredictionDistributor;
 import app.engines.prediction.interprediction.EncodingVector;
 import app.engines.prediction.interprediction.Vector;
-import app.engines.prediction.interprediction.VectorEngine;
+import app.engines.prediction.interprediction.encoding.VectorEngine;
 import app.engines.prediction.intraprediction.EncodingIntraPredictionBlock;
 import app.engines.prediction.intraprediction.IntraEngine;
 import app.engines.prediction.intraprediction.IntraPredictionBlock;
@@ -73,7 +73,7 @@ public class Encoder {
 	private static DifferenceEngine DIFFERENCE_ENGINE = new DifferenceEngine();
 	
 	/**
-	 * The {@link app.engines.prediction.interprediction.VectorEngine VectorEngine} used for the whole
+	 * The {@link app.engines.prediction.interprediction.encoding.VectorEngine VectorEngine} used for the whole
 	 * encoding process.
 	 */
 	private static VectorEngine VECTOR_ENGINE = new VectorEngine();

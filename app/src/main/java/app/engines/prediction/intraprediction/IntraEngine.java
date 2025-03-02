@@ -24,6 +24,8 @@ package app.engines.prediction.intraprediction;
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 
+import app.engines.prediction.intraprediction.encoding.IntraPipeline;
+import app.engines.prediction.intraprediction.encoding.IntraPredictionTask;
 import app.managers.LoadDistributor;
 import app.utils.PixelRaster;
 import app.utils.components.MacroBlock;

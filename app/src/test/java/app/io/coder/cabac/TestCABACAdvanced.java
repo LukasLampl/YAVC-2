@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -335,9 +337,13 @@ public class TestCABACAdvanced {
 		Dimension bounds = new Dimension(1920, 1080);
 		final int numOfRoots = (1920 * 1080) / (QuadtreeBase.MAX_SIZE * QuadtreeBase.MAX_SIZE) + 1;
 		
-		List<MacroBlock> roots = MockQuadtreeEngine.generateQuadtrees(numOfRoots, bounds, false);
+		List<MacroBlock> roots = MockQuadtreeEngine.generateQuadtrees(1, bounds, true);
 		MockQuadtreeEngine.assignLinks(roots);
 		BitWriter data = Protocol.binarizeQuadtrees(roots);
+		
+		System.out.println(numOfRoots + " quadtrees stored in " + data.getTotalBits() + " Bits or " + (data.getTotalBits() / Byte.SIZE) + " Bytes.");
+		Files.write(Path.of("C:\\Users\\Lukas Lampl\\Documents\\EncoderOut\\cabac.bin"), data.toByteArray());
+		
 		BitReader input = new BitReader(data.toByteArray(), data.getTotalBits());
 		List<MacroBlock> decoded = Protocol.debinarizeQuadtrees(input, bounds);
 		
@@ -346,6 +352,8 @@ public class TestCABACAdvanced {
 		for (int i = 0; i < roots.size(); i++) {
 			assertSingleQuadtree(roots.get(i), decoded.get(i));
 		}
+		
+//		Files.write(Path.of("C:\\Users\\Lukas Lampl\\Documents\\EncoderOut\\cabac.bin"), data.toByteArray());
 	}
 	
 	private void assertSingleQuadtree(final MacroBlock expected, final MacroBlock got) {

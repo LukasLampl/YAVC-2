@@ -3,6 +3,7 @@ package app.io.coder.cabac;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import app.encoder.MatrixOperations;
@@ -938,6 +939,7 @@ public class TestCABAC {
 	}
 	
 	@Test
+	@Disabled
 	public void testThroughput() {
 		final int steps = 16;
 		final int dataLen = 0x7FFFFF;

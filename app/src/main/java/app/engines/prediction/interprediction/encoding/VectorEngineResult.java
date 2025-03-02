@@ -19,8 +19,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package app.engines.prediction.interprediction;
+package app.engines.prediction.interprediction.encoding;
 
+import app.engines.prediction.interprediction.Vector;
 import app.managers.LoadDistributor;
 import app.utils.components.MacroBlock;
 

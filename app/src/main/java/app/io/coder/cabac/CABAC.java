@@ -256,11 +256,10 @@ public class CABAC {
 	private void flushInverseBits(int bit, final BitWriter output) {
 		bit = ~bit;
 
-		for (int i = 0; i < this.underflowCount; i++) {
+		while (this.underflowCount > 0) {
 			output.write(bit);
+			this.underflowCount--;
 		}
-
-		this.underflowCount = 0;
 	}
 
 	/**
@@ -361,7 +360,8 @@ public class CABAC {
 	 * @param output	The bit writer to flush the bits.
 	 */
 	private void flushEncoder(final BitWriter output) {
-		this.underflowCount += PRECISION - 1;
+//		this.underflowCount += PRECISION - 1;
+		this.underflowCount++;
 
 		if (this.low < QUARTER_RANGE) {
 			output.write(0x00);

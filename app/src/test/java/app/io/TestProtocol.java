@@ -30,7 +30,11 @@ import java.util.Random;
 
 import org.junit.jupiter.api.Test;
 
+import app.encoder.MatrixOperations;
 import app.exceptions.DCTCoefficientOutOfBoundsException;
+import app.io.coder.cabac.CABAC;
+import app.io.coder.cabac.ContextModelManager;
+import app.io.coder.cabac.ContextModelManager.ResidualType;
 import app.rendering.ColorManager;
 import app.utils.ArrayUtils;
 import app.utils.MathUtils;
@@ -227,6 +231,53 @@ public class TestProtocol {
 				ArrayUtils.copyArray(data[2], 0, stream, data[0].length + data[1].length, data[2].length);
 				double[][][] decoded = ProtocolBase.getDeltaCoefficientsFromDatastream(stream, 0, size);
 				assertArrayEquals(deltas, decoded);
+			}
+		}
+	}
+	
+	@Test
+	public void testBinarizeDeltaMatrix_001() {
+		final int N = 16;
+		CABAC encoder = new CABAC();
+		CABAC decoder = new CABAC();
+		
+		ContextModelManager manager_enc = new ContextModelManager();
+		ContextModelManager manager_dec = new ContextModelManager();
+		
+		byte[] deltaBytes = MatrixOperations.generateRandomByteMatrix(N * N);
+		BitWriter output = new BitWriter();
+		BitWriter dec = new BitWriter();
+		
+		Protocol.binarizeResiduals(deltaBytes, ResidualType.RESIDUAL_Y, output, encoder, manager_enc, N);
+		Protocol.debinarizeResiduals(new BitReader(output.toByteArray(), output.getTotalBits()), ResidualType.RESIDUAL_Y, dec, decoder, manager_dec, N);
+		byte[] decoded = dec.toByteArray();
+		
+		assertEquals(deltaBytes.length, decoded.length);
+		assertArrayEquals(deltaBytes, decoded);
+	}
+	
+	@Test
+	public void testBinarizeDeltaMatrix_002() {
+		int[] sizes = {4, 8, 16, 64, 128};
+		
+		for (final int size : sizes) {
+			for (int i = 0; i < 1024; i++) {
+				CABAC encoder = new CABAC();
+				CABAC decoder = new CABAC();
+				
+				ContextModelManager manager_enc = new ContextModelManager();
+				ContextModelManager manager_dec = new ContextModelManager();
+				
+				byte[] deltaBytes = MatrixOperations.generateRandomByteMatrix(size * size);
+				BitWriter output = new BitWriter();
+				BitWriter dec = new BitWriter();
+				
+				Protocol.binarizeResiduals(deltaBytes, ResidualType.RESIDUAL_Y, output, encoder, manager_enc, size);
+				Protocol.debinarizeResiduals(new BitReader(output.toByteArray(), output.getTotalBits()), ResidualType.RESIDUAL_Y, dec, decoder, manager_dec, size);
+				byte[] decoded = dec.toByteArray();
+				
+				assertEquals(deltaBytes.length, decoded.length);
+				assertArrayEquals(deltaBytes, decoded);
 			}
 		}
 	}

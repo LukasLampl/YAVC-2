@@ -19,11 +19,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package app.engines.prediction.intraprediction;
+package app.engines.prediction.intraprediction.decoding;
 
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 
+import app.engines.prediction.intraprediction.DecodingIntraPredictionBlock;
 import app.managers.ListManager;
 
 public class IntraConverterPool {

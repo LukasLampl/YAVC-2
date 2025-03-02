@@ -19,10 +19,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package app.engines.prediction.intraprediction;
+package app.engines.prediction.intraprediction.decoding;
 
 import java.awt.Dimension;
 
+import app.engines.prediction.intraprediction.encoding.IntraPipeline;
 import app.utils.components.MacroBlock;
 
 public class IntraDecoder {

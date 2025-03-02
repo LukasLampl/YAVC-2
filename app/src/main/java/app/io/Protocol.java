@@ -29,17 +29,19 @@ import java.util.List;
 import app.engines.prediction.interprediction.DecodingVector;
 import app.engines.prediction.interprediction.EncodingVector;
 import app.engines.prediction.interprediction.Vector;
-import app.engines.prediction.interprediction.VectorConverterPool;
+import app.engines.prediction.interprediction.decoding.VectorConverterPool;
 import app.engines.prediction.intraprediction.DecodingIntraPredictionBlock;
 import app.engines.prediction.intraprediction.EncodingIntraPredictionBlock;
-import app.engines.prediction.intraprediction.IntraConverterPool;
-import app.engines.prediction.intraprediction.IntraPipeline;
+import app.engines.prediction.intraprediction.decoding.IntraConverterPool;
+import app.engines.prediction.intraprediction.encoding.IntraPipeline;
 import app.engines.quadtree.QuadtreeBase;
 import app.exceptions.CorruptedFileException;
 import app.exceptions.DCTCoefficientOutOfBoundsException;
+import app.io.coder.cabac.BinaryContextModel;
 import app.io.coder.cabac.CABAC;
 import app.io.coder.cabac.ContextModelManager;
 import app.io.coder.cabac.ContextModelManager.CodingType;
+import app.io.coder.cabac.ContextModelManager.ResidualType;
 import app.managers.ListManager;
 import app.rendering.ColorManager;
 import app.utils.ArrayUtils;
@@ -800,12 +802,9 @@ public class Protocol {
 		encoder.encode(new BitReader(borderColors_v), output,
 				manager.getModel(CodingType.INTRA_BORDER_VERTICAL));
 		
-		encoder.encode(new BitReader(differences[ColorManager.Y_INDEX]),
-				output, manager.getModel(CodingType.RESIDUALS_Y));
-		encoder.encode(new BitReader(differences[ColorManager.U_INDEX]),
-				output, manager.getModel(CodingType.RESIDUALS_U));
-		encoder.encode(new BitReader(differences[ColorManager.V_INDEX]),
-				output, manager.getModel(CodingType.RESIDUALS_V));
+		binarizeResiduals(differences[ColorManager.Y_INDEX], ResidualType.RESIDUAL_Y, output, encoder, manager, block.getSize());
+		binarizeResiduals(differences[ColorManager.U_INDEX], ResidualType.RESIDUAL_U, output, encoder, manager, block.getSize() >> 1);
+		binarizeResiduals(differences[ColorManager.V_INDEX], ResidualType.RESIDUAL_V, output, encoder, manager, block.getSize() >> 1);
 	}
 	
 	public static DecodingIntraPredictionBlock debinarizeIntraPredictionBlock(final CABAC decoder, final ContextModelManager manager,
@@ -829,13 +828,9 @@ public class Protocol {
 		
 		decoder.decode(Byte.SIZE * ColorManager.CHANNELS * size, input, borderWriter_v,
 				manager.getModel(CodingType.INTRA_BORDER_VERTICAL));
-		
-		decoder.decode(differenceY_Length * Byte.SIZE, input, diffYWriter,
-				manager.getModel(CodingType.RESIDUALS_Y));
-		decoder.decode(differenceUV_Length * Byte.SIZE, input, diffUWriter,
-				manager.getModel(CodingType.RESIDUALS_U));
-		decoder.decode(differenceUV_Length * Byte.SIZE, input, diffVWriter,
-				manager.getModel(CodingType.RESIDUALS_V));
+		debinarizeResiduals(input, ResidualType.RESIDUAL_Y, diffYWriter, decoder, manager, parent.getSize());
+		debinarizeResiduals(input, ResidualType.RESIDUAL_U, diffUWriter, decoder, manager, parent.getSize() >> 1);
+		debinarizeResiduals(input, ResidualType.RESIDUAL_V, diffVWriter, decoder, manager, parent.getSize() >> 1);
 		
 		byte[] angle = angleWriter.toByteArray();
 		byte[] border_h = borderWriter_h.toByteArray();
@@ -877,12 +872,9 @@ public class Protocol {
 		
 		encoder.encode(new BitReader(refAndSize), output, manager.getModel(CodingType.VECTOR_REFERENCE));
 		
-		encoder.encode(new BitReader(differences[ColorManager.Y_INDEX]),
-				output, manager.getModel(CodingType.RESIDUALS_Y));
-		encoder.encode(new BitReader(differences[ColorManager.U_INDEX]),
-				output, manager.getModel(CodingType.RESIDUALS_U));
-		encoder.encode(new BitReader(differences[ColorManager.V_INDEX]),
-				output, manager.getModel(CodingType.RESIDUALS_V));
+		binarizeResiduals(differences[ColorManager.Y_INDEX], ResidualType.RESIDUAL_Y, output, encoder, manager, v.getSize());
+		binarizeResiduals(differences[ColorManager.U_INDEX], ResidualType.RESIDUAL_U, output, encoder, manager, v.getSize() >> 1);
+		binarizeResiduals(differences[ColorManager.V_INDEX], ResidualType.RESIDUAL_V, output, encoder, manager, v.getSize() >> 1);
 	}
 	
 	public static DecodingVector debinarizeVector(final CABAC decoder,
@@ -902,9 +894,9 @@ public class Protocol {
 		decoder.decode(Byte.SIZE, input, spanXWriter, manager.getModel(CodingType.VECTOR_SPAN_X));
 		decoder.decode(Byte.SIZE, input, spanYWriter, manager.getModel(CodingType.VECTOR_SPAN_Y));
 		decoder.decode(Byte.SIZE, input, referenceAndSizeWriter, manager.getModel(CodingType.VECTOR_REFERENCE));
-		decoder.decode(differenceY_Length * Byte.SIZE, input, diffYWriter, manager.getModel(CodingType.RESIDUALS_Y));
-		decoder.decode(differenceUV_Length * Byte.SIZE, input, diffUWriter, manager.getModel(CodingType.RESIDUALS_U));
-		decoder.decode(differenceUV_Length * Byte.SIZE, input, diffVWriter, manager.getModel(CodingType.RESIDUALS_V));
+		debinarizeResiduals(input, ResidualType.RESIDUAL_Y, diffYWriter, decoder, manager, parent.getSize());
+		debinarizeResiduals(input, ResidualType.RESIDUAL_U, diffUWriter, decoder, manager, parent.getSize() >> 1);
+		debinarizeResiduals(input, ResidualType.RESIDUAL_V, diffVWriter, decoder, manager, parent.getSize() >> 1);
 		
 		byte[] spanX = spanXWriter.toByteArray();
 		byte[] spanY = spanYWriter.toByteArray();
@@ -924,5 +916,77 @@ public class Protocol {
 		vec.setReference(f_refAndSize[0]);
 		vec.setYUVDelta(f_deltas);
 		return vec;
+	}
+	
+	public static void binarizeResiduals(final byte[] residualPart, final ResidualType type,
+			final BitWriter output, final CABAC encoder, final ContextModelManager manager,
+			final int size) {
+		final int totalSize = size * size;
+		final int lenPerQuadrant = size == 2 ? 4 : size == 4 ? 16 : 64;
+		final int quarterLen = size == 2 ? 1 : size == 4 ? 4 : 16;
+		byte[] stream = new byte[quarterLen];
+		
+		for (int group = 0; group < totalSize; group += lenPerQuadrant) {
+			for (int quarter = 0; quarter < 4; quarter++) {
+				final BinaryContextModel model = getModel(manager, type, quarter);
+				ArrayUtils.copyArray(residualPart, group + (quarter * quarterLen), stream, 0, quarterLen);
+				encoder.encode(new BitReader(stream), output, model);
+			}
+		}
+	}
+	
+	public static void debinarizeResiduals(final BitReader input, final ResidualType type,
+			final BitWriter output, final CABAC decoder, final ContextModelManager manager,
+			final int size) {
+		final int totalSize = size * size;
+		final int lenPerQuadrant = size == 2 ? 4 : size == 4 ? 16 : 64;
+		final int quarterLen = size == 2 ? 1 : size == 4 ? 4 : 16;
+		
+		for (int group = 0; group < totalSize; group += lenPerQuadrant) {
+			for (int quarter = 0; quarter < 4; quarter++) {
+				final BinaryContextModel model = getModel(manager, type, quarter);
+				decoder.decode(quarterLen * Byte.SIZE, input, output, model);
+			}
+		}
+	}
+	
+	private static BinaryContextModel getModel(final ContextModelManager manager, final ResidualType type, final int quarter) {
+		BinaryContextModel model = null;
+		
+		if (quarter == 0) {
+			if (type == ResidualType.RESIDUAL_Y) {
+				model = manager.getModel(CodingType.RESIDUALS_Y_FIRST_QUARTER);
+			} else if (type == ResidualType.RESIDUAL_U) {
+				model = manager.getModel(CodingType.RESIDUALS_U_FIRST_QUARTER);
+			} else if (type == ResidualType.RESIDUAL_V) {
+				model = manager.getModel(CodingType.RESIDUALS_V_FIRST_QUARTER);
+			}
+		} else if (quarter == 1) {
+			if (type == ResidualType.RESIDUAL_Y) {
+				model = manager.getModel(CodingType.RESIDUALS_Y_SECOND_QUARTER);
+			} else if (type == ResidualType.RESIDUAL_U) {
+				model = manager.getModel(CodingType.RESIDUALS_U_SECOND_QUARTER);
+			} else if (type == ResidualType.RESIDUAL_V) {
+				model = manager.getModel(CodingType.RESIDUALS_V_SECOND_QUARTER);
+			}
+		} else if (quarter == 2) {
+			if (type == ResidualType.RESIDUAL_Y) {
+				model = manager.getModel(CodingType.RESIDUALS_Y_THIRD_QUARTER);
+			} else if (type == ResidualType.RESIDUAL_U) {
+				model = manager.getModel(CodingType.RESIDUALS_U_THIRD_QUARTER);
+			} else if (type == ResidualType.RESIDUAL_V) {
+				model = manager.getModel(CodingType.RESIDUALS_V_THIRD_QUARTER);
+			}
+		} else if (quarter == 3) {
+			if (type == ResidualType.RESIDUAL_Y) {
+				model = manager.getModel(CodingType.RESIDUALS_Y_FOURTH_QUARTER);
+			} else if (type == ResidualType.RESIDUAL_U) {
+				model = manager.getModel(CodingType.RESIDUALS_U_FOURTH_QUARTER);
+			} else if (type == ResidualType.RESIDUAL_V) {
+				model = manager.getModel(CodingType.RESIDUALS_V_FOURTH_QUARTER);
+			}
+		}
+		
+		return model;
 	}
 }

@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package app.engines.prediction.intraprediction;
+package app.engines.prediction.intraprediction.encoding;
 
 import java.awt.Dimension;
 
@@ -37,7 +37,7 @@ public abstract class IntraPipeline {
 	public final static int MAX_ANGLE = 180;
 	public final static int NUM_OF_ANGLES = (MAX_ANGLE - MIN_ANGLE) / ANGLE_STEP;
 	
-	protected static void computeAngularIntraPredictionBlock(MacroBlock predictionBlock, final double[][] verticalYUV,
+	public static void computeAngularIntraPredictionBlock(MacroBlock predictionBlock, final double[][] verticalYUV,
 			final double[][] horizontalYUV, final float angle, final Dimension dim) {
 		if (isEdgeBlock(predictionBlock, dim)) {
 			return;

@@ -19,11 +19,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package app.engines.prediction.interprediction;
+package app.engines.prediction.interprediction.encoding;
 
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 
+import app.engines.prediction.interprediction.EncodingVector;
 import app.managers.LoadDistributor;
 import app.managers.ReferenceFrameManager;
 import app.utils.components.MacroBlock;
@@ -31,7 +32,7 @@ import app.utils.components.MacroBlock;
 /**
  * <p>The class {@code VectorEngine} is the main distributor class
  * for calculation/predicting motion in a frame using the
- * {@link app.engines.prediction.interprediction.VectorPredictionTask VectorPredictionTask}.
+ * {@link app.engines.prediction.interprediction.encoding.VectorPredictionTask VectorPredictionTask}.
  * </p>
  * 
  * <p><b>Performance warning:</b><br> Even though this process is

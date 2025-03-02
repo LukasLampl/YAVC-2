@@ -19,41 +19,20 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package app.engines.prediction.interprediction;
+package app.engines.prediction.intraprediction.decoding;
 
 import java.util.List;
 import java.util.concurrent.RecursiveAction;
 
 import app.Main;
+import app.engines.prediction.intraprediction.DecodingIntraPredictionBlock;
 import app.io.Protocol;
 import app.io.ProtocolBase;
 import app.managers.ListManager;
+import app.rendering.ColorManager;
 
-/**
- * The {@code VectorConversionTask} class is a Recursive splitting
- * task that allows to process a byte array containing the vectors and
- * a list of the indexes within a very short amount of time.
- * 
- * <p><b>Stats:</b><br>
- * Processing time for <u>~15.000</u> Vectors on a i7-7700HQ @ 2.80 GHz:<br><br>
- * <table border="1">
- * 	<tr>
- * 		<td>Min</td><td>Max</td><td>Avg.</td>
- * 	</tr>
- * 	<tr>
- * 		<td>7ms</td><td>86ms</td><td>~12ms</td>
- * 	</tr>
- * </table>
- * <br>
- * <i>The data is from the 21.11.2024 and might not represent the current stats.
- * It is only there for an orientation.</i>
- * </p>
- * 
- * @author Lukas Lampl
- * @since 1.2.5 [Optimized prototype]
- */
-public class VectorConversionTask extends RecursiveAction {
-	private static final long serialVersionUID = -1416920943935831433L;
+public class IntraConversionTask extends RecursiveAction {
+	private static final long serialVersionUID = -9153076396071631916L;
 	
 	/**
 	 * Determines the total amount of work per Recursive task measured in pixels.
@@ -84,7 +63,7 @@ public class VectorConversionTask extends RecursiveAction {
 	 * The vector manager in which to write all read in vector for
 	 * further processing.
 	 */
-	private ListManager<DecodingVector> vectorManager = null;
+	private ListManager<DecodingIntraPredictionBlock> intraBlocksManager = null;
 	
 	/**
 	 * Flag for whether the vectors should be converted by a single thread or not.
@@ -102,13 +81,13 @@ public class VectorConversionTask extends RecursiveAction {
 	 * @param data			Raw data containing the vectors in byte form.
 	 * @param vectorManager	The vector manager in which to write the vectors into.
 	 */
-	public VectorConversionTask(int start, int end, List<Integer> indexes, byte[] data,
-			ListManager<DecodingVector> vectorManager) {
+	public IntraConversionTask(int start, int end, List<Integer> indexes, byte[] data,
+			ListManager<DecodingIntraPredictionBlock> intraBlocksManager) {
 		this.start = start;
 		this.end = end;
 		this.indexes = indexes;
 		this.data = data;
-		this.vectorManager = vectorManager;
+		this.intraBlocksManager = intraBlocksManager;
 	}
 	
 	/**
@@ -125,14 +104,14 @@ public class VectorConversionTask extends RecursiveAction {
 	 */
 	@Override
 	protected void compute() {
-		final int totalWorkload = getWorkloadOfThread();
+		int totalWorkload = getWorkloadOfThread();
 		
 		if (totalWorkload > MAX_WORK && !this.executeOnSingleThread) {
-			final int middle = (this.start + this.end) / 2;
-			final VectorConversionTask tl = new VectorConversionTask(this.start, middle,
-					this.indexes, this.data, this.vectorManager);
-			final VectorConversionTask tr = new VectorConversionTask(middle, this.end,
-					this.indexes, this.data, this.vectorManager);
+			int middle = (this.start + this.end) / 2;
+			IntraConversionTask tl = new IntraConversionTask(this.start, middle,
+					this.indexes, this.data, this.intraBlocksManager);
+			IntraConversionTask tr = new IntraConversionTask(middle, this.end,
+					this.indexes, this.data, this.intraBlocksManager);
 			invokeAll(tl, tr);
 		} else {
 			execute();
@@ -141,7 +120,7 @@ public class VectorConversionTask extends RecursiveAction {
 	
 	/**
 	 * Calculates the current workload of the RecursiveTask
-	 * by adding the sizes of the vectors and returning it.
+	 * by adding the sizes of the intra blocks and returning it.
 	 * 
 	 * <p><b>Note:</b><br>
 	 * Since the task gets indexes the length of an object is
@@ -156,11 +135,11 @@ public class VectorConversionTask extends RecursiveAction {
 		
 		for (int i = this.start; i < this.end; i++) {
 			if (i == 0) {
-				totalWorkload = this.indexes.get(i);
+				totalWorkload += indexes.get(i);
 				continue;
 			}
 			
-			totalWorkload += (this.indexes.get(i) - this.indexes.get(i - 1));
+			totalWorkload += (indexes.get(i) - indexes.get(i - 1));
 		}
 		
 		return totalWorkload;
@@ -168,37 +147,38 @@ public class VectorConversionTask extends RecursiveAction {
 	
 	/**
 	 * Executes the given task by working the indexes from the given start
-	 * and end down. The function essentially creates the vectors based on the
-	 * {@link #data} and {@link #indexes}, in the end it adds the vectors to
-	 * the {@link #vectorManager}
+	 * and end down. The function essentially creates the intra block based on the
+	 * {@link #data} and {@link #indexes}, in the end it adds the intra block to
+	 * the {@link #intraBlocksManager}
 	 */
 	public void execute() {
 		for (int i = this.start; i < this.end; i++) {
 			final int index = indexes.get(i).intValue();
 			final int posX = ProtocolBase.getPosition(this.data[index], this.data[index + 1]);
 			final int posY = ProtocolBase.getPosition(this.data[index + 2], this.data[index + 3]);
-			final int spanX = Protocol.getVectorSpanInt(this.data[index + 4]);
-			final int spanY = Protocol.getVectorSpanInt(this.data[index + 5]);
-			final int[] refAndSize = Protocol.getReferenceAndSizeInt(this.data[index + 6]);
-			final int ref = refAndSize[0];
-			final int size = refAndSize[1];
-			DecodingVector vec = this.vectorManager.getCachedObj();
+			final int[] sizeAndAngle = Protocol.getSizeAndAngle(this.data[index + 4], this.data[index + 5]);
+			final int size = sizeAndAngle[0];
+			final int angle = sizeAndAngle[1];
+			final double[][][] borderColors = Protocol.getBorderColors(this.data, size, index + 6);
+			final int borderOffset = (size * 2) * ColorManager.CHANNELS;
+			DecodingIntraPredictionBlock intraBlock = this.intraBlocksManager.getCachedObj();
 			
-			if (vec == null) {
-				vec = new DecodingVector(posX, posY, size);
+			if (intraBlock == null) {
+				intraBlock = new DecodingIntraPredictionBlock(posX, posY, angle, size);
 			} else {
-				vec.setSize(size);
-				vec.move(posX, posY);
+				intraBlock.setSize(size);
+				intraBlock.move(posX, posY);
 			}
 			
 			double[][][] diffs = ProtocolBase.getDeltaCoefficientsFromDatastream(this.data,
-					index + Protocol.VECTOR_HEADER_LENGTH, size);
+					index + Protocol.INTRA_BLOCK_HEADER_LENGTH + borderOffset, size);
 			diffs = Main.DCT_ENGINE.computeIDCTOfDeltas(diffs, size, true, true);
-			vec.setYUVDelta(diffs);
-			vec.setSpanX(spanX);
-			vec.setSpanY(spanY);
-			vec.setReference(ref);
-			this.vectorManager.add(vec);
+			double[][][] yuvDelta = diffs;
+			intraBlock.setYUVDelta(yuvDelta);
+			intraBlock.setAngle(angle);
+			intraBlock.setVertical(borderColors[0]);
+			intraBlock.setHorizontal(borderColors[1]);
+			this.intraBlocksManager.add(intraBlock);
 		}
 	}
 }

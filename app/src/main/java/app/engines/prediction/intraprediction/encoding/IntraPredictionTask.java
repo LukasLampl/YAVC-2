@@ -19,11 +19,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package app.engines.prediction.intraprediction;
+package app.engines.prediction.intraprediction.encoding;
 
 import java.util.List;
 import java.util.concurrent.RecursiveAction;
 
+import app.engines.prediction.intraprediction.EncodingIntraPredictionBlock;
 import app.engines.prediction.intraprediction.cost.CostFunction;
 import app.engines.prediction.intraprediction.cost.MSECost;
 import app.managers.LoadDistributor;

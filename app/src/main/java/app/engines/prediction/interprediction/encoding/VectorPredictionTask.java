@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 
-package app.engines.prediction.interprediction;
+package app.engines.prediction.interprediction.encoding;
 
 import java.awt.Dimension;
 import java.awt.Point;
@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.concurrent.RecursiveAction;
 
 import app.config;
+import app.engines.prediction.interprediction.EncodingVector;
 import app.managers.LoadDistributor;
 import app.managers.ReferenceFrameManager;
 import app.rendering.ColorManager;

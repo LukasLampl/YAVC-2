@@ -19,18 +19,20 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package app.engines.prediction.interprediction;
+package app.engines.prediction.interprediction.decoding;
 
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 
+import app.engines.prediction.interprediction.DecodingVector;
+import app.engines.prediction.interprediction.Vector;
 import app.managers.ListManager;
 
 /**
  * The {@code VectorConverterPool} class is a parent class
  * for processing raw byte data into vectors.
  * 
- * @see app.engines.prediction.interprediction.VectorConversionTask
+ * @see app.engines.prediction.interprediction.decoding.VectorConversionTask
  * @author Lukas Lampl
  * @since 1.2.5 [Optimized prototype]
  */
